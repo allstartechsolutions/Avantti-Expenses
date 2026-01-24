@@ -1,0 +1,214 @@
+# Avantti Construction - Documentation
+
+## Documentation Index
+
+### Monetary System
+
+1. **[Monetary Storage](./monetary-storage.md)** - Integer-based storage system
+   - Why we store values as integers (cents) instead of decimals
+   - Database schema and migration details
+   - Model accessors and mutators
+   - How to work with monetary values in code
+   - Payment processor integration
+
+2. **[Currency Formatting](./currency-formatting.md)** - Multi-currency locale formatting
+   - Configuration for different countries and currencies
+   - How to format currency in views
+   - Supported currencies and locales
+   - Examples for US, Europe, Brazil, and more
+   - Troubleshooting and best practices
+
+### Address System
+
+3. **[Address System](./address-system.md)** - Multi-country address handling with Google Places
+   - Country-specific address formats (US and Brazil)
+   - Google Places Autocomplete integration
+   - Latitude/Longitude geocoding
+   - Database schema and model implementation
+   - Conditional field display based on country
+   - Configuration and setup guide
+
+### Weather System
+
+4. **[Weather System](./weather-system.md)** - Weather data for Daily Reports
+   - Visual Crossing API integration
+   - Historical and forecast weather data
+   - Manual weather observations
+   - Temperature units based on country (°F for US, °C for BR)
+   - Precipitation, humidity, and wind data
+   - Daily weather snapshots
+
+### Quick Reference
+
+#### Storage Format
+```
+Database:   150000 (integer, cents)
+           ↓ (Accessor)
+Application: 1500.00 (float, dollars)
+           ↓ (Formatter)
+Display:    $1,500.00 (string, localized)
+```
+
+#### Configuration (`.env`)
+```env
+# United States (Default)
+APP_LOCALE=en_US
+APP_CURRENCY=USD
+# Output: $1,500.00
+
+# Germany / Europe
+APP_LOCALE=de_DE
+APP_CURRENCY=EUR
+# Output: 1.500,00 €
+
+# Brazil
+APP_LOCALE=pt_BR
+APP_CURRENCY=BRL
+# Output: R$ 1.500,00
+```
+
+#### Common Tasks
+
+**Display a monetary value in a view:**
+```blade
+{{ Number::currency($project->initial_amount, config('app.currency'), config('app.locale')) }}
+```
+
+**Create/Update a monetary value:**
+```php
+$project = Project::create([
+    'initial_amount' => 1500.00,  // Just use dollars, mutator handles conversion
+]);
+```
+
+**Calculate totals:**
+```php
+$total = $expenses->sum('total_amount');  // Works correctly with accessors
+```
+
+**Switch currency for a different customer:**
+1. Edit `.env` file
+2. Update `APP_LOCALE` and `APP_CURRENCY`
+3. Run `php artisan config:clear`
+4. All monetary values automatically update
+
+### Benefits of This System
+
+✅ **Precision**: No floating-point errors
+✅ **International**: Supports 170+ currencies with correct formatting
+✅ **Payment-ready**: Compatible with Stripe, PayPal, etc.
+✅ **Simple**: Developers work with regular dollar amounts
+✅ **Automatic**: Conversions happen transparently
+
+### Getting Started
+
+1. Read [Monetary Storage](./monetary-storage.md) to understand how values are stored
+2. Read [Currency Formatting](./currency-formatting.md) to learn about display formatting
+3. See examples in the existing codebase (models and views)
+4. Test with different locales to see formatting changes
+
+### Questions?
+
+- How are values stored? → See [Monetary Storage](./monetary-storage.md)
+- How to format for different countries? → See [Currency Formatting](./currency-formatting.md)
+- How to change currency? → Update `.env` file (see Currency Formatting docs)
+- Having precision issues? → Check that you're using the accessor pattern correctly
+
+---
+
+## Address System Quick Reference
+
+### Configuration (`.env`)
+```env
+# Country (affects address form fields and autocomplete)
+APP_COUNTRY=US  # or BR for Brazil
+
+# Google Maps API Key (for address autocomplete)
+GOOGLE_MAPS_API_KEY=your_api_key_here
+```
+
+### Country Differences
+
+| Feature | US | BR |
+|---------|-----|-----|
+| Neighborhood field | Hidden | Visible (Bairro) |
+| Postal code label | "Postal Code" | "CEP" |
+| Autocomplete | US addresses | Brazilian addresses |
+
+### Common Tasks
+
+**Display full address:**
+```php
+echo $project->full_address;
+// US: "123 Main St, Suite 100, New York, NY, 10001"
+// BR: "Rua Augusta, 1234, Consolação, São Paulo, SP, 01310-100"
+```
+
+**Switch country:**
+1. Edit `.env` file: `APP_COUNTRY=BR`
+2. Run `php artisan config:clear`
+3. Forms automatically show country-specific fields
+
+**Enable address autocomplete:**
+1. Get API key from [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable: Places API, Geocoding API, Maps JavaScript API
+3. Add to `.env`: `GOOGLE_MAPS_API_KEY=your_key`
+
+### Benefits
+
+- Multi-country support (US, Brazil)
+- Google Places autocomplete
+- Automatic lat/long geocoding
+- Country-specific form fields
+- Easy country switching via ENV
+
+---
+
+## Weather System Quick Reference
+
+### Configuration (`.env`)
+```env
+# Visual Crossing Weather API
+VISUAL_CROSSING_API_KEY=your_api_key_here
+```
+
+### Country-Specific Units
+
+| Measurement | US | BR |
+|-------------|-----|-----|
+| Temperature | Fahrenheit (°F) | Celsius (°C) |
+| Precipitation | Inches (in) | Millimeters (mm) |
+| Wind Speed | mph | km/h |
+
+### Common Tasks
+
+**Fetch weather in Daily Report:**
+1. Create/edit a daily report for a job site with geocoded address
+2. Click "Fetch Weather" button
+3. Weather data displays automatically
+4. Save report to persist data
+
+**Add manual observation:**
+1. Click "Add Observation" in Observed Weather Conditions section
+2. Fill in time, conditions, and optional notes
+3. Save the observation
+4. Save report to persist all observations
+
+**Format temperature in code:**
+```php
+use App\Services\WeatherService;
+
+// Format for display (auto-detects country)
+WeatherService::formatTemperature(72); // "72°F" (US) or "22°C" (BR)
+
+// Get current unit
+WeatherService::getTemperatureUnit(); // "F" or "C"
+```
+
+### Benefits
+
+- Historical and forecast weather data
+- Manual observation tracking
+- Weather delay documentation
+- Automatic unit conversion based on country
+- Precipitation accumulation tracking (1, 2, 3 days)
