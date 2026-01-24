@@ -3,8 +3,8 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Client</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add a new client to the system</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Novo Cliente</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Adicionar novo cliente no sistema/p>
             </div>
             <div>
                 <x-ui.button
