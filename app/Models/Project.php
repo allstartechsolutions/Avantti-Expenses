@@ -76,6 +76,22 @@ class Project extends Model
     }
 
     /**
+     * Get all expenses for this project (including job site expenses)
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Get only project-level expenses (not tied to a job site)
+     */
+    public function projectLevelExpenses(): HasMany
+    {
+        return $this->hasMany(Expense::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

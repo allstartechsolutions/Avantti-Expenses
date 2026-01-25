@@ -3,18 +3,49 @@
 namespace App\Livewire\Project;
 
 use App\Enums\JobSiteStatus;
+use App\Models\CatalogItem;
+use App\Models\Expense;
 use App\Models\JobSite;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ProjectShow extends Component
 {
+    use WithFileUploads;
+
     public Project $project;
     public $activeTab = 'overview';
 
     // Job Site search and filters
     public $jobSiteSearch = '';
+
+    // Expense properties
+    public $expenseSearch = '';
+    public $expenseLocationFilter = 'all'; // 'all', 'project', or job_site_id
+    public $showExpenseModal = false;
+    public $expenseModalMode = 'create';
+    public $editingExpense = null;
+
+    // Expense form properties
+    public $expense_job_site_id = null; // null = project-level
+    public $catalogItemSearch = '';
+    public $selectedCatalogItem = null;
+    public $isCustomItem = false;
+    public $expense_item_name = '';
+    public $expense_item_type = '';
+    public $expense_purchase_unit = '';
+    public $expense_usage_unit = '';
+    public $expense_unit_type_used = 'custom';
+    public $expense_quantity = '';
+    public $expense_unit_price = '';
+    public $expense_total_amount = '';
+    public $expense_notes = '';
+    public $expense_date = '';
+    public $expense_receipt = null;
+    public $existingReceiptPath = null;
 
     // Job Site form properties
     public $showJobSiteForm = false;
@@ -177,6 +208,223 @@ class ProjectShow extends Component
         $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'status', 'editingJobSite']);
     }
 
+    // Expense methods
+    public function updatedCatalogItemSearch()
+    {
+        if (empty($this->catalogItemSearch)) {
+            $this->selectedCatalogItem = null;
+        }
+    }
+
+    public function selectCatalogItem($itemId)
+    {
+        $item = CatalogItem::find($itemId);
+
+        if ($item) {
+            $this->selectedCatalogItem = $itemId;
+            $this->catalogItemSearch = $item->name;
+            $this->expense_item_name = $item->name;
+            $this->expense_item_type = $item->type;
+            $this->expense_purchase_unit = $item->purchase_unit ?? '';
+            $this->expense_usage_unit = $item->usage_unit ?? '';
+            $this->isCustomItem = false;
+
+            if ($item->type === 'product' && $item->usage_unit) {
+                $this->expense_unit_type_used = 'usage';
+                $this->expense_unit_price = $item->unit_cost;
+            } else {
+                $this->expense_unit_type_used = 'purchase';
+                $this->expense_unit_price = $item->current_cost;
+            }
+
+            $this->calculateExpenseTotal();
+        }
+    }
+
+    public function updatedExpenseUnitTypeUsed()
+    {
+        if (!$this->selectedCatalogItem) {
+            return;
+        }
+
+        $item = CatalogItem::find($this->selectedCatalogItem);
+        if ($item) {
+            if ($this->expense_unit_type_used === 'purchase') {
+                $this->expense_unit_price = $item->current_cost;
+            } elseif ($this->expense_unit_type_used === 'usage') {
+                $this->expense_unit_price = $item->unit_cost;
+            }
+            $this->calculateExpenseTotal();
+        }
+    }
+
+    public function toggleCustomItem()
+    {
+        $this->isCustomItem = !$this->isCustomItem;
+
+        if ($this->isCustomItem) {
+            $this->reset(['selectedCatalogItem', 'catalogItemSearch', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_unit_price', 'expense_quantity', 'expense_total_amount']);
+            $this->expense_unit_type_used = 'custom';
+        } else {
+            $this->reset(['expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_unit_price', 'expense_quantity', 'expense_total_amount']);
+        }
+    }
+
+    public function calculateExpenseTotal()
+    {
+        if ($this->expense_quantity && $this->expense_unit_price) {
+            $this->expense_total_amount = number_format($this->expense_quantity * $this->expense_unit_price, 2, '.', '');
+        }
+    }
+
+    public function updatedExpenseQuantity()
+    {
+        $this->calculateExpenseTotal();
+    }
+
+    public function updatedExpenseUnitPrice()
+    {
+        $this->calculateExpenseTotal();
+    }
+
+    public function openExpenseCreateModal()
+    {
+        $this->reset(['expense_job_site_id', 'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount', 'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense']);
+        $this->expense_date = now()->format('Y-m-d');
+        $this->expense_unit_type_used = 'custom';
+        $this->expenseModalMode = 'create';
+        $this->showExpenseModal = true;
+        $this->dispatch('open-modal', 'expense-modal');
+    }
+
+    public function openExpenseEditModal($expenseId)
+    {
+        $expense = Expense::findOrFail($expenseId);
+
+        $this->editingExpense = $expense->id;
+        $this->expense_job_site_id = $expense->job_site_id;
+        $this->isCustomItem = $expense->isCustom();
+
+        if (!$this->isCustomItem) {
+            $this->selectedCatalogItem = $expense->catalog_item_id;
+            $this->catalogItemSearch = $expense->catalogItem?->name;
+        }
+
+        $this->expense_item_name = $expense->item_name;
+        $this->expense_item_type = $expense->item_type;
+        $this->expense_purchase_unit = $expense->purchase_unit;
+        $this->expense_usage_unit = $expense->usage_unit;
+        $this->expense_unit_type_used = $expense->unit_type_used;
+        $this->expense_quantity = $expense->quantity;
+        $this->expense_unit_price = $expense->unit_price;
+        $this->expense_total_amount = $expense->total_amount;
+        $this->expense_notes = $expense->notes;
+        $this->expense_date = $expense->expense_date->format('Y-m-d');
+        $this->existingReceiptPath = $expense->receipt_path;
+        $this->expense_receipt = null;
+
+        $this->expenseModalMode = 'edit';
+        $this->showExpenseModal = true;
+        $this->dispatch('open-modal', 'expense-modal');
+    }
+
+    public function openExpenseViewModal($expenseId)
+    {
+        $expense = Expense::findOrFail($expenseId);
+
+        $this->editingExpense = $expense->id;
+        $this->expense_job_site_id = $expense->job_site_id;
+        $this->isCustomItem = $expense->isCustom();
+
+        if (!$this->isCustomItem) {
+            $this->selectedCatalogItem = $expense->catalog_item_id;
+            $this->catalogItemSearch = $expense->catalogItem?->name;
+        }
+
+        $this->expense_item_name = $expense->item_name;
+        $this->expense_item_type = $expense->item_type;
+        $this->expense_purchase_unit = $expense->purchase_unit;
+        $this->expense_usage_unit = $expense->usage_unit;
+        $this->expense_unit_type_used = $expense->unit_type_used;
+        $this->expense_quantity = $expense->quantity;
+        $this->expense_unit_price = $expense->unit_price;
+        $this->expense_total_amount = $expense->total_amount;
+        $this->expense_notes = $expense->notes;
+        $this->expense_date = $expense->expense_date->format('Y-m-d');
+        $this->existingReceiptPath = $expense->receipt_path;
+
+        $this->expenseModalMode = 'view';
+        $this->showExpenseModal = true;
+        $this->dispatch('open-modal', 'expense-modal');
+    }
+
+    public function saveExpense()
+    {
+        $this->validate([
+            'expense_item_name' => 'required|string|max:255',
+            'expense_quantity' => 'required|numeric|min:0.01',
+            'expense_unit_price' => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
+            'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'expense_job_site_id' => 'nullable|exists:job_sites,id',
+        ]);
+
+        $receiptPath = $this->existingReceiptPath;
+
+        if ($this->expense_receipt) {
+            if ($this->existingReceiptPath) {
+                Storage::delete($this->existingReceiptPath);
+            }
+            $receiptPath = $this->expense_receipt->store('expenses', 'local');
+        }
+
+        $data = [
+            'project_id' => $this->project->id,
+            'job_site_id' => $this->expense_job_site_id ?: null,
+            'catalog_item_id' => $this->isCustomItem ? null : $this->selectedCatalogItem,
+            'item_name' => $this->expense_item_name,
+            'item_type' => $this->expense_item_type,
+            'purchase_unit' => $this->expense_purchase_unit,
+            'usage_unit' => $this->expense_usage_unit,
+            'unit_type_used' => $this->expense_unit_type_used,
+            'quantity' => $this->expense_quantity,
+            'unit_price' => $this->expense_unit_price,
+            'total_amount' => $this->expense_total_amount,
+            'notes' => $this->expense_notes,
+            'receipt_path' => $receiptPath,
+            'expense_date' => $this->expense_date,
+        ];
+
+        if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
+            $expense = Expense::findOrFail($this->editingExpense);
+            $expense->update($data);
+            session()->flash('message', 'Expense updated successfully!');
+        } else {
+            $data['created_by'] = Auth::id();
+            Expense::create($data);
+            session()->flash('message', 'Expense added successfully!');
+        }
+
+        $this->closeExpenseModal();
+        $this->project->refresh();
+    }
+
+    public function deleteExpense($expenseId)
+    {
+        $expense = Expense::findOrFail($expenseId);
+        $expense->delete();
+
+        session()->flash('message', 'Expense deleted successfully!');
+        $this->project->refresh();
+    }
+
+    public function closeExpenseModal()
+    {
+        $this->showExpenseModal = false;
+        $this->reset(['expense_job_site_id', 'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount', 'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense']);
+        $this->dispatch('close-modal', 'expense-modal');
+    }
+
     public function render()
     {
         $jobSitesQuery = $this->project->jobSites()->with('createdBy');
@@ -194,9 +442,42 @@ class ProjectShow extends Component
         $jobSites = $jobSitesQuery->orderBy('created_at', 'desc')->get();
         $statuses = JobSiteStatus::cases();
 
+        // Expenses query with filters
+        $expensesQuery = $this->project->expenses()->with(['jobSite', 'catalogItem', 'createdBy']);
+
+        // Apply location filter
+        if ($this->expenseLocationFilter === 'project') {
+            $expensesQuery->whereNull('job_site_id');
+        } elseif ($this->expenseLocationFilter !== 'all' && is_numeric($this->expenseLocationFilter)) {
+            $expensesQuery->where('job_site_id', $this->expenseLocationFilter);
+        }
+
+        // Apply search filter
+        if ($this->expenseSearch) {
+            $expensesQuery->where(function($query) {
+                $query->where('item_name', 'like', '%' . $this->expenseSearch . '%')
+                    ->orWhere('notes', 'like', '%' . $this->expenseSearch . '%');
+            });
+        }
+
+        $expenses = $expensesQuery->orderBy('expense_date', 'desc')->get();
+        $totalExpensesAmount = $expenses->sum('total_amount');
+
+        // Catalog items for expense form search
+        $catalogItems = collect();
+        if ($this->catalogItemSearch && strlen($this->catalogItemSearch) >= 2) {
+            $catalogItems = CatalogItem::where('is_active', true)
+                ->where('name', 'like', '%' . $this->catalogItemSearch . '%')
+                ->take(10)
+                ->get();
+        }
+
         return view('livewire.project.project-show', [
             'jobSites' => $jobSites,
             'statuses' => $statuses,
+            'expenses' => $expenses,
+            'totalExpensesAmount' => $totalExpensesAmount,
+            'catalogItems' => $catalogItems,
         ])->layout('components.layouts.app');
     }
 }

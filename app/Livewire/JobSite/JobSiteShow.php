@@ -371,6 +371,7 @@ class JobSiteShow extends Component
         }
 
         $data = [
+            'project_id' => $this->jobSite->project_id,
             'job_site_id' => $this->jobSite->id,
             'catalog_item_id' => $this->isCustomItem ? null : $this->selectedCatalogItem,
             'item_name' => $this->expense_item_name,

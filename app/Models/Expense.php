@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class Expense extends Model
 {
     protected $fillable = [
+        'project_id',
         'job_site_id',
         'catalog_item_id',
         'item_name',
@@ -68,11 +69,27 @@ class Expense extends Model
     }
 
     /**
-     * Get the job site this expense belongs to
+     * Get the project this expense belongs to
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * Get the job site this expense belongs to (nullable for project-level expenses)
      */
     public function jobSite(): BelongsTo
     {
         return $this->belongsTo(JobSite::class);
+    }
+
+    /**
+     * Check if this is a project-level expense (not tied to a specific job site)
+     */
+    public function isProjectLevel(): bool
+    {
+        return is_null($this->job_site_id);
     }
 
     /**
