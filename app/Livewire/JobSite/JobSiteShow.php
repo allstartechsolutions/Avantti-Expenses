@@ -164,6 +164,7 @@ class JobSiteShow extends Component
             session()->flash('message', 'Change order updated successfully!');
         } else {
             ChangeOrder::create([
+                'project_id' => $this->jobSite->project_id,
                 'job_site_id' => $this->jobSite->id,
                 'title' => $this->title,
                 'requested_date' => $this->requested_date,

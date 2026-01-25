@@ -21,10 +21,15 @@
                 @endif
             </td>
             <td style="width: 50%; vertical-align: top; text-align: right; border: none; padding: 0;">
-                <div style="font-size: 11pt; font-weight: bold; color: #3F5189;">Project: {{ $dailyReport->jobSite->project->project_name }}</div>
+                <div style="font-size: 11pt; font-weight: bold; color: #3F5189;">Project: {{ $dailyReport->project->project_name }}</div>
                 <div style="font-size: 8pt; color: #666;">
-                    <strong>Job Site:</strong> {{ $dailyReport->jobSite->job_site_name }}<br>
-                    {{ $dailyReport->jobSite->full_address ?? '' }}
+                    @if($dailyReport->jobSite)
+                        <strong>Job Site:</strong> {{ $dailyReport->jobSite->job_site_name }}<br>
+                        {{ $dailyReport->jobSite->full_address ?? '' }}
+                    @else
+                        <strong>Location:</strong> Project (General)<br>
+                        {{ $dailyReport->project->full_address ?? '' }}
+                    @endif
                 </div>
             </td>
         </tr>

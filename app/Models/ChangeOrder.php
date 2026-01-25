@@ -12,6 +12,7 @@ class ChangeOrder extends Model
     use HasFactory;
 
     protected $fillable = [
+        'project_id',
         'job_site_id',
         'title',
         'requested_date',
@@ -39,6 +40,14 @@ class ChangeOrder extends Model
     }
 
     /**
+     * Get the project that owns this change order
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    /**
      * Get the job site that owns this change order
      */
     public function jobSite(): BelongsTo
@@ -52,5 +61,13 @@ class ChangeOrder extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Check if this is a project-level change order (not assigned to a job site)
+     */
+    public function isProjectLevel(): bool
+    {
+        return is_null($this->job_site_id);
     }
 }

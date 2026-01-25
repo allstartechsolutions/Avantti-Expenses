@@ -92,6 +92,38 @@ class Project extends Model
     }
 
     /**
+     * Get all change orders for this project (including job site change orders)
+     */
+    public function changeOrders(): HasMany
+    {
+        return $this->hasMany(ChangeOrder::class);
+    }
+
+    /**
+     * Get only project-level change orders (not tied to a job site)
+     */
+    public function projectLevelChangeOrders(): HasMany
+    {
+        return $this->hasMany(ChangeOrder::class)->whereNull('job_site_id');
+    }
+
+    /**
+     * Get all daily reports for this project (including job site daily reports)
+     */
+    public function dailyReports(): HasMany
+    {
+        return $this->hasMany(DailyReport::class);
+    }
+
+    /**
+     * Get only project-level daily reports (not tied to a job site)
+     */
+    public function projectLevelDailyReports(): HasMany
+    {
+        return $this->hasMany(DailyReport::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

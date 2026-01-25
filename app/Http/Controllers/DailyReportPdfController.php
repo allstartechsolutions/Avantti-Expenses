@@ -16,7 +16,8 @@ class DailyReportPdfController extends Controller
     {
         // Load all necessary relationships
         $dailyReport->load([
-            'jobSite.project',
+            'project',
+            'jobSite',
             'preparedBy',
             'weather',
             'weatherObservations',
@@ -35,10 +36,11 @@ class DailyReportPdfController extends Controller
         // Set paper size and orientation
         $pdf->setPaper('letter', 'portrait');
 
-        // Generate filename
+        // Generate filename - use job site name if available, otherwise project name
+        $locationName = $dailyReport->jobSite?->job_site_name ?? $dailyReport->project?->project_name ?? 'report';
         $filename = sprintf(
             'daily-report-%s-%s.pdf',
-            $dailyReport->jobSite->job_site_name,
+            $locationName,
             $dailyReport->report_date->format('Y-m-d')
         );
 
@@ -55,7 +57,8 @@ class DailyReportPdfController extends Controller
     {
         // Load all necessary relationships
         $dailyReport->load([
-            'jobSite.project',
+            'project',
+            'jobSite',
             'preparedBy',
             'weather',
             'weatherObservations',

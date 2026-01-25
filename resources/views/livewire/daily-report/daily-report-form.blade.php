@@ -6,9 +6,11 @@
                 <div class="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
                     <a href="{{ route('projects.index') }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">Projects</a>
                     <span>/</span>
-                    <a href="{{ route('projects.show', $jobSite->project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->project->project_name }}</a>
-                    <span>/</span>
-                    <a href="{{ route('jobsites.show', $jobSite->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->job_site_name }}</a>
+                    <a href="{{ route('projects.show', $project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $project->project_name }}</a>
+                    @if($jobSite)
+                        <span>/</span>
+                        <a href="{{ route('jobsites.show', $jobSite->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->job_site_name }}</a>
+                    @endif
                     <span>/</span>
                     <span class="text-slate-900 dark:text-white">{{ $mode === 'edit' ? 'Edit' : 'Create' }} Daily Report</span>
                 </div>
@@ -86,15 +88,21 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Project</label>
-                <p class="text-slate-900 dark:text-white">{{ $jobSite->project->project_name }}</p>
+                <p class="text-slate-900 dark:text-white">{{ $project->project_name }}</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Job Site</label>
-                <p class="text-slate-900 dark:text-white">{{ $jobSite->job_site_name }}</p>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
+                @if($jobSite)
+                    <p class="text-slate-900 dark:text-white">{{ $jobSite->job_site_name }}</p>
+                @else
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                        Project (General)
+                    </span>
+                @endif
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
-                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $jobSite->full_address }}</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $jobSite?->full_address ?? $project->full_address }}</p>
             </div>
             <div>
                 <label for="report_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Report Date *</label>
@@ -317,10 +325,13 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No weather data</h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    @if($jobSite->latitude && $jobSite->longitude)
+                    @php
+                        $hasCoordinates = ($jobSite?->latitude && $jobSite?->longitude) || ($project?->latitude && $project?->longitude);
+                    @endphp
+                    @if($hasCoordinates)
                         Click "Fetch Weather" to get weather data for this date.
                     @else
-                        Add an address with geocoding to the job site first.
+                        Add an address with geocoding to the {{ $jobSite ? 'job site' : 'project' }} first.
                     @endif
                 </p>
             </div>

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class DailyReport extends Model
 {
     protected $fillable = [
+        'project_id',
         'job_site_id',
         'report_date',
         'prepared_by',
@@ -25,9 +26,22 @@ class DailyReport extends Model
         'updated_at' => 'datetime',
     ];
 
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
     public function jobSite(): BelongsTo
     {
         return $this->belongsTo(JobSite::class);
+    }
+
+    /**
+     * Check if this is a project-level daily report (not assigned to a job site)
+     */
+    public function isProjectLevel(): bool
+    {
+        return is_null($this->job_site_id);
     }
 
     public function preparedBy(): BelongsTo

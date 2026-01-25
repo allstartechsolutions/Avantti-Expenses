@@ -9,6 +9,7 @@ use App\Models\DailyReportTask;
 use App\Models\DailyReportWeather;
 use App\Models\DailyReportWeatherObservation;
 use App\Models\JobSite;
+use App\Models\Project;
 use App\Services\WeatherService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -19,9 +20,11 @@ class DailyReportForm extends Component
 {
     use WithFileUploads;
 
-    public JobSite $jobSite;
+    public ?Project $project = null;
+    public ?JobSite $jobSite = null;
     public ?DailyReport $dailyReport = null;
     public $mode = 'create'; // 'create' or 'edit'
+    public $context = 'jobsite'; // 'jobsite' or 'project'
 
     // Daily Report properties
     public $report_date = '';
@@ -84,14 +87,34 @@ class DailyReportForm extends Component
         ];
     }
 
-    public function mount(JobSite $jobSite, ?DailyReport $dailyReport = null)
+    public function mount(?JobSite $jobSite = null, ?Project $project = null, ?DailyReport $dailyReport = null)
     {
-        $this->jobSite = $jobSite->load('project');
+        // Determine the context based on what was passed
+        if ($jobSite && $jobSite->exists) {
+            $this->jobSite = $jobSite->load('project');
+            $this->project = $this->jobSite->project;
+            $this->context = 'jobsite';
+        } elseif ($project && $project->exists) {
+            $this->project = $project;
+            $this->jobSite = null;
+            $this->context = 'project';
+        }
 
         if ($dailyReport && $dailyReport->exists) {
-            $this->dailyReport = $dailyReport->load(['tasks.images', 'preparedBy', 'weather', 'weatherObservations', 'manpowerLogs.images']);
+            $this->dailyReport = $dailyReport->load(['tasks.images', 'preparedBy', 'weather', 'weatherObservations', 'manpowerLogs.images', 'jobSite', 'project']);
             $this->mode = 'edit';
             $this->report_date = $dailyReport->report_date->format('Y-m-d');
+
+            // Set context based on the daily report
+            if ($dailyReport->job_site_id) {
+                $this->jobSite = $dailyReport->jobSite;
+                $this->project = $dailyReport->project;
+                $this->context = 'jobsite';
+            } else {
+                $this->project = $dailyReport->project;
+                $this->jobSite = null;
+                $this->context = 'project';
+            }
 
             // Load existing tasks
             $this->tasks = $dailyReport->tasks->map(function ($task) {
@@ -239,9 +262,14 @@ class DailyReportForm extends Component
     // Weather methods
     public function fetchWeather()
     {
-        // Check if job site has coordinates
-        if (!$this->jobSite->latitude || !$this->jobSite->longitude) {
-            $this->weatherError = 'Job site does not have coordinates. Please add an address with geocoding first.';
+        // Get coordinates from job site or project
+        $latitude = $this->jobSite?->latitude ?? $this->project?->latitude;
+        $longitude = $this->jobSite?->longitude ?? $this->project?->longitude;
+
+        // Check if we have coordinates
+        if (!$latitude || !$longitude) {
+            $location = $this->jobSite ? 'Job site' : 'Project';
+            $this->weatherError = "{$location} does not have coordinates. Please add an address with geocoding first.";
             return;
         }
 
@@ -256,8 +284,8 @@ class DailyReportForm extends Component
         $this->weatherError = null;
 
         $weatherData = $weatherService->fetchWeatherForDate(
-            $this->jobSite->latitude,
-            $this->jobSite->longitude,
+            $latitude,
+            $longitude,
             $this->report_date
         );
 
@@ -545,7 +573,7 @@ class DailyReportForm extends Component
         if ($this->mode === 'edit' && $this->dailyReport) {
             if (!$this->dailyReport->isEditable() && !Auth::user()->is_admin) {
                 session()->flash('error', 'This report is no longer editable.');
-                return redirect()->route('jobsites.show', $this->jobSite);
+                return $this->redirectBack();
             }
 
             $this->dailyReport->update([
@@ -558,7 +586,8 @@ class DailyReportForm extends Component
             $dailyReport = $this->dailyReport;
         } else {
             $dailyReport = DailyReport::create([
-                'job_site_id' => $this->jobSite->id,
+                'project_id' => $this->project->id,
+                'job_site_id' => $this->jobSite?->id,
                 'report_date' => $this->report_date,
                 'prepared_by' => Auth::id(),
             ]);
@@ -688,11 +717,19 @@ class DailyReportForm extends Component
         }
 
         session()->flash('message', 'Daily report ' . ($this->mode === 'edit' ? 'updated' : 'created') . ' successfully!');
-        return redirect()->route('jobsites.show', $this->jobSite);
+        return $this->redirectBack();
     }
 
     public function cancel()
     {
+        return $this->redirectBack();
+    }
+
+    protected function redirectBack()
+    {
+        if ($this->context === 'project' || !$this->jobSite) {
+            return redirect()->route('projects.show', ['project' => $this->project, 'tab' => 'daily-reports']);
+        }
         return redirect()->route('jobsites.show', $this->jobSite);
     }
 

@@ -61,9 +61,13 @@ Route::middleware(['auth'])->group(function () {
     // Job Site routes
     Route::get('job-sites/{jobSite}', JobSiteShow::class)->name('jobsites.show');
 
-    // Daily Report routes
+    // Daily Report routes (Job Site level)
     Route::get('job-sites/{jobSite}/daily-reports/create', DailyReportForm::class)->name('dailyreports.create');
     Route::get('job-sites/{jobSite}/daily-reports/{dailyReport}/edit', DailyReportForm::class)->name('dailyreports.edit');
+
+    // Daily Report routes (Project level)
+    Route::get('projects/{project}/daily-reports/create', DailyReportForm::class)->name('dailyreports.project.create');
+    Route::get('projects/{project}/daily-reports/{dailyReport}/edit', DailyReportForm::class)->name('dailyreports.project.edit');
 
     // Daily Report PDF routes
     Route::get('daily-reports/{dailyReport}/pdf', [DailyReportPdfController::class, 'download'])->name('dailyreports.pdf.download');
