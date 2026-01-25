@@ -10,7 +10,9 @@
             ? 'company'
             : (request()->routeIs('projects.*') || request()->routeIs('clients.*')
                 ? 'projects'
-                : null)
+                : (request()->routeIs('catalog.*')
+                    ? 'catalog'
+                    : null))
     ),
     welcomeSectionVisible: localStorage.getItem('welcomeSectionDismissed') !== 'true',
     toggleSubmenu(menu) {

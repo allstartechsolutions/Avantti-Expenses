@@ -23,6 +23,9 @@ use App\Http\Controllers\FileController;
 use App\Livewire\Catalog\CatalogItemIndex;
 use App\Livewire\Catalog\CatalogItemCreate;
 use App\Livewire\Catalog\CatalogItemEdit;
+use App\Livewire\Catalog\CatalogCategoryIndex;
+use App\Livewire\Catalog\CatalogCategoryCreate;
+use App\Livewire\Catalog\CatalogCategoryEdit;
 use App\Livewire\Supplier\SupplierIndex;
 use App\Livewire\Supplier\SupplierCreate;
 use App\Livewire\Supplier\SupplierEdit;
@@ -77,6 +80,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('catalog', CatalogItemIndex::class)->name('catalog.index');
     Route::get('catalog/create', CatalogItemCreate::class)->name('catalog.create');
     Route::get('catalog/{item}/edit', CatalogItemEdit::class)->name('catalog.edit');
+
+    // Catalog Category routes
+    Route::get('catalog/categories', CatalogCategoryIndex::class)->name('catalog.categories.index');
+    Route::get('catalog/categories/create', CatalogCategoryCreate::class)->name('catalog.categories.create');
+    Route::get('catalog/categories/{category}/edit', CatalogCategoryEdit::class)->name('catalog.categories.edit');
 
     // Supplier routes
     Route::get('suppliers', SupplierIndex::class)->name('suppliers.index');

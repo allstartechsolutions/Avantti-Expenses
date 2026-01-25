@@ -4,6 +4,7 @@ namespace App\Livewire\Catalog;
 
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -14,6 +15,7 @@ class CatalogItemCreate extends Component
     public $sku = '';
     public $description = '';
     public $category_id = '';
+    public $supplier_id = '';
     public $is_active = true;
 
     // Product fields
@@ -33,6 +35,7 @@ class CatalogItemCreate extends Component
             'sku' => 'nullable|string|max:255|unique:catalog_items,sku',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:catalog_categories,id',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'is_active' => 'boolean',
             'current_cost' => 'required|numeric|min:0',
         ];
@@ -52,6 +55,7 @@ class CatalogItemCreate extends Component
 
     protected $validationAttributes = [
         'category_id' => 'category',
+        'supplier_id' => 'preferred supplier',
         'current_cost' => 'cost',
         'purchase_unit' => 'purchase unit',
         'usage_unit' => 'usage unit',
@@ -69,6 +73,7 @@ class CatalogItemCreate extends Component
             'sku' => $this->sku ?: null,
             'description' => $this->description,
             'category_id' => $this->category_id ?: null,
+            'supplier_id' => in_array($this->type, ['product', 'rental']) && $this->supplier_id ? $this->supplier_id : null,
             'is_active' => $this->is_active,
             'purchase_unit' => $this->type === 'product' ? $this->purchase_unit : null,
             'usage_unit' => $this->type === 'product' ? $this->usage_unit : null,
@@ -92,8 +97,11 @@ class CatalogItemCreate extends Component
             ->orderBy('name')
             ->get();
 
+        $suppliers = Supplier::orderBy('name')->get();
+
         return view('livewire.catalog.catalog-item-create', [
             'categories' => $categories,
+            'suppliers' => $suppliers,
         ])->layout('components.layouts.app');
     }
 }

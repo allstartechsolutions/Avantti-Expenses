@@ -99,7 +99,8 @@ resources/views/livewire/
 4. Create Blade views with Tailwind CSS
 5. Add Alpine.js interactions where needed
 6. Implement validation and error handling
-7. for buttons use the componets already setup and use the welcome blade to get the layouts for columns and titles.
+7. for buttons use the components already setup and use the welcome blade to get the layouts for columns and titles.
+8. Always save the documentation inside de docs folder unless you are told different.
 
 ### Error Handling
 - For simple CRUD: Use Laravel/Livewire's default error handling

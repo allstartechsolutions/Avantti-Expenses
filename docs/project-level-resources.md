@@ -360,3 +360,74 @@ Any new features that track work, costs, or documents should follow this pattern
 3. Update Project model with relationships
 4. Add UI to ProjectShow (tab with CRUD or list with links)
 5. Update any existing job-site-level forms to include `project_id`
+
+---
+
+## Other Session Logs
+
+### Session 4 - 2026-01-25
+
+**Goal:** Add "Preferred Supplier" field to Catalog Items (Products and Rentals)
+
+**Changes Made:**
+
+1. **Created Migration** (`2026_01_25_120000_add_supplier_id_to_catalog_items_table.php`)
+   - Added `supplier_id` foreign key (nullable) to catalog_items table
+   - References suppliers table with ON DELETE SET NULL
+
+2. **Created Default Supplier Seeder** (`database/seeders/DefaultSupplierSeeder.php`)
+   - Creates "General Supplier" with dummy values
+   - Used for items without a specific preferred supplier
+
+3. **Updated CatalogItem Model** (`app/Models/CatalogItem.php`)
+   - Added `supplier_id` to `$fillable`
+   - Added `supplier()` BelongsTo relationship
+
+4. **Updated Supplier Model** (`app/Models/Supplier.php`)
+   - Added `catalogItems()` HasMany relationship
+
+5. **Updated CatalogItemCreate Component** (`app/Livewire/Catalog/CatalogItemCreate.php`)
+   - Added `$supplier_id` property
+   - Added validation rule for supplier_id
+   - Added supplier_id to validation attributes
+   - Updated save() to include supplier_id for products and rentals
+   - Updated render() to pass suppliers to view
+
+6. **Updated CatalogItemEdit Component** (`app/Livewire/Catalog/CatalogItemEdit.php`)
+   - Added `$supplier_id` property
+   - Updated mount() to load supplier_id from item
+   - Added validation rule for supplier_id
+   - Added supplier_id to validation attributes
+   - Updated save() to include supplier_id for products and rentals
+   - Updated render() to pass suppliers to view
+
+7. **Updated CatalogItemCreate View** (`resources/views/livewire/catalog/catalog-item-create.blade.php`)
+   - Added searchable Preferred Supplier dropdown (shows only for products and rentals)
+   - Dropdown appears after Category field in Basic Information section
+   - Uses Alpine.js for client-side search filtering
+
+8. **Updated CatalogItemEdit View** (`resources/views/livewire/catalog/catalog-item-edit.blade.php`)
+   - Added searchable Preferred Supplier dropdown (shows only for products and rentals)
+   - Dropdown appears after Category field in Basic Information section
+   - Uses Alpine.js for client-side search filtering
+
+**UI Features:**
+- Supplier dropdown only appears for Products and Rentals (not Services)
+- Dropdown is optional - can be left blank
+- Shows all available suppliers from the Supplier module
+- Default "General Supplier" available via seeder for items without specific supplier
+- **Searchable dropdown** with Alpine.js:
+  - Type-to-search: Filter suppliers as you type
+  - Click to select from the filtered list
+  - Clear button (X) to remove the selection
+  - Escape key closes the dropdown
+  - Click outside closes the dropdown
+  - Smooth fade in/out animations
+  - Shows "No suppliers found" when no matches
+  - Initializes with current value on edit page
+
+**Commands to run:**
+```bash
+php artisan migrate
+php artisan db:seed --class=DefaultSupplierSeeder
+```

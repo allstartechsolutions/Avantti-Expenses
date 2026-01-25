@@ -108,6 +108,99 @@
                                 @enderror
                             </div>
 
+                            <!-- Preferred Supplier (for products and rentals only) -->
+                            @if(in_array($type, ['product', 'rental']))
+                                <div
+                                    x-data="{
+                                        open: false,
+                                        search: '',
+                                        selectedName: '',
+                                        suppliers: {{ $suppliers->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->toJson() }},
+                                        get filteredSuppliers() {
+                                            if (!this.search) return this.suppliers;
+                                            return this.suppliers.filter(s => s.name.toLowerCase().includes(this.search.toLowerCase()));
+                                        },
+                                        selectSupplier(supplier) {
+                                            $wire.set('supplier_id', supplier.id);
+                                            this.selectedName = supplier.name;
+                                            this.search = '';
+                                            this.open = false;
+                                        },
+                                        clearSelection() {
+                                            $wire.set('supplier_id', '');
+                                            this.selectedName = '';
+                                            this.search = '';
+                                        },
+                                        init() {
+                                            const currentId = $wire.get('supplier_id');
+                                            if (currentId) {
+                                                const found = this.suppliers.find(s => s.id == currentId);
+                                                if (found) this.selectedName = found.name;
+                                            }
+                                        }
+                                    }"
+                                    @click.outside="open = false"
+                                    class="relative"
+                                >
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Preferred Supplier
+                                    </label>
+
+                                    <!-- Selected value display / Search input -->
+                                    <div class="relative">
+                                        <template x-if="selectedName && !open">
+                                            <div class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white flex items-center justify-between cursor-pointer" @click="open = true">
+                                                <span x-text="selectedName"></span>
+                                                <button type="button" @click.stop="clearSelection()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="!selectedName || open">
+                                            <input
+                                                type="text"
+                                                x-model="search"
+                                                @focus="open = true"
+                                                @keydown.escape="open = false"
+                                                placeholder="Search supplier..."
+                                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        </template>
+                                    </div>
+
+                                    <!-- Dropdown -->
+                                    <div
+                                        x-show="open"
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 scale-95"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 max-h-60 overflow-auto"
+                                    >
+                                        <template x-if="filteredSuppliers.length === 0">
+                                            <div class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">No suppliers found</div>
+                                        </template>
+
+                                        <template x-for="supplier in filteredSuppliers" :key="supplier.id">
+                                            <button
+                                                type="button"
+                                                @click="selectSupplier(supplier)"
+                                                class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700 text-sm text-slate-900 dark:text-white"
+                                                x-text="supplier.name"
+                                            ></button>
+                                        </template>
+                                    </div>
+
+                                    @error('supplier_id')
+                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+
                             <!-- Description -->
                             <div class="md:col-span-2">
                                 <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

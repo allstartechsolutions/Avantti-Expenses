@@ -38,6 +38,15 @@
    - Precipitation, humidity, and wind data
    - Daily weather snapshots
 
+### UI Components
+
+5. **[Header Search](./header-search.md)** - Project search in header
+   - Debounced search (300ms) for performance
+   - Searches by project name
+   - Shows project name and address in results
+   - Lazy loading - no queries on page load
+   - Optimized for thousands of projects
+
 ### Quick Reference
 
 #### Storage Format
@@ -212,3 +221,41 @@ WeatherService::getTemperatureUnit(); // "F" or "C"
 - Weather delay documentation
 - Automatic unit conversion based on country
 - Precipitation accumulation tracking (1, 2, 3 days)
+
+---
+
+## Header Search Quick Reference
+
+### How It Works
+
+1. User types at least 2 characters in search field
+2. After 300ms pause, Livewire queries the database
+3. Results show project name and address (max 8 results)
+4. Click result to navigate to project page
+
+### Performance Features
+
+- **Debounced**: 300ms delay prevents excessive queries
+- **Lazy**: No database queries until user searches
+- **Limited**: Maximum 8 results returned
+- **Indexed**: `project_name` column is indexed
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `app/Livewire/Shared/HeaderSearch.php` | Livewire component |
+| `resources/views/livewire/shared/header-search.blade.php` | Search view |
+| `resources/views/components/layouts/inc/header.blade.php` | Header integration |
+
+### Customization
+
+**Change debounce time:**
+```blade
+wire:model.live.debounce.500ms="search"
+```
+
+**Change result limit:**
+```php
+->limit(10)  // In getResultsProperty()
+```

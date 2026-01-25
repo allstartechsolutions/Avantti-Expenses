@@ -19,6 +19,7 @@ class CatalogItem extends Model
         'sku',
         'description',
         'category_id',
+        'supplier_id',
         'is_active',
         'purchase_unit',
         'usage_unit',
@@ -70,6 +71,14 @@ class CatalogItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(CatalogCategory::class, 'category_id');
+    }
+
+    /**
+     * Get the preferred supplier
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Livewire\Catalog;
 
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
+use App\Models\Supplier;
 use Livewire\Component;
 
 class CatalogItemEdit extends Component
@@ -15,6 +16,7 @@ class CatalogItemEdit extends Component
     public $sku;
     public $description;
     public $category_id;
+    public $supplier_id;
     public $is_active;
 
     // Product fields
@@ -34,6 +36,7 @@ class CatalogItemEdit extends Component
         $this->sku = $item->sku;
         $this->description = $item->description;
         $this->category_id = $item->category_id;
+        $this->supplier_id = $item->supplier_id;
         $this->is_active = $item->is_active;
         $this->purchase_unit = $item->purchase_unit;
         $this->usage_unit = $item->usage_unit;
@@ -50,6 +53,7 @@ class CatalogItemEdit extends Component
             'sku' => 'nullable|string|max:255|unique:catalog_items,sku,' . $this->item->id,
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:catalog_categories,id',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'is_active' => 'boolean',
             'current_cost' => 'required|numeric|min:0',
         ];
@@ -69,6 +73,7 @@ class CatalogItemEdit extends Component
 
     protected $validationAttributes = [
         'category_id' => 'category',
+        'supplier_id' => 'preferred supplier',
         'current_cost' => 'cost',
         'purchase_unit' => 'purchase unit',
         'usage_unit' => 'usage unit',
@@ -87,6 +92,7 @@ class CatalogItemEdit extends Component
             'sku' => $this->sku ?: null,
             'description' => $this->description,
             'category_id' => $this->category_id ?: null,
+            'supplier_id' => in_array($this->type, ['product', 'rental']) && $this->supplier_id ? $this->supplier_id : null,
             'is_active' => $this->is_active,
             'purchase_unit' => $this->type === 'product' ? $this->purchase_unit : null,
             'usage_unit' => $this->type === 'product' ? $this->usage_unit : null,
@@ -109,10 +115,13 @@ class CatalogItemEdit extends Component
             ->orderBy('name')
             ->get();
 
+        $suppliers = Supplier::orderBy('name')->get();
+
         $priceHistory = $this->item->priceHistory()->with('changedBy')->take(10)->get();
 
         return view('livewire.catalog.catalog-item-edit', [
             'categories' => $categories,
+            'suppliers' => $suppliers,
             'priceHistory' => $priceHistory,
         ])->layout('components.layouts.app');
     }

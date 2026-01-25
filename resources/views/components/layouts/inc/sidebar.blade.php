@@ -10,7 +10,7 @@
             <div class="w-8 h-8 bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg flex items-center justify-center">
                 <span class="text-white font-bold text-sm leading-none">A</span>
             </div>
-            <span class="text-xl font-bold text-slate-800 dark:text-white">Avantti</span>
+            <span class="text-xl font-bold text-slate-800 dark:text-white">Despesas</span>
         </div>
         <div class="flex items-center space-x-2">
             <!-- Desktop Toggle -->
@@ -145,12 +145,50 @@
             </div>
 
             <!-- Catalog -->
-            <a href="{{ route('catalog.index') }}" class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('catalog.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
-                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Catalog</span>
-            </a>
+            <div class="mb-1">
+                <button @click="toggleSubmenu('catalog')"
+                        class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('catalog.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Catalog</span>
+                    </div>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'catalog'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu === 'catalog'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- Catalog Submenu -->
+                <div x-show="activeSubmenu === 'catalog' && (!sidebarCollapsed || sidebarOpen)" x-cloak
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     class="ml-8 mt-2 space-y-1">
+                    <a href="{{ route('catalog.index') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('catalog.index') || request()->routeIs('catalog.create') || request()->routeIs('catalog.edit') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        All Items
+                    </a>
+                    <a href="{{ route('catalog.categories.index') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('catalog.categories.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        </svg>
+                        Categories
+                    </a>
+                </div>
+            </div>
 
             <!-- Suppliers -->
             <a href="{{ route('suppliers.index') }}" class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('suppliers.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
