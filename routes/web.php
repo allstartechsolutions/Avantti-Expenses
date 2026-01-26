@@ -30,6 +30,11 @@ use App\Livewire\Supplier\SupplierIndex;
 use App\Livewire\Supplier\SupplierCreate;
 use App\Livewire\Supplier\SupplierEdit;
 use App\Livewire\Supplier\SupplierShow;
+use App\Livewire\Payment\PaymentDashboard;
+use App\Livewire\CostCode\CostCodeTemplateIndex;
+use App\Livewire\CostCode\CostCodeTemplateCreate;
+use App\Livewire\CostCode\CostCodeTemplateShow;
+use App\Livewire\CostCode\CostCodeTemplateEdit;
 
 Route::get('/', function () {
     return view('welcome');
@@ -91,6 +96,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('suppliers/create', SupplierCreate::class)->name('suppliers.create');
     Route::get('suppliers/{supplier}', SupplierShow::class)->name('suppliers.show');
     Route::get('suppliers/{supplier}/edit', SupplierEdit::class)->name('suppliers.edit');
+
+    // Payment routes
+    Route::get('payments', PaymentDashboard::class)->name('payments.index');
+
+    // Cost Code Template routes
+    Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');
+    Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
+    Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)->name('cost-codes.templates.show');
+    Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)->name('cost-codes.templates.edit');
 
     // File download route (protected)
     Route::get('files/download', [FileController::class, 'download'])->name('files.download');

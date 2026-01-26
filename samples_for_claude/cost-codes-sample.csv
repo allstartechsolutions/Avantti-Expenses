@@ -1,0 +1,25 @@
+code,name,description,parent_code
+1,Projetos,N/A,
+1.1.1,Projeto Arquitetonico,N/A,1
+1.1.2,Projeto Estrutural,N/A,1
+1.1.3,Projeto de Instalacoes ,N/A,1
+1.1.4,Projeto de Paisagismo,N/A,1
+1.1.5,Plotagem de projetos de Arquitetura,N/A,1
+2,Canteiro de obra,N/A,
+2.1.1,Mao de Obra de Execucao,N/A,2
+2.1.2,Mobilizacao (Construcao Canteiro Obra/Refeitorio),N/A,2
+2.1.3,Locacao Container Materiais,N/A,2
+2.1.4,Locacao de cacamba,N/A,2
+2.1.5,Locação de equipamentos diversos,N/A,2
+2.1.6,Locação de máquinas para usos diversos,N/A,2
+2.1.7,Bota Fora,N/A,2
+2.1.8,Topografia - Marcacao Terreno E estacas,N/A,2
+2.1.9,Consumo Agua/ Internet / Energia,N/A,2
+2.1.10,Controle Tecnologico - Concreto,N/A,2
+2.1.11,Estudo de sondagem do Solo,N/A,2
+2.1.12,Espacadores ,N/A,2
+3,Terraplanagem,N/A,
+3.1.1,Limpeza do terreno ,N/A,3
+3.1.2,Terra para nivelamento dos niveis,N/A,3
+3.1.3,Formas para gabarito,N/A,3
+3.1.4,Topografo - Marcacao gabarito estacas,N/A,3

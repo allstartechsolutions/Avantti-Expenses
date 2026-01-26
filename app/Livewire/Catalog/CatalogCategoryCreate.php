@@ -3,6 +3,7 @@
 namespace App\Livewire\Catalog;
 
 use App\Models\CatalogCategory;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class CatalogCategoryCreate extends Component
@@ -38,6 +39,7 @@ class CatalogCategoryCreate extends Component
             'parent_id' => $this->parent_id ?: null,
             'is_active' => $this->is_active,
             'display_order' => $this->display_order,
+            'created_by' => Auth::id(),
         ]);
 
         session()->flash('message', 'Category created successfully!');

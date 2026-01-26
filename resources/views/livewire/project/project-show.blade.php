@@ -751,6 +751,17 @@
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
                         </select>
+                        <!-- Status Filter -->
+                        <select
+                            wire:model.live="expenseStatusFilter"
+                            class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <option value="all">All Status</option>
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                            <option value="partial">Partial</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
                     </div>
                     <x-ui.button
                         variant="primary"
@@ -760,20 +771,51 @@
                     </x-ui.button>
                 </div>
 
-                <!-- Summary Card -->
-                <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-white/80">Total Expenses</p>
-                            <p class="text-3xl font-bold mt-1">{{ Number::currency($totalExpensesAmount, config('app.currency'), config('app.locale')) }}</p>
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Total Expenses -->
+                    <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-white/80">Total Expenses</p>
+                                <p class="text-2xl font-bold mt-1">{{ Number::currency($totalExpensesAmount, config('app.currency'), config('app.locale')) }}</p>
+                            </div>
+                            <div class="bg-white/10 rounded-full p-3">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="bg-white/10 rounded-full p-4">
-                            <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+                        <p class="mt-2 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }}</p>
+                    </div>
+                    <!-- Paid Amount -->
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Paid</p>
+                                <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($totalPaidAmount, config('app.currency'), config('app.locale')) }}</p>
+                            </div>
+                            <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
+                                <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }} recorded</p>
+                    <!-- Pending Amount -->
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending</p>
+                                <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ Number::currency($totalPendingAmount, config('app.currency'), config('app.locale')) }}</p>
+                            </div>
+                            <div class="bg-amber-100 dark:bg-amber-900/20 rounded-full p-3">
+                                <svg class="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Expenses List -->
@@ -786,9 +828,9 @@
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Item</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Quantity</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Price</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Payments</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
@@ -823,14 +865,30 @@
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ number_format((float)$expense->quantity, 2) }} {{ $expense->getDisplayUnit() }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ Number::currency($expense->unit_price, config('app.currency'), config('app.locale')) }}
-                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-white">
                                                 {{ Number::currency($expense->total_amount, config('app.currency'), config('app.locale')) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                                                <span class="font-medium">{{ $expense->getPaymentLabel() }}</span>
+                                                @if($expense->isInstallment())
+                                                    <div class="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
+                                                        <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ $expense->getPaymentProgress() }}%"></div>
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @php
+                                                    $statusColors = [
+                                                        'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+                                                        'unpaid' => 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300',
+                                                        'partial' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+                                                        'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+                                                        'cancelled' => 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
+                                                    ];
+                                                @endphp
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$expense->status] ?? $statusColors['unpaid'] }}">
+                                                    {{ ucfirst($expense->status) }}
+                                                </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div class="flex items-center justify-end space-x-2">
@@ -843,14 +901,32 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </button>
-                                                    <button
-                                                        wire:click="openExpenseEditModal({{ $expense->id }})"
-                                                        class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                        title="Edit">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                        </svg>
-                                                    </button>
+                                                    @if($expense->isEditable())
+                                                        <button
+                                                            wire:click="openExpenseEditModal({{ $expense->id }})"
+                                                            class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
+                                                            title="Edit">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                            </svg>
+                                                        </button>
+                                                    @else
+                                                        <span class="text-slate-300 dark:text-slate-600 cursor-not-allowed" title="Cannot edit - has payments">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                            </svg>
+                                                        </span>
+                                                    @endif
+                                                    @if($expense->status !== 'paid' && $expense->isOneTime())
+                                                        <button
+                                                            wire:click="markExpenseAsPaid({{ $expense->id }})"
+                                                            class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                            title="Mark as Paid">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                        </button>
+                                                    @endif
                                                     <button
                                                         wire:click="deleteExpense({{ $expense->id }})"
                                                         wire:confirm="Are you sure you want to delete this expense?"
@@ -1278,6 +1354,140 @@
                             <a href="{{ route('files.show', ['path' => $existingReceiptPath]) }}" target="_blank" class="text-[#3F5189] hover:underline">View Receipt</a>
                         </div>
                     @endif
+
+                    <!-- Payment Information Section -->
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-4">Payment Information</h3>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                                @php
+                                    $statusColors = [
+                                        'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+                                        'unpaid' => 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300',
+                                        'partial' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+                                        'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+                                        'cancelled' => 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
+                                    ];
+                                @endphp
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium {{ $statusColors[$expense_status] ?? $statusColors['unpaid'] }}">
+                                    {{ ucfirst($expense_status) }}
+                                </span>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Method</label>
+                                <p class="text-slate-900 dark:text-white">
+                                    {{ $expense_payment_method ? str_replace('_', ' ', ucfirst($expense_payment_method)) : 'Not specified' }}
+                                    @if($expense_is_auto_payment)
+                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                                            Auto
+                                        </span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+
+                        @if($expense_has_installments && $viewingExpense)
+                            <!-- Installment Payment Schedule -->
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Schedule</label>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400">
+                                        {{ $viewingExpense->getPaidInstallmentsCount() }}/{{ $viewingExpense->total_installments }} paid
+                                    </span>
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-4">
+                                    <div class="bg-green-500 h-2.5 rounded-full" style="width: {{ $viewingExpense->getPaymentProgress() }}%"></div>
+                                </div>
+
+                                <div class="bg-slate-50 dark:bg-slate-900 rounded-lg overflow-hidden">
+                                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                        <thead>
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">#</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Due Date</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Paid Date</th>
+                                                <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                            @foreach($viewingExpense->payments as $payment)
+                                                <tr>
+                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->payment_number }}</td>
+                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->due_date->format('M d, Y') }}</td>
+                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ Number::currency($payment->amount, config('app.currency'), config('app.locale')) }}</td>
+                                                    <td class="px-4 py-2">
+                                                        @php
+                                                            $paymentStatusColors = [
+                                                                'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+                                                                'pending' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
+                                                                'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+                                                            ];
+                                                        @endphp
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $paymentStatusColors[$payment->status] ?? $paymentStatusColors['pending'] }}">
+                                                            {{ ucfirst($payment->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
+                                                        {{ $payment->paid_date ? $payment->paid_date->format('M d, Y') : '-' }}
+                                                    </td>
+                                                    <td class="px-4 py-2 text-right">
+                                                        @if($payment->status === 'pending')
+                                                            <button
+                                                                wire:click="markPaymentAsPaid({{ $payment->id }})"
+                                                                class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
+                                                                Mark Paid
+                                                            </button>
+                                                            <button
+                                                                wire:click="markPaymentAsOverdue({{ $payment->id }})"
+                                                                class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">
+                                                                Overdue
+                                                            </button>
+                                                        @elseif($payment->status === 'overdue')
+                                                            <button
+                                                                wire:click="markPaymentAsPaid({{ $payment->id }})"
+                                                                class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
+                                                                Mark Paid
+                                                            </button>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="mt-3 flex justify-between text-sm">
+                                    <span class="text-green-600 dark:text-green-400 font-medium">
+                                        Paid: {{ Number::currency($viewingExpense->getPaidAmount(), config('app.currency'), config('app.locale')) }}
+                                    </span>
+                                    <span class="text-amber-600 dark:text-amber-400 font-medium">
+                                        Pending: {{ Number::currency($viewingExpense->getPendingAmount(), config('app.currency'), config('app.locale')) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @else
+                            <!-- One-time Payment Info -->
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                @if($expense_status === 'paid' && $expense_paid_date)
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Paid Date</label>
+                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}</p>
+                                    </div>
+                                @elseif($expense_status === 'unpaid' && $expense_payment_due_date)
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
+                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_payment_due_date)->format('M d, Y') }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 mt-6">
@@ -1542,6 +1752,218 @@
                                         {{ $expense_receipt->getClientOriginalName() }}
                                     </span>
                                 </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Payment Section -->
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-4">Payment Information</h3>
+
+                        <!-- Payment Method and Auto Payment -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment Method</label>
+                                <select
+                                    wire:model="expense_payment_method"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <option value="">Select method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="check">Check</option>
+                                    <option value="credit_card">Credit Card</option>
+                                    <option value="debit_card">Debit Card</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    @if(config('app.country') === 'BR')
+                                        <option value="pix">PIX</option>
+                                    @endif
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <label class="flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        wire:model="expense_is_auto_payment"
+                                        class="rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
+                                    <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Auto Payment</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Installments Toggle -->
+                        <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg mb-4">
+                            <div>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Split into installments</span>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enable to divide this expense into multiple payments</p>
+                            </div>
+                            <button
+                                type="button"
+                                wire:click="$toggle('expense_has_installments')"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:ring-offset-2 {{ $expense_has_installments ? 'bg-[#3F5189]' : 'bg-slate-200' }}">
+                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $expense_has_installments ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </button>
+                        </div>
+
+                        @if(!$expense_has_installments)
+                            <!-- One-Time Payment Options -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
+                                    <select
+                                        wire:model.live="expense_status"
+                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        <option value="paid">Paid</option>
+                                        <option value="unpaid">Unpaid</option>
+                                    </select>
+                                </div>
+                                @if($expense_status === 'paid')
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Paid Date</label>
+                                        <input
+                                            type="date"
+                                            wire:model="expense_paid_date"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    </div>
+                                @else
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Payment Due Date <span class="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            wire:model="expense_payment_due_date"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <!-- Installment Options -->
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Number of Installments <span class="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="2"
+                                            max="120"
+                                            wire:model.live="expense_total_installments"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        @error('expense_total_installments') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Frequency <span class="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            wire:model.live="expense_payment_frequency"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                            <option value="weekly">Weekly</option>
+                                            <option value="biweekly">Biweekly</option>
+                                            <option value="monthly">Monthly</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            First Payment Date <span class="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            wire:model.live="expense_payment_due_date"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Amount Type Toggle -->
+                                <div class="flex items-center space-x-4">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            wire:model.live="expense_use_custom_amounts"
+                                            value="0"
+                                            class="border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
+                                        <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                                            Equal amounts
+                                            @if($expense_total_amount && $expense_total_installments)
+                                                ({{ Number::currency($expense_total_amount / $expense_total_installments, config('app.currency'), config('app.locale')) }} each)
+                                            @endif
+                                        </span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            wire:model.live="expense_use_custom_amounts"
+                                            value="1"
+                                            class="border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
+                                        <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Custom amounts</span>
+                                    </label>
+                                </div>
+
+                                <!-- Payment Schedule Preview -->
+                                @if(count($expense_payment_schedule_preview) > 0)
+                                    <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
+                                        <h4 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Payment Schedule Preview</h4>
+                                        <div class="max-h-48 overflow-y-auto">
+                                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">#</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Due Date</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                                    @foreach($expense_payment_schedule_preview as $index => $preview)
+                                                        <tr>
+                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">{{ $preview['number'] }}</td>
+                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">{{ $preview['due_date_formatted'] }}</td>
+                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">
+                                                                @if($expense_use_custom_amounts)
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        wire:model.live.debounce.500ms="expense_custom_amounts.{{ $index }}"
+                                                                        class="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                                @else
+                                                                    {{ Number::currency($preview['amount'], config('app.currency'), config('app.locale')) }}
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        @if($expense_use_custom_amounts)
+                                            @php
+                                                $customTotal = array_sum($expense_custom_amounts ?? []);
+                                                $expectedTotal = floatval($expense_total_amount);
+                                                $diff = round($expectedTotal - $customTotal, 2);
+                                            @endphp
+                                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm">
+                                                <span class="text-slate-600 dark:text-slate-400">
+                                                    Total: {{ Number::currency($customTotal, config('app.currency'), config('app.locale')) }}
+                                                </span>
+                                                @if($diff != 0)
+                                                    <span class="text-red-600 dark:text-red-400 font-medium">
+                                                        {{ $diff > 0 ? 'Remaining:' : 'Over by:' }} {{ Number::currency(abs($diff), config('app.currency'), config('app.locale')) }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-green-600 dark:text-green-400 font-medium">
+                                                        Amounts match total
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400">
+                                                Total: {{ Number::currency($expense_total_amount, config('app.currency'), config('app.locale')) }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         @endif
                     </div>

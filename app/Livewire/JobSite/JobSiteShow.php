@@ -60,6 +60,20 @@ class JobSiteShow extends Component
     public $expense_receipt = null;
     public $existingReceiptPath = null;
 
+    // Expense payment properties
+    public $expense_status = 'paid';
+    public $expense_payment_method = null;
+    public $expense_is_auto_payment = false;
+    public $expense_has_installments = false;
+    public $expense_total_installments = 2;
+    public $expense_payment_frequency = 'monthly';
+    public $expense_payment_due_date = '';
+    public $expense_paid_date = '';
+    public $expense_use_custom_amounts = false;
+    public $expense_custom_amounts = [];
+    public $expense_payment_schedule_preview = [];
+    public $expenseStatusFilter = 'all';
+
     protected function rules()
     {
         $rules = [
@@ -285,9 +299,24 @@ class JobSiteShow extends Component
 
     public function openExpenseCreateModal()
     {
-        $this->reset(['catalogItemSearch', 'selectedCatalogItem', 'isCustomItem', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount', 'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense']);
+        $this->reset([
+            'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
+            'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
+            'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
+            'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            // Payment fields
+            'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
+            'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
+            'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
+            'expense_custom_amounts', 'expense_payment_schedule_preview'
+        ]);
         $this->expense_date = now()->format('Y-m-d');
+        $this->expense_paid_date = now()->format('Y-m-d');
+        $this->expense_payment_due_date = now()->format('Y-m-d');
         $this->expense_unit_type_used = 'custom';
+        $this->expense_status = 'paid';
+        $this->expense_total_installments = 2;
+        $this->expense_payment_frequency = 'monthly';
         $this->expenseModalMode = 'create';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -295,7 +324,13 @@ class JobSiteShow extends Component
 
     public function openExpenseEditModal($expenseId)
     {
-        $expense = Expense::findOrFail($expenseId);
+        $expense = Expense::with('payments')->findOrFail($expenseId);
+
+        // Check if expense is editable
+        if (!$expense->isEditable()) {
+            session()->flash('error', 'This expense cannot be edited because it has payments.');
+            return;
+        }
 
         $this->editingExpense = $expense->id;
         $this->isCustomItem = $expense->isCustom();
@@ -318,6 +353,23 @@ class JobSiteShow extends Component
         $this->existingReceiptPath = $expense->receipt_path;
         $this->expense_receipt = null;
 
+        // Payment fields
+        $this->expense_status = $expense->status;
+        $this->expense_payment_method = $expense->payment_method;
+        $this->expense_is_auto_payment = $expense->is_auto_payment;
+        $this->expense_has_installments = $expense->isInstallment();
+        $this->expense_total_installments = $expense->total_installments;
+        $this->expense_payment_frequency = $expense->payment_frequency ?? 'monthly';
+        $this->expense_payment_due_date = $expense->payment_due_date?->format('Y-m-d') ?? now()->format('Y-m-d');
+        $this->expense_paid_date = $expense->paid_date?->format('Y-m-d') ?? now()->format('Y-m-d');
+
+        // Load custom amounts if installments
+        if ($expense->isInstallment()) {
+            $this->expense_use_custom_amounts = false;
+            $this->expense_custom_amounts = $expense->payments->pluck('amount')->toArray();
+            $this->generatePaymentSchedulePreview();
+        }
+
         $this->expenseModalMode = 'edit';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -325,7 +377,7 @@ class JobSiteShow extends Component
 
     public function openExpenseViewModal($expenseId)
     {
-        $expense = Expense::findOrFail($expenseId);
+        $expense = Expense::with('payments')->findOrFail($expenseId);
 
         $this->editingExpense = $expense->id;
         $this->isCustomItem = $expense->isCustom();
@@ -347,6 +399,16 @@ class JobSiteShow extends Component
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
 
+        // Payment fields
+        $this->expense_status = $expense->status;
+        $this->expense_payment_method = $expense->payment_method;
+        $this->expense_is_auto_payment = $expense->is_auto_payment;
+        $this->expense_has_installments = $expense->isInstallment();
+        $this->expense_total_installments = $expense->total_installments;
+        $this->expense_payment_frequency = $expense->payment_frequency;
+        $this->expense_payment_due_date = $expense->payment_due_date?->format('Y-m-d');
+        $this->expense_paid_date = $expense->paid_date?->format('Y-m-d');
+
         $this->expenseModalMode = 'view';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -354,13 +416,30 @@ class JobSiteShow extends Component
 
     public function saveExpense()
     {
-        $this->validate([
+        $rules = [
             'expense_item_name' => 'required|string|max:255',
             'expense_quantity' => 'required|numeric|min:0.01',
             'expense_unit_price' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-        ]);
+            'expense_payment_method' => 'nullable|in:cash,check,credit_card,debit_card,bank_transfer,pix,other',
+        ];
+
+        // Add conditional validation based on payment type
+        if ($this->expense_has_installments) {
+            $rules['expense_total_installments'] = 'required|integer|min:2|max:120';
+            $rules['expense_payment_frequency'] = 'required|in:weekly,biweekly,monthly';
+            $rules['expense_payment_due_date'] = 'required|date';
+        } else {
+            $rules['expense_status'] = 'required|in:unpaid,paid';
+            if ($this->expense_status === 'unpaid') {
+                $rules['expense_payment_due_date'] = 'required|date';
+            } else {
+                $rules['expense_paid_date'] = 'nullable|date';
+            }
+        }
+
+        $this->validate($rules);
 
         $receiptPath = $this->existingReceiptPath;
 
@@ -386,15 +465,63 @@ class JobSiteShow extends Component
             'notes' => $this->expense_notes,
             'receipt_path' => $receiptPath,
             'expense_date' => $this->expense_date,
+            // Payment fields
+            'payment_method' => $this->expense_payment_method,
+            'is_auto_payment' => $this->expense_is_auto_payment,
         ];
+
+        // Handle installments vs one-time payment
+        if ($this->expense_has_installments) {
+            $data['status'] = 'unpaid';
+            $data['total_installments'] = $this->expense_total_installments;
+            $data['payment_frequency'] = $this->expense_payment_frequency;
+            $data['payment_due_date'] = $this->expense_payment_due_date;
+            $data['paid_date'] = null;
+        } else {
+            $data['status'] = $this->expense_status;
+            $data['total_installments'] = 1;
+            $data['payment_frequency'] = null;
+
+            if ($this->expense_status === 'paid') {
+                $data['paid_date'] = $this->expense_paid_date ?: now()->format('Y-m-d');
+                $data['payment_due_date'] = null;
+            } else {
+                $data['paid_date'] = null;
+                $data['payment_due_date'] = $this->expense_payment_due_date;
+            }
+        }
 
         if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
             $expense = Expense::findOrFail($this->editingExpense);
+
+            // Check if editable
+            if (!$expense->isEditable()) {
+                session()->flash('error', 'This expense cannot be edited because it has payments.');
+                return;
+            }
+
             $expense->update($data);
+
+            // Regenerate payment schedule if installments changed
+            if ($this->expense_has_installments) {
+                $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                $expense->generatePaymentSchedule($customAmounts);
+            } else {
+                // Remove any existing payments if changed to one-time
+                $expense->payments()->delete();
+            }
+
             session()->flash('message', 'Expense updated successfully!');
         } else {
             $data['created_by'] = Auth::id();
-            Expense::create($data);
+            $expense = Expense::create($data);
+
+            // Generate payment schedule for installments
+            if ($this->expense_has_installments) {
+                $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                $expense->generatePaymentSchedule($customAmounts);
+            }
+
             session()->flash('message', 'Expense added successfully!');
         }
 
@@ -414,8 +541,173 @@ class JobSiteShow extends Component
     public function closeExpenseModal()
     {
         $this->showExpenseModal = false;
-        $this->reset(['catalogItemSearch', 'selectedCatalogItem', 'isCustomItem', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount', 'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense']);
+        $this->reset([
+            'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
+            'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
+            'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
+            'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            // Payment fields
+            'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
+            'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
+            'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
+            'expense_custom_amounts', 'expense_payment_schedule_preview'
+        ]);
         $this->dispatch('close-modal', 'expense-modal');
+    }
+
+    // Payment schedule methods
+    public function updatedExpenseHasInstallments()
+    {
+        if ($this->expense_has_installments) {
+            $this->expense_status = 'unpaid';
+            $this->expense_payment_due_date = $this->expense_payment_due_date ?: now()->format('Y-m-d');
+            $this->generatePaymentSchedulePreview();
+        } else {
+            $this->expense_status = 'paid';
+            $this->expense_payment_schedule_preview = [];
+        }
+    }
+
+    public function updatedExpenseTotalInstallments()
+    {
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function updatedExpensePaymentFrequency()
+    {
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function updatedExpensePaymentDueDate()
+    {
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function updatedExpenseTotalAmount()
+    {
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function updatedExpenseUseCustomAmounts()
+    {
+        if ($this->expense_use_custom_amounts) {
+            $this->initializeCustomAmounts();
+        }
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function initializeCustomAmounts()
+    {
+        $total = floatval($this->expense_total_amount) ?: 0;
+        $count = intval($this->expense_total_installments) ?: 2;
+
+        $equalAmount = round($total / $count, 2);
+        $this->expense_custom_amounts = array_fill(0, $count, $equalAmount);
+
+        // Adjust last payment for rounding
+        $sum = array_sum($this->expense_custom_amounts);
+        $diff = round($total - $sum, 2);
+        if ($diff != 0 && count($this->expense_custom_amounts) > 0) {
+            $this->expense_custom_amounts[count($this->expense_custom_amounts) - 1] += $diff;
+        }
+    }
+
+    public function updateCustomAmount($index, $value)
+    {
+        $this->expense_custom_amounts[$index] = floatval($value);
+        $this->generatePaymentSchedulePreview();
+    }
+
+    public function generatePaymentSchedulePreview()
+    {
+        if (!$this->expense_has_installments || !$this->expense_total_amount || !$this->expense_total_installments) {
+            $this->expense_payment_schedule_preview = [];
+            return;
+        }
+
+        $total = floatval($this->expense_total_amount);
+        $count = intval($this->expense_total_installments);
+        $frequency = $this->expense_payment_frequency ?: 'monthly';
+        $startDate = $this->expense_payment_due_date ? \Carbon\Carbon::parse($this->expense_payment_due_date) : now();
+
+        // Calculate amounts
+        if ($this->expense_use_custom_amounts && count($this->expense_custom_amounts) === $count) {
+            $amounts = $this->expense_custom_amounts;
+        } else {
+            $equalAmount = round($total / $count, 2);
+            $amounts = array_fill(0, $count, $equalAmount);
+
+            // Adjust last payment for rounding
+            $sum = array_sum($amounts);
+            $diff = round($total - $sum, 2);
+            if ($diff != 0) {
+                $amounts[$count - 1] += $diff;
+            }
+        }
+
+        $this->expense_payment_schedule_preview = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $dueDate = match ($frequency) {
+                'weekly' => $startDate->copy()->addWeeks($i),
+                'biweekly' => $startDate->copy()->addWeeks($i * 2),
+                'monthly' => $startDate->copy()->addMonths($i),
+                default => $startDate->copy()->addMonths($i),
+            };
+
+            $this->expense_payment_schedule_preview[] = [
+                'number' => $i + 1,
+                'due_date' => $dueDate->format('Y-m-d'),
+                'due_date_formatted' => $dueDate->format('M d, Y'),
+                'amount' => $amounts[$i],
+            ];
+        }
+    }
+
+    public function getCustomAmountsTotal()
+    {
+        return array_sum($this->expense_custom_amounts ?? []);
+    }
+
+    // Mark payment as paid
+    public function markPaymentAsPaid($paymentId)
+    {
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment->markAsPaid($this->expense_payment_method);
+
+        session()->flash('message', 'Payment marked as paid!');
+        $this->jobSite->refresh();
+
+        // Refresh the view modal if open
+        if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
+            $this->openExpenseViewModal($payment->expense_id);
+        }
+    }
+
+    // Mark payment as overdue
+    public function markPaymentAsOverdue($paymentId)
+    {
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment->markAsOverdue();
+
+        session()->flash('message', 'Payment marked as overdue!');
+        $this->jobSite->refresh();
+
+        if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
+            $this->openExpenseViewModal($payment->expense_id);
+        }
+    }
+
+    // Mark one-time expense as paid
+    public function markExpenseAsPaid($expenseId)
+    {
+        $expense = Expense::findOrFail($expenseId);
+
+        if ($expense->isOneTime()) {
+            $expense->markAsPaid();
+            session()->flash('message', 'Expense marked as paid!');
+            $this->jobSite->refresh();
+        }
     }
 
     public function render()
@@ -433,7 +725,12 @@ class JobSiteShow extends Component
         $totalChangeOrdersAmount = $changeOrders->sum('amount');
 
         // Expenses
-        $expensesQuery = $this->jobSite->expenses()->with(['catalogItem', 'createdBy']);
+        $expensesQuery = $this->jobSite->expenses()->with(['catalogItem', 'createdBy', 'payments']);
+
+        // Apply status filter
+        if ($this->expenseStatusFilter !== 'all') {
+            $expensesQuery->where('status', $this->expenseStatusFilter);
+        }
 
         if ($this->expenseSearch) {
             $expensesQuery->where(function($query) {
@@ -444,6 +741,10 @@ class JobSiteShow extends Component
 
         $expenses = $expensesQuery->orderBy('expense_date', 'desc')->get();
         $totalExpensesAmount = $expenses->sum('total_amount');
+
+        // Calculate payment totals
+        $totalPaidAmount = $expenses->sum(fn($e) => $e->getPaidAmount());
+        $totalPendingAmount = $expenses->sum(fn($e) => $e->getPendingAmount());
 
         // Catalog items for search
         $catalogItems = collect();
@@ -460,13 +761,22 @@ class JobSiteShow extends Component
             ->orderBy('report_date', 'desc')
             ->get();
 
+        // Get the viewing expense with payments for the modal
+        $viewingExpense = null;
+        if ($this->editingExpense && $this->expenseModalMode === 'view') {
+            $viewingExpense = Expense::with('payments')->find($this->editingExpense);
+        }
+
         return view('livewire.job-site.job-site-show', [
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
             'expenses' => $expenses,
             'totalExpensesAmount' => $totalExpensesAmount,
+            'totalPaidAmount' => $totalPaidAmount,
+            'totalPendingAmount' => $totalPendingAmount,
             'catalogItems' => $catalogItems,
             'dailyReports' => $dailyReports,
+            'viewingExpense' => $viewingExpense,
         ])->layout('components.layouts.app');
     }
 }

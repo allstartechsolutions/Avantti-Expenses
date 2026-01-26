@@ -19,6 +19,7 @@ class CatalogCategory extends Model
         'parent_id',
         'is_active',
         'display_order',
+        'created_by',
     ];
 
     protected $casts = [
@@ -60,6 +61,14 @@ class CatalogCategory extends Model
     public function items(): HasMany
     {
         return $this->hasMany(CatalogItem::class, 'category_id');
+    }
+
+    /**
+     * Get the user who created this category
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
