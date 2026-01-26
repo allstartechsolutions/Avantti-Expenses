@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Project extends Model
 {
@@ -121,6 +122,22 @@ class Project extends Model
     public function projectLevelDailyReports(): HasMany
     {
         return $this->hasMany(DailyReport::class)->whereNull('job_site_id');
+    }
+
+    /**
+     * Get the project-level budget (if exists).
+     */
+    public function budget(): HasOne
+    {
+        return $this->hasOne(Budget::class)->whereNull('job_site_id');
+    }
+
+    /**
+     * Get all budgets for this project (including job site budgets).
+     */
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
     }
 
     /**

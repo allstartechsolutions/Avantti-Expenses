@@ -6,9 +6,13 @@ use App\Enums\JobSiteStatus;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\Expense;
+use App\Models\ExpenseItem;
 use App\Models\JobSite;
 use App\Models\Project;
+use App\Models\Supplier;
+use App\Services\BudgetService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -32,21 +36,18 @@ class ProjectShow extends Component
 
     // Expense form properties
     public $expense_job_site_id = null; // null = project-level
-    public $catalogItemSearch = '';
-    public $selectedCatalogItem = null;
-    public $isCustomItem = false;
-    public $expense_item_name = '';
-    public $expense_item_type = '';
-    public $expense_purchase_unit = '';
-    public $expense_usage_unit = '';
-    public $expense_unit_type_used = 'custom';
-    public $expense_quantity = '';
-    public $expense_unit_price = '';
-    public $expense_total_amount = '';
+    public $expense_supplier_id = null;
+    public $supplierSearch = '';
     public $expense_notes = '';
     public $expense_date = '';
     public $expense_receipt = null;
     public $existingReceiptPath = null;
+    public $expense_total_amount = 0;
+
+    // Expense items (multi-item support)
+    public $expenseItems = [];
+    public $catalogItemSearches = []; // Search text per item row
+    public $budgetItems = []; // Available budget items for dropdown
 
     // Expense payment properties
     public $expense_status = 'paid';
@@ -133,7 +134,7 @@ class ProjectShow extends Component
         $this->project = $project;
 
         // Support tab switching via URL parameter
-        if ($tab && in_array($tab, ['overview', 'jobsites', 'expenses', 'change-orders', 'daily-reports'])) {
+        if ($tab && in_array($tab, ['overview', 'jobsites', 'expenses', 'change-orders', 'daily-reports', 'budget'])) {
             $this->activeTab = $tab;
         }
     }
@@ -249,104 +250,200 @@ class ProjectShow extends Component
     }
 
     // Expense methods
-    public function updatedCatalogItemSearch()
+
+    /**
+     * Get empty expense item structure
+     */
+    protected function getEmptyExpenseItem(): array
     {
-        if (empty($this->catalogItemSearch)) {
-            $this->selectedCatalogItem = null;
+        return [
+            'id' => null,
+            'budget_item_id' => null,
+            'catalog_item_id' => null,
+            'item_name' => '',
+            'item_type' => 'custom',
+            'description' => '',
+            'quantity' => 1,
+            'unit' => '',
+            'unit_price' => '',
+            'total_amount' => 0,
+        ];
+    }
+
+    /**
+     * Add a new expense item row
+     */
+    public function addExpenseItem()
+    {
+        $this->expenseItems[] = $this->getEmptyExpenseItem();
+        $this->catalogItemSearches[] = '';
+    }
+
+    /**
+     * Remove an expense item row
+     */
+    public function removeExpenseItem($index)
+    {
+        if (count($this->expenseItems) > 1) {
+            unset($this->expenseItems[$index]);
+            unset($this->catalogItemSearches[$index]);
+            $this->expenseItems = array_values($this->expenseItems);
+            $this->catalogItemSearches = array_values($this->catalogItemSearches);
+            $this->calculateExpenseTotal();
         }
     }
 
-    public function selectCatalogItem($itemId)
+    /**
+     * Select a catalog item for a specific expense item row
+     */
+    public function selectCatalogItemForRow($itemId, $rowIndex)
     {
         $item = CatalogItem::find($itemId);
 
-        if ($item) {
-            $this->selectedCatalogItem = $itemId;
-            $this->catalogItemSearch = $item->name;
-            $this->expense_item_name = $item->name;
-            $this->expense_item_type = $item->type;
-            $this->expense_purchase_unit = $item->purchase_unit ?? '';
-            $this->expense_usage_unit = $item->usage_unit ?? '';
-            $this->isCustomItem = false;
+        if ($item && isset($this->expenseItems[$rowIndex])) {
+            $this->expenseItems[$rowIndex]['catalog_item_id'] = $itemId;
+            $this->expenseItems[$rowIndex]['item_name'] = $item->name;
+            $this->expenseItems[$rowIndex]['item_type'] = 'catalog';
+            $this->expenseItems[$rowIndex]['unit'] = $item->usage_unit ?? $item->purchase_unit ?? '';
+            $this->expenseItems[$rowIndex]['unit_price'] = $item->unit_cost ?? $item->current_cost ?? 0;
+            $this->catalogItemSearches[$rowIndex] = $item->name;
 
-            if ($item->type === 'product' && $item->usage_unit) {
-                $this->expense_unit_type_used = 'usage';
-                $this->expense_unit_price = $item->unit_cost;
-            } else {
-                $this->expense_unit_type_used = 'purchase';
-                $this->expense_unit_price = $item->current_cost;
-            }
+            $this->calculateItemTotal($rowIndex);
+        }
+    }
 
+    /**
+     * Clear catalog item selection for a row (switch to custom)
+     */
+    public function clearCatalogItemForRow($rowIndex)
+    {
+        if (isset($this->expenseItems[$rowIndex])) {
+            $this->expenseItems[$rowIndex]['catalog_item_id'] = null;
+            $this->expenseItems[$rowIndex]['item_type'] = 'custom';
+            $this->catalogItemSearches[$rowIndex] = '';
+        }
+    }
+
+    /**
+     * Calculate total for a specific item row
+     */
+    public function calculateItemTotal($index)
+    {
+        if (isset($this->expenseItems[$index])) {
+            $qty = floatval($this->expenseItems[$index]['quantity'] ?? 0);
+            $price = floatval($this->expenseItems[$index]['unit_price'] ?? 0);
+            $this->expenseItems[$index]['total_amount'] = round($qty * $price, 2);
             $this->calculateExpenseTotal();
         }
     }
 
-    public function updatedExpenseUnitTypeUsed()
-    {
-        if (!$this->selectedCatalogItem) {
-            return;
-        }
-
-        $item = CatalogItem::find($this->selectedCatalogItem);
-        if ($item) {
-            if ($this->expense_unit_type_used === 'purchase') {
-                $this->expense_unit_price = $item->current_cost;
-            } elseif ($this->expense_unit_type_used === 'usage') {
-                $this->expense_unit_price = $item->unit_cost;
-            }
-            $this->calculateExpenseTotal();
-        }
-    }
-
-    public function toggleCustomItem()
-    {
-        $this->isCustomItem = !$this->isCustomItem;
-
-        if ($this->isCustomItem) {
-            $this->reset(['selectedCatalogItem', 'catalogItemSearch', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_unit_price', 'expense_quantity', 'expense_total_amount']);
-            $this->expense_unit_type_used = 'custom';
-        } else {
-            $this->reset(['expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_unit_price', 'expense_quantity', 'expense_total_amount']);
-        }
-    }
-
+    /**
+     * Calculate total expense amount from all items
+     */
     public function calculateExpenseTotal()
     {
-        if ($this->expense_quantity && $this->expense_unit_price) {
-            $this->expense_total_amount = number_format($this->expense_quantity * $this->expense_unit_price, 2, '.', '');
+        $total = 0;
+        foreach ($this->expenseItems as $item) {
+            $total += floatval($item['total_amount'] ?? 0);
+        }
+        $this->expense_total_amount = round($total, 2);
+    }
+
+    /**
+     * Handle item field updates
+     */
+    public function updatedExpenseItems($value, $key)
+    {
+        // Key format: "0.quantity" or "1.unit_price"
+        $parts = explode('.', $key);
+        if (count($parts) === 2) {
+            $index = intval($parts[0]);
+            $field = $parts[1];
+
+            if (in_array($field, ['quantity', 'unit_price'])) {
+                $this->calculateItemTotal($index);
+            }
         }
     }
 
-    public function updatedExpenseQuantity()
+    /**
+     * Handle catalog item search updates - sync to item_name
+     */
+    public function updatedCatalogItemSearches($value, $key)
     {
-        $this->calculateExpenseTotal();
+        $index = intval($key);
+        if (isset($this->expenseItems[$index]) && !$this->expenseItems[$index]['catalog_item_id']) {
+            // If no catalog item selected, use the search text as item name
+            $this->expenseItems[$index]['item_name'] = $value;
+        }
     }
 
-    public function updatedExpenseUnitPrice()
+    /**
+     * Load budget items for dropdown based on current location
+     */
+    public function loadBudgetItems()
     {
-        $this->calculateExpenseTotal();
+        $this->budgetItems = BudgetService::getBudgetItemsForDropdown(
+            $this->project->id,
+            $this->expense_job_site_id
+        );
+    }
+
+    /**
+     * Handle job site change - reload budget items
+     */
+    public function updatedExpenseJobSiteId()
+    {
+        $this->loadBudgetItems();
+    }
+
+    /**
+     * Select a supplier
+     */
+    public function selectSupplier($supplierId)
+    {
+        $supplier = Supplier::find($supplierId);
+        if ($supplier) {
+            $this->expense_supplier_id = $supplierId;
+            $this->supplierSearch = $supplier->name;
+        }
+    }
+
+    /**
+     * Clear supplier selection
+     */
+    public function clearSupplier()
+    {
+        $this->expense_supplier_id = null;
+        $this->supplierSearch = '';
     }
 
     public function openExpenseCreateModal()
     {
         $this->reset([
-            'expense_job_site_id', 'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
-            'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
-            'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
+            'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expenseItems', 'catalogItemSearches', 'expense_total_amount',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview'
         ]);
+
+        // Initialize with one empty item
+        $this->expenseItems = [$this->getEmptyExpenseItem()];
+        $this->catalogItemSearches = [''];
+
         $this->expense_date = now()->format('Y-m-d');
         $this->expense_paid_date = now()->format('Y-m-d');
         $this->expense_payment_due_date = now()->format('Y-m-d');
-        $this->expense_unit_type_used = 'custom';
-        $this->expense_status = 'paid'; // Default for one-time payments
+        $this->expense_status = 'paid';
         $this->expense_total_installments = 2;
         $this->expense_payment_frequency = 'monthly';
+
+        $this->loadBudgetItems();
+
         $this->expenseModalMode = 'create';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -354,7 +451,7 @@ class ProjectShow extends Component
 
     public function openExpenseEditModal($expenseId)
     {
-        $expense = Expense::with('payments')->findOrFail($expenseId);
+        $expense = Expense::with(['payments', 'items.budgetItem', 'items.catalogItem', 'supplier'])->findOrFail($expenseId);
 
         // Check if expense is editable
         if (!$expense->isEditable()) {
@@ -364,25 +461,50 @@ class ProjectShow extends Component
 
         $this->editingExpense = $expense->id;
         $this->expense_job_site_id = $expense->job_site_id;
-        $this->isCustomItem = $expense->isCustom();
-
-        if (!$this->isCustomItem) {
-            $this->selectedCatalogItem = $expense->catalog_item_id;
-            $this->catalogItemSearch = $expense->catalogItem?->name;
-        }
-
-        $this->expense_item_name = $expense->item_name;
-        $this->expense_item_type = $expense->item_type;
-        $this->expense_purchase_unit = $expense->purchase_unit;
-        $this->expense_usage_unit = $expense->usage_unit;
-        $this->expense_unit_type_used = $expense->unit_type_used;
-        $this->expense_quantity = $expense->quantity;
-        $this->expense_unit_price = $expense->unit_price;
-        $this->expense_total_amount = $expense->total_amount;
+        $this->expense_supplier_id = $expense->supplier_id;
+        $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_notes = $expense->notes;
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
         $this->expense_receipt = null;
+        $this->expense_total_amount = $expense->total_amount;
+
+        // Load expense items
+        $this->expenseItems = [];
+        $this->catalogItemSearches = [];
+
+        if ($expense->items->count() > 0) {
+            foreach ($expense->items as $item) {
+                $this->expenseItems[] = [
+                    'id' => $item->id,
+                    'budget_item_id' => $item->budget_item_id,
+                    'catalog_item_id' => $item->catalog_item_id,
+                    'item_name' => $item->item_name,
+                    'item_type' => $item->item_type,
+                    'description' => $item->description ?? '',
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit ?? '',
+                    'unit_price' => $item->unit_price,
+                    'total_amount' => $item->total_amount,
+                ];
+                $this->catalogItemSearches[] = $item->catalogItem?->name ?? '';
+            }
+        } else {
+            // Legacy expense without items - create one from header data
+            $this->expenseItems[] = [
+                'id' => null,
+                'budget_item_id' => null,
+                'catalog_item_id' => $expense->catalog_item_id,
+                'item_name' => $expense->item_name ?? '',
+                'item_type' => $expense->catalog_item_id ? 'catalog' : 'custom',
+                'description' => '',
+                'quantity' => $expense->quantity ?? 1,
+                'unit' => $expense->getDisplayUnit(),
+                'unit_price' => $expense->unit_price,
+                'total_amount' => $expense->total_amount,
+            ];
+            $this->catalogItemSearches[] = $expense->catalogItem?->name ?? '';
+        }
 
         // Payment fields
         $this->expense_status = $expense->status;
@@ -401,6 +523,8 @@ class ProjectShow extends Component
             $this->generatePaymentSchedulePreview();
         }
 
+        $this->loadBudgetItems();
+
         $this->expenseModalMode = 'edit';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -408,28 +532,38 @@ class ProjectShow extends Component
 
     public function openExpenseViewModal($expenseId)
     {
-        $expense = Expense::with('payments')->findOrFail($expenseId);
+        $expense = Expense::with(['payments', 'items.budgetItem', 'items.catalogItem', 'supplier'])->findOrFail($expenseId);
 
         $this->editingExpense = $expense->id;
         $this->expense_job_site_id = $expense->job_site_id;
-        $this->isCustomItem = $expense->isCustom();
-
-        if (!$this->isCustomItem) {
-            $this->selectedCatalogItem = $expense->catalog_item_id;
-            $this->catalogItemSearch = $expense->catalogItem?->name;
-        }
-
-        $this->expense_item_name = $expense->item_name;
-        $this->expense_item_type = $expense->item_type;
-        $this->expense_purchase_unit = $expense->purchase_unit;
-        $this->expense_usage_unit = $expense->usage_unit;
-        $this->expense_unit_type_used = $expense->unit_type_used;
-        $this->expense_quantity = $expense->quantity;
-        $this->expense_unit_price = $expense->unit_price;
-        $this->expense_total_amount = $expense->total_amount;
+        $this->expense_supplier_id = $expense->supplier_id;
+        $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_notes = $expense->notes;
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
+        $this->expense_total_amount = $expense->total_amount;
+
+        // Load expense items
+        $this->expenseItems = [];
+        $this->catalogItemSearches = [];
+
+        if ($expense->items->count() > 0) {
+            foreach ($expense->items as $item) {
+                $this->expenseItems[] = [
+                    'id' => $item->id,
+                    'budget_item_id' => $item->budget_item_id,
+                    'catalog_item_id' => $item->catalog_item_id,
+                    'item_name' => $item->item_name,
+                    'item_type' => $item->item_type,
+                    'description' => $item->description ?? '',
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit ?? '',
+                    'unit_price' => $item->unit_price,
+                    'total_amount' => $item->total_amount,
+                ];
+                $this->catalogItemSearches[] = $item->catalogItem?->name ?? '';
+            }
+        }
 
         // Payment fields
         $this->expense_status = $expense->status;
@@ -441,6 +575,8 @@ class ProjectShow extends Component
         $this->expense_payment_due_date = $expense->payment_due_date?->format('Y-m-d');
         $this->expense_paid_date = $expense->paid_date?->format('Y-m-d');
 
+        $this->loadBudgetItems();
+
         $this->expenseModalMode = 'view';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
@@ -448,14 +584,17 @@ class ProjectShow extends Component
 
     public function saveExpense()
     {
+        // Validate header fields
         $rules = [
-            'expense_item_name' => 'required|string|max:255',
-            'expense_quantity' => 'required|numeric|min:0.01',
-            'expense_unit_price' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'expense_job_site_id' => 'nullable|exists:job_sites,id',
+            'expense_supplier_id' => 'nullable|exists:suppliers,id',
             'expense_payment_method' => 'nullable|in:cash,check,credit_card,debit_card,bank_transfer,pix,other',
+            'expenseItems' => 'required|array|min:1',
+            'expenseItems.*.item_name' => 'required|string|max:255',
+            'expenseItems.*.quantity' => 'required|numeric|min:0.01',
+            'expenseItems.*.unit_price' => 'required|numeric|min:0',
         ];
 
         // Add conditional validation based on payment type
@@ -472,7 +611,12 @@ class ProjectShow extends Component
             }
         }
 
-        $this->validate($rules);
+        $this->validate($rules, [
+            'expenseItems.required' => 'At least one item is required.',
+            'expenseItems.*.item_name.required' => 'Item name is required.',
+            'expenseItems.*.quantity.required' => 'Quantity is required.',
+            'expenseItems.*.unit_price.required' => 'Unit price is required.',
+        ]);
 
         $receiptPath = $this->existingReceiptPath;
 
@@ -483,80 +627,151 @@ class ProjectShow extends Component
             $receiptPath = $this->expense_receipt->store('expenses', 'local');
         }
 
-        $data = [
-            'project_id' => $this->project->id,
-            'job_site_id' => $this->expense_job_site_id ?: null,
-            'catalog_item_id' => $this->isCustomItem ? null : $this->selectedCatalogItem,
-            'item_name' => $this->expense_item_name,
-            'item_type' => $this->expense_item_type,
-            'purchase_unit' => $this->expense_purchase_unit,
-            'usage_unit' => $this->expense_usage_unit,
-            'unit_type_used' => $this->expense_unit_type_used,
-            'quantity' => $this->expense_quantity,
-            'unit_price' => $this->expense_unit_price,
-            'total_amount' => $this->expense_total_amount,
-            'notes' => $this->expense_notes,
-            'receipt_path' => $receiptPath,
-            'expense_date' => $this->expense_date,
-            // Payment fields
-            'payment_method' => $this->expense_payment_method,
-            'is_auto_payment' => $this->expense_is_auto_payment,
-        ];
+        // Calculate total from items
+        $this->calculateExpenseTotal();
 
-        // Handle installments vs one-time payment
-        if ($this->expense_has_installments) {
-            $data['status'] = 'unpaid';
-            $data['total_installments'] = $this->expense_total_installments;
-            $data['payment_frequency'] = $this->expense_payment_frequency;
-            $data['payment_due_date'] = $this->expense_payment_due_date;
-            $data['paid_date'] = null;
-        } else {
-            $data['status'] = $this->expense_status;
-            $data['total_installments'] = 1;
-            $data['payment_frequency'] = null;
+        DB::transaction(function () use ($receiptPath) {
+            // Prepare header data
+            $data = [
+                'project_id' => $this->project->id,
+                'job_site_id' => $this->expense_job_site_id ?: null,
+                'supplier_id' => $this->expense_supplier_id ?: null,
+                'total_amount' => $this->expense_total_amount,
+                'notes' => $this->expense_notes,
+                'receipt_path' => $receiptPath,
+                'expense_date' => $this->expense_date,
+                'payment_method' => $this->expense_payment_method,
+                'is_auto_payment' => $this->expense_is_auto_payment,
+            ];
 
-            if ($this->expense_status === 'paid') {
-                $data['paid_date'] = $this->expense_paid_date ?: now()->format('Y-m-d');
-                $data['payment_due_date'] = null;
-            } else {
-                $data['paid_date'] = null;
+            // Handle installments vs one-time payment
+            if ($this->expense_has_installments) {
+                $data['status'] = 'unpaid';
+                $data['total_installments'] = $this->expense_total_installments;
+                $data['payment_frequency'] = $this->expense_payment_frequency;
                 $data['payment_due_date'] = $this->expense_payment_due_date;
-            }
-        }
-
-        if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
-            $expense = Expense::findOrFail($this->editingExpense);
-
-            // Check if editable
-            if (!$expense->isEditable()) {
-                session()->flash('error', 'This expense cannot be edited because it has payments.');
-                return;
-            }
-
-            $expense->update($data);
-
-            // Regenerate payment schedule if installments changed
-            if ($this->expense_has_installments) {
-                $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
-                $expense->generatePaymentSchedule($customAmounts);
+                $data['paid_date'] = null;
             } else {
-                // Remove any existing payments if changed to one-time
-                $expense->payments()->delete();
+                $data['status'] = $this->expense_status;
+                $data['total_installments'] = 1;
+                $data['payment_frequency'] = null;
+
+                if ($this->expense_status === 'paid') {
+                    $data['paid_date'] = $this->expense_paid_date ?: now()->format('Y-m-d');
+                    $data['payment_due_date'] = null;
+                } else {
+                    $data['paid_date'] = null;
+                    $data['payment_due_date'] = $this->expense_payment_due_date;
+                }
             }
 
-            session()->flash('message', 'Expense updated successfully!');
-        } else {
-            $data['created_by'] = Auth::id();
-            $expense = Expense::create($data);
+            if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
+                $expense = Expense::findOrFail($this->editingExpense);
 
-            // Generate payment schedule for installments
-            if ($this->expense_has_installments) {
-                $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
-                $expense->generatePaymentSchedule($customAmounts);
+                if (!$expense->isEditable()) {
+                    throw new \Exception('This expense cannot be edited because it has payments.');
+                }
+
+                $expense->update($data);
+
+                // Get existing item IDs
+                $existingItemIds = $expense->items()->pluck('id')->toArray();
+                $updatedItemIds = [];
+
+                // Update or create items
+                foreach ($this->expenseItems as $index => $itemData) {
+                    $budgetItemId = $itemData['budget_item_id'] ?: null;
+
+                    // If no budget item selected, assign to Miscellaneous
+                    if (!$budgetItemId) {
+                        $miscItem = BudgetService::getMiscellaneousItem(
+                            $this->project->id,
+                            $this->expense_job_site_id,
+                            Auth::id()
+                        );
+                        $budgetItemId = $miscItem->id;
+                    }
+
+                    $itemPayload = [
+                        'budget_item_id' => $budgetItemId,
+                        'catalog_item_id' => $itemData['catalog_item_id'] ?: null,
+                        'item_name' => $itemData['item_name'],
+                        'item_type' => $itemData['item_type'] ?? 'custom',
+                        'description' => $itemData['description'] ?? null,
+                        'quantity' => $itemData['quantity'],
+                        'unit' => $itemData['unit'] ?? null,
+                        'unit_price' => $itemData['unit_price'],
+                        'total_amount' => floatval($itemData['quantity']) * floatval($itemData['unit_price']),
+                        'sort_order' => $index,
+                    ];
+
+                    if (!empty($itemData['id'])) {
+                        // Update existing item
+                        $expense->items()->where('id', $itemData['id'])->update($itemPayload);
+                        $updatedItemIds[] = $itemData['id'];
+                    } else {
+                        // Create new item
+                        $newItem = $expense->items()->create($itemPayload);
+                        $updatedItemIds[] = $newItem->id;
+                    }
+                }
+
+                // Delete removed items
+                $itemsToDelete = array_diff($existingItemIds, $updatedItemIds);
+                if (!empty($itemsToDelete)) {
+                    $expense->items()->whereIn('id', $itemsToDelete)->delete();
+                }
+
+                // Regenerate payment schedule if installments changed
+                if ($this->expense_has_installments) {
+                    $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                    $expense->generatePaymentSchedule($customAmounts);
+                } else {
+                    $expense->payments()->delete();
+                }
+
+                session()->flash('message', 'Expense updated successfully!');
+            } else {
+                $data['created_by'] = Auth::id();
+                $expense = Expense::create($data);
+
+                // Create expense items
+                foreach ($this->expenseItems as $index => $itemData) {
+                    $budgetItemId = $itemData['budget_item_id'] ?: null;
+
+                    // If no budget item selected, assign to Miscellaneous
+                    if (!$budgetItemId) {
+                        $miscItem = BudgetService::getMiscellaneousItem(
+                            $this->project->id,
+                            $this->expense_job_site_id,
+                            Auth::id()
+                        );
+                        $budgetItemId = $miscItem->id;
+                    }
+
+                    $expense->items()->create([
+                        'budget_item_id' => $budgetItemId,
+                        'catalog_item_id' => $itemData['catalog_item_id'] ?: null,
+                        'item_name' => $itemData['item_name'],
+                        'item_type' => $itemData['item_type'] ?? 'custom',
+                        'description' => $itemData['description'] ?? null,
+                        'quantity' => $itemData['quantity'],
+                        'unit' => $itemData['unit'] ?? null,
+                        'unit_price' => $itemData['unit_price'],
+                        'total_amount' => floatval($itemData['quantity']) * floatval($itemData['unit_price']),
+                        'sort_order' => $index,
+                    ]);
+                }
+
+                // Generate payment schedule for installments
+                if ($this->expense_has_installments) {
+                    $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                    $expense->generatePaymentSchedule($customAmounts);
+                }
+
+                session()->flash('message', 'Expense added successfully!');
             }
-
-            session()->flash('message', 'Expense added successfully!');
-        }
+        });
 
         $this->closeExpenseModal();
         $this->project->refresh();
@@ -575,10 +790,9 @@ class ProjectShow extends Component
     {
         $this->showExpenseModal = false;
         $this->reset([
-            'expense_job_site_id', 'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
-            'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
-            'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
+            'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expenseItems', 'catalogItemSearches', 'budgetItems', 'expense_total_amount',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
@@ -872,7 +1086,7 @@ class ProjectShow extends Component
         $statuses = JobSiteStatus::cases();
 
         // Expenses query with filters
-        $expensesQuery = $this->project->expenses()->with(['jobSite', 'catalogItem', 'createdBy', 'payments']);
+        $expensesQuery = $this->project->expenses()->with(['jobSite', 'supplier', 'createdBy', 'payments', 'items.budgetItem']);
 
         // Apply location filter
         if ($this->expenseLocationFilter === 'project') {
@@ -886,11 +1100,16 @@ class ProjectShow extends Component
             $expensesQuery->where('status', $this->expenseStatusFilter);
         }
 
-        // Apply search filter
+        // Apply search filter - search in items and notes
         if ($this->expenseSearch) {
             $expensesQuery->where(function($query) {
-                $query->where('item_name', 'like', '%' . $this->expenseSearch . '%')
-                    ->orWhere('notes', 'like', '%' . $this->expenseSearch . '%');
+                $query->where('notes', 'like', '%' . $this->expenseSearch . '%')
+                    ->orWhereHas('items', function($itemQuery) {
+                        $itemQuery->where('item_name', 'like', '%' . $this->expenseSearch . '%');
+                    })
+                    ->orWhereHas('supplier', function($supplierQuery) {
+                        $supplierQuery->where('name', 'like', '%' . $this->expenseSearch . '%');
+                    });
             });
         }
 
@@ -901,11 +1120,24 @@ class ProjectShow extends Component
         $totalPaidAmount = $expenses->sum(fn($e) => $e->getPaidAmount());
         $totalPendingAmount = $expenses->sum(fn($e) => $e->getPendingAmount());
 
-        // Catalog items for expense form search
+        // Catalog items for expense form search (search across all catalog item searches)
         $catalogItems = collect();
-        if ($this->catalogItemSearch && strlen($this->catalogItemSearch) >= 2) {
-            $catalogItems = CatalogItem::where('is_active', true)
-                ->where('name', 'like', '%' . $this->catalogItemSearch . '%')
+        $activeSearchIndex = null;
+        foreach ($this->catalogItemSearches as $index => $search) {
+            if ($search && strlen($search) >= 2 && !isset($this->expenseItems[$index]['catalog_item_id'])) {
+                $activeSearchIndex = $index;
+                $catalogItems = CatalogItem::where('is_active', true)
+                    ->where('name', 'like', '%' . $search . '%')
+                    ->take(10)
+                    ->get();
+                break;
+            }
+        }
+
+        // Suppliers for dropdown search
+        $suppliers = collect();
+        if ($this->supplierSearch && strlen($this->supplierSearch) >= 2 && !$this->expense_supplier_id) {
+            $suppliers = Supplier::where('name', 'like', '%' . $this->supplierSearch . '%')
                 ->take(10)
                 ->get();
         }
@@ -960,6 +1192,13 @@ class ProjectShow extends Component
             $viewingExpense = Expense::with('payments')->find($this->editingExpense);
         }
 
+        // Budget data
+        $projectBudget = $this->project->budget;
+        $jobSiteBudgets = $this->project->budgets()
+            ->whereNotNull('job_site_id')
+            ->with(['jobSite', 'items'])
+            ->get();
+
         return view('livewire.project.project-show', [
             'jobSites' => $jobSites,
             'statuses' => $statuses,
@@ -968,10 +1207,14 @@ class ProjectShow extends Component
             'totalPaidAmount' => $totalPaidAmount,
             'totalPendingAmount' => $totalPendingAmount,
             'catalogItems' => $catalogItems,
+            'activeSearchIndex' => $activeSearchIndex,
+            'suppliers' => $suppliers,
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
             'dailyReports' => $dailyReports,
             'viewingExpense' => $viewingExpense,
+            'projectBudget' => $projectBudget,
+            'jobSiteBudgets' => $jobSiteBudgets,
         ])->layout('components.layouts.app');
     }
 }

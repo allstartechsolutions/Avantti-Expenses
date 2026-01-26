@@ -17,6 +17,7 @@ use App\Livewire\Project\ProjectEdit;
 use App\Livewire\Project\ProjectIndex;
 use App\Livewire\Project\ProjectShow;
 use App\Livewire\JobSite\JobSiteShow;
+use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\DailyReportPdfController;
 use App\Http\Controllers\FileController;
@@ -35,6 +36,9 @@ use App\Livewire\CostCode\CostCodeTemplateIndex;
 use App\Livewire\CostCode\CostCodeTemplateCreate;
 use App\Livewire\CostCode\CostCodeTemplateShow;
 use App\Livewire\CostCode\CostCodeTemplateEdit;
+use App\Livewire\Budget\BudgetCreate;
+use App\Livewire\Budget\BudgetShow;
+use App\Livewire\Budget\BudgetEdit;
 
 Route::get('/', function () {
     return view('welcome');
@@ -68,6 +72,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Job Site routes
     Route::get('job-sites/{jobSite}', JobSiteShow::class)->name('jobsites.show');
+
+    // Expense routes
+    Route::get('projects/{project}/expenses/create', ExpenseCreate::class)->name('expenses.project.create');
+    Route::get('job-sites/{jobSite}/expenses/create', ExpenseCreate::class)->name('expenses.jobsite.create');
 
     // Daily Report routes (Job Site level)
     Route::get('job-sites/{jobSite}/daily-reports/create', DailyReportForm::class)->name('dailyreports.create');
@@ -105,6 +113,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
     Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)->name('cost-codes.templates.show');
     Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)->name('cost-codes.templates.edit');
+
+    // Budget routes
+    Route::get('budgets/{budget}', BudgetShow::class)->name('budgets.show');
+    Route::get('budgets/{budget}/edit', BudgetEdit::class)->name('budgets.edit');
+    Route::get('projects/{project}/budgets/create', BudgetCreate::class)->name('projects.budgets.create');
+    Route::get('job-sites/{jobSite}/budgets/create', BudgetCreate::class)->name('job-sites.budgets.create');
 
     // File download route (protected)
     Route::get('files/download', [FileController::class, 'download'])->name('files.download');

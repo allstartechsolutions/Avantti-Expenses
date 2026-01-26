@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class JobSite extends Model
 {
@@ -88,6 +89,14 @@ class JobSite extends Model
     public function dailyReports(): HasMany
     {
         return $this->hasMany(DailyReport::class);
+    }
+
+    /**
+     * Get the budget for this job site (if exists).
+     */
+    public function budget(): HasOne
+    {
+        return $this->hasOne(Budget::class);
     }
 
     /**

@@ -484,29 +484,104 @@ When implementing Phase 1:
 
 ---
 
-# PHASE 2: Project/Job Site Cost Codes
+# PHASE 2: Project/Job Site Budgets
 
-*To be detailed after Phase 1 is complete*
+**Status:** In Progress
+**Detailed docs:** `docs/sessions/2026-01-26-phase2-project-budgets.md`
 
-## Preview
+## Overview
 
-- Apply template to Project or Job Site
-- Copy cost codes from template (not linked, independent copy)
-- Add/remove/edit cost codes per project
-- Each applied cost code gets a `budgeted_amount` field
+Budgets allow users to allocate funds to cost codes for projects and job sites. Each budget is an independent copy from a template (if used), and the template is not modified when the budget changes.
+
+## Design Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Budgets per location | One per location | Simpler, covers most use cases |
+| Total amount | Auto-calculated | Sum of budget items - ensures consistency |
+| UI approach | Tab + standalone pages | Quick access + detailed editing |
+| Template relationship | Reference only | Budget items are independent copies |
+| Notes field | Yes | Additional context for users |
+
+## Database Schema
+
+### Table: `budgets`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint | Primary key |
+| `project_id` | foreignId | Always required |
+| `job_site_id` | foreignId (nullable) | Null = project-level |
+| `name` | string | Budget name |
+| `notes` | text (nullable) | Additional context |
+| `source_template_id` | foreignId (nullable) | Original template |
+| `created_by` | foreignId | User who created |
+
+**Note:** No `total_amount` column - calculated as sum of budget items.
+
+**Constraint:** Unique `project_id + job_site_id`
+
+### Table: `budget_items`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint | Primary key |
+| `budget_id` | foreignId | Parent budget |
+| `parent_id` | foreignId (nullable) | Hierarchy |
+| `code` | string | Cost code |
+| `name` | string | Cost code name |
+| `description` | text (nullable) | |
+| `budgeted_amount` | unsignedBigInteger | Amount in cents |
+| `sort_order` | integer | Display order |
+
+## Routes
+
+- `GET /budgets/{budget}` - BudgetShow
+- `GET /budgets/{budget}/edit` - BudgetEdit
+- `GET /projects/{project}/budgets/create` - BudgetCreate (project context)
+- `GET /job-sites/{jobSite}/budgets/create` - BudgetCreate (job site context)
+
+## UI Integration
+
+- Budget tab on Project show page
+- Budget tab on Job Site show page
+- Standalone pages for detailed view/edit
 
 ---
 
-# PHASE 3: Budget System
+## Future Integrations (Post Phase 2)
+
+> **Important:** After completing the Budget module, these integrations are planned:
+>
+> **Change Orders (Phase 6):**
+> - Approved change orders can be allocated to budget items
+> - Increases `revised_amount` for those cost codes
+>
+> **Expenses (Phase 4):**
+> - Expense items link to budget items
+> - Tracks `actual_amount` per cost code
+>
+> **Purchase Orders (Phase 5):**
+> - PO items link to budget items
+> - Tracks `committed_amount` per cost code
+>
+> **Computed Fields (Future):**
+> - `revised_amount` = `budgeted_amount` + allocated change orders
+> - `committed_amount` = sum of approved PO items
+> - `actual_amount` = sum of expense items
+> - `remaining_amount` = `revised_amount` - `actual_amount`
+
+---
+
+# PHASE 3: Budget Reports (Simplified)
 
 *To be detailed after Phase 2 is complete*
 
 ## Preview
 
-- Project Budget: Total amount + breakdown by cost code
-- Job Site Budget: Optional, same structure
-- Track: Budgeted, Revised, Committed, Actual, Remaining
-- Budget vs Actual reports
+- Budget Summary by Cost Code
+- Allocated vs Unallocated amounts
+- Export to PDF/Excel
 
 ---
 

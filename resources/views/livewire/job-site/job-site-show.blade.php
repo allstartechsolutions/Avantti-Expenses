@@ -67,6 +67,14 @@
                     </svg>
                     Daily Reports
                 </button>
+                <button
+                    wire:click="setActiveTab('budget')"
+                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'budget' ? 'border-[#3F5189] text-[#3F5189] dark:border-[#4A5A96] dark:text-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Budget
+                </button>
             </nav>
         </div>
     </div>
@@ -415,7 +423,7 @@
                     <x-ui.button
                         variant="primary"
                         icon="plus"
-                        wire:click="openExpenseCreateModal">
+                        href="{{ route('expenses.jobsite.create', $jobSite) }}">
                         Add Expense
                     </x-ui.button>
                 </div>
@@ -595,7 +603,7 @@
                                 <x-ui.button
                                     variant="primary"
                                     icon="plus"
-                                    wire:click="openExpenseCreateModal">
+                                    href="{{ route('expenses.jobsite.create', $jobSite) }}">
                                     Add Expense
                                 </x-ui.button>
                             </div>
@@ -880,6 +888,99 @@
                         </div>
                     </div>
                 @endif
+            </div>
+        @endif
+
+        <!-- Budget Tab -->
+        @if($activeTab === 'budget')
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Job Site Budget</h3>
+                        @if(!$budget)
+                            <x-ui.button
+                                variant="primary"
+                                size="sm"
+                                href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
+                                icon="plus">
+                                Create Budget
+                            </x-ui.button>
+                        @endif
+                    </div>
+
+                    <div class="p-6">
+                        @if($budget)
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-[#3F5189]/10 to-[#5A6FA8]/10 dark:from-[#3F5189]/20 dark:to-[#5A6FA8]/20 rounded-lg">
+                                <div>
+                                    <h4 class="font-semibold text-slate-900 dark:text-white">{{ $budget->name }}</h4>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                        {{ $budget->items_count }} cost codes
+                                        @if($budget->sourceTemplate)
+                                            &bull; Template: {{ $budget->sourceTemplate->name }}
+                                        @endif
+                                    </p>
+                                    @if($budget->notes)
+                                        <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">{{ Str::limit($budget->notes, 100) }}</p>
+                                    @endif
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <x-ui.button
+                                            variant="secondary"
+                                            size="sm"
+                                            href="{{ route('budgets.show', $budget->id) }}"
+                                            icon="eye">
+                                            View Details
+                                        </x-ui.button>
+                                        <x-ui.button
+                                            variant="ghost"
+                                            size="sm"
+                                            href="{{ route('budgets.edit', $budget->id) }}"
+                                            icon="edit">
+                                            Edit
+                                        </x-ui.button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quick Preview of Top Cost Codes -->
+                            @if($budget->parentItems->count() > 0)
+                                <div class="mt-6">
+                                    <h5 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Cost Code Summary</h5>
+                                    <div class="space-y-2">
+                                        @foreach($budget->parentItems->take(5) as $item)
+                                            <div class="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-2 py-0.5 text-xs font-mono font-medium rounded bg-[#3F5189] text-white">{{ $item->code }}</span>
+                                                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ $item->name }}</span>
+                                                </div>
+                                                <span class="text-sm font-medium text-slate-900 dark:text-white">
+                                                    {{ Number::currency($item->budgeted_amount, config('app.currency'), config('app.locale')) }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                        @if($budget->parentItems->count() > 5)
+                                            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-2">
+                                                + {{ $budget->parentItems->count() - 5 }} more cost codes
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @else
+                            <div class="text-center py-8">
+                                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No budget yet</h4>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Create a budget to track cost allocation for this job site.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         @endif
     </div>

@@ -75,6 +75,14 @@
                     </svg>
                     Daily Reports
                 </button>
+                <button
+                    wire:click="setActiveTab('budget')"
+                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'budget' ? 'border-[#3F5189] text-[#3F5189] dark:border-[#4A5A96] dark:text-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Budget
+                </button>
             </nav>
         </div>
     </div>
@@ -766,7 +774,7 @@
                     <x-ui.button
                         variant="primary"
                         icon="plus"
-                        wire:click="openExpenseCreateModal">
+                        href="{{ route('expenses.project.create', $project) }}">
                         Add Expense
                     </x-ui.button>
                 </div>
@@ -826,7 +834,7 @@
                                 <thead class="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Item</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Supplier / Items</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Payments</th>
@@ -844,14 +852,14 @@
                                                 <div class="flex items-center">
                                                     <div>
                                                         <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                            {{ $expense->item_name }}
+                                                            {{ $expense->supplier?->name ?? 'No Supplier' }}
                                                         </div>
-                                                        @if($expense->isCustom())
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-                                                                Custom
+                                                        @if($expense->items->count() > 0)
+                                                            <span class="text-xs text-slate-500 dark:text-slate-400">
+                                                                {{ $expense->items->count() }} {{ Str::plural('item', $expense->items->count()) }}
                                                             </span>
-                                                        @else
-                                                            <span class="text-xs text-slate-500 dark:text-slate-400">From Catalog</span>
+                                                        @elseif($expense->item_name)
+                                                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ $expense->item_name }}</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -956,7 +964,7 @@
                                 <x-ui.button
                                     variant="primary"
                                     icon="plus"
-                                    wire:click="openExpenseCreateModal">
+                                    href="{{ route('expenses.project.create', $project) }}">
                                     Add Expense
                                 </x-ui.button>
                             </div>
@@ -1286,706 +1294,136 @@
                 @endif
             </div>
         @endif
-    </div>
 
-    <!-- Expense Modal -->
-    <x-ui.modal name="expense-modal" maxWidth="2xl">
-        <div class="p-6">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">
-                @if($expenseModalMode === 'view')
-                    Expense Details
-                @elseif($expenseModalMode === 'edit')
-                    Edit Expense
-                @else
-                    Add Expense
-                @endif
-            </h2>
-
-            @if($expenseModalMode === 'view')
-                <!-- View Mode -->
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
-                            <p class="text-slate-900 dark:text-white">{{ $expense_date ? \Carbon\Carbon::parse($expense_date)->format('M d, Y') : '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
-                            <p class="text-slate-900 dark:text-white">
-                                @if($expense_job_site_id)
-                                    {{ $jobSites->firstWhere('id', $expense_job_site_id)?->job_site_name ?? 'Unknown' }}
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">Project (General)</span>
-                                @endif
-                            </p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Item Name</label>
-                        <p class="text-slate-900 dark:text-white">{{ $expense_item_name }}</p>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Quantity</label>
-                            <p class="text-slate-900 dark:text-white">{{ $expense_quantity }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Unit Price</label>
-                            <p class="text-slate-900 dark:text-white">{{ Number::currency($expense_unit_price ?: 0, config('app.currency'), config('app.locale')) }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Total Amount</label>
-                            <p class="text-xl font-bold text-slate-900 dark:text-white">{{ Number::currency($expense_total_amount ?: 0, config('app.currency'), config('app.locale')) }}</p>
-                        </div>
-                    </div>
-
-                    @if($expense_notes)
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
-                            <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $expense_notes }}</p>
-                        </div>
-                    @endif
-
-                    @if($existingReceiptPath)
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Receipt</label>
-                            <a href="{{ route('files.show', ['path' => $existingReceiptPath]) }}" target="_blank" class="text-[#3F5189] hover:underline">View Receipt</a>
-                        </div>
-                    @endif
-
-                    <!-- Payment Information Section -->
-                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-4">Payment Information</h3>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
-                                @php
-                                    $statusColors = [
-                                        'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
-                                        'unpaid' => 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300',
-                                        'partial' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
-                                        'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
-                                        'cancelled' => 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
-                                    ];
-                                @endphp
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium {{ $statusColors[$expense_status] ?? $statusColors['unpaid'] }}">
-                                    {{ ucfirst($expense_status) }}
-                                </span>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Method</label>
-                                <p class="text-slate-900 dark:text-white">
-                                    {{ $expense_payment_method ? str_replace('_', ' ', ucfirst($expense_payment_method)) : 'Not specified' }}
-                                    @if($expense_is_auto_payment)
-                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
-                                            Auto
-                                        </span>
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
-
-                        @if($expense_has_installments && $viewingExpense)
-                            <!-- Installment Payment Schedule -->
-                            <div class="mt-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Schedule</label>
-                                    <span class="text-sm text-slate-500 dark:text-slate-400">
-                                        {{ $viewingExpense->getPaidInstallmentsCount() }}/{{ $viewingExpense->total_installments }} paid
-                                    </span>
-                                </div>
-
-                                <!-- Progress Bar -->
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-4">
-                                    <div class="bg-green-500 h-2.5 rounded-full" style="width: {{ $viewingExpense->getPaymentProgress() }}%"></div>
-                                </div>
-
-                                <div class="bg-slate-50 dark:bg-slate-900 rounded-lg overflow-hidden">
-                                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                        <thead>
-                                            <tr>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">#</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Due Date</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Paid Date</th>
-                                                <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                                            @foreach($viewingExpense->payments as $payment)
-                                                <tr>
-                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->payment_number }}</td>
-                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->due_date->format('M d, Y') }}</td>
-                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ Number::currency($payment->amount, config('app.currency'), config('app.locale')) }}</td>
-                                                    <td class="px-4 py-2">
-                                                        @php
-                                                            $paymentStatusColors = [
-                                                                'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
-                                                                'pending' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
-                                                                'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
-                                                            ];
-                                                        @endphp
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $paymentStatusColors[$payment->status] ?? $paymentStatusColors['pending'] }}">
-                                                            {{ ucfirst($payment->status) }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
-                                                        {{ $payment->paid_date ? $payment->paid_date->format('M d, Y') : '-' }}
-                                                    </td>
-                                                    <td class="px-4 py-2 text-right">
-                                                        @if($payment->status === 'pending')
-                                                            <button
-                                                                wire:click="markPaymentAsPaid({{ $payment->id }})"
-                                                                class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
-                                                                Mark Paid
-                                                            </button>
-                                                            <button
-                                                                wire:click="markPaymentAsOverdue({{ $payment->id }})"
-                                                                class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">
-                                                                Overdue
-                                                            </button>
-                                                        @elseif($payment->status === 'overdue')
-                                                            <button
-                                                                wire:click="markPaymentAsPaid({{ $payment->id }})"
-                                                                class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
-                                                                Mark Paid
-                                                            </button>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="mt-3 flex justify-between text-sm">
-                                    <span class="text-green-600 dark:text-green-400 font-medium">
-                                        Paid: {{ Number::currency($viewingExpense->getPaidAmount(), config('app.currency'), config('app.locale')) }}
-                                    </span>
-                                    <span class="text-amber-600 dark:text-amber-400 font-medium">
-                                        Pending: {{ Number::currency($viewingExpense->getPendingAmount(), config('app.currency'), config('app.locale')) }}
-                                    </span>
-                                </div>
-                            </div>
-                        @else
-                            <!-- One-time Payment Info -->
-                            <div class="grid grid-cols-2 gap-4 mt-4">
-                                @if($expense_status === 'paid' && $expense_paid_date)
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Paid Date</label>
-                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}</p>
-                                    </div>
-                                @elseif($expense_status === 'unpaid' && $expense_payment_due_date)
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
-                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_payment_due_date)->format('M d, Y') }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end space-x-4 mt-6">
-                    <x-ui.button type="button" variant="secondary" wire:click="closeExpenseModal">
-                        Close
-                    </x-ui.button>
-                </div>
-            @else
-                <!-- Create/Edit Mode -->
-                <form wire:submit.prevent="saveExpense" class="space-y-4">
-                    <!-- Location Selector -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Location</label>
-                        <select
-                            wire:model="expense_job_site_id"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">Project (General)</option>
-                            @foreach($jobSites as $js)
-                                <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Select "Project (General)" for project-level expenses or a specific job site.</p>
-                    </div>
-
-                    <!-- Item Type Toggle -->
-                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            {{ $isCustomItem ? 'Custom Item' : 'From Catalog' }}
-                        </span>
-                        <button
-                            type="button"
-                            wire:click="toggleCustomItem"
-                            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:ring-offset-2 {{ $isCustomItem ? 'bg-[#3F5189]' : 'bg-slate-200' }}">
-                            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $isCustomItem ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                        </button>
-                    </div>
-
-                    @if(!$isCustomItem)
-                        <!-- Catalog Item Search -->
-                        <div class="relative">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Search Catalog Item</label>
-                            <input
-                                type="text"
-                                wire:model.live.debounce.300ms="catalogItemSearch"
-                                placeholder="Type to search catalog..."
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-
-                            @if($catalogItems->count() > 0 && !$selectedCatalogItem)
-                                <div class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 max-h-60 overflow-auto">
-                                    @foreach($catalogItems as $catalogItem)
-                                        <button
-                                            type="button"
-                                            wire:click="selectCatalogItem({{ $catalogItem->id }})"
-                                            class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between">
-                                            <div>
-                                                <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $catalogItem->name }}</div>
-                                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ ucfirst($catalogItem->type) }} - {{ Number::currency($catalogItem->current_cost, config('app.currency'), config('app.locale')) }}</div>
-                                            </div>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @endif
-
-                    <!-- Item Name (auto-filled from catalog or manual for custom) -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Item Name <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            wire:model="expense_item_name"
-                            {{ $isCustomItem ? '' : 'readonly' }}
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white {{ $isCustomItem ? '' : 'bg-slate-100 dark:bg-slate-900' }}"
-                            placeholder="Enter item name">
-                        @error('expense_item_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    @if(!$isCustomItem && $selectedCatalogItem && $expense_purchase_unit && $expense_usage_unit)
-                        <!-- Unit Type Selector (for products with conversion) -->
-                        <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                Select Unit Type <span class="text-red-500">*</span>
-                            </label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="relative flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all {{ $expense_unit_type_used === 'usage' ? 'border-[#3F5189] bg-[#3F5189]/5' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400' }}">
-                                    <input
-                                        type="radio"
-                                        wire:model.live="expense_unit_type_used"
-                                        value="usage"
-                                        class="sr-only">
-                                    <div class="flex-1">
-                                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $expense_usage_unit }}</div>
-                                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Usage unit</div>
-                                    </div>
-                                </label>
-                                <label class="relative flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all {{ $expense_unit_type_used === 'purchase' ? 'border-[#3F5189] bg-[#3F5189]/5' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400' }}">
-                                    <input
-                                        type="radio"
-                                        wire:model.live="expense_unit_type_used"
-                                        value="purchase"
-                                        class="sr-only">
-                                    <div class="flex-1">
-                                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $expense_purchase_unit }}</div>
-                                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Purchase unit</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                                Example: Use "{{ $expense_usage_unit }}" for individual items or "{{ $expense_purchase_unit }}" for whole packages
-                            </p>
-                        </div>
-                    @endif
-
-                    @if($isCustomItem)
-                        <!-- Custom Item Fields -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Type</label>
-                                <select wire:model="expense_item_type" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                    <option value="">Select type (optional)</option>
-                                    <option value="product">Product</option>
-                                    <option value="service">Service</option>
-                                    <option value="rental">Rental</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Unit</label>
-                                <input
-                                    type="text"
-                                    wire:model="expense_usage_unit"
-                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="e.g., Each, Hour">
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Quantity and Price -->
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Quantity <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                wire:model.live="expense_quantity"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="0.00">
-                            @error('expense_quantity') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Unit Price <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400">$</span>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    wire:model.live="expense_unit_price"
-                                    class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="0.00">
-                            </div>
-                            @error('expense_unit_price') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Total</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400">$</span>
-                                <input
-                                    type="text"
-                                    value="{{ $expense_total_amount }}"
-                                    readonly
-                                    class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Date -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Expense Date <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="date"
-                            wire:model="expense_date"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        @error('expense_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- Notes -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
-                        <textarea
-                            wire:model="expense_notes"
-                            rows="3"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Optional notes about this expense"></textarea>
-                    </div>
-
-                    <!-- Receipt Upload -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Receipt
-                        </label>
-                        @if($existingReceiptPath && !$expense_receipt)
-                            <div class="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                <div class="flex items-center justify-between text-sm">
-                                    <span class="text-slate-600 dark:text-slate-400">Current receipt:</span>
-                                    <a href="{{ route('files.download', ['path' => $existingReceiptPath]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline font-medium">
-                                        <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        Download
-                                    </a>
-                                </div>
-                            </div>
-                        @endif
-
-                        <div
-                            x-data="{ isDragging: false }"
-                            @dragover.prevent="isDragging = true"
-                            @dragleave.prevent="isDragging = false"
-                            @drop.prevent="isDragging = false; $refs.fileInput.files = $event.dataTransfer.files; $refs.fileInput.dispatchEvent(new Event('change', { bubbles: true }))"
-                            :class="isDragging ? 'border-[#3F5189] bg-[#3F5189]/5' : 'border-slate-300 dark:border-slate-600'"
-                            class="relative border-2 border-dashed rounded-lg p-6 transition-colors duration-200 hover:border-[#3F5189] dark:hover:border-[#4A5A96] cursor-pointer"
-                            @click="$refs.fileInput.click()">
-
-                            <input
-                                type="file"
-                                x-ref="fileInput"
-                                wire:model="expense_receipt"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                class="hidden"
-                            >
-
-                            <div class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="mt-4 flex justify-center text-sm text-slate-600 dark:text-slate-400">
-                                    <span class="relative font-medium text-[#3F5189] dark:text-[#4A5A96] hover:text-[#2F3F6F]">
-                                        Click to upload
-                                    </span>
-                                    <span class="pl-1">or drag and drop</span>
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">PDF, JPG, PNG up to 10MB</p>
-                            </div>
-                        </div>
-
-                        @error('expense_receipt') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
-
-                        @if($expense_receipt)
-                            <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                <div class="flex items-center">
-                                    <svg class="h-5 w-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span class="text-sm text-green-800 dark:text-green-300 font-medium">
-                                        {{ $expense_receipt->getClientOriginalName() }}
-                                    </span>
-                                </div>
-                            </div>
+        <!-- Budget Tab -->
+        @if($activeTab === 'budget')
+            <div class="space-y-6">
+                <!-- Project Budget Section -->
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Budget</h3>
+                        @if(!$projectBudget)
+                            <x-ui.button
+                                variant="primary"
+                                size="sm"
+                                href="{{ route('projects.budgets.create', $project->id) }}"
+                                icon="plus">
+                                Create Budget
+                            </x-ui.button>
                         @endif
                     </div>
 
-                    <!-- Payment Section -->
-                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-4">Payment Information</h3>
-
-                        <!-- Payment Method and Auto Payment -->
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment Method</label>
-                                <select
-                                    wire:model="expense_payment_method"
-                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                    <option value="">Select method</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="check">Check</option>
-                                    <option value="credit_card">Credit Card</option>
-                                    <option value="debit_card">Debit Card</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    @if(config('app.country') === 'BR')
-                                        <option value="pix">PIX</option>
-                                    @endif
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center">
-                                <label class="flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        wire:model="expense_is_auto_payment"
-                                        class="rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
-                                    <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Auto Payment</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Installments Toggle -->
-                        <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg mb-4">
-                            <div>
-                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Split into installments</span>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enable to divide this expense into multiple payments</p>
-                            </div>
-                            <button
-                                type="button"
-                                wire:click="$toggle('expense_has_installments')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:ring-offset-2 {{ $expense_has_installments ? 'bg-[#3F5189]' : 'bg-slate-200' }}">
-                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $expense_has_installments ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                            </button>
-                        </div>
-
-                        @if(!$expense_has_installments)
-                            <!-- One-Time Payment Options -->
-                            <div class="grid grid-cols-2 gap-4">
+                    <div class="p-6">
+                        @if($projectBudget)
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-[#3F5189]/10 to-[#5A6FA8]/10 dark:from-[#3F5189]/20 dark:to-[#5A6FA8]/20 rounded-lg">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
-                                    <select
-                                        wire:model.live="expense_status"
-                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        <option value="paid">Paid</option>
-                                        <option value="unpaid">Unpaid</option>
-                                    </select>
+                                    <h4 class="font-semibold text-slate-900 dark:text-white">{{ $projectBudget->name }}</h4>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                        {{ $projectBudget->items_count }} cost codes
+                                        @if($projectBudget->sourceTemplate)
+                                            &bull; Template: {{ $projectBudget->sourceTemplate->name }}
+                                        @endif
+                                    </p>
                                 </div>
-                                @if($expense_status === 'paid')
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Paid Date</label>
-                                        <input
-                                            type="date"
-                                            wire:model="expense_paid_date"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {{ Number::currency($projectBudget->total_amount, config('app.currency'), config('app.locale')) }}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <x-ui.button
+                                            variant="secondary"
+                                            size="sm"
+                                            href="{{ route('budgets.show', $projectBudget->id) }}"
+                                            icon="eye">
+                                            View
+                                        </x-ui.button>
+                                        <x-ui.button
+                                            variant="ghost"
+                                            size="sm"
+                                            href="{{ route('budgets.edit', $projectBudget->id) }}"
+                                            icon="edit">
+                                            Edit
+                                        </x-ui.button>
                                     </div>
-                                @else
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Payment Due Date <span class="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            wire:model="expense_payment_due_date"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                @endif
+                                </div>
                             </div>
                         @else
-                            <!-- Installment Options -->
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Number of Installments <span class="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="2"
-                                            max="120"
-                                            wire:model.live="expense_total_installments"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        @error('expense_total_installments') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Frequency <span class="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            wire:model.live="expense_payment_frequency"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                            <option value="weekly">Weekly</option>
-                                            <option value="biweekly">Biweekly</option>
-                                            <option value="monthly">Monthly</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            First Payment Date <span class="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            wire:model.live="expense_payment_due_date"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
+                            <div class="text-center py-8">
+                                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No project budget</h4>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Create a budget to track cost allocation for this project.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
 
-                                <!-- Amount Type Toggle -->
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            wire:model.live="expense_use_custom_amounts"
-                                            value="0"
-                                            class="border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
-                                        <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">
-                                            Equal amounts
-                                            @if($expense_total_amount && $expense_total_installments)
-                                                ({{ Number::currency($expense_total_amount / $expense_total_installments, config('app.currency'), config('app.locale')) }} each)
-                                            @endif
-                                        </span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            wire:model.live="expense_use_custom_amounts"
-                                            value="1"
-                                            class="border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
-                                        <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Custom amounts</span>
-                                    </label>
-                                </div>
+                <!-- Job Site Budgets Section -->
+                @if($jobSites->count() > 0)
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Job Site Budgets</h3>
+                        </div>
 
-                                <!-- Payment Schedule Preview -->
-                                @if(count($expense_payment_schedule_preview) > 0)
-                                    <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
-                                        <h4 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Payment Schedule Preview</h4>
-                                        <div class="max-h-48 overflow-y-auto">
-                                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">#</th>
-                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Due Date</th>
-                                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                                                    @foreach($expense_payment_schedule_preview as $index => $preview)
-                                                        <tr>
-                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">{{ $preview['number'] }}</td>
-                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">{{ $preview['due_date_formatted'] }}</td>
-                                                            <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">
-                                                                @if($expense_use_custom_amounts)
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        wire:model.live.debounce.500ms="expense_custom_amounts.{{ $index }}"
-                                                                        class="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                                                @else
-                                                                    {{ Number::currency($preview['amount'], config('app.currency'), config('app.locale')) }}
-                                                                @endif
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
+                        <div class="divide-y divide-slate-200 dark:divide-slate-700">
+                            @foreach($jobSites as $jobSite)
+                                @php
+                                    $jobSiteBudget = $jobSiteBudgets->firstWhere('job_site_id', $jobSite->id);
+                                @endphp
+                                <div class="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                            <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
                                         </div>
-
-                                        @if($expense_use_custom_amounts)
-                                            @php
-                                                $customTotal = array_sum($expense_custom_amounts ?? []);
-                                                $expectedTotal = floatval($expense_total_amount);
-                                                $diff = round($expectedTotal - $customTotal, 2);
-                                            @endphp
-                                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm">
-                                                <span class="text-slate-600 dark:text-slate-400">
-                                                    Total: {{ Number::currency($customTotal, config('app.currency'), config('app.locale')) }}
-                                                </span>
-                                                @if($diff != 0)
-                                                    <span class="text-red-600 dark:text-red-400 font-medium">
-                                                        {{ $diff > 0 ? 'Remaining:' : 'Over by:' }} {{ Number::currency(abs($diff), config('app.currency'), config('app.locale')) }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-green-600 dark:text-green-400 font-medium">
-                                                        Amounts match total
-                                                    </span>
-                                                @endif
-                                            </div>
+                                        <div>
+                                            <a href="{{ route('jobsites.show', $jobSite->id) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189]">
+                                                {{ $jobSite->job_site_name }}
+                                            </a>
+                                            @if($jobSiteBudget)
+                                                <p class="text-sm text-slate-500 dark:text-slate-400">
+                                                    {{ $jobSiteBudget->name }} &bull; {{ $jobSiteBudget->items_count }} cost codes
+                                                </p>
+                                            @else
+                                                <p class="text-sm text-slate-400 dark:text-slate-500">No budget</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        @if($jobSiteBudget)
+                                            <span class="font-semibold text-slate-900 dark:text-white">
+                                                {{ Number::currency($jobSiteBudget->total_amount, config('app.currency'), config('app.locale')) }}
+                                            </span>
+                                            <x-ui.button
+                                                variant="ghost"
+                                                size="sm"
+                                                href="{{ route('budgets.show', $jobSiteBudget->id) }}"
+                                                icon="eye">
+                                            </x-ui.button>
                                         @else
-                                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400">
-                                                Total: {{ Number::currency($expense_total_amount, config('app.currency'), config('app.locale')) }}
-                                            </div>
+                                            <x-ui.button
+                                                variant="secondary"
+                                                size="sm"
+                                                href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
+                                                icon="plus">
+                                                Create
+                                            </x-ui.button>
                                         @endif
                                     </div>
-                                @endif
-                            </div>
-                        @endif
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
+                @endif
+            </div>
+        @endif
+    </div>
 
-                    <!-- Form Actions -->
-                    <div class="flex items-center justify-end space-x-4 pt-4">
-                        <x-ui.button
-                            type="button"
-                            variant="secondary"
-                            wire:click="closeExpenseModal">
-                            Cancel
-                        </x-ui.button>
-                        <x-ui.button
-                            type="submit"
-                            variant="primary">
-                            {{ $expenseModalMode === 'edit' ? 'Update' : 'Add Expense' }}
-                        </x-ui.button>
-                    </div>
-                </form>
-            @endif
-        </div>
-    </x-ui.modal>
+
+    @include('livewire.project.partials.expense-modal')
 
     <!-- Change Order Modal -->
     <x-ui.modal name="change-order-modal" maxWidth="2xl">

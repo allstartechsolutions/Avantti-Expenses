@@ -767,6 +767,9 @@ class JobSiteShow extends Component
             $viewingExpense = Expense::with('payments')->find($this->editingExpense);
         }
 
+        // Budget
+        $budget = $this->jobSite->budget?->load(['sourceTemplate', 'parentItems']);
+
         return view('livewire.job-site.job-site-show', [
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
@@ -777,6 +780,7 @@ class JobSiteShow extends Component
             'catalogItems' => $catalogItems,
             'dailyReports' => $dailyReports,
             'viewingExpense' => $viewingExpense,
+            'budget' => $budget,
         ])->layout('components.layouts.app');
     }
 }

@@ -14,6 +14,7 @@ class Expense extends Model
     protected $fillable = [
         'project_id',
         'job_site_id',
+        'supplier_id',
         'catalog_item_id',
         'item_name',
         'item_type',
@@ -98,6 +99,22 @@ class Expense extends Model
     }
 
     /**
+     * Get the supplier for this expense (optional)
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * Get the expense items (line items)
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(ExpenseItem::class)->orderBy('sort_order');
+    }
+
+    /**
      * Check if this is a project-level expense (not tied to a specific job site)
      */
     public function isProjectLevel(): bool
@@ -127,6 +144,28 @@ class Expense extends Model
     public function isCustom(): bool
     {
         return is_null($this->catalog_item_id);
+    }
+
+    /**
+     * Check if this expense uses the new multi-item structure
+     */
+    public function hasItems(): bool
+    {
+        return $this->items()->exists();
+    }
+
+    /**
+     * Recalculate total_amount from expense items
+     */
+    public function recalculateTotal(): void
+    {
+        if (!$this->hasItems()) {
+            return;
+        }
+
+        $totalCents = $this->items()->sum('total_amount');
+        $this->total_amount = $totalCents / 100;
+        $this->save();
     }
 
     /**
