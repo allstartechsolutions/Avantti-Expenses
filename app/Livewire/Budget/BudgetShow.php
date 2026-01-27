@@ -59,7 +59,7 @@ class BudgetShow extends Component
             return route('jobsites.show', $this->budget->job_site_id);
         }
 
-        return route('projects.show', $this->budget->project_id);
+        return route('projects.budget', $this->budget->project_id);
     }
 
     /**

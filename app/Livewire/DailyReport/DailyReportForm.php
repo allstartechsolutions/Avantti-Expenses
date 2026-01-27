@@ -728,7 +728,7 @@ class DailyReportForm extends Component
     protected function redirectBack()
     {
         if ($this->context === 'project' || !$this->jobSite) {
-            return redirect()->route('projects.show', ['project' => $this->project, 'tab' => 'daily-reports']);
+            return redirect()->route('projects.daily-reports', $this->project);
         }
         return redirect()->route('jobsites.show', $this->jobSite);
     }

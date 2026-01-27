@@ -380,7 +380,7 @@ class ExpenseCreate extends Component
             return redirect()->route('jobsites.show', ['jobSite' => $this->jobSite->id, 'tab' => 'expenses']);
         }
 
-        return redirect()->route('projects.show', ['project' => $this->project->id, 'tab' => 'expenses']);
+        return redirect()->route('projects.expenses', $this->project->id);
     }
 
     public function render()

@@ -16,7 +16,7 @@
             </div>
             <x-ui.button
                 variant="secondary"
-                href="{{ $jobSite ? route('job-sites.show', $jobSite->id) : route('projects.show', $project->id) }}"
+                href="{{ $jobSite ? route('jobsites.show', $jobSite->id) : route('projects.budget', $project->id) }}"
                 icon="arrow-left">
                 Back
             </x-ui.button>
@@ -139,7 +139,7 @@
                 <x-ui.button
                     type="button"
                     variant="secondary"
-                    href="{{ $jobSite ? route('job-sites.show', $jobSite->id) : route('projects.show', $project->id) }}">
+                    href="{{ $jobSite ? route('jobsites.show', $jobSite->id) : route('projects.budget', $project->id) }}">
                     Cancel
                 </x-ui.button>
                 <x-ui.button

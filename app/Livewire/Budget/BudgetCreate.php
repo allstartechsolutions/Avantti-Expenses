@@ -78,7 +78,7 @@ class BudgetCreate extends Component
             return route('job-sites.show', $this->jobSite->id);
         }
 
-        return route('projects.show', $this->project->id);
+        return route('projects.budget', $this->project->id);
     }
 
     /**

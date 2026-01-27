@@ -173,7 +173,7 @@ class BudgetEdit extends Component
             return redirect()->route('jobsites.show', $jobSiteId);
         }
 
-        return redirect()->route('projects.show', $projectId);
+        return redirect()->route('projects.budget', $projectId);
     }
 
     public function render()

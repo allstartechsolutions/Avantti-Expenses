@@ -6,7 +6,7 @@
                 <div class="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
                     <a href="{{ route('projects.index') }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">Projects</a>
                     <span>/</span>
-                    <a href="{{ route('projects.show', $jobSite->project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->project->project_name }}</a>
+                    <a href="{{ route('projects.overview', $jobSite->project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->project->project_name }}</a>
                     <span>/</span>
                     <span class="text-slate-900 dark:text-white">{{ $jobSite->job_site_name }}</span>
                 </div>
@@ -16,7 +16,7 @@
             <div class="flex items-center space-x-3">
                 <x-ui.button
                     variant="secondary"
-                    href="{{ route('projects.show', $jobSite->project->id) }}"
+                    href="{{ route('projects.jobsites', $jobSite->project->id) }}"
                     icon="arrow-left">
                     Back to Project
                 </x-ui.button>
@@ -169,7 +169,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         Project
                                     </label>
-                                    <a href="{{ route('projects.show', $jobSite->project->id) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
+                                    <a href="{{ route('projects.overview', $jobSite->project->id) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                                         {{ $jobSite->project->project_name }}
                                     </a>
                                 </div>

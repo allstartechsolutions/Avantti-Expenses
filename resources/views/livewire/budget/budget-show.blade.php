@@ -345,7 +345,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-slate-500 dark:text-slate-400">Project</span>
-                        <a href="{{ route('projects.show', $budget->project_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
+                        <a href="{{ route('projects.overview', $budget->project_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
                             {{ $budget->project->project_name }}
                         </a>
                     </div>

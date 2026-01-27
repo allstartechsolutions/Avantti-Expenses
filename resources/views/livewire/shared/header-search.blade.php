@@ -34,7 +34,7 @@
             <ul class="max-h-64 overflow-y-auto">
                 @foreach($this->results as $project)
                     <li>
-                        <a href="{{ route('projects.show', $project->id) }}"
+                        <a href="{{ route('projects.overview', $project->id) }}"
                            class="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-b-0">
                             <div class="font-medium text-sm text-slate-800 dark:text-white">
                                 {{ $project->project_name }}

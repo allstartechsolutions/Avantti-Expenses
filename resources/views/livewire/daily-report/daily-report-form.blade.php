@@ -6,7 +6,7 @@
                 <div class="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
                     <a href="{{ route('projects.index') }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">Projects</a>
                     <span>/</span>
-                    <a href="{{ route('projects.show', $project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $project->project_name }}</a>
+                    <a href="{{ route('projects.overview', $project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $project->project_name }}</a>
                     @if($jobSite)
                         <span>/</span>
                         <a href="{{ route('jobsites.show', $jobSite->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->job_site_name }}</a>

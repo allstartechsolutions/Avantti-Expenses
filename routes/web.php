@@ -16,6 +16,12 @@ use App\Livewire\Project\ProjectCreate;
 use App\Livewire\Project\ProjectEdit;
 use App\Livewire\Project\ProjectIndex;
 use App\Livewire\Project\ProjectShow;
+use App\Livewire\Project\ProjectOverview;
+use App\Livewire\Project\ProjectExpenses;
+use App\Livewire\Project\ProjectJobSites;
+use App\Livewire\Project\ProjectChangeOrders;
+use App\Livewire\Project\ProjectDailyReports;
+use App\Livewire\Project\ProjectBudget;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
@@ -67,8 +73,18 @@ Route::middleware(['auth'])->group(function () {
     // Project routes
     Route::get('projects', ProjectIndex::class)->name('projects.index');
     Route::get('projects/create', ProjectCreate::class)->name('projects.create');
-    Route::get('projects/{project}', ProjectShow::class)->name('projects.show');
     Route::get('projects/{project}/edit', ProjectEdit::class)->name('projects.edit');
+
+    // Project section routes (new navigation structure)
+    Route::get('projects/{project}', ProjectOverview::class)->name('projects.overview');
+    Route::get('projects/{project}/jobsites', ProjectJobSites::class)->name('projects.jobsites');
+    Route::get('projects/{project}/expenses', ProjectExpenses::class)->name('projects.expenses');
+    Route::get('projects/{project}/change-orders', ProjectChangeOrders::class)->name('projects.change-orders');
+    Route::get('projects/{project}/daily-reports', ProjectDailyReports::class)->name('projects.daily-reports');
+    Route::get('projects/{project}/budget', ProjectBudget::class)->name('projects.budget');
+
+    // Legacy route alias (for backward compatibility during migration)
+    Route::get('projects/{project}/show', ProjectShow::class)->name('projects.show');
 
     // Job Site routes
     Route::get('job-sites/{jobSite}', JobSiteShow::class)->name('jobsites.show');

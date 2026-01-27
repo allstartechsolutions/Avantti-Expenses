@@ -203,7 +203,7 @@
                                 <!-- Actions -->
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <x-ui.view-edit-buttons
-                                        :viewRoute="route('projects.show', $project->id)"
+                                        :viewRoute="route('projects.overview', $project->id)"
                                         :editRoute="route('projects.edit', $project->id)" />
                                 </td>
                             </tr>
