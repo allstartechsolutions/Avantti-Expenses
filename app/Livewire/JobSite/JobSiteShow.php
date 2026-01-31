@@ -9,6 +9,7 @@ use App\Models\DailyReportImage;
 use App\Models\DailyReportTask;
 use App\Models\Expense;
 use App\Models\JobSite;
+use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -770,6 +771,20 @@ class JobSiteShow extends Component
         // Budget
         $budget = $this->jobSite->budget?->load(['sourceTemplate', 'parentItems']);
 
+        // Purchase Orders
+        $purchaseOrders = PurchaseOrder::where('job_site_id', $this->jobSite->id)
+            ->with(['supplier', 'createdBy'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $purchaseOrderStats = [
+            'total' => $purchaseOrders->count(),
+            'pending' => $purchaseOrders->where('status', 'pending')->count(),
+            'approved' => $purchaseOrders->where('status', 'approved')->count(),
+            'totalAmount' => $purchaseOrders->sum('total_amount'),
+            'approvedAmount' => $purchaseOrders->where('status', 'approved')->sum('total_amount'),
+        ];
+
         return view('livewire.job-site.job-site-show', [
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
@@ -781,6 +796,8 @@ class JobSiteShow extends Component
             'dailyReports' => $dailyReports,
             'viewingExpense' => $viewingExpense,
             'budget' => $budget,
+            'purchaseOrders' => $purchaseOrders,
+            'purchaseOrderStats' => $purchaseOrderStats,
         ])->layout('components.layouts.app');
     }
 }

@@ -68,6 +68,14 @@
                     Daily Reports
                 </button>
                 <button
+                    wire:click="setActiveTab('purchaseorders')"
+                    class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'purchaseorders' ? 'border-[#3F5189] text-[#3F5189] dark:border-[#4A5A96] dark:text-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Purchase Orders
+                </button>
+                <button
                     wire:click="setActiveTab('budget')"
                     class="group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'budget' ? 'border-[#3F5189] text-[#3F5189] dark:border-[#4A5A96] dark:text-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -888,6 +896,141 @@
                         </div>
                     </div>
                 @endif
+            </div>
+        @endif
+
+        <!-- Purchase Orders Tab -->
+        @if($activeTab === 'purchaseorders')
+            <div class="space-y-6">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total POs</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ $purchaseOrders->count() }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Approval</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ $purchaseOrders->where('status', 'pending')->count() }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/30 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved Total</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($purchaseOrders->where('status', 'approved')->sum('total_amount'), config('app.currency'), config('app.locale')) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PO List -->
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Purchase Orders</h3>
+                        <x-ui.button
+                            variant="primary"
+                            size="sm"
+                            href="{{ route('purchase-orders.jobsite.create', $jobSite->id) }}"
+                            icon="plus">
+                            New PO
+                        </x-ui.button>
+                    </div>
+
+                    @if($purchaseOrders->count() > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-900/50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">PO #</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Supplier</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    @foreach($purchaseOrders as $po)
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                                    #{{ $po->id }}
+                                                    @if($po->po_number)
+                                                        <span class="text-slate-500">({{ $po->po_number }})</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                                                {{ $po->po_date->format('M d, Y') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                                                {{ $po->supplier?->name ?? '-' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                    @switch($po->status)
+                                                        @case('draft') bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300 @break
+                                                        @case('pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 @break
+                                                        @case('approved') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 @break
+                                                        @case('rejected') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 @break
+                                                        @case('cancelled') bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300 @break
+                                                    @endswitch
+                                                ">
+                                                    {{ $po->getStatusLabel() }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white text-right">
+                                                {{ Number::currency($po->total_amount, config('app.currency'), config('app.locale')) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                                <x-ui.view-edit-buttons
+                                                    :viewRoute="route('purchase-orders.show', $po->id)"
+                                                    :editRoute="$po->canBeEdited() ? route('purchase-orders.edit', $po->id) : null" />
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No purchase orders</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a new purchase order.</p>
+                            <div class="mt-6">
+                                <x-ui.button variant="primary" href="{{ route('purchase-orders.jobsite.create', $jobSite->id) }}" icon="plus">
+                                    New Purchase Order
+                                </x-ui.button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         @endif
 

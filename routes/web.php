@@ -45,6 +45,10 @@ use App\Livewire\CostCode\CostCodeTemplateEdit;
 use App\Livewire\Budget\BudgetCreate;
 use App\Livewire\Budget\BudgetShow;
 use App\Livewire\Budget\BudgetEdit;
+use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
+use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
+use App\Livewire\PurchaseOrder\PurchaseOrderShow;
+use App\Livewire\Project\ProjectPurchaseOrders;
 
 Route::get('/', function () {
     return view('welcome');
@@ -135,6 +139,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('budgets/{budget}/edit', BudgetEdit::class)->name('budgets.edit');
     Route::get('projects/{project}/budgets/create', BudgetCreate::class)->name('projects.budgets.create');
     Route::get('job-sites/{jobSite}/budgets/create', BudgetCreate::class)->name('job-sites.budgets.create');
+
+    // Purchase Order routes
+    Route::get('projects/{project}/purchase-orders', ProjectPurchaseOrders::class)->name('projects.purchase-orders');
+    Route::get('projects/{project}/purchase-orders/create', PurchaseOrderCreate::class)->name('purchase-orders.project.create');
+    Route::get('job-sites/{jobSite}/purchase-orders/create', PurchaseOrderCreate::class)->name('purchase-orders.jobsite.create');
+    Route::get('purchase-orders/{purchaseOrder}', PurchaseOrderShow::class)->name('purchase-orders.show');
+    Route::get('purchase-orders/{purchaseOrder}/edit', PurchaseOrderEdit::class)->name('purchase-orders.edit');
 
     // File download route (protected)
     Route::get('files/download', [FileController::class, 'download'])->name('files.download');

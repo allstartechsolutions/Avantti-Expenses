@@ -16,6 +16,7 @@ class Expense extends Model
         'job_site_id',
         'supplier_id',
         'catalog_item_id',
+        'purchase_order_id',
         'item_name',
         'item_type',
         'purchase_unit',
@@ -136,6 +137,22 @@ class Expense extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the purchase order this expense was created from (if any)
+     */
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    /**
+     * Check if this expense was created from a purchase order
+     */
+    public function isFromPurchaseOrder(): bool
+    {
+        return !is_null($this->purchase_order_id);
     }
 
     /**
