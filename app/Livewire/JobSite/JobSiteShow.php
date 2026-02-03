@@ -101,9 +101,29 @@ class JobSiteShow extends Component
         'file' => 'file',
     ];
 
+    public $activeNavTab = 'overview';
+
     public function mount(JobSite $jobSite)
     {
         $this->jobSite = $jobSite->load('project');
+
+        // Detect which section page we're on from the URL
+        $path = request()->path();
+        $tabMap = [
+            'expenses' => 'expenses',
+            'change-orders' => 'changeorders',
+            'purchase-orders' => 'purchaseorders',
+            'daily-reports' => 'dailyreports',
+            'budget' => 'budget',
+        ];
+
+        foreach ($tabMap as $segment => $tab) {
+            if (str_ends_with($path, '/' . $segment)) {
+                $this->activeTab = $tab;
+                $this->activeNavTab = $segment;
+                break;
+            }
+        }
     }
 
     public function setActiveTab($tab)
