@@ -56,7 +56,7 @@ class BudgetShow extends Component
     public function getBackUrlProperty(): string
     {
         if ($this->budget->job_site_id) {
-            return route('jobsites.show', $this->budget->job_site_id);
+            return route('jobsites.overview', $this->budget->job_site_id);
         }
 
         return route('projects.budget', $this->budget->project_id);

@@ -348,7 +348,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <x-ui.view-edit-buttons
-                                                :viewRoute="route('jobsites.show', $jobSite->id)"
+                                                :viewRoute="route('jobsites.overview', $jobSite->id)"
                                                 :editAction="'editJobSite(' . $jobSite->id . ')'" />
                                         </td>
                                     </tr>

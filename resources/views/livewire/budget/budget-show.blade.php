@@ -352,7 +352,7 @@
                     @if($budget->jobSite)
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-slate-500 dark:text-slate-400">Job Site</span>
-                            <a href="{{ route('jobsites.show', $budget->job_site_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
+                            <a href="{{ route('jobsites.overview', $budget->job_site_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
                                 {{ $budget->jobSite->job_site_name }}
                             </a>
                         </div>

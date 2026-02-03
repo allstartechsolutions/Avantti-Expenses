@@ -170,7 +170,7 @@ class BudgetEdit extends Component
         session()->flash('message', 'Budget deleted successfully.');
 
         if ($jobSiteId) {
-            return redirect()->route('jobsites.show', $jobSiteId);
+            return redirect()->route('jobsites.overview', $jobSiteId);
         }
 
         return redirect()->route('projects.budget', $projectId);

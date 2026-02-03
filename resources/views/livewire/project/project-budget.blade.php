@@ -82,7 +82,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <a href="{{ route('jobsites.show', $jobSite->id) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189]">
+                                    <a href="{{ route('jobsites.overview', $jobSite->id) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189]">
                                         {{ $jobSite->job_site_name }}
                                     </a>
                                     @if($jobSiteBudget)

@@ -699,7 +699,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <x-ui.view-edit-buttons
-                                                        :viewRoute="route('jobsites.show', $jobSite->id)"
+                                                        :viewRoute="route('jobsites.overview', $jobSite->id)"
                                                         :editAction="'editJobSite(' . $jobSite->id . ')'" />
                                                 </td>
                                             </tr>
@@ -1380,7 +1380,7 @@
                                             </svg>
                                         </div>
                                         <div>
-                                            <a href="{{ route('jobsites.show', $jobSite->id) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189]">
+                                            <a href="{{ route('jobsites.overview', $jobSite->id) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189]">
                                                 {{ $jobSite->job_site_name }}
                                             </a>
                                             @if($jobSiteBudget)

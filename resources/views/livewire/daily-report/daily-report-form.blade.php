@@ -9,7 +9,7 @@
                     <a href="{{ route('projects.overview', $project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $project->project_name }}</a>
                     @if($jobSite)
                         <span>/</span>
-                        <a href="{{ route('jobsites.show', $jobSite->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->job_site_name }}</a>
+                        <a href="{{ route('jobsites.overview', $jobSite->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $jobSite->job_site_name }}</a>
                     @endif
                     <span>/</span>
                     <span class="text-slate-900 dark:text-white">{{ $mode === 'edit' ? 'Edit' : 'Create' }} Daily Report</span>

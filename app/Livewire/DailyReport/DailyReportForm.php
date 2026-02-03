@@ -730,7 +730,7 @@ class DailyReportForm extends Component
         if ($this->context === 'project' || !$this->jobSite) {
             return redirect()->route('projects.daily-reports', $this->project);
         }
-        return redirect()->route('jobsites.show', $this->jobSite);
+        return redirect()->route('jobsites.overview', $this->jobSite);
     }
 
     public function render()
