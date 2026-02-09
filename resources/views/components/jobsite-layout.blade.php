@@ -28,6 +28,9 @@
                     icon="arrow-left">
                     Back to Project
                 </x-ui.button>
+                @if(isset($actions))
+                    {{ $actions }}
+                @endif
             </div>
         </div>
     </div>

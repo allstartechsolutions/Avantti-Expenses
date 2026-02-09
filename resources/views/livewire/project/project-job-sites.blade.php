@@ -347,9 +347,29 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <x-ui.view-edit-buttons
-                                                :viewRoute="route('jobsites.overview', $jobSite->id)"
-                                                :editAction="'editJobSite(' . $jobSite->id . ')'" />
+                                            <div class="flex items-center justify-end space-x-2">
+                                                <x-ui.button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    href="{{ route('jobsites.overview', $jobSite->id) }}"
+                                                    icon="eye">
+                                                    View
+                                                </x-ui.button>
+                                                <x-ui.button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    wire:click="editJobSite({{ $jobSite->id }})"
+                                                    icon="edit">
+                                                    Edit
+                                                </x-ui.button>
+                                                <x-ui.button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    wire:click="confirmDeleteJobSite({{ $jobSite->id }})"
+                                                    icon="trash">
+                                                    Delete
+                                                </x-ui.button>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -379,4 +399,82 @@
             @endif
         @endif
     </div>
+
+    <!-- Delete Job Site Confirmation Modal -->
+    @if($showDeleteJobSiteModal)
+        <x-ui.modal name="delete-jobsite-modal" :show="true" maxWidth="lg">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
+                    Delete Job Site
+                </h3>
+
+                <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
+                    Are you sure you want to delete <strong>{{ $deleteJobSiteData['name'] ?? '' }}</strong>?
+                    This action <strong>cannot be undone</strong>.
+                </p>
+
+                @if(!empty($deleteJobSiteData))
+                    @php
+                        $hasRelatedJobSite = ($deleteJobSiteData['expenses'] ?? 0) > 0
+                            || ($deleteJobSiteData['change_orders'] ?? 0) > 0
+                            || ($deleteJobSiteData['daily_reports'] ?? 0) > 0
+                            || ($deleteJobSiteData['budgets'] ?? 0) > 0;
+                    @endphp
+
+                    @if($hasRelatedJobSite)
+                        <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                            <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
+                                @if(($deleteJobSiteData['expenses'] ?? 0) > 0)
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        {{ $deleteJobSiteData['expenses'] }} Expense(s)
+                                    </li>
+                                @endif
+                                @if(($deleteJobSiteData['change_orders'] ?? 0) > 0)
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        {{ $deleteJobSiteData['change_orders'] }} Change Order(s)
+                                    </li>
+                                @endif
+                                @if(($deleteJobSiteData['daily_reports'] ?? 0) > 0)
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        {{ $deleteJobSiteData['daily_reports'] }} Daily Report(s)
+                                    </li>
+                                @endif
+                                @if(($deleteJobSiteData['budgets'] ?? 0) > 0)
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        {{ $deleteJobSiteData['budgets'] }} Budget(s)
+                                    </li>
+                                @endif
+                            </ul>
+                        </div>
+                    @endif
+                @endif
+
+                <div class="flex justify-end space-x-3">
+                    <x-ui.button
+                        variant="secondary"
+                        wire:click="cancelDeleteJobSite"
+                        icon="x">
+                        Cancel
+                    </x-ui.button>
+                    <x-ui.button
+                        variant="danger"
+                        wire:click="deleteJobSite"
+                        icon="trash">
+                        Delete Job Site
+                    </x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
+    @endif
 </x-project-layout>

@@ -12,6 +12,10 @@ use App\Livewire\Client\ClientCreate;
 use App\Livewire\Client\ClientEdit;
 use App\Livewire\Client\ClientIndex;
 use App\Livewire\Client\ClientShow;
+use App\Livewire\Subcontractor\SubcontractorIndex;
+use App\Livewire\Subcontractor\SubcontractorCreate;
+use App\Livewire\Subcontractor\SubcontractorEdit;
+use App\Livewire\Subcontractor\SubcontractorShow;
 use App\Livewire\Project\ProjectCreate;
 use App\Livewire\Project\ProjectEdit;
 use App\Livewire\Project\ProjectIndex;
@@ -74,6 +78,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('clients/create', ClientCreate::class)->name('clients.create');
     Route::get('clients/{client}', ClientShow::class)->name('clients.show');
     Route::get('clients/{client}/edit', ClientEdit::class)->name('clients.edit');
+
+    // Subcontractor routes
+    Route::get('subcontractors', SubcontractorIndex::class)->name('subcontractors.index');
+    Route::get('subcontractors/create', SubcontractorCreate::class)->name('subcontractors.create');
+    Route::get('subcontractors/{subcontractor}', SubcontractorShow::class)->name('subcontractors.show');
+    Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)->name('subcontractors.edit');
 
     // Project routes
     Route::get('projects', ProjectIndex::class)->name('projects.index');

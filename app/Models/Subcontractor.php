@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Subcontractor extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'company_name',
+        'website',
+        'contact_name',
+        'contact_email',
+        'title',
+        'phone',
+        'street',
+        'address_2',
+        'neighborhood',
+        'city',
+        'state',
+        'postal_code',
+        'country',
+        'latitude',
+        'longitude',
+        'created_by',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get the user who created this subcontractor
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get all documents for this subcontractor
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SubcontractorDocument::class);
+    }
+
+    /**
+     * Get the full address as a formatted string
+     */
+    public function getFullAddressAttribute(): string
+    {
+        if ($this->country === 'BR') {
+            $addressParts = array_filter([
+                $this->street,
+                $this->address_2,
+                $this->neighborhood,
+                $this->city,
+                $this->state,
+                $this->postal_code,
+            ]);
+        } else {
+            $addressParts = array_filter([
+                $this->street,
+                $this->address_2,
+                $this->city,
+                $this->state,
+                $this->postal_code,
+            ]);
+        }
+
+        return implode(', ', $addressParts);
+    }
+
+    /**
+     * Get subcontractor initials for avatar
+     */
+    public function getInitialsAttribute(): string
+    {
+        $words = explode(' ', $this->company_name);
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+        }
+        return strtoupper(substr($this->company_name, 0, 2));
+    }
+}

@@ -178,12 +178,13 @@ MENU
 │   └── Users
 ├── Projects (submenu)
 │   ├── All Projects
+│   ├── Subcontractors
 │   ├── Clients
 │   └── Cost Codes
 ├── Catalog (submenu)
 │   ├── All Items
-│   └── Categories
-├── Suppliers (simple link)
+│   ├── Categories
+│   └── Suppliers
 └── Payments (simple link)
 ```
 

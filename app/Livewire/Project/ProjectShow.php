@@ -5,10 +5,14 @@ namespace App\Livewire\Project;
 use App\Enums\JobSiteStatus;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
+use App\Models\DailyReportImage;
+use App\Models\DailyReportManpower;
+use App\Models\DailyReport;
 use App\Models\Expense;
 use App\Models\ExpenseItem;
 use App\Models\JobSite;
 use App\Models\Project;
+use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\BudgetService;
 use Illuminate\Support\Facades\Auth;
@@ -82,6 +86,15 @@ class ProjectShow extends Component
     // Daily Reports properties
     public $dailyReportSearch = '';
     public $dailyReportLocationFilter = 'all';
+
+    // Delete Project modal
+    public $showDeleteProjectModal = false;
+    public $deleteProjectData = [];
+
+    // Delete Job Site modal
+    public $showDeleteJobSiteModal = false;
+    public $deletingJobSiteId = null;
+    public $deleteJobSiteData = [];
 
     // Job Site form properties
     public $showJobSiteForm = false;
@@ -1066,6 +1079,209 @@ class ProjectShow extends Component
         $this->showChangeOrderModal = false;
         $this->reset(['co_job_site_id', 'co_title', 'co_requested_date', 'co_description', 'co_amount', 'co_file', 'existingFilePath', 'editingChangeOrder']);
         $this->dispatch('close-modal', 'change-order-modal');
+    }
+
+    // =========================================================================
+    // DELETE PROJECT
+    // =========================================================================
+
+    public function confirmDeleteProject()
+    {
+        $project = Project::withCount([
+            'jobSites',
+            'expenses',
+            'changeOrders',
+            'dailyReports',
+            'budgets',
+        ])->findOrFail($this->project->id);
+
+        $purchaseOrdersCount = PurchaseOrder::where('project_id', $this->project->id)->count();
+
+        $this->deleteProjectData = [
+            'name' => $project->project_name,
+            'job_sites' => $project->job_sites_count,
+            'expenses' => $project->expenses_count,
+            'change_orders' => $project->change_orders_count,
+            'daily_reports' => $project->daily_reports_count,
+            'budgets' => $project->budgets_count,
+            'purchase_orders' => $purchaseOrdersCount,
+        ];
+
+        $this->showDeleteProjectModal = true;
+        $this->dispatch('open-modal', 'delete-project-modal');
+    }
+
+    public function deleteProject()
+    {
+        DB::transaction(function () {
+            $this->cleanupProjectFiles($this->project->id);
+            $this->project->delete();
+        });
+
+        session()->flash('message', 'Project deleted successfully!');
+        return $this->redirect(route('projects.index'), navigate: true);
+    }
+
+    public function cancelDeleteProject()
+    {
+        $this->showDeleteProjectModal = false;
+        $this->deleteProjectData = [];
+        $this->dispatch('close-modal', 'delete-project-modal');
+    }
+
+    protected function cleanupProjectFiles($projectId)
+    {
+        // Delete expense receipt files
+        $receiptPaths = Expense::where('project_id', $projectId)
+            ->whereNotNull('receipt_path')
+            ->pluck('receipt_path');
+
+        foreach ($receiptPaths as $path) {
+            Storage::delete($path);
+        }
+
+        // Delete change order files
+        $changeOrderPaths = ChangeOrder::where('project_id', $projectId)
+            ->whereNotNull('file_path')
+            ->pluck('file_path');
+
+        foreach ($changeOrderPaths as $path) {
+            Storage::delete($path);
+        }
+
+        // Delete purchase order receipt files
+        $poPaths = PurchaseOrder::where('project_id', $projectId)
+            ->whereNotNull('receipt_path')
+            ->pluck('receipt_path');
+
+        foreach ($poPaths as $path) {
+            Storage::delete($path);
+        }
+
+        // Delete daily report images (polymorphic - won't cascade)
+        $dailyReportIds = DailyReport::where('project_id', $projectId)->pluck('id');
+
+        if ($dailyReportIds->isNotEmpty()) {
+            $imagePaths = DailyReportImage::whereIn('imageable_id', $dailyReportIds)
+                ->where('imageable_type', DailyReport::class)
+                ->pluck('file_path');
+
+            foreach ($imagePaths as $path) {
+                Storage::delete($path);
+            }
+
+            // Also get manpower log images
+            $manpowerIds = DailyReportManpower::whereIn('daily_report_id', $dailyReportIds)->pluck('id');
+
+            if ($manpowerIds->isNotEmpty()) {
+                $manpowerImagePaths = DailyReportImage::whereIn('imageable_id', $manpowerIds)
+                    ->where('imageable_type', DailyReportManpower::class)
+                    ->pluck('file_path');
+
+                foreach ($manpowerImagePaths as $path) {
+                    Storage::delete($path);
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // DELETE JOB SITE
+    // =========================================================================
+
+    public function confirmDeleteJobSite($jobSiteId)
+    {
+        $jobSite = JobSite::withCount([
+            'expenses',
+            'changeOrders',
+            'dailyReports',
+        ])->findOrFail($jobSiteId);
+
+        $hasBudget = $jobSite->budget()->exists() ? 1 : 0;
+
+        $this->deletingJobSiteId = $jobSiteId;
+        $this->deleteJobSiteData = [
+            'name' => $jobSite->job_site_name,
+            'expenses' => $jobSite->expenses_count,
+            'change_orders' => $jobSite->change_orders_count,
+            'daily_reports' => $jobSite->daily_reports_count,
+            'budgets' => $hasBudget,
+        ];
+
+        $this->showDeleteJobSiteModal = true;
+        $this->dispatch('open-modal', 'delete-jobsite-modal');
+    }
+
+    public function deleteJobSite()
+    {
+        $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
+
+        DB::transaction(function () use ($jobSite) {
+            $this->cleanupJobSiteFiles($jobSite->id);
+            $jobSite->delete();
+        });
+
+        $this->showDeleteJobSiteModal = false;
+        $this->deletingJobSiteId = null;
+        $this->deleteJobSiteData = [];
+
+        session()->flash('message', 'Job site deleted successfully!');
+        $this->project->refresh();
+    }
+
+    public function cancelDeleteJobSite()
+    {
+        $this->showDeleteJobSiteModal = false;
+        $this->deletingJobSiteId = null;
+        $this->deleteJobSiteData = [];
+        $this->dispatch('close-modal', 'delete-jobsite-modal');
+    }
+
+    protected function cleanupJobSiteFiles($jobSiteId)
+    {
+        // Delete expense receipt files
+        $receiptPaths = Expense::where('job_site_id', $jobSiteId)
+            ->whereNotNull('receipt_path')
+            ->pluck('receipt_path');
+
+        foreach ($receiptPaths as $path) {
+            Storage::delete($path);
+        }
+
+        // Delete change order files
+        $changeOrderPaths = ChangeOrder::where('job_site_id', $jobSiteId)
+            ->whereNotNull('file_path')
+            ->pluck('file_path');
+
+        foreach ($changeOrderPaths as $path) {
+            Storage::delete($path);
+        }
+
+        // Delete daily report images (polymorphic - won't cascade)
+        $dailyReportIds = DailyReport::where('job_site_id', $jobSiteId)->pluck('id');
+
+        if ($dailyReportIds->isNotEmpty()) {
+            $imagePaths = DailyReportImage::whereIn('imageable_id', $dailyReportIds)
+                ->where('imageable_type', DailyReport::class)
+                ->pluck('file_path');
+
+            foreach ($imagePaths as $path) {
+                Storage::delete($path);
+            }
+
+            // Also get manpower log images
+            $manpowerIds = DailyReportManpower::whereIn('daily_report_id', $dailyReportIds)->pluck('id');
+
+            if ($manpowerIds->isNotEmpty()) {
+                $manpowerImagePaths = DailyReportImage::whereIn('imageable_id', $manpowerIds)
+                    ->where('imageable_type', DailyReportManpower::class)
+                    ->pluck('file_path');
+
+                foreach ($manpowerImagePaths as $path) {
+                    Storage::delete($path);
+                }
+            }
+        }
     }
 
     public function render()

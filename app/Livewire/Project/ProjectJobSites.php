@@ -3,9 +3,16 @@
 namespace App\Livewire\Project;
 
 use App\Enums\JobSiteStatus;
+use App\Models\ChangeOrder;
+use App\Models\DailyReport;
+use App\Models\DailyReportImage;
+use App\Models\DailyReportManpower;
+use App\Models\Expense;
 use App\Models\JobSite;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
 class ProjectJobSites extends Component
@@ -14,6 +21,11 @@ class ProjectJobSites extends Component
 
     // Search
     public $jobSiteSearch = '';
+
+    // Delete Job Site modal
+    public $showDeleteJobSiteModal = false;
+    public $deletingJobSiteId = null;
+    public $deleteJobSiteData = [];
 
     // Form properties
     public $showJobSiteForm = false;
@@ -175,6 +187,97 @@ class ProjectJobSites extends Component
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
             'email', 'job_amount', 'status', 'editingJobSite'
         ]);
+    }
+
+    public function confirmDeleteJobSite(int $jobSiteId): void
+    {
+        $jobSite = JobSite::withCount([
+            'expenses',
+            'changeOrders',
+            'dailyReports',
+        ])->findOrFail($jobSiteId);
+
+        $hasBudget = $jobSite->budget()->exists() ? 1 : 0;
+
+        $this->deletingJobSiteId = $jobSiteId;
+        $this->deleteJobSiteData = [
+            'name' => $jobSite->job_site_name,
+            'expenses' => $jobSite->expenses_count,
+            'change_orders' => $jobSite->change_orders_count,
+            'daily_reports' => $jobSite->daily_reports_count,
+            'budgets' => $hasBudget,
+        ];
+
+        $this->showDeleteJobSiteModal = true;
+        $this->dispatch('open-modal', 'delete-jobsite-modal');
+    }
+
+    public function deleteJobSite(): void
+    {
+        $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
+
+        DB::transaction(function () use ($jobSite) {
+            $this->cleanupJobSiteFiles($jobSite->id);
+            $jobSite->delete();
+        });
+
+        $this->showDeleteJobSiteModal = false;
+        $this->deletingJobSiteId = null;
+        $this->deleteJobSiteData = [];
+
+        session()->flash('message', 'Job site deleted successfully!');
+        $this->project->refresh();
+    }
+
+    public function cancelDeleteJobSite(): void
+    {
+        $this->showDeleteJobSiteModal = false;
+        $this->deletingJobSiteId = null;
+        $this->deleteJobSiteData = [];
+        $this->dispatch('close-modal', 'delete-jobsite-modal');
+    }
+
+    protected function cleanupJobSiteFiles(int $jobSiteId): void
+    {
+        $receiptPaths = Expense::where('job_site_id', $jobSiteId)
+            ->whereNotNull('receipt_path')
+            ->pluck('receipt_path');
+
+        foreach ($receiptPaths as $path) {
+            Storage::delete($path);
+        }
+
+        $changeOrderPaths = ChangeOrder::where('job_site_id', $jobSiteId)
+            ->whereNotNull('file_path')
+            ->pluck('file_path');
+
+        foreach ($changeOrderPaths as $path) {
+            Storage::delete($path);
+        }
+
+        $dailyReportIds = DailyReport::where('job_site_id', $jobSiteId)->pluck('id');
+
+        if ($dailyReportIds->isNotEmpty()) {
+            $imagePaths = DailyReportImage::whereIn('imageable_id', $dailyReportIds)
+                ->where('imageable_type', DailyReport::class)
+                ->pluck('file_path');
+
+            foreach ($imagePaths as $path) {
+                Storage::delete($path);
+            }
+
+            $manpowerIds = DailyReportManpower::whereIn('daily_report_id', $dailyReportIds)->pluck('id');
+
+            if ($manpowerIds->isNotEmpty()) {
+                $manpowerImagePaths = DailyReportImage::whereIn('imageable_id', $manpowerIds)
+                    ->where('imageable_type', DailyReportManpower::class)
+                    ->pluck('file_path');
+
+                foreach ($manpowerImagePaths as $path) {
+                    Storage::delete($path);
+                }
+            }
+        }
     }
 
     public function render()
