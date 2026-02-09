@@ -47,6 +47,22 @@
    - Lazy loading - no queries on page load
    - Optimized for thousands of projects
 
+### Data Management
+
+6. **[Delete Functionality](./delete-functionality.md)** - Project & Job Site deletion with confirmation modals
+   - Confirmation modal with related data counts (not just `wire:confirm`)
+   - Manual file cleanup before cascade delete (Eloquent events won't fire on cascade)
+   - Polymorphic image cleanup (DailyReportImage)
+   - DB transaction wrapping
+   - Actions slot pattern for shared layouts
+
+### Architecture
+
+7. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
+8. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
+9. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
+10. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+
 ### Quick Reference
 
 #### Storage Format

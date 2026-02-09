@@ -54,6 +54,7 @@ Props for `<x-jobsite-nav>`: `$jobSite`, `$active`
 1. **`resources/views/components/jobsite-layout.blade.php`**
    - Shared layout with breadcrumbs (Projects > Project Name > Job Sites > Job Site Name > Section)
    - Page header with title and "Back to Project" button
+   - Optional `actions` slot in header for injecting buttons (e.g., Delete button)
    - Success message flash
    - `<x-jobsite-nav>` integration
    - Content slot
@@ -68,6 +69,7 @@ Props for `<x-jobsite-nav>`: `$jobSite`, `$active`
    - Lightweight component receiving `JobSite` via route model binding
    - Loads `project`, `createdBy` relationships
    - Queries change orders and expenses for summary totals
+   - Delete functionality with confirmation modal, file cleanup, and DB transaction (see `docs/delete-functionality.md`)
    - Layout: `components.layouts.app`
 
 4. **`resources/views/livewire/job-site/job-site-overview.blade.php`**

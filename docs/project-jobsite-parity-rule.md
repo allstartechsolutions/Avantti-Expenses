@@ -43,6 +43,7 @@ When enhancing a feature (e.g., adding a new filter, a new column, export functi
 | Daily Reports | `ProjectDailyReports` | `JobSiteShow` (daily reports tab) |
 | Purchase Orders | `ProjectPurchaseOrders` | `JobSiteShow` (purchase orders tab) |
 | Budget | `ProjectBudget` | `JobSiteShow` (budget tab) |
+| Delete | `ProjectIndex`, `ProjectOverview` | `ProjectJobSites`, `JobSiteOverview` |
 
 > **Note:** Job Site pages are being migrated from tabs to standalone page components (see `docs/jobsite-tabs-to-pages.md`). Update this table as migration progresses.
 
