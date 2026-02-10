@@ -5,6 +5,7 @@ namespace App\Livewire\Catalog;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\Supplier;
+use App\Models\TaxRate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -26,6 +27,10 @@ class CatalogItemCreate extends Component
     // Pricing
     public $current_cost = '';
     public $billing_type = '';
+
+    // Tax
+    public $is_taxable = false;
+    public $tax_rate_id = '';
 
     protected function rules()
     {
@@ -50,7 +55,22 @@ class CatalogItemCreate extends Component
             $rules['billing_type'] = 'required|in:hourly,fixed,daily,weekly,monthly';
         }
 
+        $rules['is_taxable'] = 'boolean';
+        if ($this->is_taxable) {
+            $rules['tax_rate_id'] = 'required|exists:tax_rates,id';
+        }
+
         return $rules;
+    }
+
+    public function updatedIsTaxable($value)
+    {
+        if ($value) {
+            $default = TaxRate::where('is_default', true)->first();
+            $this->tax_rate_id = $default?->id ?? '';
+        } else {
+            $this->tax_rate_id = '';
+        }
     }
 
     protected $validationAttributes = [
@@ -61,6 +81,7 @@ class CatalogItemCreate extends Component
         'usage_unit' => 'usage unit',
         'units_per_purchase' => 'units per purchase',
         'billing_type' => 'billing type',
+        'tax_rate_id' => 'tax rate',
     ];
 
     public function save()
@@ -80,6 +101,8 @@ class CatalogItemCreate extends Component
             'units_per_purchase' => $this->type === 'product' ? $this->units_per_purchase : null,
             'current_cost' => $this->current_cost,
             'billing_type' => in_array($this->type, ['service', 'rental']) ? $this->billing_type : null,
+            'is_taxable' => $this->is_taxable,
+            'tax_rate_id' => $this->is_taxable && $this->tax_rate_id ? $this->tax_rate_id : null,
             'created_by' => Auth::id(),
         ]);
 
@@ -98,10 +121,12 @@ class CatalogItemCreate extends Component
             ->get();
 
         $suppliers = Supplier::orderBy('name')->get();
+        $taxRates = TaxRate::orderBy('state')->get();
 
         return view('livewire.catalog.catalog-item-create', [
             'categories' => $categories,
             'suppliers' => $suppliers,
+            'taxRates' => $taxRates,
         ])->layout('components.layouts.app');
     }
 }

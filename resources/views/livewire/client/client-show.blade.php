@@ -19,6 +19,23 @@
                     icon="edit">
                     Edit Client
                 </x-ui.button>
+                @if($projectsCount > 0)
+                    <span title="Cannot delete: linked to {{ $projectsCount }} project(s)">
+                        <x-ui.button
+                            variant="danger"
+                            icon="trash"
+                            disabled>
+                            Delete
+                        </x-ui.button>
+                    </span>
+                @else
+                    <x-ui.button
+                        variant="danger"
+                        wire:click="confirmDeleteClient"
+                        icon="trash">
+                        Delete
+                    </x-ui.button>
+                @endif
             </div>
         </div>
     </div>
@@ -257,4 +274,41 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Client Confirmation Modal -->
+    @if($showDeleteModal)
+        <x-ui.modal name="delete-client-modal" :show="true" maxWidth="lg">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
+                    Delete Client
+                </h3>
+
+                <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
+                    Are you sure you want to delete <strong>{{ $deleteClientData['name'] ?? $client->company_name }}</strong>?
+                    This action <strong>cannot be undone</strong>.
+                </p>
+
+                <div class="flex justify-end space-x-3">
+                    <x-ui.button
+                        variant="secondary"
+                        wire:click="cancelDeleteClient"
+                        icon="x">
+                        Cancel
+                    </x-ui.button>
+                    <x-ui.button
+                        variant="danger"
+                        wire:click="deleteClient"
+                        icon="trash">
+                        Delete Client
+                    </x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
+    @endif
 </div>

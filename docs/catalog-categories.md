@@ -319,3 +319,76 @@ $categories = CatalogCategory::active()
 ```
 
 This ensures users only see relevant categories for the item type they're creating/editing.
+
+---
+
+## Catalog Item Tax Configuration
+
+Catalog items support an optional taxable flag with a linked tax rate from the System Settings tax rates.
+
+### Database Fields
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `is_taxable` | boolean | Whether the item is taxable (default: false) |
+| `tax_rate_id` | bigint (nullable) | Foreign key to `tax_rates` table (nullOnDelete) |
+
+**Migration:** `database/migrations/2026_02_09_154514_add_tax_fields_to_catalog_items_table.php`
+
+### How It Works
+
+1. **Toggle OFF (default)**: Item is not taxable. `tax_rate_id` is null.
+2. **Toggle ON**: A tax rate dropdown appears. The system default tax rate is auto-selected.
+3. **Tax rate is a reference (FK)**, not a hardcoded value. When a tax rate is updated in System Settings, all catalog items using that rate automatically reflect the new rate.
+4. If a tax rate is deleted from System Settings, the `tax_rate_id` is set to null (`nullOnDelete`), and the item remains taxable but without an assigned rate.
+
+### Auto-Select Default Behavior
+
+When the taxable toggle is turned on, the `updatedIsTaxable()` Livewire hook queries for the system default tax rate and pre-selects it:
+
+```php
+public function updatedIsTaxable($value)
+{
+    if ($value) {
+        $default = TaxRate::where('is_default', true)->first();
+        $this->tax_rate_id = $default?->id ?? '';
+    } else {
+        $this->tax_rate_id = '';
+    }
+}
+```
+
+### Tax Rate Dropdown
+
+The dropdown displays all tax rates ordered by state in the format:
+```
+State - Rate% (Default)
+```
+Example: `TX - 8.25% (Default)`
+
+The `(Default)` label is only shown for the system default tax rate.
+
+### Validation Rules
+
+```php
+'is_taxable' => 'boolean',
+'tax_rate_id' => 'required|exists:tax_rates,id', // Only when is_taxable is true
+```
+
+### Model Relationship
+
+```php
+// CatalogItem model
+public function taxRate(): BelongsTo
+{
+    return $this->belongsTo(TaxRate::class);
+}
+```
+
+### Affected Files
+
+- **Model:** `app/Models/CatalogItem.php` — added `is_taxable`, `tax_rate_id` to fillable/casts, added `taxRate()` relationship
+- **Create:** `app/Livewire/Catalog/CatalogItemCreate.php` — added tax properties, validation, `updatedIsTaxable()`, passes `$taxRates` to view
+- **Edit:** `app/Livewire/Catalog/CatalogItemEdit.php` — same as create, plus mounts existing values
+- **Create View:** `resources/views/livewire/catalog/catalog-item-create.blade.php` — Tax section after Pricing
+- **Edit View:** `resources/views/livewire/catalog/catalog-item-edit.blade.php` — Tax section after Pricing

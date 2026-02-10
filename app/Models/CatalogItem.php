@@ -26,11 +26,14 @@ class CatalogItem extends Model
         'units_per_purchase',
         'current_cost',
         'billing_type',
+        'is_taxable',
+        'tax_rate_id',
         'created_by',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_taxable' => 'boolean',
         'units_per_purchase' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -63,6 +66,14 @@ class CatalogItem extends Model
                 ]);
             }
         });
+    }
+
+    /**
+     * Get the tax rate
+     */
+    public function taxRate(): BelongsTo
+    {
+        return $this->belongsTo(TaxRate::class);
     }
 
     /**

@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
-use App\Livewire\Company\CompanyCreate;
+use App\Livewire\Company\CompanyInfo;
 use App\Livewire\User\UserCreate;
 use App\Livewire\User\UserEdit;
 use App\Livewire\User\UserIndex;
@@ -54,6 +54,11 @@ use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
 use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
 use App\Livewire\PurchaseOrder\PurchaseOrderShow;
 use App\Livewire\Project\ProjectPurchaseOrders;
+use App\Livewire\Estimate\EstimateIndex;
+use App\Livewire\Estimate\EstimateCreate;
+use App\Livewire\Estimate\EstimateShow;
+use App\Livewire\Estimate\EstimateEdit;
+use App\Livewire\SystemSettings\SettingsIndex;
 
 Route::get('/', function () {
     return view('welcome');
@@ -64,8 +69,8 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
-    // Company settings (single company setup)
-    Route::get('company/settings', CompanyCreate::class)->name('company.settings');
+    // Company info
+    Route::get('company/info', CompanyInfo::class)->name('company.info');
 
     // User routes
     Route::get('users', UserIndex::class)->name('users.index');
@@ -146,6 +151,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Payment routes
     Route::get('payments', PaymentDashboard::class)->name('payments.index');
+
+    // Estimate routes
+    Route::get('estimates', EstimateIndex::class)->name('estimates.index');
+    Route::get('estimates/create', EstimateCreate::class)->name('estimates.create');
+    Route::get('estimates/{estimate}', EstimateShow::class)->name('estimates.show');
+    Route::get('estimates/{estimate}/edit', EstimateEdit::class)->name('estimates.edit');
+
+    // System Settings routes
+    Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');
 
     // Cost Code Template routes
     Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');

@@ -185,7 +185,11 @@ MENU
 │   ├── All Items
 │   ├── Categories
 │   └── Suppliers
-└── Payments (simple link)
+├── Payments (simple link)
+├── Estimates (simple link)
+└── Settings (submenu)
+    ├── Tax Rates
+    └── Messages
 ```
 
 ---

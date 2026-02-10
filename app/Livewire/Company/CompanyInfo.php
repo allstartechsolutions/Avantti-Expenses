@@ -8,7 +8,7 @@ use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-class CompanyCreate extends Component
+class CompanyInfo extends Component
 {
     use WithFileUploads;
 
@@ -134,12 +134,12 @@ class CompanyCreate extends Component
         $message = $this->company ? 'Company updated successfully!' : 'Company created successfully!';
         session()->flash('message', $message);
 
-        return redirect()->route('company.settings');
+        return redirect()->route('company.info');
     }
 
     public function render()
     {
-        return view('livewire.company.company-create')
+        return view('livewire.company.company-info')
             ->layout('components.layouts.app');
     }
 }

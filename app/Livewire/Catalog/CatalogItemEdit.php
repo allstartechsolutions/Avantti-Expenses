@@ -5,6 +5,7 @@ namespace App\Livewire\Catalog;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\Supplier;
+use App\Models\TaxRate;
 use Livewire\Component;
 
 class CatalogItemEdit extends Component
@@ -28,6 +29,10 @@ class CatalogItemEdit extends Component
     public $current_cost;
     public $billing_type;
 
+    // Tax
+    public $is_taxable;
+    public $tax_rate_id;
+
     public function mount(CatalogItem $item)
     {
         $this->item = $item;
@@ -43,6 +48,8 @@ class CatalogItemEdit extends Component
         $this->units_per_purchase = $item->units_per_purchase;
         $this->current_cost = $item->current_cost;
         $this->billing_type = $item->billing_type;
+        $this->is_taxable = $item->is_taxable;
+        $this->tax_rate_id = $item->tax_rate_id;
     }
 
     protected function rules()
@@ -68,7 +75,22 @@ class CatalogItemEdit extends Component
             $rules['billing_type'] = 'required|in:hourly,fixed,daily,weekly,monthly';
         }
 
+        $rules['is_taxable'] = 'boolean';
+        if ($this->is_taxable) {
+            $rules['tax_rate_id'] = 'required|exists:tax_rates,id';
+        }
+
         return $rules;
+    }
+
+    public function updatedIsTaxable($value)
+    {
+        if ($value) {
+            $default = TaxRate::where('is_default', true)->first();
+            $this->tax_rate_id = $default?->id ?? '';
+        } else {
+            $this->tax_rate_id = '';
+        }
     }
 
     protected $validationAttributes = [
@@ -79,6 +101,7 @@ class CatalogItemEdit extends Component
         'usage_unit' => 'usage unit',
         'units_per_purchase' => 'units per purchase',
         'billing_type' => 'billing type',
+        'tax_rate_id' => 'tax rate',
     ];
 
     public function save()
@@ -99,6 +122,8 @@ class CatalogItemEdit extends Component
             'units_per_purchase' => $this->type === 'product' ? $this->units_per_purchase : null,
             'current_cost' => $this->current_cost,
             'billing_type' => in_array($this->type, ['service', 'rental']) ? $this->billing_type : null,
+            'is_taxable' => $this->is_taxable,
+            'tax_rate_id' => $this->is_taxable && $this->tax_rate_id ? $this->tax_rate_id : null,
         ]);
 
         session()->flash('message', 'Catalog item updated successfully!');
@@ -116,12 +141,14 @@ class CatalogItemEdit extends Component
             ->get();
 
         $suppliers = Supplier::orderBy('name')->get();
+        $taxRates = TaxRate::orderBy('state')->get();
 
         $priceHistory = $this->item->priceHistory()->with('changedBy')->take(10)->get();
 
         return view('livewire.catalog.catalog-item-edit', [
             'categories' => $categories,
             'suppliers' => $suppliers,
+            'taxRates' => $taxRates,
             'priceHistory' => $priceHistory,
         ])->layout('components.layouts.app');
     }

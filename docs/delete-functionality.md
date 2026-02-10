@@ -1,8 +1,8 @@
-# Delete Functionality: Projects & Job Sites
+# Delete Functionality: Projects, Job Sites & Clients
 
 ## Overview
 
-Delete functionality for Projects and Job Sites with confirmation modals that warn about irreversible data loss. Modals display counts of all related data that will be permanently deleted. All associated files are cleaned up from storage before the database records are cascade-deleted.
+Delete functionality for Projects, Job Sites, and Clients with confirmation modals that warn about irreversible data loss. Project and Job Site modals display counts of all related data that will be permanently deleted, with file cleanup before cascade delete. Client delete is only allowed when the client has no linked projects.
 
 ---
 
@@ -270,6 +270,84 @@ Both `project-layout.blade.php` and `jobsite-layout.blade.php` now support an op
 ```
 
 This pattern can be reused for any future buttons that need to appear in the header area of project or job site pages.
+
+---
+
+## Client Delete
+
+### Behavior
+
+Unlike Projects and Job Sites, **client delete is conditional**. A client can only be deleted if it has **zero linked projects**. If the client is tied to any project, the Delete button is **visually disabled** (grayed out with 50% opacity and `not-allowed` cursor). A native browser tooltip on hover explains why: "Cannot delete: linked to X project(s)".
+
+There is no file cleanup needed for clients (they don't store files).
+
+### Where Delete Buttons Appear
+
+| Page | Component | Route | Button Location |
+|------|-----------|-------|-----------------|
+| Clients Index | `ClientIndex` | `clients.index` | Actions column in table (alongside View/Edit) |
+| Client Show | `ClientShow` | `clients.show` | Header (alongside Back/Edit buttons) |
+
+### Disabled Button Pattern
+
+The delete button is conditionally rendered as either enabled or disabled based on the projects count:
+
+```blade
+@if($client->projects_count > 0)
+    <span title="Cannot delete: linked to {{ $client->projects_count }} project(s)">
+        <x-ui.button variant="danger" size="sm" icon="trash" disabled>
+            Delete
+        </x-ui.button>
+    </span>
+@else
+    <x-ui.button variant="danger" size="sm"
+        wire:click="confirmDeleteClient({{ $client->id }})" icon="trash">
+        Delete
+    </x-ui.button>
+@endif
+```
+
+The `<x-ui.button>` component has built-in `disabled:opacity-50 disabled:cursor-not-allowed` styles. The wrapping `<span title="...">` provides the hover tooltip (since disabled buttons don't fire their own title in all browsers).
+
+### Data Loading
+
+- **ClientIndex**: uses `->withCount('projects')` in the query so each row has `$client->projects_count`
+- **ClientShow**: loads `$this->projectsCount = Project::where('client_id', $client->id)->count()` in `mount()`
+
+### Protection Logic
+
+Even though the button is disabled in the UI, the server-side guard still exists as a safety net in `deleteClient()`:
+
+```php
+// Re-check as a safety guard (race condition protection)
+if (Project::where('client_id', $client->id)->exists()) {
+    $this->cancelDeleteClient();
+    return;
+}
+```
+
+### Modal Content
+
+Since clients can only be deleted when they have no linked data, the modal is simpler than Project/Job Site modals:
+- Warning icon
+- "Are you sure?" message with "cannot be undone"
+- Cancel and Delete buttons
+- No related data list (there's nothing to cascade)
+
+### After Deletion
+
+- From `ClientIndex`: stays on the same page (list refreshes)
+- From `ClientShow`: redirects to `route('clients.index')` with a success flash message
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `app/Models/Client.php` | Added `projects()` HasMany relationship |
+| `app/Livewire/Client/ClientIndex.php` | Added `withCount('projects')` to query, added `confirmDeleteClient()`, `deleteClient()`, `cancelDeleteClient()` methods and modal state properties |
+| `app/Livewire/Client/ClientShow.php` | Added `$projectsCount` property loaded in `mount()`, added `confirmDeleteClient()`, `deleteClient()`, `cancelDeleteClient()` methods and modal state properties |
+| `resources/views/livewire/client/client-index.blade.php` | Replaced `x-ui.view-edit-buttons` with View/Edit/Delete buttons (Delete disabled when has projects), added delete modal |
+| `resources/views/livewire/client/client-show.blade.php` | Added Delete button in header (disabled when has projects), added delete modal |
 
 ---
 
