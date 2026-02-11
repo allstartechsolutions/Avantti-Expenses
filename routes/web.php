@@ -64,9 +64,10 @@ use App\Livewire\Invoice\InvoiceShow;
 use App\Livewire\Invoice\InvoiceEdit;
 use App\Http\Controllers\InvoicePdfController;
 use App\Livewire\SystemSettings\SettingsIndex;
+use App\Livewire\Profile\UserProfile;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 })->name('home');
 
 Route::view('dashboard', 'dashboard')
@@ -74,6 +75,9 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    // Profile
+    Route::get('profile', UserProfile::class)->name('profile');
+
     // Company info
     Route::get('company/info', CompanyInfo::class)->name('company.info');
 
