@@ -13,8 +13,11 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 - Per-item tax calculations with configurable tax rates
 - Predefined payment terms (Net 15/30/60/90) with auto-calculated due dates
 - Message templates from DocumentMessage system (type=invoice), editable per invoice
-- Status workflow: Draft → Sent → Pending → Paid
-- Past due detection (pending + due date in past)
+- Status workflow: Draft → Sent → Pending → Partial → Paid
+- Past due detection (pending/partial + due date in past)
+- Payment recording (manual and credit card via CardPointe)
+- Partial payment tracking with progress bar
+- Client saved payment methods (CardPointe profiles)
 - Sequential invoice numbering (INV-0001, INV-0002, etc.)
 - Conversion from accepted estimates (copies all items, discounts, taxes)
 - Status change audit trail with user attribution
@@ -36,7 +39,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 | invoice_date | date | Date of invoice |
 | terms | enum | net_15, net_30, net_60, net_90 |
 | due_date | date | Auto-calculated from invoice_date + terms |
-| status | enum | draft, sent, pending, paid (default: draft) |
+| status | enum | draft, sent, pending, partial, paid (default: draft) |
 | message_title | string | Snapshot from DocumentMessage (nullable) |
 | message_body | text | Snapshot, editable by user (nullable) |
 | discount_type | enum | percentage, fixed (nullable) |
@@ -96,8 +99,8 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 |--------|------|-------------|
 | id | bigint | Primary key |
 | invoice_id | bigint | FK to invoices (cascadeOnDelete) |
-| old_status | enum | draft, sent, pending, paid (nullable — null for creation) |
-| new_status | enum | draft, sent, pending, paid |
+| old_status | enum | draft, sent, pending, partial, paid (nullable — null for creation) |
+| new_status | enum | draft, sent, pending, partial, paid |
 | changed_by | bigint | FK to users |
 | timestamps | | created_at, updated_at |
 
@@ -118,6 +121,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 - `createdBy()` - BelongsTo User
 - `emailsSent()` - HasMany InvoiceEmail (ordered by sent_at desc)
 - `statusHistories()` - HasMany InvoiceStatusHistory (ordered by created_at desc)
+- `payments()` - HasMany InvoicePayment (ordered by payment_number)
 
 **Money Accessors (cents ↔ dollars):**
 - `subtotal`, `taxTotal`, `totalAmount`, `discountAmount`
@@ -129,10 +133,17 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 - `isDraft()` - Status is 'draft'
 - `isSent()` - Status is 'sent'
 - `isPending()` - Status is 'pending'
+- `isPartial()` - Status is 'partial'
 - `isPaid()` - Status is 'paid'
-- `isPastDue()` - Pending + due date is in the past
+- `isPastDue()` - Pending or partial + due date is in the past
 - `canBeEdited()` - Returns true if draft or sent
 - `canBeSent()` - Returns true if draft with items
+
+**Payment Helpers:**
+- `getAmountPaid()` - Sum of completed payments in dollars
+- `getBalanceDue()` - Total minus amount paid
+- `getPaymentProgress()` - Percentage paid (0-100)
+- `updateStatusFromPayments()` - Auto-transitions status based on payments (paid/partial/pending)
 
 **Static Methods:**
 - `generateInvoiceNumber()` - Generates next sequential INV-XXXX number
@@ -173,16 +184,17 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 ## Status Workflow
 
 ```
-┌─────────┐     markAsSent()     ┌────────┐     markAsPending()     ┌─────────┐
-│  DRAFT  │ ───────────────────► │  SENT  │ ──────────────────────► │ PENDING │
-└─────────┘                      └────────┘                         └─────────┘
-                                      │                                  │
-                                      │          markAsPaid()            │ markAsPaid()
-                                      └──────────────┐──────────────────┘
-                                                      ▼
-                                                 ┌─────────┐
-                                                 │  PAID   │
-                                                 └─────────┘
+                                                         ┌──────────┐
+┌─────────┐    markAsSent()    ┌────────┐               │ PARTIAL  │◄──┐
+│  DRAFT  │───────────────────►│  SENT  │──┐            └──────────┘   │
+└─────────┘                    └────────┘  │                 │          │
+                                    │      │   payment       │  payment │ void/refund
+                         markAsPending()   │                 │          │
+                                    │      │                 ▼          │
+                                    ▼      │            ┌─────────┐    │
+                              ┌─────────┐  └───────────►│  PAID   │────┘
+                              │ PENDING │──────────────►└─────────┘
+                              └─────────┘   payment
 ```
 
 ### Status Transition Rules
@@ -194,8 +206,11 @@ All transitions are logged to `invoice_status_histories` with the user who made 
 | draft | sent | `markAsSent()` | Must be draft |
 | draft | sent | `sendEmail()` | Auto-transition when emailing a draft |
 | sent | pending | `markAsPending()` | Must be sent |
-| sent | paid | `markAsPaid()` | Must be sent |
-| pending | paid | `markAsPaid()` | Must be pending |
+| sent/pending | partial | `updateStatusFromPayments()` | Partial payment recorded |
+| sent/pending/partial | paid | `updateStatusFromPayments()` | Full balance paid |
+| partial/paid | pending | `updateStatusFromPayments()` | Payments voided/refunded |
+
+See **[Invoice Payments Module](./invoice-payments-module.md)** for full payment workflow details.
 
 ### Edit/Delete Permissions
 
@@ -247,13 +262,18 @@ All transitions are logged to `invoice_status_histories` with the user who made 
 - Two-column layout: main content + sidebar
 - Invoice details card (client, project, jobsite, dates, terms, created by, source estimate link, timestamps)
 - Items table with all columns and totals breakdown
+- Payment summary (amount paid, balance due, progress bar)
+- Payment history table with void/refund actions
 - Message display (rendered HTML)
 - Email History card (shown when emails have been sent)
+- Credit card payment modal with iFrame tokenizer and saved cards dropdown
+- Manual payment modal (cash, check, bank transfer, etc.)
 
 **Sidebar Actions (status-based):**
 - **Draft:** Email Invoice, Mark as Sent, View/Download PDF, Edit, Delete
-- **Sent:** Email Invoice, Mark as Pending, Mark as Paid, View/Download PDF, Edit, Delete
-- **Pending:** Past due warning (if applicable), Mark as Paid, Email Invoice, View/Download PDF
+- **Sent:** Email Invoice, Record Payment, Mark as Pending, View/Download PDF, Edit, Delete
+- **Pending:** Past due warning (if applicable), Record Payment, Email Invoice, View/Download PDF
+- **Partial:** Past due warning (if applicable), Record Payment, Email Invoice, View/Download PDF
 - **Paid:** Paid confirmation with timestamp, View/Download PDF
 
 **Sidebar Cards:**
@@ -278,7 +298,7 @@ Inline component rendered inside `InvoiceShow` via `<livewire:invoice.invoice-se
 
 **Features:**
 - Pre-fills recipient from client email, subject from company name + invoice number
-- Generates default body with client name, invoice number, total amount, due date
+- Generates default body with client name, invoice number, and inline Invoice Summary table (number, date, due date, total, amount paid if any, balance due)
 - CC field (comma-separated)
 - TinyMCE editor for body
 - Sends email with PDF attachment
@@ -314,12 +334,27 @@ Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'
 - `database/migrations/2026_02_10_200001_create_invoice_items_table.php`
 - `database/migrations/2026_02_10_200002_create_invoice_emails_table.php`
 - `database/migrations/2026_02_10_210001_create_invoice_status_histories_table.php`
+- `database/migrations/2026_02_11_100000_create_invoice_payments_table.php`
+- `database/migrations/2026_02_11_100001_add_partial_status_to_invoices_table.php`
+- `database/migrations/2026_02_11_100002_add_partial_status_to_invoice_status_histories_table.php`
+- `database/migrations/2026_02_11_200000_create_client_payment_methods_table.php`
+- `database/migrations/2026_02_11_200003_add_soft_deletes_to_client_payment_methods_table.php`
+- `database/migrations/2026_02_11_200004_add_card_name_to_client_payment_methods_table.php`
+- `database/migrations/2026_02_11_200005_add_cardpointe_profile_id_to_clients_table.php`
 
 **Models:**
 - `app/Models/Invoice.php`
 - `app/Models/InvoiceItem.php`
 - `app/Models/InvoiceEmail.php`
 - `app/Models/InvoiceStatusHistory.php`
+- `app/Models/InvoicePayment.php`
+- `app/Models/ClientPaymentMethod.php`
+
+**Services:**
+- `app/Services/CardPointeService.php`
+
+**Exceptions:**
+- `app/Exceptions/CardPointeException.php`
 
 **Controllers:**
 - `app/Http/Controllers/InvoicePdfController.php`
@@ -365,4 +400,11 @@ All monetary values are stored in cents (unsignedBigInteger) in the database and
 - If the invoice is deleted, `converted_to_invoice_id` on the estimate is cleared, making the estimate available for conversion again
 
 ### Past Due Detection
-Invoices with status `pending` and a `due_date` in the past are flagged as "Past Due" with a red badge and warning in the sidebar.
+Invoices with status `pending` or `partial` and a `due_date` in the past are flagged as "Past Due" with a red badge and warning in the sidebar.
+
+### Payments & CardPointe Integration
+See **[Invoice Payments Module](./invoice-payments-module.md)** for full documentation on:
+- Manual and credit card payment recording
+- CardPointe Gateway integration (authorize, void, refund)
+- Client saved payment methods (CardPointe profiles)
+- Partial payment tracking and automatic status transitions

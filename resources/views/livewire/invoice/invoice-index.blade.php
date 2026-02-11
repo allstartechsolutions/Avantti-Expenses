@@ -49,6 +49,10 @@
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'pending' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     Pending <span class="ml-1 text-xs bg-yellow-100 dark:bg-yellow-700 text-yellow-600 dark:text-yellow-300 px-2 py-0.5 rounded-full">{{ $statusCounts['pending'] }}</span>
                 </button>
+                <button wire:click="setStatusFilter('partial')"
+                    class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'partial' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    Partial <span class="ml-1 text-xs bg-orange-100 dark:bg-orange-700 text-orange-600 dark:text-orange-300 px-2 py-0.5 rounded-full">{{ $statusCounts['partial'] }}</span>
+                </button>
                 <button wire:click="setStatusFilter('paid')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'paid' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     Paid <span class="ml-1 text-xs bg-green-100 dark:bg-green-700 text-green-600 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $statusCounts['paid'] }}</span>
@@ -165,6 +169,11 @@
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
                                         ${{ number_format($invoice->total_amount, 2) }}
                                     </div>
+                                    @if($invoice->isPartial())
+                                        <div class="text-xs text-orange-600 dark:text-orange-400">
+                                            Due: ${{ number_format($invoice->getBalanceDue(), 2) }}
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">

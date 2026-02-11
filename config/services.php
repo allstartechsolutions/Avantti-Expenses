@@ -44,4 +44,12 @@ return [
         'base_url' => 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline',
     ],
 
+    'cardpointe' => [
+        'env' => env('CARDPOINTE_ENV', 'uat'),
+        'merchant_id' => env('CARDPOINTE_MERCHANT_ID'),
+        'api_user' => env('CARDPOINTE_API_USER'),
+        'api_pass' => env('CARDPOINTE_API_PASS'),
+        'site' => env('CARDPOINTE_SITE', 'fts-uat'),
+    ],
+
 ];

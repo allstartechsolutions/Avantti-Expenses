@@ -63,12 +63,16 @@ use App\Livewire\Invoice\InvoiceCreate;
 use App\Livewire\Invoice\InvoiceShow;
 use App\Livewire\Invoice\InvoiceEdit;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\EmailTrackingController;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 
 Route::get('/', function () {
     return redirect('/login');
 })->name('home');
+
+// Public (no auth)
+Route::get('email/track/{token}', [EmailTrackingController::class, 'track'])->name('email.track');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

@@ -206,6 +206,79 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Payment Methods Card -->
+            @if($cardPointeConfigured)
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Payment Methods</h3>
+                        <x-ui.button variant="primary" size="sm" wire:click="openAddCardModal" icon="plus">
+                            Add Card
+                        </x-ui.button>
+                    </div>
+                    <div class="p-6">
+                        @if(count($paymentMethods) > 0)
+                            <div class="space-y-3">
+                                @foreach($paymentMethods as $pm)
+                                    <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-600 {{ $pm['is_default'] ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : '' }}">
+                                        <div class="flex items-center gap-3">
+                                            {{-- Card icon --}}
+                                            <div class="flex-shrink-0">
+                                                <svg class="w-8 h-8 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-sm font-medium text-slate-900 dark:text-white">
+                                                        {{ ucfirst($pm['card_brand'] ?? 'Card') }} ending in {{ $pm['card_last_four'] }}
+                                                    </span>
+                                                    @if($pm['is_default'])
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                            Default
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                @if($pm['expiry_formatted'])
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Expires {{ $pm['expiry_formatted'] }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @if(!$pm['is_default'])
+                                                <x-ui.button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    wire:click="setDefaultCard({{ $pm['id'] }})"
+                                                    title="Set as default">
+                                                    Set Default
+                                                </x-ui.button>
+                                            @endif
+                                            <x-ui.button
+                                                variant="ghost"
+                                                size="sm"
+                                                wire:click="openEditCardModal({{ $pm['id'] }})"
+                                                icon="edit"
+                                                title="Edit expiry">
+                                            </x-ui.button>
+                                            <x-ui.button
+                                                variant="ghost"
+                                                size="sm"
+                                                wire:click="deleteCard({{ $pm['id'] }})"
+                                                wire:confirm="Are you sure you want to remove this payment method?"
+                                                icon="trash"
+                                                title="Remove card">
+                                            </x-ui.button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No payment methods saved.</p>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Sidebar Actions -->
@@ -274,6 +347,183 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Card Modal -->
+    @if($showAddCardModal)
+        <x-ui.modal name="add-card-modal" :show="true" maxWidth="lg">
+            <div
+                x-data="{
+                    tokenReceived: false,
+                    init() {
+                        window.addEventListener('message', (event) => {
+                            try {
+                                let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                                if (data.token) {
+                                    this.tokenReceived = true;
+                                    $wire.setCardToken(data.token);
+                                }
+                            } catch (e) {}
+                        });
+                    }
+                }"
+            >
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Add Payment Method</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    {{-- Card Number (iFrame tokenizer) --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Card Number *</label>
+                        <div class="rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden bg-white">
+                            <iframe
+                                src="{{ $iframeUrl }}"
+                                frameborder="0"
+                                scrolling="no"
+                                style="width: 100%; height: 38px;"
+                            ></iframe>
+                        </div>
+                        <div x-show="tokenReceived" class="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Card tokenized
+                        </div>
+                    </div>
+
+                    {{-- Name on Card --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name on Card *</label>
+                        <input
+                            type="text"
+                            wire:model="cardName"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            placeholder="John Doe">
+                        @error('cardName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Expiry + CVV --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Expiration *</label>
+                            <input
+                                type="text"
+                                wire:model="cardExpiry"
+                                maxlength="4"
+                                inputmode="numeric"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                placeholder="MMYY">
+                            @error('cardExpiry') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CVV *</label>
+                            <input
+                                type="text"
+                                wire:model="cardCvv"
+                                maxlength="4"
+                                inputmode="numeric"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                placeholder="123">
+                            @error('cardCvv') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    {{-- Billing Zip --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Billing Zip Code *</label>
+                        <input
+                            type="text"
+                            wire:model="cardZip"
+                            maxlength="10"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            placeholder="12345">
+                        @error('cardZip') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Error --}}
+                    @if($cardError)
+                        <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-sm text-red-700 dark:text-red-300">{{ $cardError }}</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                    <x-ui.button variant="secondary" wire:click="$set('showAddCardModal', false)" icon="x">
+                        Cancel
+                    </x-ui.button>
+                    <x-ui.button variant="primary" wire:click="addCard" icon="plus" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="addCard">Add Card</span>
+                        <span wire:loading wire:target="addCard">Processing...</span>
+                    </x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
+    @endif
+
+    <!-- Edit Card Modal -->
+    @if($showEditCardModal)
+        <x-ui.modal name="edit-card-modal" :show="true" maxWidth="md">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Edit Payment Method</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                {{-- Card display (read-only) --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Card</label>
+                    <p class="text-sm text-slate-900 dark:text-white">{{ $editCardDisplayName }}</p>
+                </div>
+
+                {{-- Name on Card --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name on Card *</label>
+                    <input
+                        type="text"
+                        wire:model="editCardName"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        placeholder="John Doe">
+                    @error('editCardName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Expiry --}}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Expiration *</label>
+                    <input
+                        type="text"
+                        wire:model="editExpiry"
+                        maxlength="4"
+                        inputmode="numeric"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        placeholder="MMYY">
+                    @error('editExpiry') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Error --}}
+                @if($editError)
+                    <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p class="text-sm text-red-700 dark:text-red-300">{{ $editError }}</p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                <x-ui.button variant="secondary" wire:click="$set('showEditCardModal', false)" icon="x">
+                    Cancel
+                </x-ui.button>
+                <x-ui.button variant="primary" wire:click="updateCard" icon="save" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="updateCard">Update</span>
+                    <span wire:loading wire:target="updateCard">Updating...</span>
+                </x-ui.button>
+            </div>
+        </x-ui.modal>
+    @endif
 
     <!-- Delete Client Confirmation Modal -->
     @if($showDeleteModal)

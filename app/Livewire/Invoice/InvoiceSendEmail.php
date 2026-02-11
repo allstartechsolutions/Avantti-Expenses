@@ -32,11 +32,31 @@ class InvoiceSendEmail extends Component
 
         $this->subject = "Invoice {$invoice->invoice_number} from {$companyName}";
 
+        $amountPaidLine = '';
+        $amountPaid = $invoice->getAmountPaid();
+        if ($amountPaid > 0) {
+            $amountPaidLine = "<tr><td style='padding:4px 0;font-size:13px;color:#28a745;'>Amount Paid:</td>"
+                . "<td style='padding:4px 0;font-size:13px;color:#28a745;text-align:right;'>- \${$this->formatMoney($amountPaid)}</td></tr>";
+        }
+
+        $summaryBlock = "<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f8f9fa;border-radius:6px;border:1px solid #e9ecef;margin:15px 0;'>"
+            . "<tr><td style='padding:20px;'>"
+            . "<strong style='color:#3F5189;font-size:15px;'>Invoice Summary</strong>"
+            . "<table width='100%' cellpadding='0' cellspacing='0' style='margin-top:10px;'>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>Invoice Number:</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;font-weight:bold;'>{$invoice->invoice_number}</td></tr>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>Date:</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->invoice_date->format('M d, Y')}</td></tr>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>Due Date:</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->due_date->format('M d, Y')}</td></tr>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>Total:</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;font-weight:bold;'>\${$this->formatMoney($invoice->total_amount)}</td></tr>"
+            . $amountPaidLine
+            . "<tr><td colspan='2' style='padding:8px 0 0;'><div style='border-top:1px solid #dee2e6;'></div></td></tr>"
+            . "<tr><td style='padding:8px 0 4px;font-size:15px;color:#3F5189;font-weight:bold;'>Balance Due:</td><td style='padding:8px 0 4px;font-size:15px;color:#3F5189;text-align:right;font-weight:bold;'>\${$this->formatMoney($invoice->getBalanceDue())}</td></tr>"
+            . "</table>"
+            . "</td></tr></table>";
+
         $this->body = "Dear {$invoice->client->contact_name},<br><br>"
             . "Please find attached the invoice <strong>{$invoice->invoice_number}</strong> "
             . "for your review.<br><br>"
-            . "Total Amount: <strong>\${$this->formatMoney($invoice->total_amount)}</strong><br>"
-            . "Due Date: <strong>{$invoice->due_date->format('M d, Y')}</strong><br><br>"
+            . $summaryBlock
             . "If you have any questions, please don't hesitate to reach out.<br><br>"
             . "Best regards,<br>"
             . $companyName;

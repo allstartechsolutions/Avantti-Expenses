@@ -65,7 +65,7 @@ class InvoiceIndex extends Component
 
         // Apply status filter
         if ($this->statusFilter === 'past_due') {
-            $query->where('status', 'pending')->where('due_date', '<', now()->toDateString());
+            $query->whereIn('status', ['pending', 'partial'])->where('due_date', '<', now()->toDateString());
         } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
@@ -77,8 +77,9 @@ class InvoiceIndex extends Component
             'draft' => Invoice::where('status', 'draft')->count(),
             'sent' => Invoice::where('status', 'sent')->count(),
             'pending' => Invoice::where('status', 'pending')->count(),
+            'partial' => Invoice::where('status', 'partial')->count(),
             'paid' => Invoice::where('status', 'paid')->count(),
-            'past_due' => Invoice::where('status', 'pending')->where('due_date', '<', now()->toDateString())->count(),
+            'past_due' => Invoice::whereIn('status', ['pending', 'partial'])->where('due_date', '<', now()->toDateString())->count(),
         ];
 
         return view('livewire.invoice.invoice-index', [

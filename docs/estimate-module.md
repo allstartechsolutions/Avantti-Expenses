@@ -357,7 +357,7 @@ Inline component rendered inside `EstimateShow` via `<livewire:estimate.estimate
 1. Each sent email gets a unique UUID `tracking_token`
 2. The email HTML includes a hidden 1x1 transparent GIF `<img>` tag pointing to the tracking route
 3. When the recipient's email client loads images, it hits the tracking URL
-4. The controller looks up the `EstimateEmail` by token and sets `opened_at` if not already set
+4. The controller looks up the `EstimateEmail` or `InvoiceEmail` by token and sets `opened_at` if not already set
 5. Returns a 1x1 transparent GIF with no-cache headers
 
 **Limitations:**

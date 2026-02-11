@@ -170,10 +170,45 @@
                         <td style="border-top: 2px solid #3F5189; padding: 8px 8px 4px; font-size: 11pt; font-weight: bold; text-align: right; color: #3F5189;">Total</td>
                         <td style="border-top: 2px solid #3F5189; padding: 8px 8px 4px; font-size: 11pt; font-weight: bold; text-align: right; color: #3F5189;">${{ number_format($invoice->total_amount, 2) }}</td>
                     </tr>
+                    @if($invoice->payments->where('status', 'completed')->count() > 0)
+                    <tr>
+                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #27ae60;">Amount Paid</td>
+                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #27ae60;">-${{ number_format($invoice->getAmountPaid(), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-top: 1px solid #ddd; padding: 6px 8px 4px; font-size: 10pt; font-weight: bold; text-align: right; color: {{ $invoice->getBalanceDue() > 0 ? '#e67e22' : '#27ae60' }};">Balance Due</td>
+                        <td style="border-top: 1px solid #ddd; padding: 6px 8px 4px; font-size: 10pt; font-weight: bold; text-align: right; color: {{ $invoice->getBalanceDue() > 0 ? '#e67e22' : '#27ae60' }};">${{ number_format($invoice->getBalanceDue(), 2) }}</td>
+                    </tr>
+                    @endif
                 </table>
             </td>
         </tr>
     </table>
+
+    <!-- Payments Section -->
+    @if($invoice->payments->where('status', 'completed')->count() > 0)
+    <div style="margin-bottom: 20px;">
+        <div style="font-size: 9pt; font-weight: bold; color: #3F5189; margin-bottom: 8px;">Payments Received</div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">#</th>
+                <th style="background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">Date</th>
+                <th style="background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">Method</th>
+                <th style="background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">Reference</th>
+                <th style="background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px 8px; text-align: right; font-size: 8pt; font-weight: bold; color: #555;">Amount</th>
+            </tr>
+            @foreach($invoice->payments->where('status', 'completed') as $payment)
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->payment_number }}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->payment_date->format('M d, Y') }}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->getPaymentMethodLabel() }}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->reference_number ?? '—' }}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt; text-align: right;">${{ number_format($payment->amount, 2) }}</td>
+            </tr>
+            @endforeach
+        </table>
+    </div>
+    @endif
 
     <!-- Message Section -->
     @if($invoice->message_body)

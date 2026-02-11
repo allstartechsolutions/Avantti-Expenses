@@ -60,20 +60,21 @@
 
 7. **[Purchase Order Module](./purchase-order-module.md)** - Complete PO workflow with approval, expense creation, and revision support
 8. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, message templates, PDF generation, email sending with tracking pixel open detection, email history log, and status change tracking
-9. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Paid)
+9. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Partial → Paid)
+10. **[Invoice Payments & CardPointe](./invoice-payments-module.md)** - Payment recording (manual + credit card), CardPointe Gateway integration, client saved payment methods, partial payment tracking, void/refund support
 
 ### User Management
 
-10. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
+11. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
     - Live password requirements checklist (Alpine.js)
     - Logout on password change
 
 ### Architecture
 
-11. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
-12. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
-13. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
-14. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+12. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
+13. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
+14. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
+15. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
 
 ### Quick Reference
 

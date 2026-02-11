@@ -10,6 +10,7 @@ This document explains how the sidebar navigation works and how to add new menu 
 |------|---------|
 | `resources/views/components/layouts/app.blade.php` | Main layout with Alpine.js state for submenus |
 | `resources/views/components/layouts/inc/sidebar.blade.php` | Sidebar component with menu items |
+| `resources/views/components/layouts/inc/header.blade.php` | Header bar with search, fullscreen, settings icon |
 
 ---
 
@@ -187,10 +188,17 @@ MENU
 │   ├── Categories
 │   └── Suppliers
 ├── Estimates (simple link)
-├── Invoices (simple link)
-└── Settings (submenu)
-    ├── Tax Rates
-    └── Messages
+└── Invoices (simple link)
+
+HEADER (right side icons)
+├── Search Projects
+├── Messages
+├── Fullscreen toggle
+└── Settings (gear icon → system-settings.index)
+
+USER DROPDOWN (sidebar bottom)
+├── Profile (→ profile page)
+└── Logout
 ```
 
 ---

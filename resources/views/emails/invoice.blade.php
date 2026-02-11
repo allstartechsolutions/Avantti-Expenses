@@ -25,42 +25,6 @@
                             <div style="font-size: 14px; line-height: 1.6; color: #555;">
                                 {!! $emailBody !!}
                             </div>
-                        </td>
-                    </tr>
-
-                    <!-- Invoice Summary -->
-                    <tr>
-                        <td style="padding: 0 30px 30px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
-                                <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 12px; color: #3F5189; font-size: 16px;">Invoice Summary</h3>
-                                        <table width="100%" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Invoice Number:</td>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right; font-weight: bold;">{{ $invoice->invoice_number }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Date:</td>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $invoice->invoice_date->format('M d, Y') }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Due Date:</td>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $invoice->due_date->format('M d, Y') }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="2" style="padding: 8px 0 0;">
-                                                    <div style="border-top: 1px solid #dee2e6;"></div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 8px 0 4px; font-size: 15px; color: #3F5189; font-weight: bold;">Total:</td>
-                                                <td style="padding: 8px 0 4px; font-size: 15px; color: #3F5189; text-align: right; font-weight: bold;">${{ number_format($invoice->total_amount, 2) }}</td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
                             <p style="font-size: 12px; color: #999; margin-top: 15px; text-align: center;">
                                 The full invoice is attached as a PDF.
                             </p>

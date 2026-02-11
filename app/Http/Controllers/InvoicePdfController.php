@@ -10,7 +10,7 @@ class InvoicePdfController extends Controller
 {
     public function download(Invoice $invoice)
     {
-        $invoice->load(['client', 'project', 'jobSite', 'items', 'createdBy']);
+        $invoice->load(['client', 'project', 'jobSite', 'items', 'createdBy', 'payments']);
 
         $company = Company::first();
 
@@ -30,7 +30,7 @@ class InvoicePdfController extends Controller
 
     public function stream(Invoice $invoice)
     {
-        $invoice->load(['client', 'project', 'jobSite', 'items', 'createdBy']);
+        $invoice->load(['client', 'project', 'jobSite', 'items', 'createdBy', 'payments']);
 
         $company = Company::first();
 

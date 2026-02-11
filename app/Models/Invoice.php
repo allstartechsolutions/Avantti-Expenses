@@ -119,6 +119,11 @@ class Invoice extends Model
         return $this->hasMany(InvoiceStatusHistory::class)->orderByDesc('created_at');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('payment_number');
+    }
+
     // Status tracking
 
     public function recordStatusChange(\App\Models\User $user, ?string $oldStatus, string $newStatus): void
@@ -152,9 +157,14 @@ class Invoice extends Model
         return $this->status === 'paid';
     }
 
+    public function isPartial(): bool
+    {
+        return $this->status === 'partial';
+    }
+
     public function isPastDue(): bool
     {
-        return $this->status === 'pending' && $this->due_date->isPast();
+        return in_array($this->status, ['pending', 'partial']) && $this->due_date->isPast();
     }
 
     public function canBeEdited(): bool
@@ -197,6 +207,59 @@ class Invoice extends Model
         return \Carbon\Carbon::parse($invoiceDate)->addDays($days)->toDateString();
     }
 
+    // Payment helpers
+
+    public function getAmountPaid(): float
+    {
+        return round($this->payments()->where('status', 'completed')->sum('amount') / 100, 2);
+    }
+
+    public function getBalanceDue(): float
+    {
+        return round($this->total_amount - $this->getAmountPaid(), 2);
+    }
+
+    public function getPaymentProgress(): int
+    {
+        if ($this->total_amount == 0) {
+            return 0;
+        }
+
+        return (int) min(100, round(($this->getAmountPaid() / $this->total_amount) * 100));
+    }
+
+    public function updateStatusFromPayments(): void
+    {
+        $balanceDue = $this->getBalanceDue();
+        $amountPaid = $this->getAmountPaid();
+        $oldStatus = $this->status;
+
+        if ($balanceDue <= 0 && $amountPaid > 0) {
+            $this->update([
+                'status' => 'paid',
+                'paid_at' => $this->paid_at ?? now(),
+            ]);
+        } elseif ($amountPaid > 0 && $balanceDue > 0) {
+            $this->update([
+                'status' => 'partial',
+                'paid_at' => null,
+            ]);
+        } else {
+            // No completed payments — revert to pending if was partial/paid
+            if (in_array($oldStatus, ['partial', 'paid'])) {
+                $this->update([
+                    'status' => 'pending',
+                    'paid_at' => null,
+                ]);
+            }
+        }
+
+        // Record status change if it changed
+        if ($this->status !== $oldStatus) {
+            $this->recordStatusChange(auth()->user(), $oldStatus, $this->status);
+        }
+    }
+
     // Status display helpers
 
     public function getStatusColorAttribute(): string
@@ -209,6 +272,7 @@ class Invoice extends Model
             'draft' => 'bg-gray-100 text-gray-800',
             'sent' => 'bg-blue-100 text-blue-800',
             'pending' => 'bg-yellow-100 text-yellow-800',
+            'partial' => 'bg-orange-100 text-orange-800',
             'paid' => 'bg-green-100 text-green-800',
             default => 'bg-gray-100 text-gray-800',
         };
@@ -224,6 +288,7 @@ class Invoice extends Model
             'draft' => 'Draft',
             'sent' => 'Sent',
             'pending' => 'Pending',
+            'partial' => 'Partial',
             'paid' => 'Paid',
             default => ucfirst($this->status),
         };

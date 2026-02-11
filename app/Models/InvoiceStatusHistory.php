@@ -50,6 +50,7 @@ class InvoiceStatusHistory extends Model
             'draft' => 'Draft',
             'sent' => 'Sent',
             'pending' => 'Pending',
+            'partial' => 'Partial',
             'paid' => 'Paid',
             default => ucfirst($status),
         };
@@ -61,6 +62,7 @@ class InvoiceStatusHistory extends Model
             'draft' => 'gray',
             'sent' => 'blue',
             'pending' => 'yellow',
+            'partial' => 'orange',
             'paid' => 'green',
             default => 'gray',
         };

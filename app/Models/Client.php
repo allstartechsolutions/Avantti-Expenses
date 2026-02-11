@@ -22,6 +22,7 @@ class Client extends Model
         'phone',
         'email',
         'website',
+        'cardpointe_profile_id',
         'created_by',
     ];
 
@@ -44,6 +45,14 @@ class Client extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    /**
+     * Get the saved payment methods for this client
+     */
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(ClientPaymentMethod::class);
     }
 
     /**
