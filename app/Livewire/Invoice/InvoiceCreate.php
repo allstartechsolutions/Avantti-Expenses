@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Livewire\Estimate;
+namespace App\Livewire\Invoice;
 
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
-use App\Models\Estimate;
-use App\Models\EstimateItem;
+use App\Models\Invoice;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\TaxRate;
@@ -15,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
-class EstimateCreate extends Component
+class InvoiceCreate extends Component
 {
     // Header fields
     public $client_id = null;
@@ -24,8 +23,8 @@ class EstimateCreate extends Component
     public $projectSearch = '';
     public $job_site_id = null;
     public $jobSiteSearch = '';
-    public $estimate_number = '';
-    public $estimate_date;
+    public $invoice_number = '';
+    public $invoice_date;
     public $terms = 'net_30';
     public $due_date;
 
@@ -76,8 +75,8 @@ class EstimateCreate extends Component
 
     public function mount()
     {
-        $this->estimate_number = Estimate::generateEstimateNumber();
-        $this->estimate_date = now()->format('Y-m-d');
+        $this->invoice_number = Invoice::generateInvoiceNumber();
+        $this->invoice_date = now()->format('Y-m-d');
         $this->terms = 'net_30';
         $this->calculateDueDate();
         $this->loadDefaultMessage();
@@ -149,7 +148,7 @@ class EstimateCreate extends Component
 
     // --- Date/Terms ---
 
-    public function updatedEstimateDate()
+    public function updatedInvoiceDate()
     {
         $this->calculateDueDate();
     }
@@ -161,8 +160,8 @@ class EstimateCreate extends Component
 
     protected function calculateDueDate()
     {
-        if ($this->estimate_date && $this->terms) {
-            $this->due_date = Estimate::calculateDueDate($this->estimate_date, $this->terms);
+        if ($this->invoice_date && $this->terms) {
+            $this->due_date = Invoice::calculateDueDate($this->invoice_date, $this->terms);
         }
     }
 
@@ -170,7 +169,7 @@ class EstimateCreate extends Component
 
     protected function loadDefaultMessage()
     {
-        $default = DocumentMessage::where('type', 'estimate')
+        $default = DocumentMessage::where('type', 'invoice')
             ->where('is_active', true)
             ->where('is_default', true)
             ->first();
@@ -343,7 +342,6 @@ class EstimateCreate extends Component
         if (!$this->item_is_taxable) {
             $this->item_tax_rate = 0;
         } else {
-            // Set default tax rate if none set
             if (floatval($this->item_tax_rate) == 0) {
                 $default = TaxRate::where('is_default', true)->first();
                 $this->item_tax_rate = $default?->rate ?? 0;
@@ -400,7 +398,7 @@ class EstimateCreate extends Component
             $this->items[] = $itemData;
         }
 
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
         $this->closeItemModal();
     }
 
@@ -408,24 +406,24 @@ class EstimateCreate extends Component
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
     }
 
     // --- Overall discount ---
 
     public function updatedOverallDiscountType()
     {
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
     }
 
     public function updatedOverallDiscountValue()
     {
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
     }
 
-    // --- Estimate totals ---
+    // --- Invoice totals ---
 
-    public function calculateEstimateTotals()
+    public function calculateInvoiceTotals()
     {
         $subtotal = 0;
         $taxTotal = 0;
@@ -457,7 +455,7 @@ class EstimateCreate extends Component
     {
         $this->validate([
             'client_id' => 'required|exists:clients,id',
-            'estimate_date' => 'required|date',
+            'invoice_date' => 'required|date',
             'terms' => 'required|in:net_15,net_30,net_60,net_90',
             'items' => 'required|array|min:1',
         ], [
@@ -466,15 +464,15 @@ class EstimateCreate extends Component
             'items.min' => 'At least one item is required.',
         ]);
 
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
 
-        $estimate = DB::transaction(function () {
-            $estimate = Estimate::create([
+        $invoice = DB::transaction(function () {
+            $invoice = Invoice::create([
                 'client_id' => $this->client_id,
                 'project_id' => $this->project_id ?: null,
                 'job_site_id' => $this->job_site_id ?: null,
-                'estimate_number' => $this->estimate_number,
-                'estimate_date' => $this->estimate_date,
+                'invoice_number' => $this->invoice_number,
+                'invoice_date' => $this->invoice_date,
                 'terms' => $this->terms,
                 'due_date' => $this->due_date,
                 'status' => 'draft',
@@ -491,7 +489,7 @@ class EstimateCreate extends Component
             ]);
 
             foreach ($this->items as $index => $item) {
-                $estimate->items()->create([
+                $invoice->items()->create([
                     'catalog_item_id' => $item['catalog_item_id'],
                     'item_type' => $item['item_type'],
                     'item_name' => $item['item_name'],
@@ -510,12 +508,12 @@ class EstimateCreate extends Component
                 ]);
             }
 
-            return $estimate;
+            return $invoice;
         });
 
-        session()->flash('message', 'Estimate saved as draft!');
+        session()->flash('message', 'Invoice saved as draft!');
 
-        return redirect()->route('estimates.show', $estimate->id);
+        return redirect()->route('invoices.show', $invoice->id);
     }
 
     // --- Render ---
@@ -560,8 +558,8 @@ class EstimateCreate extends Component
                 ->get();
         }
 
-        // Document messages for estimate
-        $documentMessages = DocumentMessage::where('type', 'estimate')
+        // Document messages for invoice
+        $documentMessages = DocumentMessage::where('type', 'invoice')
             ->where('is_active', true)
             ->orderByDesc('is_default')
             ->orderBy('title')
@@ -570,7 +568,7 @@ class EstimateCreate extends Component
         // Tax rates for dropdown
         $taxRates = TaxRate::orderByDesc('is_default')->orderBy('state')->get();
 
-        return view('livewire.estimate.estimate-create', [
+        return view('livewire.invoice.invoice-create', [
             'clients' => $clients,
             'projects' => $projects,
             'jobSites' => $jobSites,

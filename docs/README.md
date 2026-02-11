@@ -59,14 +59,15 @@
 ### Modules
 
 7. **[Purchase Order Module](./purchase-order-module.md)** - Complete PO workflow with approval, expense creation, and revision support
-8. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, and message templates
+8. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, message templates, PDF generation, email sending with tracking pixel open detection, email history log, and status change tracking
+9. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Paid)
 
 ### Architecture
 
-9. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
-10. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
-11. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
-12. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+10. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
+11. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
+12. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
+13. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
 
 ### Quick Reference
 

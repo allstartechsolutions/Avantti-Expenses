@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Livewire\Estimate;
+namespace App\Livewire\Invoice;
 
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
-use App\Models\Estimate;
-use App\Models\EstimateItem;
+use App\Models\Invoice;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\TaxRate;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
-class EstimateCreate extends Component
+class InvoiceEdit extends Component
 {
+    public Invoice $invoice;
+
     // Header fields
     public $client_id = null;
     public $clientSearch = '';
@@ -24,8 +24,8 @@ class EstimateCreate extends Component
     public $projectSearch = '';
     public $job_site_id = null;
     public $jobSiteSearch = '';
-    public $estimate_number = '';
-    public $estimate_date;
+    public $invoice_number = '';
+    public $invoice_date;
     public $terms = 'net_30';
     public $due_date;
 
@@ -74,13 +74,62 @@ class EstimateCreate extends Component
     public $item_calc_tax = 0;
     public $item_calc_total = 0;
 
-    public function mount()
+    public function mount(Invoice $invoice)
     {
-        $this->estimate_number = Estimate::generateEstimateNumber();
-        $this->estimate_date = now()->format('Y-m-d');
-        $this->terms = 'net_30';
-        $this->calculateDueDate();
-        $this->loadDefaultMessage();
+        if (!$invoice->canBeEdited()) {
+            return redirect()->route('invoices.show', $invoice);
+        }
+
+        $this->invoice = $invoice->load(['client', 'project', 'jobSite', 'items']);
+
+        // Populate header fields
+        $this->client_id = $invoice->client_id;
+        $this->clientSearch = $invoice->client->company_name;
+        $this->project_id = $invoice->project_id;
+        $this->projectSearch = $invoice->project?->project_name ?? '';
+        $this->job_site_id = $invoice->job_site_id;
+        $this->jobSiteSearch = $invoice->jobSite?->job_site_name ?? '';
+        $this->invoice_number = $invoice->invoice_number;
+        $this->invoice_date = $invoice->invoice_date->format('Y-m-d');
+        $this->terms = $invoice->terms;
+        $this->due_date = $invoice->due_date->format('Y-m-d');
+
+        // Populate overall discount
+        $this->overall_discount_type = $invoice->discount_type;
+        $this->overall_discount_value = $invoice->discount_value;
+
+        // Populate message
+        $this->message_title = $invoice->message_title ?? '';
+        $this->message_body = $invoice->message_body ?? '';
+
+        // Populate notes
+        $this->notes = $invoice->notes ?? '';
+
+        // Populate items from DB
+        foreach ($invoice->items as $item) {
+            $lineSubtotal = round($item->quantity * $item->unit_price, 2);
+            $lineNet = max($lineSubtotal - $item->discount_amount, 0);
+
+            $this->items[] = [
+                'catalog_item_id' => $item->catalog_item_id,
+                'item_type' => $item->item_type,
+                'item_name' => $item->item_name,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'unit' => $item->unit,
+                'unit_price' => $item->unit_price,
+                'discount_type' => $item->discount_type,
+                'discount_value' => $item->discount_value,
+                'discount_amount' => $item->discount_amount,
+                'is_taxable' => $item->is_taxable,
+                'tax_rate' => $item->tax_rate,
+                'tax_amount' => $item->tax_amount,
+                'line_net' => $lineNet,
+                'total_amount' => $item->total_amount,
+            ];
+        }
+
+        $this->calculateInvoiceTotals();
     }
 
     // --- Quick Add Client ---
@@ -149,7 +198,7 @@ class EstimateCreate extends Component
 
     // --- Date/Terms ---
 
-    public function updatedEstimateDate()
+    public function updatedInvoiceDate()
     {
         $this->calculateDueDate();
     }
@@ -161,26 +210,12 @@ class EstimateCreate extends Component
 
     protected function calculateDueDate()
     {
-        if ($this->estimate_date && $this->terms) {
-            $this->due_date = Estimate::calculateDueDate($this->estimate_date, $this->terms);
+        if ($this->invoice_date && $this->terms) {
+            $this->due_date = Invoice::calculateDueDate($this->invoice_date, $this->terms);
         }
     }
 
     // --- Message ---
-
-    protected function loadDefaultMessage()
-    {
-        $default = DocumentMessage::where('type', 'estimate')
-            ->where('is_active', true)
-            ->where('is_default', true)
-            ->first();
-
-        if ($default) {
-            $this->selectedMessageId = $default->id;
-            $this->message_title = $default->title;
-            $this->message_body = $default->body;
-        }
-    }
 
     public function updatedSelectedMessageId($value)
     {
@@ -299,7 +334,6 @@ class EstimateCreate extends Component
         $price = floatval($this->item_unit_price) ?: 0;
         $this->item_calc_subtotal = round($qty * $price, 2);
 
-        // Discount
         $discountValue = floatval($this->item_discount_value) ?: 0;
         if ($this->item_discount_type === 'percentage') {
             $this->item_calc_discount = round($this->item_calc_subtotal * ($discountValue / 100), 2);
@@ -311,49 +345,28 @@ class EstimateCreate extends Component
 
         $lineNet = max($this->item_calc_subtotal - $this->item_calc_discount, 0);
 
-        // Tax
         $taxRate = floatval($this->item_tax_rate) ?: 0;
         $this->item_calc_tax = $this->item_is_taxable ? round($lineNet * $taxRate, 2) : 0;
 
         $this->item_calc_total = round($lineNet + $this->item_calc_tax, 2);
     }
 
-    public function updatedItemQuantity()
-    {
-        $this->calculateItemTotals();
-    }
-
-    public function updatedItemUnitPrice()
-    {
-        $this->calculateItemTotals();
-    }
-
-    public function updatedItemDiscountType()
-    {
-        $this->calculateItemTotals();
-    }
-
-    public function updatedItemDiscountValue()
-    {
-        $this->calculateItemTotals();
-    }
+    public function updatedItemQuantity() { $this->calculateItemTotals(); }
+    public function updatedItemUnitPrice() { $this->calculateItemTotals(); }
+    public function updatedItemDiscountType() { $this->calculateItemTotals(); }
+    public function updatedItemDiscountValue() { $this->calculateItemTotals(); }
+    public function updatedItemTaxRate() { $this->calculateItemTotals(); }
 
     public function updatedItemIsTaxable()
     {
         if (!$this->item_is_taxable) {
             $this->item_tax_rate = 0;
         } else {
-            // Set default tax rate if none set
             if (floatval($this->item_tax_rate) == 0) {
                 $default = TaxRate::where('is_default', true)->first();
                 $this->item_tax_rate = $default?->rate ?? 0;
             }
         }
-        $this->calculateItemTotals();
-    }
-
-    public function updatedItemTaxRate()
-    {
         $this->calculateItemTotals();
     }
 
@@ -400,7 +413,7 @@ class EstimateCreate extends Component
             $this->items[] = $itemData;
         }
 
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
         $this->closeItemModal();
     }
 
@@ -408,24 +421,17 @@ class EstimateCreate extends Component
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
     }
 
     // --- Overall discount ---
 
-    public function updatedOverallDiscountType()
-    {
-        $this->calculateEstimateTotals();
-    }
+    public function updatedOverallDiscountType() { $this->calculateInvoiceTotals(); }
+    public function updatedOverallDiscountValue() { $this->calculateInvoiceTotals(); }
 
-    public function updatedOverallDiscountValue()
-    {
-        $this->calculateEstimateTotals();
-    }
+    // --- Invoice totals ---
 
-    // --- Estimate totals ---
-
-    public function calculateEstimateTotals()
+    public function calculateInvoiceTotals()
     {
         $subtotal = 0;
         $taxTotal = 0;
@@ -438,7 +444,6 @@ class EstimateCreate extends Component
         $this->calc_subtotal = round($subtotal, 2);
         $this->calc_tax_total = round($taxTotal, 2);
 
-        // Overall discount
         $discountValue = floatval($this->overall_discount_value) ?: 0;
         if ($this->overall_discount_type === 'percentage') {
             $this->calc_discount_amount = round($this->calc_subtotal * ($discountValue / 100), 2);
@@ -453,11 +458,11 @@ class EstimateCreate extends Component
 
     // --- Save ---
 
-    public function saveAsDraft()
+    public function saveInvoice()
     {
         $this->validate([
             'client_id' => 'required|exists:clients,id',
-            'estimate_date' => 'required|date',
+            'invoice_date' => 'required|date',
             'terms' => 'required|in:net_15,net_30,net_60,net_90',
             'items' => 'required|array|min:1',
         ], [
@@ -466,18 +471,16 @@ class EstimateCreate extends Component
             'items.min' => 'At least one item is required.',
         ]);
 
-        $this->calculateEstimateTotals();
+        $this->calculateInvoiceTotals();
 
-        $estimate = DB::transaction(function () {
-            $estimate = Estimate::create([
+        DB::transaction(function () {
+            $this->invoice->update([
                 'client_id' => $this->client_id,
                 'project_id' => $this->project_id ?: null,
                 'job_site_id' => $this->job_site_id ?: null,
-                'estimate_number' => $this->estimate_number,
-                'estimate_date' => $this->estimate_date,
+                'invoice_date' => $this->invoice_date,
                 'terms' => $this->terms,
                 'due_date' => $this->due_date,
-                'status' => 'draft',
                 'message_title' => $this->message_title ?: null,
                 'message_body' => $this->message_body ?: null,
                 'discount_type' => $this->overall_discount_type,
@@ -487,11 +490,13 @@ class EstimateCreate extends Component
                 'tax_total' => $this->calc_tax_total,
                 'total_amount' => $this->calc_total,
                 'notes' => $this->notes ?: null,
-                'created_by' => Auth::id(),
             ]);
 
+            // Delete old items and recreate
+            $this->invoice->items()->delete();
+
             foreach ($this->items as $index => $item) {
-                $estimate->items()->create([
+                $this->invoice->items()->create([
                     'catalog_item_id' => $item['catalog_item_id'],
                     'item_type' => $item['item_type'],
                     'item_name' => $item['item_name'],
@@ -509,20 +514,17 @@ class EstimateCreate extends Component
                     'sort_order' => $index,
                 ]);
             }
-
-            return $estimate;
         });
 
-        session()->flash('message', 'Estimate saved as draft!');
+        session()->flash('message', 'Invoice updated successfully!');
 
-        return redirect()->route('estimates.show', $estimate->id);
+        return redirect()->route('invoices.show', $this->invoice->id);
     }
 
     // --- Render ---
 
     public function render()
     {
-        // Client search
         $clients = collect();
         if ($this->clientSearch && strlen($this->clientSearch) >= 2 && !$this->client_id) {
             $clients = Client::where('company_name', 'like', '%' . $this->clientSearch . '%')
@@ -530,7 +532,6 @@ class EstimateCreate extends Component
                 ->get();
         }
 
-        // Project search (filtered by selected client)
         $projects = collect();
         if ($this->client_id && $this->projectSearch && strlen($this->projectSearch) >= 2 && !$this->project_id) {
             $projects = Project::where('client_id', $this->client_id)
@@ -540,7 +541,6 @@ class EstimateCreate extends Component
                 ->get();
         }
 
-        // Job site search (filtered by selected project)
         $jobSites = collect();
         if ($this->project_id && $this->jobSiteSearch && strlen($this->jobSiteSearch) >= 1 && !$this->job_site_id) {
             $jobSites = JobSite::where('project_id', $this->project_id)
@@ -550,7 +550,6 @@ class EstimateCreate extends Component
                 ->get();
         }
 
-        // Catalog items search (for modal)
         $catalogItems = collect();
         if ($this->catalogItemSearch && strlen($this->catalogItemSearch) >= 2 && !$this->item_catalog_item_id) {
             $catalogItems = CatalogItem::where('is_active', true)
@@ -560,17 +559,15 @@ class EstimateCreate extends Component
                 ->get();
         }
 
-        // Document messages for estimate
-        $documentMessages = DocumentMessage::where('type', 'estimate')
+        $documentMessages = DocumentMessage::where('type', 'invoice')
             ->where('is_active', true)
             ->orderByDesc('is_default')
             ->orderBy('title')
             ->get();
 
-        // Tax rates for dropdown
         $taxRates = TaxRate::orderByDesc('is_default')->orderBy('state')->get();
 
-        return view('livewire.estimate.estimate-create', [
+        return view('livewire.invoice.invoice-edit', [
             'clients' => $clients,
             'projects' => $projects,
             'jobSites' => $jobSites,

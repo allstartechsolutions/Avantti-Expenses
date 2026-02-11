@@ -7,14 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Estimate extends Model
+class Invoice extends Model
 {
     protected $fillable = [
         'client_id',
         'project_id',
         'job_site_id',
-        'estimate_number',
-        'estimate_date',
+        'estimate_id',
+        'invoice_number',
+        'invoice_date',
         'terms',
         'due_date',
         'status',
@@ -27,20 +28,17 @@ class Estimate extends Model
         'tax_total',
         'total_amount',
         'notes',
-        'converted_to_invoice_id',
         'sent_at',
-        'accepted_at',
-        'declined_at',
+        'paid_at',
         'created_by',
     ];
 
     protected $casts = [
-        'estimate_date' => 'date',
+        'invoice_date' => 'date',
         'due_date' => 'date',
         'discount_value' => 'decimal:2',
         'sent_at' => 'datetime',
-        'accepted_at' => 'datetime',
-        'declined_at' => 'datetime',
+        'paid_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -96,9 +94,14 @@ class Estimate extends Model
         return $this->belongsTo(JobSite::class);
     }
 
+    public function estimate(): BelongsTo
+    {
+        return $this->belongsTo(Estimate::class);
+    }
+
     public function items(): HasMany
     {
-        return $this->hasMany(EstimateItem::class)->orderBy('sort_order');
+        return $this->hasMany(InvoiceItem::class)->orderBy('sort_order');
     }
 
     public function createdBy(): BelongsTo
@@ -108,17 +111,12 @@ class Estimate extends Model
 
     public function emailsSent(): HasMany
     {
-        return $this->hasMany(EstimateEmail::class)->orderByDesc('sent_at');
+        return $this->hasMany(InvoiceEmail::class)->orderByDesc('sent_at');
     }
 
     public function statusHistories(): HasMany
     {
-        return $this->hasMany(EstimateStatusHistory::class)->orderByDesc('created_at');
-    }
-
-    public function invoice(): BelongsTo
-    {
-        return $this->belongsTo(Invoice::class, 'converted_to_invoice_id');
+        return $this->hasMany(InvoiceStatusHistory::class)->orderByDesc('created_at');
     }
 
     // Status tracking
@@ -144,14 +142,19 @@ class Estimate extends Model
         return $this->status === 'sent';
     }
 
-    public function isAccepted(): bool
+    public function isPending(): bool
     {
-        return $this->status === 'accepted';
+        return $this->status === 'pending';
     }
 
-    public function isDeclined(): bool
+    public function isPaid(): bool
     {
-        return $this->status === 'declined';
+        return $this->status === 'paid';
+    }
+
+    public function isPastDue(): bool
+    {
+        return $this->status === 'pending' && $this->due_date->isPast();
     }
 
     public function canBeEdited(): bool
@@ -166,22 +169,22 @@ class Estimate extends Model
 
     // Auto-number generation
 
-    public static function generateEstimateNumber(): string
+    public static function generateInvoiceNumber(): string
     {
-        $last = static::max('estimate_number');
+        $last = static::max('invoice_number');
 
         if (!$last) {
-            return 'EST-0001';
+            return 'INV-0001';
         }
 
-        $number = (int) str_replace('EST-', '', $last);
+        $number = (int) str_replace('INV-', '', $last);
 
-        return 'EST-' . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
+        return 'INV-' . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
     }
 
     // Due date calculation
 
-    public static function calculateDueDate(string $estimateDate, string $terms): string
+    public static function calculateDueDate(string $invoiceDate, string $terms): string
     {
         $days = match ($terms) {
             'net_15' => 15,
@@ -191,29 +194,37 @@ class Estimate extends Model
             default => 30,
         };
 
-        return \Carbon\Carbon::parse($estimateDate)->addDays($days)->toDateString();
+        return \Carbon\Carbon::parse($invoiceDate)->addDays($days)->toDateString();
     }
 
     // Status display helpers
 
     public function getStatusColorAttribute(): string
     {
+        if ($this->isPastDue()) {
+            return 'bg-red-100 text-red-800';
+        }
+
         return match ($this->status) {
             'draft' => 'bg-gray-100 text-gray-800',
             'sent' => 'bg-blue-100 text-blue-800',
-            'accepted' => 'bg-green-100 text-green-800',
-            'declined' => 'bg-red-100 text-red-800',
+            'pending' => 'bg-yellow-100 text-yellow-800',
+            'paid' => 'bg-green-100 text-green-800',
             default => 'bg-gray-100 text-gray-800',
         };
     }
 
     public function getStatusLabelAttribute(): string
     {
+        if ($this->isPastDue()) {
+            return 'Past Due';
+        }
+
         return match ($this->status) {
             'draft' => 'Draft',
             'sent' => 'Sent',
-            'accepted' => 'Accepted',
-            'declined' => 'Declined',
+            'pending' => 'Pending',
+            'paid' => 'Paid',
             default => ucfirst($this->status),
         };
     }

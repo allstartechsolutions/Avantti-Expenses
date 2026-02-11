@@ -180,13 +180,14 @@ MENU
 │   ├── All Projects
 │   ├── Subcontractors
 │   ├── Clients
-│   └── Cost Codes
+│   ├── Cost Codes
+│   └── Payments
 ├── Catalog (submenu)
 │   ├── All Items
 │   ├── Categories
 │   └── Suppliers
-├── Payments (simple link)
 ├── Estimates (simple link)
+├── Invoices (simple link)
 └── Settings (submenu)
     ├── Tax Rates
     └── Messages

@@ -58,6 +58,11 @@ use App\Livewire\Estimate\EstimateIndex;
 use App\Livewire\Estimate\EstimateCreate;
 use App\Livewire\Estimate\EstimateShow;
 use App\Livewire\Estimate\EstimateEdit;
+use App\Livewire\Invoice\InvoiceIndex;
+use App\Livewire\Invoice\InvoiceCreate;
+use App\Livewire\Invoice\InvoiceShow;
+use App\Livewire\Invoice\InvoiceEdit;
+use App\Http\Controllers\InvoicePdfController;
 use App\Livewire\SystemSettings\SettingsIndex;
 
 Route::get('/', function () {
@@ -157,6 +162,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('estimates/create', EstimateCreate::class)->name('estimates.create');
     Route::get('estimates/{estimate}', EstimateShow::class)->name('estimates.show');
     Route::get('estimates/{estimate}/edit', EstimateEdit::class)->name('estimates.edit');
+
+    // Invoice routes
+    Route::get('invoices', InvoiceIndex::class)->name('invoices.index');
+    Route::get('invoices/create', InvoiceCreate::class)->name('invoices.create');
+    Route::get('invoices/{invoice}', InvoiceShow::class)->name('invoices.show');
+    Route::get('invoices/{invoice}/edit', InvoiceEdit::class)->name('invoices.edit');
+
+    // Invoice PDF routes
+    Route::get('invoices/{invoice}/pdf', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
+    Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'])->name('invoices.pdf.view');
 
     // System Settings routes
     Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');

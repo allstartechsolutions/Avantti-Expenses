@@ -3,11 +3,11 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Estimate {{ $estimate->estimate_number }}</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Edit estimate details</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Invoice</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create a new invoice for a client</p>
             </div>
             <div>
-                <x-ui.button variant="secondary" href="{{ route('estimates.show', $estimate) }}" icon="arrow-left">
+                <x-ui.button variant="secondary" href="{{ route('invoices.index') }}" icon="arrow-left">
                     Back
                 </x-ui.button>
             </div>
@@ -15,14 +15,14 @@
     </div>
 
     <div class="space-y-8">
-        <!-- Estimate Details Card -->
+        <!-- Invoice Details Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Estimate Details</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic information about this estimate</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Invoice Details</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic information about this invoice</p>
             </div>
             <div class="p-6 space-y-6">
-                <!-- Row 1: Client, Estimate Number -->
+                <!-- Row 1: Client, Invoice Number -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Client Search -->
                     <div class="relative md:col-span-2">
@@ -66,12 +66,12 @@
                         @error('client_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Estimate Number -->
+                    <!-- Invoice Number -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Estimate Number</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Invoice Number</label>
                         <input
                             type="text"
-                            wire:model="estimate_number"
+                            wire:model="invoice_number"
                             readonly
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300">
                     </div>
@@ -142,16 +142,16 @@
 
                 <!-- Row 3: Date, Terms, Due Date -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Estimate Date -->
+                    <!-- Invoice Date -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Estimate Date <span class="text-red-500">*</span>
+                            Invoice Date <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="date"
-                            wire:model.live="estimate_date"
+                            wire:model.live="invoice_date"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        @error('estimate_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @error('invoice_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Terms -->
@@ -189,7 +189,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Items</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add line items to this estimate</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add line items to this invoice</p>
                     </div>
                     <x-ui.button type="button" variant="primary" icon="plus" wire:click="openAddItemModal">
                         Add Item
@@ -263,7 +263,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No items</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add at least one item to this estimate.</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add at least one item to this invoice.</p>
                         <div class="mt-4">
                             <x-ui.button type="button" variant="primary" icon="plus" wire:click="openAddItemModal">
                                 Add Item
@@ -334,7 +334,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Message</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Message to include on the estimate</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Message to include on the invoice</p>
             </div>
             <div class="p-6 space-y-4">
                 <!-- Message Template Selector -->
@@ -356,7 +356,7 @@
                 @if($selectedMessageId || $message_body)
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message Body</label>
-                        <x-ui.tinymce-editor wireModel="message_body" id="estimate-edit-message-body" :height="200" modalName="estimate-edit" />
+                        <x-ui.tinymce-editor wireModel="message_body" id="invoice-message-body" :height="200" modalName="invoice-create" />
                     </div>
                 @endif
             </div>
@@ -366,7 +366,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Notes</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Internal notes (not shown on estimate)</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Internal notes (not shown on invoice)</p>
             </div>
             <div class="p-6">
                 <textarea
@@ -379,11 +379,11 @@
 
         <!-- Form Actions -->
         <div class="flex items-center justify-end space-x-4">
-            <x-ui.button type="button" variant="secondary" href="{{ route('estimates.show', $estimate) }}">
+            <x-ui.button type="button" variant="secondary" href="{{ route('invoices.index') }}">
                 Cancel
             </x-ui.button>
-            <x-ui.button type="button" variant="primary" icon="save" wire:click="saveEstimate">
-                Save Estimate
+            <x-ui.button type="button" variant="primary" icon="save" wire:click="saveAsDraft">
+                Save as Draft
             </x-ui.button>
         </div>
     </div>

@@ -41,7 +41,7 @@
                                 </button>
                             @endif
                         </div>
-                        @if($clients->count() > 0)
+                        @if(!$client_id && strlen($clientSearch) >= 2)
                             <div class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 max-h-48 overflow-auto">
                                 @foreach($clients as $client)
                                     <button type="button" wire:click="selectClient({{ $client->id }})" class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700">
@@ -51,6 +51,16 @@
                                         @endif
                                     </button>
                                 @endforeach
+                                <!-- Add New Client option -->
+                                <button type="button" wire:click="openQuickAddClient" class="w-full px-4 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 border-t border-slate-200 dark:border-slate-700">
+                                    <div class="flex items-center gap-2 text-sm font-medium text-[#3F5189]">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Add New Client
+                                    </div>
+                                    @if($clientSearch)
+                                        <div class="text-xs text-slate-500">Create "{{ $clientSearch }}"</div>
+                                    @endif
+                                </button>
                             </div>
                         @endif
                         @error('client_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -377,6 +387,9 @@
             </x-ui.button>
         </div>
     </div>
+
+    <!-- Quick Add Client Modal -->
+    <livewire:client.client-quick-create />
 
     <!-- Add/Edit Item Modal -->
     @if($showItemModal)

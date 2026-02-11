@@ -77,6 +77,37 @@ The Estimate module provides a complete workflow for creating, managing, and tra
 
 **Indexes:** estimate_id, catalog_item_id
 
+### 3. `estimate_emails` Table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | bigint | Primary key |
+| estimate_id | bigint | FK to estimates (cascadeOnDelete) |
+| sent_to | string | Recipient email address |
+| cc | string | Comma-separated CC addresses (nullable) |
+| subject | string | Email subject used |
+| body | longText | Email body HTML sent |
+| sent_by | bigint | FK to users (cascadeOnDelete) — who clicked Send |
+| sent_at | timestamp | When the email was sent |
+| opened_at | timestamp | When the tracking pixel was loaded (nullable) |
+| tracking_token | uuid | Unique token for tracking pixel URL |
+| timestamps | | created_at, updated_at |
+
+**Indexes:** estimate_id, sent_by, tracking_token (unique)
+
+### 4. `estimate_status_histories` Table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | bigint | Primary key |
+| estimate_id | bigint | FK to estimates (cascadeOnDelete) |
+| old_status | enum | draft, sent, accepted, declined (nullable — null for creation) |
+| new_status | enum | draft, sent, accepted, declined |
+| changed_by | bigint | FK to users |
+| timestamps | | created_at, updated_at |
+
+**Indexes:** estimate_id
+
 ---
 
 ## Calculation Logic
@@ -108,6 +139,9 @@ The Estimate module provides a complete workflow for creating, managing, and tra
 - `jobSite()` - BelongsTo JobSite (nullable)
 - `items()` - HasMany EstimateItem (ordered by sort_order)
 - `createdBy()` - BelongsTo User
+- `emailsSent()` - HasMany EstimateEmail (ordered by sent_at desc)
+- `statusHistories()` - HasMany EstimateStatusHistory (ordered by created_at desc)
+- `invoice()` - BelongsTo Invoice (via `converted_to_invoice_id`)
 
 **Money Accessors (cents ↔ dollars):**
 - `subtotal`, `taxTotal`, `totalAmount`, `discountAmount`
@@ -120,6 +154,9 @@ The Estimate module provides a complete workflow for creating, managing, and tra
 - `canBeEdited()` - Returns true if draft or sent
 - `canBeSent()` - Returns true if draft with items
 
+**Status Tracking:**
+- `recordStatusChange(User $user, ?string $old, string $new)` - Creates an EstimateStatusHistory record
+
 **Static Methods:**
 - `generateEstimateNumber()` - Generates next sequential EST-XXXX number
 - `calculateDueDate($date, $terms)` - Adds term days to estimate date
@@ -128,6 +165,26 @@ The Estimate module provides a complete workflow for creating, managing, and tra
 - `status_color` - CSS classes for status badge
 - `status_label` - Human-readable status text
 - `terms_label` - Human-readable terms (e.g., "Net 30")
+
+### EstimateEmail (`app/Models/EstimateEmail.php`)
+
+**Relationships:**
+- `estimate()` - BelongsTo Estimate
+- `sentBy()` - BelongsTo User (via `sent_by` column)
+
+**Casts:**
+- `sent_at` - datetime
+- `opened_at` - datetime
+
+### EstimateStatusHistory (`app/Models/EstimateStatusHistory.php`)
+
+**Relationships:**
+- `estimate()` - BelongsTo Estimate
+- `changedBy()` - BelongsTo User (via `changed_by` column)
+
+**Display Helpers:**
+- `getChangeDescription()` - e.g., "Draft → Sent" or "Created as Draft"
+- `getStatusColor()` - Returns color name (gray, blue, green, red)
 
 ### EstimateItem (`app/Models/EstimateItem.php`)
 
@@ -160,9 +217,12 @@ The Estimate module provides a complete workflow for creating, managing, and tra
 
 ### Status Transition Rules
 
+All transitions are logged to `estimate_status_histories` with the user who made the change.
+
 | From | To | Method | Conditions |
 |------|-----|--------|------------|
 | draft | sent | `markAsSent()` | Must be draft |
+| draft | sent | `sendEmail()` | Auto-transition when emailing a draft |
 | sent | accepted | `markAsAccepted()` | Must be sent |
 | sent | declined | `markAsDeclined()` | Must be sent |
 
@@ -244,6 +304,7 @@ Unit, Hour, Day, Week, Month, Sq Ft, Ln Ft, Cu Yd, Ton, Load, Lot
 - Estimate details card (client, project, jobsite, dates, terms, created by, timestamps)
 - Items table with all columns and totals breakdown
 - Message display (rendered HTML)
+- Email History card (shown when emails have been sent) — date, sent by, recipient, CC, subject, opened status
 - Internal notes display
 
 **Sidebar Actions (status-based):**
@@ -254,6 +315,11 @@ Unit, Hour, Day, Week, Month, Sq Ft, Ln Ft, Cu Yd, Ton, Load, Lot
 
 **Sidebar Summary Card:**
 - Item count, Subtotal, Discount, Tax, Total
+
+**Sidebar Status History Card:**
+- Timeline UI showing all status changes with colored dots (gray=draft, blue=sent, green=accepted, red=declined)
+- Each entry shows: change description, changed by user name, timestamp
+- All status transitions (markAsSent, markAsAccepted, markAsDeclined) are recorded via `recordStatusChange()`
 
 ### 4. EstimateEdit (`app/Livewire/Estimate/EstimateEdit.php`)
 
@@ -266,11 +332,48 @@ Unit, Hour, Day, Week, Month, Sq Ft, Ln Ft, Cu Yd, Ton, Load, Lot
 - On save: updates estimate, deletes old items, recreates from current array
 - Save redirects to show page
 
+### 5. EstimateSendEmail (`app/Livewire/Estimate/EstimateSendEmail.php`)
+
+**View:** `resources/views/livewire/estimate/estimate-send-email.blade.php`
+
+Inline component rendered inside `EstimateShow` via `<livewire:estimate.estimate-send-email />`.
+
+**Features:**
+- Pre-fills recipient from client email, subject from company name + estimate number
+- Generates default body with client name, estimate number, total amount
+- CC field (comma-separated)
+- TinyMCE editor for body
+- Sends email with PDF attachment
+- Generates UUID tracking token per send
+- Creates `EstimateEmail` log record after successful send
+- Updates estimate status to "sent" if currently draft
+- Redirects back to estimate show page
+
+### 6. Email Open Tracking (`app/Http/Controllers/EmailTrackingController.php`)
+
+**Route:** `GET /email/track/{token}` — public (no auth middleware)
+
+**How it works:**
+1. Each sent email gets a unique UUID `tracking_token`
+2. The email HTML includes a hidden 1x1 transparent GIF `<img>` tag pointing to the tracking route
+3. When the recipient's email client loads images, it hits the tracking URL
+4. The controller looks up the `EstimateEmail` by token and sets `opened_at` if not already set
+5. Returns a 1x1 transparent GIF with no-cache headers
+
+**Limitations:**
+- Not 100% reliable — many email clients block remote images by default
+- Only records the first open (subsequent loads are ignored)
+- Industry-standard approach used by all major email platforms
+
 ---
 
 ## Routes
 
 ```php
+// Public (no auth)
+Route::get('email/track/{token}', [EmailTrackingController::class, 'track'])->name('email.track');
+
+// Authenticated
 Route::get('estimates', EstimateIndex::class)->name('estimates.index');
 Route::get('estimates/create', EstimateCreate::class)->name('estimates.create');
 Route::get('estimates/{estimate}', EstimateShow::class)->name('estimates.show');
@@ -313,26 +416,41 @@ When selecting a catalog item for a line item:
 **Migrations:**
 - `database/migrations/2026_02_09_200000_create_estimates_table.php`
 - `database/migrations/2026_02_09_200001_create_estimate_items_table.php`
+- `database/migrations/2026_02_10_151703_create_estimate_emails_table.php`
+- `database/migrations/2026_02_10_210000_create_estimate_status_histories_table.php`
 
 **Models:**
 - `app/Models/Estimate.php`
 - `app/Models/EstimateItem.php`
+- `app/Models/EstimateEmail.php`
+- `app/Models/EstimateStatusHistory.php`
+
+**Controllers:**
+- `app/Http/Controllers/EstimatePdfController.php`
+- `app/Http/Controllers/EmailTrackingController.php`
+
+**Mailables:**
+- `app/Mail/EstimateMail.php`
 
 **Livewire Components:**
 - `app/Livewire/Estimate/EstimateIndex.php`
 - `app/Livewire/Estimate/EstimateCreate.php`
 - `app/Livewire/Estimate/EstimateShow.php`
 - `app/Livewire/Estimate/EstimateEdit.php`
+- `app/Livewire/Estimate/EstimateSendEmail.php`
 
 **Views:**
 - `resources/views/livewire/estimate/estimate-index.blade.php`
 - `resources/views/livewire/estimate/estimate-create.blade.php`
 - `resources/views/livewire/estimate/estimate-show.blade.php`
 - `resources/views/livewire/estimate/estimate-edit.blade.php`
+- `resources/views/livewire/estimate/estimate-send-email.blade.php`
+- `resources/views/emails/estimate.blade.php`
+- `resources/views/pdf/estimate.blade.php`
 
 ### Modified Files
 
-- `routes/web.php` - Added estimate routes
+- `routes/web.php` - Added estimate routes and public email tracking route
 - `resources/views/components/layouts/inc/sidebar.blade.php` - Added Estimates nav item
 
 ---
@@ -344,7 +462,8 @@ All monetary values are stored in cents (unsignedBigInteger) in the database and
 
 ### Cascade Deletes
 - Deleting a Client cascades to all linked estimates
-- Deleting an Estimate cascades to all estimate items
+- Deleting an Estimate cascades to all estimate items, estimate emails, and status histories
+- Deleting a User cascades to all estimate emails they sent (via `sent_by`)
 - Deleting a Project or JobSite sets the FK to null (nullOnDelete)
 - Deleting a CatalogItem sets the FK to null on estimate items (nullOnDelete)
 
@@ -353,3 +472,9 @@ Client, Project, Job Site, and Catalog Item fields all use search-based dropdown
 
 ### Message Snapshots
 The message title and body are stored directly on the estimate record as snapshots. Changing or deleting the DocumentMessage template after an estimate is created does not affect existing estimates.
+
+### Invoice Conversion
+- Accepted estimates can be converted to draft invoices via `convertToInvoice()` in EstimateShow
+- All items, discounts, taxes, and notes are copied to the new invoice
+- The estimate's `converted_to_invoice_id` is set to link back to the created invoice
+- If the invoice is later deleted, `converted_to_invoice_id` is cleared so the estimate can be converted again

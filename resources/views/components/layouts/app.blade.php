@@ -8,7 +8,7 @@
     activeSubmenu: @js(
         request()->routeIs('company.*') || request()->routeIs('users.*')
             ? 'company'
-            : (request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*')
+            : (request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*') || request()->routeIs('payments.*')
                 ? 'projects'
                 : (request()->routeIs('catalog.*') || request()->routeIs('suppliers.*')
                     ? 'catalog'

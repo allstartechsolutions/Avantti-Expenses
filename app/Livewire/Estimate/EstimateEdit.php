@@ -10,6 +10,7 @@ use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\TaxRate;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class EstimateEdit extends Component
@@ -130,6 +131,19 @@ class EstimateEdit extends Component
 
         // Calculate totals from loaded items
         $this->calculateEstimateTotals();
+    }
+
+    // --- Quick Add Client ---
+
+    public function openQuickAddClient()
+    {
+        $this->dispatch('open-quick-add-client', companyName: $this->clientSearch);
+    }
+
+    #[On('client-quick-created')]
+    public function onClientQuickCreated($clientId)
+    {
+        $this->selectClient($clientId);
     }
 
     // --- Client/Project/JobSite cascading ---
