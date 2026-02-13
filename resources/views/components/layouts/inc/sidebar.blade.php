@@ -98,6 +98,7 @@
             </div>
 
             <!-- Projects -->
+            @if(\App\Models\ModuleAccess::isEnabled('projects'))
             <div class="mb-1">
                 <button @click="toggleSubmenu('projects')"
                         class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*') || request()->routeIs('payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
@@ -164,7 +165,10 @@
                 </div>
             </div>
 
+            @endif
+
             <!-- Catalog -->
+            @if(\App\Models\ModuleAccess::isEnabled('catalog'))
             <div class="mb-1">
                 <button @click="toggleSubmenu('catalog')"
                         class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('catalog.*') || request()->routeIs('suppliers.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
@@ -217,7 +221,10 @@
                 </div>
             </div>
 
+            @endif
+
             <!-- Estimates -->
+            @if(\App\Models\ModuleAccess::isEnabled('estimates'))
             <a href="{{ route('estimates.index') }}" class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('estimates.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -225,13 +232,17 @@
                 <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Estimates</span>
             </a>
 
+            @endif
+
             <!-- Invoices -->
+            @if(\App\Models\ModuleAccess::isEnabled('invoices'))
             <a href="{{ route('invoices.index') }}" class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('invoices.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Invoices</span>
             </a>
+            @endif
         </div>
     </nav>
 

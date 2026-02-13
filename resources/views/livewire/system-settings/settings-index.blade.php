@@ -23,6 +23,11 @@
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'messages' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     Messages
                 </button>
+                <button
+                    wire:click="switchTab('modules')"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'modules' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    Modules
+                </button>
             </nav>
         </div>
     </div>
@@ -32,5 +37,7 @@
         <livewire:system-settings.tax-rate-settings />
     @elseif($activeTab === 'messages')
         <livewire:system-settings.document-message-settings />
+    @elseif($activeTab === 'modules')
+        <livewire:system-settings.module-access-settings />
     @endif
 </div>
