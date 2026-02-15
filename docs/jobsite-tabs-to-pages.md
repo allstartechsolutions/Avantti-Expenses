@@ -33,6 +33,7 @@ Props for `<x-jobsite-nav>`: `$jobSite`, `$active`
 | 4 | `JobSiteDailyReports` | `GET /job-sites/{jobSite}/daily-reports` | `jobsites.daily-reports` | Pending |
 | 5 | `JobSitePurchaseOrders` | `GET /job-sites/{jobSite}/purchase-orders` | `jobsites.purchase-orders` | Pending |
 | 6 | `JobSiteBudget` | `GET /job-sites/{jobSite}/budget` | `jobsites.budget` | Pending |
+| 7 | `JobSiteContracts` | `GET /job-sites/{jobSite}/contracts` | `jobsites.contracts` | Done |
 
 ### Legacy Support
 

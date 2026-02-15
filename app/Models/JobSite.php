@@ -100,6 +100,14 @@ class JobSite extends Model
     }
 
     /**
+     * Get the contracts for this job site
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

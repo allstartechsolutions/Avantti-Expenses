@@ -27,6 +27,7 @@ use App\Livewire\Project\ProjectChangeOrders;
 use App\Livewire\Project\ProjectDailyReports;
 use App\Livewire\Project\ProjectBudget;
 use App\Livewire\JobSite\JobSiteShow;
+use App\Livewire\JobSite\JobSiteContracts;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
@@ -53,6 +54,10 @@ use App\Livewire\Budget\BudgetEdit;
 use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
 use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
 use App\Livewire\PurchaseOrder\PurchaseOrderShow;
+use App\Livewire\Contract\ContractCreate;
+use App\Livewire\Contract\ContractShow;
+use App\Livewire\Contract\ContractEdit;
+use App\Livewire\Project\ProjectContracts;
 use App\Livewire\Project\ProjectPurchaseOrders;
 use App\Livewire\Estimate\EstimateIndex;
 use App\Livewire\Estimate\EstimateCreate;
@@ -113,6 +118,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/jobsites', ProjectJobSites::class)->name('projects.jobsites');
     Route::get('projects/{project}/expenses', ProjectExpenses::class)->name('projects.expenses');
     Route::get('projects/{project}/change-orders', ProjectChangeOrders::class)->name('projects.change-orders');
+    Route::get('projects/{project}/contracts', ProjectContracts::class)->name('projects.contracts');
     Route::get('projects/{project}/daily-reports', ProjectDailyReports::class)->name('projects.daily-reports');
     Route::get('projects/{project}/budget', ProjectBudget::class)->name('projects.budget');
 
@@ -123,12 +129,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('job-sites/{jobSite}', JobSiteOverview::class)->name('jobsites.overview');
     Route::get('job-sites/{jobSite}/expenses', JobSiteShow::class)->name('jobsites.expenses');
     Route::get('job-sites/{jobSite}/change-orders', JobSiteShow::class)->name('jobsites.change-orders');
+    Route::get('job-sites/{jobSite}/contracts', JobSiteContracts::class)->name('jobsites.contracts');
     Route::get('job-sites/{jobSite}/purchase-orders', JobSiteShow::class)->name('jobsites.purchase-orders');
     Route::get('job-sites/{jobSite}/daily-reports', JobSiteShow::class)->name('jobsites.daily-reports');
     Route::get('job-sites/{jobSite}/budget', JobSiteShow::class)->name('jobsites.budget');
 
     // Legacy route alias (for backward compatibility during migration)
     Route::get('job-sites/{jobSite}/show', JobSiteShow::class)->name('jobsites.show');
+
+    // Contract routes
+    Route::get('contracts/{contract}', ContractShow::class)->name('contracts.show');
+    Route::get('contracts/{contract}/edit', ContractEdit::class)->name('contracts.edit');
+    Route::get('projects/{project}/contracts/create', ContractCreate::class)->name('contracts.project.create');
+    Route::get('job-sites/{jobSite}/contracts/create', ContractCreate::class)->name('contracts.jobsite.create');
 
     // Expense routes
     Route::get('projects/{project}/expenses/create', ExpenseCreate::class)->name('expenses.project.create');

@@ -141,6 +141,22 @@ class Project extends Model
     }
 
     /**
+     * Get all contracts for this project (including job site contracts)
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    /**
+     * Get only project-level contracts (not tied to a job site)
+     */
+    public function projectLevelContracts(): HasMany
+    {
+        return $this->hasMany(Contract::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string
