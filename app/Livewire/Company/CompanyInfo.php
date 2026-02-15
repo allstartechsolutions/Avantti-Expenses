@@ -41,10 +41,13 @@ class CompanyInfo extends Component
         'logo' => 'nullable|image|max:2048',
     ];
 
-    protected $validationAttributes = [
-        'name' => 'company name',
-        'postal_code' => 'postal code',
-    ];
+    public function validationAttributes()
+    {
+        return [
+            'name' => __('company name'),
+            'postal_code' => __('postal code'),
+        ];
+    }
 
     public function mount()
     {
@@ -93,7 +96,7 @@ class CompanyInfo extends Component
             $this->company->logo = null;
             $this->company->save();
             $this->existingLogo = null;
-            session()->flash('message', 'Logo removed successfully!');
+            session()->flash('message', __('Logo removed successfully!'));
         }
     }
 
@@ -131,7 +134,7 @@ class CompanyInfo extends Component
 
         $company->save();
 
-        $message = $this->company ? 'Company updated successfully!' : 'Company created successfully!';
+        $message = $this->company ? __('Company updated successfully!') : __('Company created successfully!');
         session()->flash('message', $message);
 
         return redirect()->route('company.info');

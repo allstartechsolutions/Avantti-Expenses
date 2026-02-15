@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Users</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage system users</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Users') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage system users') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('users.create') }}"
                     icon="plus">
-                    Add User
+                    {{ __('Add User') }}
                 </x-ui.button>
             </div>
         </div>
@@ -31,45 +31,45 @@
                 <!-- Search -->
                 <div class="md:col-span-2">
                     <label for="search" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Search
+                        {{ __('Search') }}
                     </label>
                     <input
                         type="text"
                         id="search"
                         wire:model.live.debounce.300ms="search"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Search by name, email, or phone..."
+                        placeholder="{{ __('Search by name, email, or phone...') }}"
                     >
                 </div>
 
                 <!-- Status Filter -->
                 <div>
                     <label for="statusFilter" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Status
+                        {{ __('Status') }}
                     </label>
                     <select
                         id="statusFilter"
                         wire:model.live="statusFilter"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="suspended">Suspended</option>
+                        <option value="">{{ __('All Statuses') }}</option>
+                        <option value="active">{{ __('Active') }}</option>
+                        <option value="inactive">{{ __('Inactive') }}</option>
+                        <option value="suspended">{{ __('Suspended') }}</option>
                     </select>
                 </div>
 
                 <!-- Role Filter -->
                 <div>
                     <label for="roleFilter" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Role
+                        {{ __('Role') }}
                     </label>
                     <select
                         id="roleFilter"
                         wire:model.live="roleFilter"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
-                        <option value="">All Roles</option>
+                        <option value="">{{ __('All Roles') }}</option>
                         @foreach(\App\Models\Role::all() as $role)
                             <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
                         @endforeach
@@ -84,7 +84,7 @@
                         variant="secondary"
                         size="sm"
                         wire:click="clearFilters">
-                        Clear Filters
+                        {{ __('Clear Filters') }}
                     </x-ui.button>
                 </div>
             @endif
@@ -98,22 +98,22 @@
                 <thead class="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            User
+                            {{ __('User') }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            Contact
+                            {{ __('Contact') }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            Role
+                            {{ __('Role') }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            Status
+                            {{ __('Status') }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            Joined
+                            {{ __('Joined') }}
                         </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                            Actions
+                            {{ __('Actions') }}
                         </th>
                     </tr>
                 </thead>
@@ -147,7 +147,7 @@
                             <!-- Role -->
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                    {{ $user->role ? ucfirst($user->role->name) : 'No Role' }}
+                                    {{ $user->role ? ucfirst($user->role->name) : __('No Role') }}
                                 </span>
                             </td>
 
@@ -187,9 +187,9 @@
                                     </svg>
                                     <p class="text-slate-500 dark:text-slate-400 text-sm">
                                         @if($search || $statusFilter || $roleFilter)
-                                            No users found matching your filters.
+                                            {{ __('No users found matching your filters.') }}
                                         @else
-                                            No users yet. Create your first user to get started.
+                                            {{ __('No users yet. Create your first user to get started.') }}
                                         @endif
                                     </p>
                                     @if(!$search && !$statusFilter && !$roleFilter)
@@ -198,7 +198,7 @@
                                                 variant="primary"
                                                 href="{{ route('users.create') }}"
                                                 icon="plus">
-                                                Add User
+                                                {{ __('Add User') }}
                                             </x-ui.button>
                                         </div>
                                     @endif
@@ -220,6 +220,6 @@
 
     <!-- Results Info -->
     <div class="mt-4 text-sm text-slate-500 dark:text-slate-400">
-        Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} users
+        {{ __('Showing :from to :to of :total users', ['from' => $users->firstItem() ?? 0, 'to' => $users->lastItem() ?? 0, 'total' => $users->total()]) }}
     </div>
 </div>

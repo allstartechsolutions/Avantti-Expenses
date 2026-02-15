@@ -97,7 +97,7 @@ class ProjectIndex extends Component
         $this->deletingProjectId = null;
         $this->deleteProjectData = [];
 
-        session()->flash('message', 'Project deleted successfully!');
+        session()->flash('message', __('Project deleted successfully!'));
     }
 
     protected function cleanupProjectFiles($projectId)

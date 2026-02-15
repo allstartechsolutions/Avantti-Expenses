@@ -4,10 +4,10 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-                        {{ $company ? 'Company Info' : 'Setup Company' }}
+                        {{ $company ? __('Company Info') : __('Setup Company') }}
                     </h1>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        {{ $company ? 'Update your company information' : 'Configure your company details' }}
+                        {{ $company ? __('Update your company information') : __('Configure your company details') }}
                     </p>
                 </div>
                 <div>
@@ -15,7 +15,7 @@
                         variant="secondary"
                         href="{{ route('dashboard') }}"
                         icon="arrow-left">
-                        Back to Dashboard
+                        {{ __('Back to Dashboard') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -33,21 +33,21 @@
             <!-- Basic Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Information</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Company name and primary details</p>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Basic Information') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Company name and primary details') }}</p>
                 </div>
                 <div class="p-6 space-y-6">
                     <!-- Company Name -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Company Name <span class="text-red-500">*</span>
+                            {{ __('Company Name') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="name"
                             wire:model.live="name"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Enter company name"
+                            placeholder="{{ __('Enter company name') }}"
                         >
                         @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -56,7 +56,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Email
+                                {{ __('Email') }}
                             </label>
                             <input
                                 type="email"
@@ -69,7 +69,7 @@
                         </div>
                         <div>
                             <label for="website" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Website
+                                {{ __('Website') }}
                             </label>
                             <input
                                 type="url"
@@ -87,21 +87,21 @@
             <!-- Address Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Address Information</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Company location details</p>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Address Information') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Company location details') }}</p>
                 </div>
                 <div class="p-6 space-y-6">
                     <!-- Street Address -->
                     <div>
                         <label for="street" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Street Address
+                            {{ __('Street Address') }}
                         </label>
                         <input
                             type="text"
                             id="street"
                             wire:model.live="street"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="123 Business Street"
+                            placeholder="{{ __('123 Business Street') }}"
                         >
                         @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -110,33 +110,33 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                City
+                                {{ __('City') }}
                             </label>
                             <input
                                 type="text"
                                 id="city"
                                 wire:model.live="city"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="City"
+                                placeholder="{{ __('City') }}"
                             >
                             @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                State/Province
+                                {{ __('State/Province') }}
                             </label>
                             <input
                                 type="text"
                                 id="state"
                                 wire:model.live="state"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="State"
+                                placeholder="{{ __('State') }}"
                             >
                             @error('state') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="postal_code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Postal Code
+                                {{ __('Postal Code') }}
                             </label>
                             <input
                                 type="text"
@@ -154,15 +154,15 @@
             <!-- Contact Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Information</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Phone numbers and contact details</p>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contact Information') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Phone numbers and contact details') }}</p>
                 </div>
                 <div class="p-6 space-y-6">
                     <!-- Phone Numbers -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Phone
+                                {{ __('Phone') }}
                             </label>
                             <input
                                 type="tel"
@@ -175,7 +175,7 @@
                         </div>
                         <div>
                             <label for="mobile" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Mobile
+                                {{ __('Mobile') }}
                             </label>
                             <input
                                 type="tel"
@@ -188,7 +188,7 @@
                         </div>
                         <div>
                             <label for="fax" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Fax
+                                {{ __('Fax') }}
                             </label>
                             <input
                                 type="tel"
@@ -206,8 +206,8 @@
             <!-- Logo Upload Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Company Logo</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Upload a logo image (max 2MB)</p>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Company Logo') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Upload a logo image (max 2MB)') }}</p>
                 </div>
                 <div class="p-6">
                     <div x-data="{ dragOver: false }"
@@ -219,12 +219,12 @@
                                 <div class="flex items-center space-x-4">
                                     <div class="flex-shrink-0">
                                         <img src="{{ asset('storage/' . $existingLogo) }}"
-                                             alt="Current logo"
+                                             alt="{{ __('Current Logo') }}"
                                              class="w-20 h-20 object-contain bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 p-2">
                                     </div>
                                     <div class="flex-1">
-                                        <p class="text-sm font-medium text-slate-900 dark:text-white">Current Logo</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">Upload a new image to replace</p>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">{{ __('Current Logo') }}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Upload a new image to replace') }}</p>
                                     </div>
                                     <div>
                                         <x-ui.button
@@ -232,7 +232,7 @@
                                             variant="danger"
                                             size="sm"
                                             wire:click="removeExistingLogo">
-                                            Remove
+                                            {{ __('Remove') }}
                                         </x-ui.button>
                                     </div>
                                 </div>
@@ -245,12 +245,12 @@
                                 <div class="flex items-center space-x-4">
                                     <div class="flex-shrink-0">
                                         <img src="{{ $logoPreview }}"
-                                             alt="Logo preview"
+                                             alt="{{ __('Logo Preview') }}"
                                              class="w-20 h-20 object-contain bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 p-2">
                                     </div>
                                     <div class="flex-1">
-                                        <p class="text-sm font-medium text-slate-900 dark:text-white">New Logo Preview</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">Image ready for upload</p>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">{{ __('New Logo Preview') }}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Image ready for upload') }}</p>
                                     </div>
                                     <div>
                                         <x-ui.button
@@ -258,7 +258,7 @@
                                             variant="danger"
                                             size="sm"
                                             wire:click="removeLogo">
-                                            Remove
+                                            {{ __('Remove') }}
                                         </x-ui.button>
                                     </div>
                                 </div>
@@ -279,10 +279,10 @@
                             <div class="mt-4">
                                 <label for="logo" class="cursor-pointer">
                                     <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        Click to upload or drag and drop
+                                        {{ __('Click to upload or drag and drop') }}
                                     </span>
                                     <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        PNG, JPG, GIF up to 2MB
+                                        {{ __('PNG, JPG, GIF up to 2MB') }}
                                     </span>
                                 </label>
                                 <input
@@ -308,7 +308,7 @@
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('dashboard') }}">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     type="submit"
@@ -316,8 +316,8 @@
                     icon="save"
                     wire:loading.attr="disabled"
                     wire:loading.class="opacity-50">
-                    <span wire:loading.remove>{{ $company ? 'Update Company' : 'Save Company' }}</span>
-                    <span wire:loading>{{ $company ? 'Updating...' : 'Saving...' }}</span>
+                    <span wire:loading.remove>{{ $company ? __('Update Company') : __('Save Company') }}</span>
+                    <span wire:loading>{{ $company ? __('Updating...') : __('Saving...') }}</span>
                 </x-ui.button>
             </div>
         </form>

@@ -36,7 +36,7 @@ class UserProfile extends Component
 
         Auth::user()->update($validated);
 
-        session()->flash('profile-message', 'Profile updated successfully.');
+        session()->flash('profile-message', __('Profile updated successfully.'));
     }
 
     public function updatePassword(): void

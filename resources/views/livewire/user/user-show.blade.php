@@ -3,21 +3,21 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">User Details</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">View user information</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('User Details') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('View user information') }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('users.index') }}"
                     icon="arrow-left">
-                    Back to Users
+                    {{ __('Back to Users') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('users.edit', $user->id) }}"
                     icon="edit">
-                    Edit User
+                    {{ __('Edit User') }}
                 </x-ui.button>
             </div>
         </div>
@@ -43,7 +43,7 @@
             <!-- Profile Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Profile Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Profile Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="flex items-center space-x-6 mb-6">
@@ -62,7 +62,7 @@
                         <!-- Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Full Name
+                                {{ __('Full Name') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $user->name }}</p>
                         </div>
@@ -70,7 +70,7 @@
                         <!-- Email -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Email Address
+                                {{ __('Email Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $user->email }}</p>
                         </div>
@@ -78,25 +78,25 @@
                         <!-- Phone -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Phone Number
+                                {{ __('Phone Number') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $user->phone ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $user->phone ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Role -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Role
+                                {{ __('Role') }}
                             </label>
                             <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                {{ $user->role ? ucfirst($user->role->name) : 'No Role' }}
+                                {{ $user->role ? ucfirst($user->role->name) : __('No Role') }}
                             </span>
                         </div>
 
                         <!-- Status -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Status
+                                {{ __('Status') }}
                             </label>
                             @php
                                 $statusColors = [
@@ -114,7 +114,7 @@
                         <!-- Created At -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Joined
+                                {{ __('Joined') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $user->created_at->format('F d, Y') }}</p>
                         </div>
@@ -125,28 +125,28 @@
             <!-- Account Details -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Account Details</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Account Details') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Email Verified -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Email Verified
+                                {{ __('Email Verified') }}
                             </label>
                             @if($user->email_verified_at)
                                 <p class="text-green-600 dark:text-green-400">
-                                    ✓ Verified on {{ $user->email_verified_at->format('M d, Y') }}
+                                    &#10003; {{ __('Verified on :date', ['date' => $user->email_verified_at->format('M d, Y')]) }}
                                 </p>
                             @else
-                                <p class="text-red-600 dark:text-red-400">Not verified</p>
+                                <p class="text-red-600 dark:text-red-400">{{ __('Not verified') }}</p>
                             @endif
                         </div>
 
                         <!-- Last Updated -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Last Updated
+                                {{ __('Last Updated') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $user->updated_at->format('F d, Y \a\t g:i A') }}</p>
                         </div>
@@ -160,7 +160,7 @@
             <!-- Quick Actions -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     <x-ui.button
@@ -168,7 +168,7 @@
                         class="w-full justify-center"
                         href="{{ route('users.edit', $user->id) }}"
                         icon="edit">
-                        Edit User
+                        {{ __('Edit User') }}
                     </x-ui.button>
 
                     <x-ui.button
@@ -177,8 +177,8 @@
                         wire:click="sendPasswordReset"
                         wire:loading.attr="disabled"
                         icon="mail">
-                        <span wire:loading.remove>Send Password Reset</span>
-                        <span wire:loading>Sending...</span>
+                        <span wire:loading.remove>{{ __('Send Password Reset') }}</span>
+                        <span wire:loading>{{ __('Sending...') }}</span>
                     </x-ui.button>
                 </div>
             </div>
@@ -186,15 +186,15 @@
             <!-- Account Stats -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Account Stats</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Account Stats') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">User ID</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('User ID') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $user->id }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Account Age</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Account Age') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->created_at->diffForHumans() }}</span>
                     </div>
                 </div>

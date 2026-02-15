@@ -27,14 +27,17 @@ class UserCreate extends Component
         'status' => 'required|in:active,inactive,suspended',
     ];
 
-    protected $validationAttributes = [
-        'name' => 'name',
-        'email' => 'email address',
-        'phone' => 'phone number',
-        'password' => 'password',
-        'role_id' => 'role',
-        'status' => 'status',
-    ];
+    public function validationAttributes()
+    {
+        return [
+            'name' => __('name'),
+            'email' => __('email address'),
+            'phone' => __('phone number'),
+            'password' => __('password'),
+            'role_id' => __('role'),
+            'status' => __('status'),
+        ];
+    }
 
     public function updated($propertyName)
     {
@@ -54,7 +57,7 @@ class UserCreate extends Component
             'status' => $this->status,
         ]);
 
-        session()->flash('message', 'User created successfully!');
+        session()->flash('message', __('User created successfully!'));
 
         return redirect()->route('users.index');
     }

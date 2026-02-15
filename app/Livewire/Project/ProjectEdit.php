@@ -51,14 +51,17 @@ class ProjectEdit extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'client_id' => 'client',
-        'project_name' => 'project name',
-        'contact_person' => 'contact person',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'initial_amount' => 'initial amount',
-    ];
+    public function validationAttributes()
+    {
+        return [
+            'client_id' => __('client'),
+            'project_name' => __('project name'),
+            'contact_person' => __('contact person'),
+            'postal_code' => __('postal code'),
+            'email' => __('email address'),
+            'initial_amount' => __('initial amount'),
+        ];
+    }
 
     public function mount(Project $project)
     {
@@ -136,7 +139,7 @@ class ProjectEdit extends Component
             'status' => $this->status,
         ]);
 
-        session()->flash('message', 'Project updated successfully!');
+        session()->flash('message', __('Project updated successfully!'));
 
         return redirect()->route('projects.index');
     }

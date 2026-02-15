@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Auth;
 
 class Contract extends Model
@@ -118,6 +119,11 @@ class Contract extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(ContractPayment::class)->orderByDesc('payment_date');
+    }
+
+    public function latestPayment(): HasOne
+    {
+        return $this->hasOne(ContractPayment::class)->latestOfMany('payment_date');
     }
 
     public function getAmountPaid(): float

@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Project</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add a new project to the system</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Create Project') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Add a new project to the system') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('projects.index') }}"
                     icon="arrow-left">
-                    Back to Projects
+                    {{ __('Back to Projects') }}
                 </x-ui.button>
             </div>
         </div>
@@ -29,14 +29,14 @@
         <!-- Client Selection Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Client Selection</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the client for this project</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Client Selection') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Select the client for this project') }}</p>
             </div>
             <div class="p-6">
                 <!-- Client Search Dropdown -->
                 <div class="relative">
                     <label for="clientSearch" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Search Client <span class="text-red-500">*</span>
+                        {{ __('Search Client') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -44,7 +44,7 @@
                         wire:model.live.debounce.300ms="clientSearch"
                         wire:focus="$set('showClientDropdown', true)"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Type to search for a client..."
+                        placeholder="{{ __('Type to search for a client...') }}"
                         autocomplete="off"
                     >
                     @error('client_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -71,7 +71,7 @@
                         </div>
                     @elseif($showClientDropdown && !empty($clientSearch) && count($clients) === 0)
                         <div class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-md shadow-lg p-4">
-                            <p class="text-sm text-slate-500 dark:text-slate-400">No clients found. <a href="{{ route('clients.create') }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">Create a new client</a></p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No clients found.') }} <a href="{{ route('clients.create') }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ __('Create a new client') }}</a></p>
                         </div>
                     @endif
                 </div>
@@ -81,21 +81,21 @@
         <!-- Project Information Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic project details</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Basic project details') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Project Name -->
                 <div>
                     <label for="project_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Project Name <span class="text-red-500">*</span>
+                        {{ __('Project Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="project_name"
                         wire:model.live="project_name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Enter project name"
+                        placeholder="{{ __('Enter project name') }}"
                     >
                     @error('project_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -104,7 +104,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="initial_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Initial Amount <span class="text-red-500">*</span>
+                            {{ __('Initial Amount') }} <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
@@ -122,7 +122,7 @@
 
                     <div>
                         <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Project Status <span class="text-red-500">*</span>
+                            {{ __('Project Status') }} <span class="text-red-500">*</span>
                         </label>
                         <select
                             id="status"
@@ -139,14 +139,14 @@
                 <!-- Description -->
                 <div>
                     <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Description
+                        {{ __('Description') }}
                     </label>
                     <textarea
                         id="description"
                         wire:model.live="description"
                         rows="4"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Enter project description..."></textarea>
+                        placeholder="{{ __('Enter project description...') }}"></textarea>
                     @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
             </div>
@@ -155,29 +155,29 @@
         <!-- Contact Information Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Primary contact for this project (editable)</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contact Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Primary contact for this project (editable)') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Contact Person and Phone -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="contact_person" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Contact Person <span class="text-red-500">*</span>
+                            {{ __('Contact Person') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="contact_person"
                             wire:model.live="contact_person"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Enter contact person name"
+                            placeholder="{{ __('Enter contact person name') }}"
                         >
                         @error('contact_person') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
                     <div>
                         <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Phone Number
+                            {{ __('Phone Number') }}
                         </label>
                         <input
                             type="tel"
@@ -193,7 +193,7 @@
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Email Address <span class="text-red-500">*</span>
+                        {{ __('Email Address') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="email"
@@ -215,14 +215,14 @@
             })"
             x-init="init()">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Address</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Start typing to search for an address or enter manually</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Address') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Start typing to search for an address or enter manually') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Street Address with Autocomplete -->
                 <div>
                     <label for="project-street" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Street Address
+                        {{ __('Street Address') }}
                     </label>
                     <input
                         type="text"
@@ -230,7 +230,7 @@
                         x-ref="streetInput"
                         wire:model.live="street"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Start typing an address..."
+                        placeholder="{{ __('Start typing an address...') }}"
                         autocomplete="off"
                     >
                     @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -239,14 +239,14 @@
                 <!-- Address Line 2 -->
                 <div>
                     <label for="address_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Address Line 2
+                        {{ __('Address Line 2') }}
                     </label>
                     <input
                         type="text"
                         id="address_2"
                         wire:model.live="address_2"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Suite, Apt, Unit, etc."
+                        placeholder="{{ __('Suite, Apt, Unit, etc.') }}"
                     >
                     @error('address_2') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -255,14 +255,14 @@
                 <!-- Neighborhood (Brazil only) -->
                 <div>
                     <label for="neighborhood" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Neighborhood (Bairro)
+                        {{ __('Neighborhood (Bairro)') }}
                     </label>
                     <input
                         type="text"
                         id="neighborhood"
                         wire:model.live="neighborhood"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Bairro"
+                        placeholder="{{ __('Bairro') }}"
                     >
                     @error('neighborhood') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -272,33 +272,33 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            City
+                            {{ __('City') }}
                         </label>
                         <input
                             type="text"
                             id="city"
                             wire:model.live="city"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="City"
+                            placeholder="{{ __('City') }}"
                         >
                         @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            State
+                            {{ __('State') }}
                         </label>
                         <input
                             type="text"
                             id="state"
                             wire:model.live="state"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="State"
+                            placeholder="{{ __('State') }}"
                         >
                         @error('state') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label for="postal_code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ config('app.country') === 'BR' ? 'CEP' : 'Postal Code' }}
+                            {{ config('app.country') === 'BR' ? __('CEP') : __('Postal Code') }}
                         </label>
                         <input
                             type="text"
@@ -322,7 +322,7 @@
             <x-ui.button
                 variant="secondary"
                 href="{{ route('projects.index') }}">
-                Cancel
+                {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button
                 type="submit"
@@ -330,8 +330,8 @@
                 icon="save"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50">
-                <span wire:loading.remove>Create Project</span>
-                <span wire:loading>Creating...</span>
+                <span wire:loading.remove>{{ __('Create Project') }}</span>
+                <span wire:loading>{{ __('Creating...') }}</span>
             </x-ui.button>
         </div>
     </form>

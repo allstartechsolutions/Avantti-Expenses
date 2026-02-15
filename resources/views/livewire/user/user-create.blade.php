@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create User</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add a new user to the system</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Create User') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Add a new user to the system') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('users.index') }}"
                     icon="arrow-left">
-                    Back to Users
+                    {{ __('Back to Users') }}
                 </x-ui.button>
             </div>
         </div>
@@ -29,21 +29,21 @@
         <!-- Basic Information Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">User details and contact information</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Basic Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('User details and contact information') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Name -->
                 <div>
                     <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Full Name <span class="text-red-500">*</span>
+                        {{ __('Full Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="name"
                         wire:model.live="name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Enter full name"
+                        placeholder="{{ __('Enter full name') }}"
                     >
                     @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -52,7 +52,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Email Address <span class="text-red-500">*</span>
+                            {{ __('Email Address') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="email"
@@ -65,7 +65,7 @@
                     </div>
                     <div>
                         <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Phone Number
+                            {{ __('Phone Number') }}
                         </label>
                         <input
                             type="tel"
@@ -83,35 +83,35 @@
         <!-- Password Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Password</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Set initial password for the user</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Password') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Set initial password for the user') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Password Fields -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Password <span class="text-red-500">*</span>
+                            {{ __('Password') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="password"
                             id="password"
                             wire:model.live="password"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Minimum 8 characters"
+                            placeholder="{{ __('Minimum 8 characters') }}"
                         >
                         @error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label for="password_confirmation" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Confirm Password <span class="text-red-500">*</span>
+                            {{ __('Confirm Password') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="password"
                             id="password_confirmation"
                             wire:model.live="password_confirmation"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Re-enter password"
+                            placeholder="{{ __('Re-enter password') }}"
                         >
                     </div>
                 </div>
@@ -121,22 +121,22 @@
         <!-- Role and Status Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Role & Status</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Assign role and set account status</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Role & Status') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Assign role and set account status') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Role and Status -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="role_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Role <span class="text-red-500">*</span>
+                            {{ __('Role') }} <span class="text-red-500">*</span>
                         </label>
                         <select
                             id="role_id"
                             wire:model.live="role_id"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         >
-                            <option value="">Select a role</option>
+                            <option value="">{{ __('Select a role') }}</option>
                             @foreach($roles as $role)
                                 <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
                             @endforeach
@@ -145,7 +145,7 @@
                     </div>
                     <div>
                         <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Status <span class="text-red-500">*</span>
+                            {{ __('Status') }} <span class="text-red-500">*</span>
                         </label>
                         <select
                             id="status"
@@ -167,7 +167,7 @@
             <x-ui.button
                 variant="secondary"
                 href="{{ route('users.index') }}">
-                Cancel
+                {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button
                 type="submit"
@@ -175,8 +175,8 @@
                 icon="save"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50">
-                <span wire:loading.remove>Create User</span>
-                <span wire:loading>Creating...</span>
+                <span wire:loading.remove>{{ __('Create User') }}</span>
+                <span wire:loading>{{ __('Creating...') }}</span>
             </x-ui.button>
         </div>
     </form>

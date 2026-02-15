@@ -40,7 +40,7 @@
         <div class="mb-6">
             <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3"
                  x-show="!sidebarCollapsed || sidebarOpen" x-cloak>
-                MENU
+                {{ __('Menu') }}
             </div>
 
             <!-- Dashboard -->
@@ -48,7 +48,7 @@
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
-                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Dashboard</span>
+                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Dashboard') }}</span>
             </a>
 
             <!-- Company -->
@@ -59,7 +59,7 @@
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
-                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Company</span>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Company') }}</span>
                     </div>
                     <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'company'" x-cloak
                          class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,14 +85,14 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
-                        Company Info
+                        {{ __('Company Info') }}
                     </a>
                     <a href="{{ route('users.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('users.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        Users
+                        {{ __('Users') }}
                     </a>
                 </div>
             </div>
@@ -101,12 +101,12 @@
             @if(\App\Models\ModuleAccess::isEnabled('projects'))
             <div class="mb-1">
                 <button @click="toggleSubmenu('projects')"
-                        class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*') || request()->routeIs('payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
+                        class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*') || request()->routeIs('payments.*') || request()->routeIs('contract-payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Projects</span>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Projects') }}</span>
                     </div>
                     <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'projects'" x-cloak
                          class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,35 +132,42 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        All Projects
+                        {{ __('All Projects') }}
                     </a>
                     <a href="{{ route('subcontractors.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('subcontractors.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
-                        Subcontractors
+                        {{ __('Subcontractors') }}
                     </a>
                     <a href="{{ route('clients.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('clients.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
-                        Clients
+                        {{ __('Clients') }}
                     </a>
                     <a href="{{ route('cost-codes.templates.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('cost-codes.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                         </svg>
-                        Cost Codes
+                        {{ __('Cost Codes') }}
                     </a>
                     <a href="{{ route('payments.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        Payments
+                        {{ __('Payments') }}
+                    </a>
+                    <a href="{{ route('contract-payments.index') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('contract-payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        {{ __('Contract Payments') }}
                     </a>
                 </div>
             </div>
@@ -176,7 +183,7 @@
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
-                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Catalog</span>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Catalog') }}</span>
                     </div>
                     <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'catalog'" x-cloak
                          class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,21 +209,21 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
-                        All Items
+                        {{ __('All Items') }}
                     </a>
                     <a href="{{ route('catalog.categories.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('catalog.categories.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                         </svg>
-                        Categories
+                        {{ __('Categories') }}
                     </a>
                     <a href="{{ route('suppliers.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('suppliers.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
                         </svg>
-                        Suppliers
+                        {{ __('Suppliers') }}
                     </a>
                 </div>
             </div>
@@ -229,7 +236,7 @@
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                 </svg>
-                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Estimates</span>
+                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Estimates') }}</span>
             </a>
 
             @endif
@@ -240,7 +247,7 @@
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>Invoices</span>
+                <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Invoices') }}</span>
             </a>
             @endif
         </div>
@@ -257,7 +264,7 @@
                     </div>
                     <div x-show="!sidebarCollapsed || sidebarOpen" x-cloak class="flex-1 text-left">
                         <p class="text-sm font-medium text-slate-900 dark:text-white">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->role?->name ? ucfirst(Auth::user()->role->name) : 'User' }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->role?->name ? ucfirst(Auth::user()->role->name) : __('User') }}</p>
                     </div>
                 </div>
                 <svg x-show="(!sidebarCollapsed || sidebarOpen)" x-cloak
@@ -286,7 +293,7 @@
                         <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
-                        Profile
+                        {{ __('Profile') }}
                     </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -294,7 +301,7 @@
                             <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                             </svg>
-                            Logout
+                            {{ __('Logout') }}
                         </button>
                     </form>
                 </div>

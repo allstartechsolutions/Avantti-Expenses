@@ -22,9 +22,9 @@ class UserShow extends Component
         );
 
         if ($status === Password::RESET_LINK_SENT) {
-            session()->flash('message', 'Password reset link sent to ' . $this->user->email);
+            session()->flash('message', __('Password reset link sent to :email', ['email' => $this->user->email]));
         } else {
-            session()->flash('error', 'Failed to send password reset link. Please try again.');
+            session()->flash('error', __('Failed to send password reset link. Please try again.'));
         }
     }
 

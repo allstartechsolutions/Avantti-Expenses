@@ -46,6 +46,14 @@ class Subcontractor extends Model
     }
 
     /**
+     * Get all contracts for this subcontractor
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    /**
      * Get all documents for this subcontractor
      */
     public function documents(): HasMany

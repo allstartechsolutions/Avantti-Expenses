@@ -1,0 +1,91 @@
+{
+    "_sidebar": "========== Sidebar Navigation ==========",
+    "_sidebar_menu": "---------- Menu Section ----------",
+
+    "_sidebar_company": "---------- Company Submenu ----------",
+
+    "_sidebar_projects": "---------- Projects Submenu ----------",
+
+    "_sidebar_catalog": "---------- Catalog Submenu ----------",
+
+    "_sidebar_single_items": "---------- Single Menu Items ----------",
+
+    "_sidebar_user_section": "---------- User Profile Section ----------",
+
+    "_footer": "========== Footer ==========",
+
+    "_company_info": "========== Company Info Page ==========",
+    "_company_info_header": "---------- Page Header ----------",
+
+    "_company_info_basic": "---------- Basic Information ----------",
+
+    "_company_info_address": "---------- Address Information ----------",
+
+    "_company_info_contact": "---------- Contact Information ----------",
+
+    "_company_info_logo": "---------- Company Logo ----------",
+
+    "_company_info_actions": "---------- Form Actions ----------",
+
+    "_company_info_messages": "---------- Flash Messages ----------",
+
+    "_company_index": "========== Company Index Page ==========",
+
+    "_users": "========== Users Module ==========",
+
+    "_users_index": "---------- User Index Page ----------",
+    "_users_index_header": ".......... Page Header ..........",
+    "_users_index_filters": ".......... Filters ..........",
+    "_users_index_table": ".......... Table ..........",
+    "_users_index_empty": ".......... Empty States ..........",
+
+    "_users_create": "---------- User Create Page ----------",
+    "_users_create_header": ".......... Page Header ..........",
+    "_users_create_password": ".......... Password Section ..........",
+    "_users_create_role": ".......... Role & Status Section ..........",
+    "_users_create_actions": ".......... Form Actions ..........",
+
+    "_users_edit": "---------- User Edit Page ----------",
+    "_users_edit_header": ".......... Page Header ..........",
+    "_users_edit_sidebar": ".......... Sidebar ..........",
+    "_users_edit_password": ".......... Password Reset ..........",
+    "_users_edit_warning": ".......... Warning ..........",
+
+    "_users_show": "---------- User Show Page ----------",
+    "_users_show_header": ".......... Page Header ..........",
+    "_users_show_profile": ".......... Profile Card ..........",
+    "_users_show_account": ".......... Account Details ..........",
+    "_users_show_sidebar": ".......... Sidebar ..........",
+
+    "_users_profile": "---------- User Profile Page ----------",
+    "_users_profile_header": ".......... Page Header ..........",
+    "_users_profile_info": ".......... Profile Information ..........",
+    "_users_profile_password": ".......... Change Password ..........",
+    "_users_profile_requirements": ".......... Password Requirements ..........",
+
+    "_users_messages": "---------- Flash Messages ----------",
+    "_users_validation": "---------- Validation Attributes ----------",
+
+    "_projects": "========== Projects Module ==========",
+
+    "_projects_index": "---------- Project Index Page ----------",
+    "_projects_index_header": ".......... Page Header ..........",
+    "_projects_index_filters": ".......... Filters ..........",
+    "_projects_index_table": ".......... Table ..........",
+    "_projects_index_empty": ".......... Empty States ..........",
+    "_projects_index_delete_modal": ".......... Delete Modal ..........",
+
+    "_projects_create": "---------- Project Create Page ----------",
+    "_projects_create_header": ".......... Page Header ..........",
+    "_projects_create_client": ".......... Client Selection ..........",
+    "_projects_create_info": ".......... Project Information ..........",
+    "_projects_create_contact": ".......... Contact Information ..........",
+    "_projects_create_address": ".......... Address ..........",
+    "_projects_create_actions": ".......... Form Actions ..........",
+
+    "_projects_edit": "---------- Project Edit Page ----------",
+    "_projects_edit_header": ".......... Page Header ..........",
+
+    "_projects_messages": "---------- Flash Messages ----------",
+    "_projects_validation": "---------- Validation Attributes ----------"
+}

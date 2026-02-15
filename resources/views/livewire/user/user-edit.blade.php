@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit User</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Update user information</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Edit User') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Update user information') }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('users.show', $user->id) }}"
                     icon="arrow-left">
-                    Back to User
+                    {{ __('Back to User') }}
                 </x-ui.button>
             </div>
         </div>
@@ -38,21 +38,21 @@
                 <!-- Basic Information Card -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Information</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">User details and contact information</p>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Basic Information') }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('User details and contact information') }}</p>
                     </div>
                     <div class="p-6 space-y-6">
                         <!-- Name -->
                         <div>
                             <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Full Name <span class="text-red-500">*</span>
+                                {{ __('Full Name') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 id="name"
                                 wire:model.live="name"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Enter full name"
+                                placeholder="{{ __('Enter full name') }}"
                             >
                             @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
@@ -61,7 +61,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Email Address <span class="text-red-500">*</span>
+                                    {{ __('Email Address') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
@@ -74,7 +74,7 @@
                             </div>
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Phone Number
+                                    {{ __('Phone Number') }}
                                 </label>
                                 <input
                                     type="tel"
@@ -92,22 +92,22 @@
                 <!-- Role and Status Card -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Role & Status</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Assign role and set account status</p>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Role & Status') }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Assign role and set account status') }}</p>
                     </div>
                     <div class="p-6 space-y-6">
                         <!-- Role and Status -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="role_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Role <span class="text-red-500">*</span>
+                                    {{ __('Role') }} <span class="text-red-500">*</span>
                                 </label>
                                 <select
                                     id="role_id"
                                     wire:model.live="role_id"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                 >
-                                    <option value="">Select a role</option>
+                                    <option value="">{{ __('Select a role') }}</option>
                                     @foreach($roles as $role)
                                         <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
                                     @endforeach
@@ -116,7 +116,7 @@
                             </div>
                             <div>
                                 <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Status <span class="text-red-500">*</span>
+                                    {{ __('Status') }} <span class="text-red-500">*</span>
                                 </label>
                                 <select
                                     id="status"
@@ -138,7 +138,7 @@
                     <x-ui.button
                         variant="secondary"
                         href="{{ route('users.show', $user->id) }}">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         type="submit"
@@ -146,8 +146,8 @@
                         icon="save"
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-50">
-                        <span wire:loading.remove>Update User</span>
-                        <span wire:loading>Updating...</span>
+                        <span wire:loading.remove>{{ __('Update User') }}</span>
+                        <span wire:loading>{{ __('Updating...') }}</span>
                     </x-ui.button>
                 </div>
             </form>
@@ -158,7 +158,7 @@
             <!-- User Info -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Current User</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Current User') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="flex items-center space-x-4 mb-4">
@@ -174,11 +174,11 @@
                     </div>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-slate-500 dark:text-slate-400">User ID:</span>
+                            <span class="text-slate-500 dark:text-slate-400">{{ __('User ID:') }}</span>
                             <span class="text-slate-900 dark:text-white">#{{ $user->id }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 dark:text-slate-400">Joined:</span>
+                            <span class="text-slate-500 dark:text-slate-400">{{ __('Joined:') }}</span>
                             <span class="text-slate-900 dark:text-white">{{ $user->created_at->format('M d, Y') }}</span>
                         </div>
                     </div>
@@ -188,11 +188,11 @@
             <!-- Password Reset -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Password</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Password') }}</h3>
                 </div>
                 <div class="p-6">
                     <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        Send a password reset link to the user's email address.
+                        {{ __("Send a password reset link to the user's email address.") }}
                     </p>
                     <x-ui.button
                         variant="secondary"
@@ -200,8 +200,8 @@
                         wire:click="sendPasswordReset"
                         wire:loading.attr="disabled"
                         icon="mail">
-                        <span wire:loading.remove wire:target="sendPasswordReset">Send Password Reset</span>
-                        <span wire:loading wire:target="sendPasswordReset">Sending...</span>
+                        <span wire:loading.remove wire:target="sendPasswordReset">{{ __('Send Password Reset') }}</span>
+                        <span wire:loading wire:target="sendPasswordReset">{{ __('Sending...') }}</span>
                     </x-ui.button>
                 </div>
             </div>
@@ -216,10 +216,10 @@
                     </div>
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                            Changes will affect user access
+                            {{ __('Changes will affect user access') }}
                         </h3>
                         <p class="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
-                            Changing the role or status will immediately update the user's access permissions.
+                            {{ __("Changing the role or status will immediately update the user's access permissions.") }}
                         </p>
                     </div>
                 </div>

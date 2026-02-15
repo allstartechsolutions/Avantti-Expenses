@@ -57,6 +57,7 @@ use App\Livewire\PurchaseOrder\PurchaseOrderShow;
 use App\Livewire\Contract\ContractCreate;
 use App\Livewire\Contract\ContractShow;
 use App\Livewire\Contract\ContractEdit;
+use App\Livewire\Contract\ContractPayments;
 use App\Livewire\Project\ProjectContracts;
 use App\Livewire\Project\ProjectPurchaseOrders;
 use App\Livewire\Estimate\EstimateIndex;
@@ -177,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Payment routes
     Route::get('payments', PaymentDashboard::class)->name('payments.index');
+    Route::get('contract-payments', ContractPayments::class)->name('contract-payments.index');
 
     // Estimate routes
     Route::get('estimates', EstimateIndex::class)->name('estimates.index');

@@ -29,13 +29,16 @@ class UserEdit extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'name' => 'name',
-        'email' => 'email address',
-        'phone' => 'phone number',
-        'role_id' => 'role',
-        'status' => 'status',
-    ];
+    public function validationAttributes()
+    {
+        return [
+            'name' => __('name'),
+            'email' => __('email address'),
+            'phone' => __('phone number'),
+            'role_id' => __('role'),
+            'status' => __('status'),
+        ];
+    }
 
     public function mount(User $user)
     {
@@ -64,7 +67,7 @@ class UserEdit extends Component
             'status' => $this->status,
         ]);
 
-        session()->flash('message', 'User updated successfully!');
+        session()->flash('message', __('User updated successfully!'));
 
         return redirect()->route('users.show', $this->user->id);
     }
@@ -76,9 +79,9 @@ class UserEdit extends Component
         );
 
         if ($status === Password::RESET_LINK_SENT) {
-            session()->flash('message', 'Password reset link sent to ' . $this->user->email);
+            session()->flash('message', __('Password reset link sent to :email', ['email' => $this->user->email]));
         } else {
-            session()->flash('error', 'Failed to send password reset link. Please try again.');
+            session()->flash('error', __('Failed to send password reset link. Please try again.'));
         }
     }
 

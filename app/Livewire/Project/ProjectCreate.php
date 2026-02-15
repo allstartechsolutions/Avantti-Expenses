@@ -48,14 +48,17 @@ class ProjectCreate extends Component
         'status' => 'required|in:created,in_progress,completed,cancelled',
     ];
 
-    protected $validationAttributes = [
-        'client_id' => 'client',
-        'project_name' => 'project name',
-        'contact_person' => 'contact person',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'initial_amount' => 'initial amount',
-    ];
+    public function validationAttributes()
+    {
+        return [
+            'client_id' => __('client'),
+            'project_name' => __('project name'),
+            'contact_person' => __('contact person'),
+            'postal_code' => __('postal code'),
+            'email' => __('email address'),
+            'initial_amount' => __('initial amount'),
+        ];
+    }
 
     public function updated($propertyName)
     {
@@ -112,7 +115,7 @@ class ProjectCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Project created successfully!');
+        session()->flash('message', __('Project created successfully!'));
 
         return redirect()->route('projects.index');
     }
