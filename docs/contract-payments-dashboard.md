@@ -115,8 +115,8 @@ White card with a flex row containing:
 | # | Column | Source | Notes |
 |---|---|---|---|
 | 1 | Subcontractor | `contract.subcontractor.company_name` | Shows "-" if null |
-| 2 | Project | `contract.project.project_name` | Client name shown as subtitle |
-| 3 | Job Site / Lot | `contract.jobSite.job_site_name` | Shows "Project General" if null |
+| 2 | Project | `contract.project.project_name` | Clickable link to `projects.overview`. Client name shown as subtitle |
+| 3 | Job Site / Lot | `contract.jobSite.job_site_name` | Clickable link to `jobsites.overview`. Shows plain text "Project General" if null |
 | 4 | Contract # | `contract.contract_number` | Clickable link to `contracts.show` |
 | 5 | Amount | `contract.amount` | Right-aligned, currency formatted |
 | 6 | Paid | Computed from `total_paid_cents` | Right-aligned, green text |
