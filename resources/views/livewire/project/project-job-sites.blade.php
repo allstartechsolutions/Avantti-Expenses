@@ -219,21 +219,60 @@
                         <input type="hidden" wire:model="latitude">
                         <input type="hidden" wire:model="longitude">
 
-                        <!-- Status -->
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Status <span class="text-red-500">*</span>
-                            </label>
-                            <select
-                                id="status"
-                                wire:model.live="status"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                @foreach($statuses as $statusOption)
-                                    <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
-                                @endforeach
-                            </select>
-                            @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        <!-- Supervisor and Status -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="supervisor_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {{ __('Supervisor') }}
+                                </label>
+                                <select
+                                    id="supervisor_id"
+                                    wire:model.live="supervisor_id"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <option value="">{{ __('Select a supervisor') }}</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('supervisor_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Status <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="status"
+                                    wire:model.live="status"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    @foreach($statuses as $statusOption)
+                                        <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
+                                    @endforeach
+                                </select>
+                                @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
                         </div>
+
+                        <!-- Supervisor Change Note (only when editing and supervisor changed) -->
+                        @if($editingJobSite)
+                            <div
+                                x-data="{ show: false, originalSupervisor: @js($editingJobSite ? \App\Models\JobSite::find($editingJobSite)?->supervisor_id : null) }"
+                                x-effect="show = ($wire.supervisor_id || '') != (originalSupervisor || '')"
+                                x-show="show"
+                                x-cloak
+                            >
+                                <label for="supervisor_change_note" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {{ __('Change Note') }}
+                                </label>
+                                <textarea
+                                    id="supervisor_change_note"
+                                    wire:model="supervisor_change_note"
+                                    rows="2"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    placeholder="{{ __('Optional reason for this change...') }}"
+                                ></textarea>
+                            </div>
+                        @endif
 
                         <!-- Form Actions -->
                         <div class="flex items-center justify-end space-x-4 pt-4">
@@ -279,6 +318,9 @@
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                         Status
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                        {{ __('Supervisor') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                         Created
@@ -335,6 +377,11 @@
                                             <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColor }}">
                                                 {{ $jobSite->status->label() }}
                                             </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-slate-900 dark:text-white">
+                                                {{ $jobSite->supervisor?->name ?? '-' }}
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-slate-900 dark:text-white">

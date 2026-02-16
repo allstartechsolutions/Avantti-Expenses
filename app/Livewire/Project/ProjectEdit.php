@@ -3,8 +3,10 @@
 namespace App\Livewire\Project;
 
 use App\Enums\ProjectStatus;
+use App\Enums\UserStatus;
 use App\Models\Client;
 use App\Models\Project;
+use App\Models\User;
 use Livewire\Component;
 
 class ProjectEdit extends Component
@@ -28,6 +30,7 @@ class ProjectEdit extends Component
     public $initial_amount = '';
     public $description = '';
     public $status = '';
+    public $project_manager_id = '';
 
     protected function rules()
     {
@@ -48,6 +51,7 @@ class ProjectEdit extends Component
             'initial_amount' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'required|in:created,in_progress,completed,cancelled',
+            'project_manager_id' => 'nullable|exists:users,id',
         ];
     }
 
@@ -60,6 +64,7 @@ class ProjectEdit extends Component
             'postal_code' => __('postal code'),
             'email' => __('email address'),
             'initial_amount' => __('initial amount'),
+            'project_manager_id' => __('project manager'),
         ];
     }
 
@@ -83,6 +88,7 @@ class ProjectEdit extends Component
         $this->initial_amount = $project->initial_amount;
         $this->description = $project->description;
         $this->status = $project->status->value;
+        $this->project_manager_id = $project->project_manager_id ?? '';
     }
 
     public function updated($propertyName)
@@ -137,11 +143,12 @@ class ProjectEdit extends Component
             'initial_amount' => $this->initial_amount,
             'description' => $this->description,
             'status' => $this->status,
+            'project_manager_id' => $this->project_manager_id ?: null,
         ]);
 
         session()->flash('message', __('Project updated successfully!'));
 
-        return redirect()->route('projects.index');
+        return redirect()->route('projects.overview', $this->project);
     }
 
     public function render()
@@ -159,9 +166,14 @@ class ProjectEdit extends Component
 
         $statuses = ProjectStatus::cases();
 
+        $users = User::where('status', UserStatus::ACTIVE)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('livewire.project.project-edit', [
             'clients' => $clients,
             'statuses' => $statuses,
+            'users' => $users,
         ])->layout('components.layouts.app');
     }
 }

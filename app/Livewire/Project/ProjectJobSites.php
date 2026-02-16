@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Enums\JobSiteStatus;
+use App\Enums\UserStatus;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
@@ -10,6 +11,7 @@ use App\Models\DailyReportManpower;
 use App\Models\Expense;
 use App\Models\JobSite;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -44,6 +46,8 @@ class ProjectJobSites extends Component
     public $email = '';
     public $job_amount = '';
     public $status = 'created';
+    public $supervisor_id = null;
+    public $supervisor_change_note = '';
 
     protected function rules(): array
     {
@@ -62,6 +66,7 @@ class ProjectJobSites extends Component
             'email' => 'required|email|max:255',
             'job_amount' => 'required|numeric|min:0',
             'status' => 'required|in:created,in_progress,completed,on_hold',
+            'supervisor_id' => 'nullable|exists:users,id',
         ];
     }
 
@@ -71,6 +76,7 @@ class ProjectJobSites extends Component
         'postal_code' => 'postal code',
         'email' => 'email address',
         'job_amount' => 'job amount',
+        'supervisor_id' => 'supervisor',
     ];
 
     public function mount(Project $project): void
@@ -83,7 +89,8 @@ class ProjectJobSites extends Component
         $this->reset([
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
-            'email', 'job_amount', 'status', 'editingJobSite'
+            'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
+            'supervisor_change_note'
         ]);
 
         // Pre-populate with project data
@@ -122,16 +129,22 @@ class ProjectJobSites extends Component
         $this->email = $jobSite->email;
         $this->job_amount = $jobSite->job_amount;
         $this->status = $jobSite->status->value;
+        $this->supervisor_id = $jobSite->supervisor_id;
+        $this->supervisor_change_note = '';
 
         $this->showJobSiteForm = true;
     }
 
-    public function saveJobSite(): void
+    public function saveJobSite()
     {
         $this->validate();
 
+        $supervisorId = $this->supervisor_id ?: null;
+
         if ($this->editingJobSite) {
             $jobSite = JobSite::findOrFail($this->editingJobSite);
+            $oldSupervisorId = $jobSite->supervisor_id;
+
             $jobSite->update([
                 'job_site_name' => $this->job_site_name,
                 'street' => $this->street,
@@ -148,11 +161,22 @@ class ProjectJobSites extends Component
                 'email' => $this->email,
                 'job_amount' => $this->job_amount,
                 'status' => $this->status,
+                'supervisor_id' => $supervisorId,
             ]);
 
+            if ($oldSupervisorId !== $supervisorId) {
+                $jobSite->recordSupervisorChange(
+                    Auth::user(),
+                    $oldSupervisorId,
+                    $supervisorId,
+                    $this->supervisor_change_note ?: null,
+                );
+            }
+
             session()->flash('message', 'Job site updated successfully!');
+            return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
         } else {
-            JobSite::create([
+            $jobSite = JobSite::create([
                 'project_id' => $this->project->id,
                 'job_site_name' => $this->job_site_name,
                 'street' => $this->street,
@@ -170,13 +194,20 @@ class ProjectJobSites extends Component
                 'job_amount' => $this->job_amount,
                 'status' => $this->status,
                 'created_by' => Auth::id(),
+                'supervisor_id' => $supervisorId,
             ]);
 
-            session()->flash('message', 'Job site created successfully!');
-        }
+            if ($supervisorId) {
+                $jobSite->recordSupervisorChange(
+                    Auth::user(),
+                    null,
+                    $supervisorId,
+                );
+            }
 
-        $this->showJobSiteForm = false;
-        $this->project->refresh();
+            session()->flash('message', 'Job site created successfully!');
+            return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
+        }
     }
 
     public function cancelJobSiteForm(): void
@@ -185,7 +216,8 @@ class ProjectJobSites extends Component
         $this->reset([
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
-            'email', 'job_amount', 'status', 'editingJobSite'
+            'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
+            'supervisor_change_note'
         ]);
     }
 
@@ -282,7 +314,7 @@ class ProjectJobSites extends Component
 
     public function render()
     {
-        $jobSitesQuery = $this->project->jobSites()->with('createdBy');
+        $jobSitesQuery = $this->project->jobSites()->with(['createdBy', 'supervisor']);
 
         if ($this->jobSiteSearch) {
             $jobSitesQuery->where(function ($query) {
@@ -295,10 +327,14 @@ class ProjectJobSites extends Component
 
         $jobSites = $jobSitesQuery->orderBy('created_at', 'desc')->get();
         $statuses = JobSiteStatus::cases();
+        $users = User::where('status', UserStatus::ACTIVE)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('livewire.project.project-job-sites', [
             'jobSites' => $jobSites,
             'statuses' => $statuses,
+            'users' => $users,
         ])->layout('components.layouts.app');
     }
 }

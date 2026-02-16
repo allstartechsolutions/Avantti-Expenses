@@ -77,6 +77,8 @@
 15. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
 16. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
 17. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+18. **[Project Manager Field](./project-manager-field.md)** - Optional project manager assignment from active users
+19. **[Job Site Supervisor Field](./jobsite-supervisor-field.md)** - Optional supervisor assignment with change history tracking
 
 ### Quick Reference
 

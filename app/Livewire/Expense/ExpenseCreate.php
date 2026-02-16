@@ -225,9 +225,9 @@ class ExpenseCreate extends Component
             'item_quantity' => 'required|numeric|min:0.01',
             'item_unit_price' => 'required|numeric|min:0',
         ], [
-            'item_name.required' => 'Item name is required.',
-            'item_quantity.required' => 'Quantity is required.',
-            'item_unit_price.required' => 'Unit price is required.',
+            'item_name.required' => __('Item name is required.'),
+            'item_quantity.required' => __('Quantity is required.'),
+            'item_unit_price.required' => __('Unit price is required.'),
         ]);
 
         $this->calculateItemTotal();
@@ -279,8 +279,8 @@ class ExpenseCreate extends Component
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',
         ], [
-            'items.required' => 'At least one item is required.',
-            'items.min' => 'At least one item is required.',
+            'items.required' => __('At least one item is required.'),
+            'items.min' => __('At least one item is required.'),
         ]);
 
         // Payment validation
@@ -373,7 +373,7 @@ class ExpenseCreate extends Component
             }
         });
 
-        session()->flash('message', 'Expense created successfully!');
+        session()->flash('message', __('Expense created successfully!'));
 
         // Redirect back to source
         if ($this->jobSite) {

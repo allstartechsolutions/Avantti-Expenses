@@ -23,7 +23,7 @@ class ProjectOverview extends Component
 
     public function mount(Project $project): void
     {
-        $this->project = $project->load(['client', 'createdBy']);
+        $this->project = $project->load(['client', 'createdBy', 'projectManager']);
     }
 
     public function confirmDeleteProject()
@@ -59,7 +59,7 @@ class ProjectOverview extends Component
             $this->project->delete();
         });
 
-        session()->flash('message', 'Project deleted successfully!');
+        session()->flash('message', __('Project deleted successfully!'));
         return $this->redirect(route('projects.index'), navigate: true);
     }
 

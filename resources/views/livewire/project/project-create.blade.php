@@ -100,8 +100,8 @@
                     @error('project_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
 
-                <!-- Initial Amount and Status -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Initial Amount, Project Manager, and Status -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="initial_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             {{ __('Initial Amount') }} <span class="text-red-500">*</span>
@@ -118,6 +118,22 @@
                             >
                         </div>
                         @error('initial_amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label for="project_manager_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            {{ __('Project Manager') }}
+                        </label>
+                        <select
+                            id="project_manager_id"
+                            wire:model.live="project_manager_id"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <option value="">{{ __('Select a project manager') }}</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('project_manager_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
                     <div>

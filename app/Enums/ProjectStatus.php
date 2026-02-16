@@ -12,10 +12,10 @@ enum ProjectStatus: string
     public function label(): string
     {
         return match($this) {
-            self::CREATED => 'Created',
-            self::IN_PROGRESS => 'In Progress',
-            self::COMPLETED => 'Completed',
-            self::CANCELLED => 'Cancelled',
+            self::CREATED => __('Created'),
+            self::IN_PROGRESS => __('In Progress'),
+            self::COMPLETED => __('Completed'),
+            self::CANCELLED => __('Cancelled'),
         };
     }
 

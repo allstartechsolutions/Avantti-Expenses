@@ -3,8 +3,10 @@
 namespace App\Livewire\Project;
 
 use App\Enums\ProjectStatus;
+use App\Enums\UserStatus;
 use App\Models\Client;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -28,6 +30,7 @@ class ProjectCreate extends Component
     public $initial_amount = '';
     public $description = '';
     public $status = 'created';
+    public $project_manager_id = '';
 
     protected $rules = [
         'client_id' => 'required|exists:clients,id',
@@ -46,6 +49,7 @@ class ProjectCreate extends Component
         'initial_amount' => 'required|numeric|min:0',
         'description' => 'nullable|string',
         'status' => 'required|in:created,in_progress,completed,cancelled',
+        'project_manager_id' => 'nullable|exists:users,id',
     ];
 
     public function validationAttributes()
@@ -57,6 +61,7 @@ class ProjectCreate extends Component
             'postal_code' => __('postal code'),
             'email' => __('email address'),
             'initial_amount' => __('initial amount'),
+            'project_manager_id' => __('project manager'),
         ];
     }
 
@@ -112,12 +117,13 @@ class ProjectCreate extends Component
             'initial_amount' => $this->initial_amount,
             'description' => $this->description,
             'status' => $this->status,
+            'project_manager_id' => $this->project_manager_id ?: null,
             'created_by' => Auth::id(),
         ]);
 
         session()->flash('message', __('Project created successfully!'));
 
-        return redirect()->route('projects.index');
+        return redirect()->route('projects.overview', $project);
     }
 
     public function render()
@@ -135,9 +141,14 @@ class ProjectCreate extends Component
 
         $statuses = ProjectStatus::cases();
 
+        $users = User::where('status', UserStatus::ACTIVE)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('livewire.project.project-create', [
             'clients' => $clients,
             'statuses' => $statuses,
+            'users' => $users,
         ])->layout('components.layouts.app');
     }
 }

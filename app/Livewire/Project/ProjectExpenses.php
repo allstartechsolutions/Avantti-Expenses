@@ -106,7 +106,7 @@ class ProjectExpenses extends Component
                 'status' => 'paid',
                 'paid_date' => now(),
             ]);
-            session()->flash('message', 'Expense marked as paid.');
+            session()->flash('message', __('Expense marked as paid.'));
         }
     }
 
@@ -125,7 +125,7 @@ class ProjectExpenses extends Component
             $this->viewingExpense->updateStatusFromPayments();
         }
 
-        session()->flash('message', 'Payment marked as paid.');
+        session()->flash('message', __('Payment marked as paid.'));
     }
 
     public function markPaymentAsOverdue(int $paymentId): void
@@ -155,7 +155,7 @@ class ProjectExpenses extends Component
         $expense->payments()->delete();
         $expense->delete();
 
-        session()->flash('message', 'Expense deleted successfully.');
+        session()->flash('message', __('Expense deleted successfully.'));
     }
 
     public function render()

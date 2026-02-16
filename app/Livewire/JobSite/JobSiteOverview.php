@@ -22,7 +22,14 @@ class JobSiteOverview extends Component
 
     public function mount(JobSite $jobSite): void
     {
-        $this->jobSite = $jobSite->load(['project', 'createdBy']);
+        $this->jobSite = $jobSite->load([
+            'project',
+            'createdBy',
+            'supervisor',
+            'supervisorHistories.changedBy',
+            'supervisorHistories.oldSupervisor',
+            'supervisorHistories.newSupervisor',
+        ]);
     }
 
     public function confirmDeleteJobSite()

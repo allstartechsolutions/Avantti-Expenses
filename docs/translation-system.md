@@ -18,11 +18,13 @@ lang/
 └── pt_BR.json    # Comment keys + all actual Portuguese translations
 ```
 
-### `en.json` — English (Reference Only)
+### `en.json` — English (Structural + Project Modules)
 
-Contains **only** organizational comment keys prefixed with `_` (e.g., `_sidebar`, `_users_create`). No actual translation strings are needed because the `__()` keys are already written in English.
+Contains organizational comment keys prefixed with `_` (e.g., `_sidebar`, `_users_create`). For earlier modules (sidebar, company, users), only comment keys exist since the `__()` keys are already in English.
 
-Purpose: serves as a structural map showing which sections/modules have been translated.
+Starting from the **Projects module** onward, `en.json` also includes actual EN values (e.g., `"Add Expense": "Add Expense"`) to allow for potential future EN customizations. This applies to: project navigation, project overview, expenses, and all subsequent modules.
+
+Purpose: serves as a structural map and EN reference for project-related modules.
 
 ### `pt_BR.json` — Brazilian Portuguese (Full Translations)
 
@@ -121,16 +123,19 @@ No middleware or dynamic switching is needed.
 
 ## Translation Progress
 
-### Completed (views + blade + PHP components + pt_BR.json entries)
+### Completed (views + blade + PHP components + JSON entries)
 
-| Module        | Views Translated                                          |
-|---------------|-----------------------------------------------------------|
-| Sidebar       | Navigation menu, user section, footer                     |
-| Company       | `company-index`, `company-info` (+ CompanyInfo.php)       |
-| Users         | `user-index`, `user-create`, `user-edit`, `user-show` (+ UserCreate.php, UserEdit.php, UserShow.php) |
-| Profile       | `user-profile` (+ UserProfile.php)                        |
-| Projects      | `project-index`, `project-create`, `project-edit` (+ ProjectIndex.php, ProjectCreate.php, ProjectEdit.php) |
-| Layout        | `app.blade.php`, `sidebar.blade.php`, `footer.blade.php`  |
+| Module           | Views Translated                                          |
+|------------------|-----------------------------------------------------------|
+| Sidebar          | Navigation menu, user section, footer                     |
+| Company          | `company-index`, `company-info` (+ CompanyInfo.php)       |
+| Users            | `user-index`, `user-create`, `user-edit`, `user-show` (+ UserCreate.php, UserEdit.php, UserShow.php) |
+| Profile          | `user-profile` (+ UserProfile.php)                        |
+| Projects (CRUD)  | `project-index`, `project-create`, `project-edit` (+ ProjectIndex.php, ProjectCreate.php, ProjectEdit.php) |
+| Layout           | `app.blade.php`, `sidebar.blade.php`, `footer.blade.php`  |
+| Project Nav      | `project-nav.blade.php`, `project-layout.blade.php`, `breadcrumb.blade.php` |
+| Project Overview | `project-overview.blade.php` (+ ProjectOverview.php, ProjectStatus.php enum) |
+| Expenses         | `project-expenses.blade.php`, `partials/expense-modal.blade.php`, `expense-create.blade.php`, `job-site-show.blade.php` (expenses tab only) (+ ProjectExpenses.php, ExpenseCreate.php, JobSiteShow.php) |
 
 ### Remaining Modules
 
@@ -140,9 +145,8 @@ No middleware or dynamic switching is needed.
 | Client           | 5             | client-index, create, edit, show, payment-methods      |
 | Estimate         | 5             | estimate-index, create, edit, show, send                |
 | Invoice          | 5             | invoice-index, create, edit, show, send                 |
-| Project (inner)  | 10            | project-show + sub-views (job-sites, expenses, etc.)   |
-| Job Site         | 3             | job-site-index, create, edit                            |
-| Expense          | 1             | expense-index (inline CRUD)                             |
+| Project (inner)  | ~6            | project-show sub-views: change-orders, daily-reports, purchase-orders, budget, contracts, job-sites |
+| Job Site         | ~4            | job-site-show (remaining tabs: change-orders, daily-reports, purchase-orders, budget), job-site-index/create/edit |
 | Daily Report     | 1             | daily-report-index (complex, inline modals)             |
 | Purchase Order   | 3             | purchase-order-index, create, edit                      |
 | Budget           | 3             | budget-index, create, edit                              |
@@ -156,7 +160,12 @@ No middleware or dynamic switching is needed.
 | System Settings  | 4             | tax rates, messages, etc.                               |
 | Shared           | 1             | shared components                                       |
 
-**Total remaining: ~81 blade files across 18 modules**
+**Total remaining: ~72 blade files across 17 modules**
+
+### Notes on Partially Translated Files
+
+- **`job-site-show.blade.php`**: Only the **expenses tab** (lines 11-232) has been translated. Other tabs (change-orders, daily-reports, purchase-orders, budget) remain untranslated.
+- **`ProjectStatus.php` enum**: Status labels (`Created`, `In Progress`, `Completed`, `Cancelled`) are now translated via `__()` in the `label()` method.
 
 ## Workflow for Adding Translations
 
@@ -164,15 +173,21 @@ When translating a new module:
 
 1. **Read the blade view** — identify all user-facing text
 2. **Wrap text with `__()`** in the blade file
-3. **Update the Livewire PHP component** — wrap flash messages, validation attributes
-4. **Add comment keys to `en.json`** — section markers for the module
-5. **Add translations to `pt_BR.json`** — comment keys + all translated strings
-6. **Test** — verify the page renders correctly in both locales
+3. **Update the Livewire PHP component** — wrap flash messages, validation messages, validation attributes
+4. **Add keys to `en.json`** — section comment markers + EN values (for project modules and onward)
+5. **Add translations to `pt_BR.json`** — comment keys + all translated Portuguese strings
+6. **Validate JSON** — run `json_decode()` on both files to ensure valid JSON
+7. **Test** — verify the page renders correctly in both locales
 
 ## Important Notes
 
-- Enum labels (e.g., project statuses) may need separate translation handling via the enum's `label()` method
+- Enum labels (e.g., `ProjectStatus`) are translated via `__()` in the enum's `label()` method
 - Date formatting should use `config('app.locale')` or Carbon's localization
 - Currency symbols may differ by country — already handled via `config('app.country')`
 - Do NOT translate route names, wire:model properties, or technical identifiers
 - Placeholder text in inputs should also be translated
+- `Str::plural()` calls are left as-is (English pluralization only)
+- Dynamic status labels use `__(ucfirst($status))` pattern (e.g., `__(ucfirst($expense->status))`)
+- Brand names like `PIX` are kept as-is (not translated)
+- Payment method labels use `__(str_replace('_', ' ', ucfirst($method)))` for dynamic translation
+- When a module exists at both project and job site level, translate both locations (same keys are reused)

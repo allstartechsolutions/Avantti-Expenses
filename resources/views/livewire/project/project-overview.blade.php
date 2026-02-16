@@ -1,10 +1,10 @@
-<x-project-layout :project="$project" active="overview" title="Project Details">
+<x-project-layout :project="$project" active="overview" :title="__('Project Details')">
     <x-slot:actions>
         <x-ui.button
             variant="danger"
             wire:click="confirmDeleteProject"
             icon="trash">
-            Delete
+            {{ __('Delete') }}
         </x-ui.button>
     </x-slot:actions>
 
@@ -14,14 +14,14 @@
             <!-- Project Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Project Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Project Name
+                                {{ __('Project Name') }}
                             </label>
                             <p class="text-slate-900 dark:text-white font-medium">{{ $project->project_name }}</p>
                         </div>
@@ -29,7 +29,7 @@
                         <!-- Client -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Client
+                                {{ __('Client') }}
                             </label>
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-8 w-8 bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-full flex items-center justify-center mr-2">
@@ -44,7 +44,7 @@
                         <!-- Initial Amount -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Initial Amount
+                                {{ __('Initial Amount') }}
                             </label>
                             <p class="text-slate-900 dark:text-white font-medium">{{ Number::currency($project->initial_amount, config('app.currency'), config('app.locale')) }}</p>
                         </div>
@@ -52,7 +52,7 @@
                         <!-- Status -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Status
+                                {{ __('Status') }}
                             </label>
                             @php
                                 $statusColors = [
@@ -71,7 +71,7 @@
                         <!-- Created At -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Created On
+                                {{ __('Created On') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $project->created_at->format('F d, Y') }}</p>
                         </div>
@@ -80,18 +80,26 @@
                         @if($project->createdBy)
                             <div>
                                 <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                    Created By
+                                    {{ __('Created By') }}
                                 </label>
                                 <p class="text-slate-900 dark:text-white">{{ $project->createdBy->name }}</p>
                             </div>
                         @endif
+
+                        <!-- Project Manager -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                {{ __('Project Manager') }}
+                            </label>
+                            <p class="text-slate-900 dark:text-white">{{ $project->projectManager?->name ?? __('Not assigned') }}</p>
+                        </div>
                     </div>
 
                     <!-- Description -->
                     @if($project->description)
                         <div class="mt-6">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Description
+                                {{ __('Description') }}
                             </label>
                             <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $project->description }}</p>
                         </div>
@@ -102,14 +110,14 @@
             <!-- Contact Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contact Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Contact Person -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Contact Person
+                                {{ __('Contact Person') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $project->contact_person }}</p>
                         </div>
@@ -117,15 +125,15 @@
                         <!-- Phone -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Phone Number
+                                {{ __('Phone Number') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->phone ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->phone ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Email -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Email Address
+                                {{ __('Email Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $project->email }}</p>
                         </div>
@@ -136,13 +144,13 @@
             <!-- Address Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Address</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Address') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($project->full_address)
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Full Address
+                                {{ __('Full Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $project->full_address }}</p>
                         </div>
@@ -152,51 +160,51 @@
                         <!-- Street -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Street Address
+                                {{ __('Street Address') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->street ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->street ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Address Line 2 -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Address Line 2
+                                {{ __('Address Line 2') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->address_2 ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->address_2 ?? __('Not provided') }}</p>
                         </div>
 
                         @if(config('app.country') === 'BR')
                         <!-- Neighborhood (Brazil only) -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Neighborhood (Bairro)
+                                {{ __('Neighborhood (Bairro)') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->neighborhood ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->neighborhood ?? __('Not provided') }}</p>
                         </div>
                         @endif
 
                         <!-- City -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                City
+                                {{ __('City') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->city ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->city ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- State -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                State
+                                {{ __('State') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->state ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->state ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Postal Code -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                {{ config('app.country') === 'BR' ? 'CEP' : 'Postal Code' }}
+                                {{ __('Postal Code') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->postal_code ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->postal_code ?? __('Not provided') }}</p>
                         </div>
                     </div>
                 </div>
@@ -208,7 +216,7 @@
             <!-- Quick Actions -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     <x-ui.button
@@ -216,7 +224,7 @@
                         class="w-full justify-center"
                         href="{{ route('projects.edit', $project->id) }}"
                         icon="edit">
-                        Edit Project
+                        {{ __('Edit Project') }}
                     </x-ui.button>
 
                     @if($project->email)
@@ -224,7 +232,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
-                            Send Email
+                            {{ __('Send Email') }}
                         </a>
                     @endif
 
@@ -233,7 +241,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            Call Contact
+                            {{ __('Call Contact') }}
                         </a>
                     @endif
                 </div>
@@ -242,20 +250,20 @@
             <!-- Project Stats -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Information') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Project ID</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Project ID') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $project->id }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Created</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $project->created_at->diffForHumans() }}</span>
                     </div>
                     @if($project->created_at != $project->updated_at)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Last Updated</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Last Updated') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $project->updated_at->diffForHumans() }}</span>
                         </div>
                     @endif
@@ -275,12 +283,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Project
+                    {{ __('Delete Project') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
-                    Are you sure you want to delete <strong>{{ $deleteProjectData['name'] ?? $project->project_name }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    {{ __('Are you sure you want to delete') }} <strong>{{ $deleteProjectData['name'] ?? $project->project_name }}</strong>?
+                    {{ __('This action') }} <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 @if(!empty($deleteProjectData))
@@ -295,42 +303,42 @@
 
                     @if($hasRelated)
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">{{ __('The following data will be permanently deleted:') }}</p>
                             <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
                                 @if(($deleteProjectData['job_sites'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['job_sites'] }} Job Site(s)
+                                        {{ $deleteProjectData['job_sites'] }} {{ __('Job Site(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteProjectData['expenses'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['expenses'] }} Expense(s)
+                                        {{ $deleteProjectData['expenses'] }} {{ __('Expense(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteProjectData['change_orders'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['change_orders'] }} Change Order(s)
+                                        {{ $deleteProjectData['change_orders'] }} {{ __('Change Order(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteProjectData['daily_reports'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['daily_reports'] }} Daily Report(s)
+                                        {{ $deleteProjectData['daily_reports'] }} {{ __('Daily Report(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteProjectData['purchase_orders'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['purchase_orders'] }} Purchase Order(s)
+                                        {{ $deleteProjectData['purchase_orders'] }} {{ __('Purchase Order(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteProjectData['budgets'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteProjectData['budgets'] }} Budget(s)
+                                        {{ $deleteProjectData['budgets'] }} {{ __('Budget(s)') }}
                                     </li>
                                 @endif
                             </ul>
@@ -343,13 +351,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteProject"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteProject"
                         icon="trash">
-                        Delete Project
+                        {{ __('Delete Project') }}
                     </x-ui.button>
                 </div>
             </div>

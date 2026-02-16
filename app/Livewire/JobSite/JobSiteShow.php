@@ -355,7 +355,7 @@ class JobSiteShow extends Component
 
         // Check if expense is editable
         if (!$expense->isEditable()) {
-            session()->flash('error', 'This expense cannot be edited because it has payments.');
+            session()->flash('error', __('This expense cannot be edited because it has payments.'));
             return;
         }
 
@@ -523,7 +523,7 @@ class JobSiteShow extends Component
 
             // Check if editable
             if (!$expense->isEditable()) {
-                session()->flash('error', 'This expense cannot be edited because it has payments.');
+                session()->flash('error', __('This expense cannot be edited because it has payments.'));
                 return;
             }
 
@@ -538,7 +538,7 @@ class JobSiteShow extends Component
                 $expense->payments()->delete();
             }
 
-            session()->flash('message', 'Expense updated successfully!');
+            session()->flash('message', __('Expense updated successfully!'));
         } else {
             $data['created_by'] = Auth::id();
             $expense = Expense::create($data);
@@ -549,7 +549,7 @@ class JobSiteShow extends Component
                 $expense->generatePaymentSchedule($customAmounts);
             }
 
-            session()->flash('message', 'Expense added successfully!');
+            session()->flash('message', __('Expense added successfully!'));
         }
 
         $this->closeExpenseModal();
@@ -561,7 +561,7 @@ class JobSiteShow extends Component
         $expense = Expense::findOrFail($expenseId);
         $expense->delete();
 
-        session()->flash('message', 'Expense deleted successfully!');
+        session()->flash('message', __('Expense deleted successfully!'));
         $this->jobSite->refresh();
     }
 
@@ -702,7 +702,7 @@ class JobSiteShow extends Component
         $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
         $payment->markAsPaid($this->expense_payment_method);
 
-        session()->flash('message', 'Payment marked as paid!');
+        session()->flash('message', __('Payment marked as paid.'));
         $this->jobSite->refresh();
 
         // Refresh the view modal if open
@@ -717,7 +717,7 @@ class JobSiteShow extends Component
         $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
         $payment->markAsOverdue();
 
-        session()->flash('message', 'Payment marked as overdue!');
+        session()->flash('message', __('Payment marked as overdue.'));
         $this->jobSite->refresh();
 
         if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
@@ -732,7 +732,7 @@ class JobSiteShow extends Component
 
         if ($expense->isOneTime()) {
             $expense->markAsPaid();
-            session()->flash('message', 'Expense marked as paid!');
+            session()->flash('message', __('Expense marked as paid.'));
             $this->jobSite->refresh();
         }
     }

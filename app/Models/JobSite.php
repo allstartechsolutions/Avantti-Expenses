@@ -32,6 +32,7 @@ class JobSite extends Model
         'job_amount',
         'status',
         'created_by',
+        'supervisor_id',
     ];
 
     protected $casts = [
@@ -65,6 +66,35 @@ class JobSite extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the supervisor assigned to this job site
+     */
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    /**
+     * Get the supervisor change history for this job site
+     */
+    public function supervisorHistories(): HasMany
+    {
+        return $this->hasMany(JobSiteSupervisorHistory::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Record a supervisor change in the history
+     */
+    public function recordSupervisorChange(User $changedBy, ?int $oldSupervisorId, ?int $newSupervisorId, ?string $note = null): void
+    {
+        $this->supervisorHistories()->create([
+            'old_supervisor_id' => $oldSupervisorId,
+            'new_supervisor_id' => $newSupervisorId,
+            'changed_by' => $changedBy->id,
+            'note' => $note,
+        ]);
     }
 
     /**

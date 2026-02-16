@@ -1,13 +1,13 @@
 @props([
     'project',
     'active' => 'overview',
-    'title' => 'Project Details'
+    'title' => __('Project Details')
 ])
 
 <div>
     {{-- Breadcrumbs --}}
     <x-ui.breadcrumb :items="[
-        ['label' => 'Projects', 'url' => route('projects.index')],
+        ['label' => __('Projects'), 'url' => route('projects.index')],
         ['label' => $project->project_name, 'url' => route('projects.overview', $project)],
         ['label' => ucwords(str_replace('-', ' ', $active))]
     ]" />
@@ -24,13 +24,13 @@
                     variant="secondary"
                     href="{{ route('projects.index') }}"
                     icon="arrow-left">
-                    Back to Projects
+                    {{ __('Back to Projects') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('projects.edit', $project->id) }}"
                     icon="edit">
-                    Edit Project
+                    {{ __('Edit Project') }}
                 </x-ui.button>
                 @if(isset($actions))
                     {{ $actions }}

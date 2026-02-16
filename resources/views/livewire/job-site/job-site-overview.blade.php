@@ -143,6 +143,16 @@
                                 <p class="text-slate-900 dark:text-white">{{ $jobSite->createdBy->name }}</p>
                             </div>
                         @endif
+
+                        <!-- Supervisor -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                {{ __('Supervisor') }}
+                            </label>
+                            <p class="text-slate-900 dark:text-white">
+                                {{ $jobSite->supervisor?->name ?? __('Not assigned') }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -312,6 +322,43 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Supervisor History Card -->
+            @if($jobSite->supervisorHistories->isNotEmpty())
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Supervisor History') }}</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            @foreach($jobSite->supervisorHistories as $history)
+                                <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-600">
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                        {{ $history->created_at->format('M d, Y h:i A') }}
+                                    </div>
+                                    <div class="text-sm text-slate-900 dark:text-white">
+                                        @if($history->old_supervisor_id === null && $history->new_supervisor_id !== null)
+                                            {{ __('Initial assignment') }}: <span class="font-medium">{{ $history->newSupervisor?->name }}</span>
+                                        @elseif($history->new_supervisor_id === null)
+                                            <span class="font-medium">{{ $history->oldSupervisor?->name }}</span> &rarr; <span class="text-slate-400 italic">{{ __('Removed') }}</span>
+                                        @else
+                                            <span class="font-medium">{{ $history->oldSupervisor?->name }}</span> &rarr; <span class="font-medium">{{ $history->newSupervisor?->name }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ __('by') }} {{ $history->changedBy?->name }}
+                                    </div>
+                                    @if($history->note)
+                                        <div class="mt-1 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
+                                            {{ $history->note }}
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 

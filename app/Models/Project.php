@@ -33,6 +33,7 @@ class Project extends Model
         'description',
         'status',
         'created_by',
+        'project_manager_id',
     ];
 
     protected $casts = [
@@ -66,6 +67,14 @@ class Project extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the project manager
+     */
+    public function projectManager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'project_manager_id');
     }
 
     /**
