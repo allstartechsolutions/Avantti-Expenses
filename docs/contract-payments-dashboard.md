@@ -65,6 +65,8 @@ Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
 
 Balance is computed in the view: `$contract->amount - ($contract->total_paid_cents ?? 0) / 100`
 
+> **Note:** The Contract model's `getBalanceDue()` method uses `getAdjustedAmount()` (original amount + change orders) instead of the raw `amount`. The dashboard view computes balance inline for performance, so it does not account for change orders in the dashboard table. The individual contract show page displays the full adjusted breakdown.
+
 #### Validation Rules (processPayments)
 
 - Payment date is required

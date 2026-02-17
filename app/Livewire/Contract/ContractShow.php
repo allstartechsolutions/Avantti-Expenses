@@ -35,6 +35,7 @@ class ContractShow extends Component
             'createdBy',
             'statusHistories.changedBy',
             'payments.createdBy',
+            'changeOrders.createdBy',
         ]);
     }
 
@@ -145,6 +146,7 @@ class ContractShow extends Component
         session()->flash('message', 'Payment deleted successfully.');
     }
 
+    #[\Livewire\Attributes\On('change-orders-updated')]
     public function refreshContract()
     {
         $this->contract = $this->contract->fresh([
@@ -154,14 +156,22 @@ class ContractShow extends Component
             'createdBy',
             'statusHistories.changedBy',
             'payments.createdBy',
+            'changeOrders.createdBy',
         ]);
     }
 
     public function delete()
     {
-        // Clean up file before deleting
+        // Clean up contract file before deleting
         if ($this->contract->contract_file_path && Storage::exists($this->contract->contract_file_path)) {
             Storage::delete($this->contract->contract_file_path);
+        }
+
+        // Clean up change order files (cascade delete won't trigger Eloquent events)
+        foreach ($this->contract->changeOrders as $changeOrder) {
+            if ($changeOrder->file_path && Storage::exists($changeOrder->file_path)) {
+                Storage::delete($changeOrder->file_path);
+            }
         }
 
         $jobSiteId = $this->contract->job_site_id;

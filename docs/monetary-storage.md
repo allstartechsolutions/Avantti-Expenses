@@ -46,6 +46,7 @@ Schema::create('projects', function (Blueprint $table) {
 | `catalog_item_price_history` | `old_cost`, `new_cost` |
 | `expenses` | `unit_price`, `total_amount` |
 | `contracts` | `amount` |
+| `contract_change_orders` | `amount` (signed — negative for deductions) |
 | `contract_payments` | `amount` |
 
 ## Model Implementation

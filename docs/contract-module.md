@@ -52,7 +52,25 @@ The Contract module provides management of subcontractor contracts within projec
 
 See [Contract Payments](./contract-payments.md) for full details.
 
-### 3. `contract_status_histories` Table
+### 3. `contract_change_orders` Table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | bigint | Primary key |
+| contract_id | bigint | Foreign key to contracts (cascadeOnDelete) |
+| title | string | Change order title |
+| date | date | Change order date |
+| amount | bigInteger | Amount in cents (signed — negative for deductions) |
+| description | text | Optional description (nullable) |
+| file_path | string | Path to uploaded document (nullable) |
+| created_by | bigint | Foreign key to users (nullable, nullOnDelete) |
+| timestamps | | created_at, updated_at |
+
+**Indexes:** `contract_id`
+
+See [Contract Change Orders](#contract-change-orders) section below for full details.
+
+### 4. `contract_status_histories` Table
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -78,6 +96,7 @@ See [Contract Payments](./contract-payments.md) for full details.
 - `subcontractor()` - BelongsTo Subcontractor (nullable)
 - `createdBy()` - BelongsTo User
 - `statusHistories()` - HasMany ContractStatusHistory
+- `changeOrders()` - HasMany ContractChangeOrder (ordered by date desc)
 - `payments()` - HasMany ContractPayment (ordered by payment_date desc)
 
 **Accessors (cents ↔ dollars):**
@@ -91,10 +110,14 @@ See [Contract Payments](./contract-payments.md) for full details.
 - `isPartiallyPaid()` - Status is 'partially_paid'
 - `isCancelled()` - Status is 'cancelled'
 
+**Change Order Methods:**
+- `getChangeOrdersTotal()` - Returns sum of all change order amounts in dollars
+- `getAdjustedAmount()` - Returns original amount + change orders total in dollars
+
 **Payment Methods:**
 - `getAmountPaid()` - Returns total paid in dollars
-- `getBalanceDue()` - Returns remaining balance in dollars
-- `updateStatusFromPayments()` - Auto-transitions status based on payment totals
+- `getBalanceDue()` - Returns adjusted amount minus amount paid in dollars
+- `updateStatusFromPayments()` - Auto-transitions status based on payment totals (uses adjusted amount)
 
 **Other Methods:**
 - `generateContractNumber()` - Static method, returns next sequential CTR-XXXX number
@@ -113,6 +136,17 @@ See [Contract Payments](./contract-payments.md) for full details.
 
 **Display Helpers:**
 - `getPaymentMethodLabel()` - Returns human-readable payment method label
+
+### ContractChangeOrder Model
+
+**Location:** `app/Models/ContractChangeOrder.php`
+
+**Relationships:**
+- `contract()` - BelongsTo Contract
+- `createdBy()` - BelongsTo User
+
+**Accessors (cents ↔ dollars):**
+- `amount` - Automatically converts between cents (database) and dollars (application). Supports negative values for deductions.
 
 ### ContractStatusHistory Model
 
@@ -154,14 +188,16 @@ See [Contract Payments](./contract-payments.md) for full details.
 **Features:**
 - View contract details (read-only)
 - Three-column layout: main content (col-span-2) + sidebar (col-span-1)
-- Main content cards: Details, Financial (with paid/balance due), Notes (conditional), Contract File (conditional)
+- Main content cards: Details, Financial (with change orders breakdown and paid/balance due), Change Orders (inline component), Notes (conditional), Contract File (conditional)
 - Sidebar cards: Actions, Status History timeline, Payment History (conditional)
+- Financial card shows: Original Amount, Change Orders (green, positive total), Deductions (red, negative total), Adjusted Amount, Amount Paid, Balance Due
 - Status change via modal with dropdown and optional reason
 - Payment recording via modal with amount, method, date, reference, notes
 - Computed `availableStatuses` property controls allowed transitions per current status
-- Delete with `wire:confirm` — cleans up contract file from storage before deleting
+- Delete with `wire:confirm` — cleans up contract file and change order files from storage before deleting
 - Back navigation returns to correct context (project or job site contracts index)
 - View/Download links for attached contract file
+- Listens for `change-orders-updated` event to refresh financial data when change orders are added/edited/deleted
 
 **Action Buttons (sidebar):**
 - **Change Status** - Opens modal (only shown when transitions are available)
@@ -169,7 +205,31 @@ See [Contract Payments](./contract-payments.md) for full details.
 - **Edit Contract** - Links to ContractEdit
 - **Delete Contract** - With confirmation dialog
 
-### 3. ContractEdit
+### 3. ContractChangeOrders (Inline Component)
+
+**Location:** `app/Livewire/Contract/ContractChangeOrders.php`
+
+**View:** `resources/views/livewire/contract/contract-change-orders.blade.php`
+
+**Type:** Inline component (embedded in ContractShow page)
+
+**Features:**
+- Lists all change orders for a contract in a table (Title, Date, Amount, Created By, File, Actions)
+- Amounts are color-coded: green with `+` prefix for positive (additions), red for negative (deductions)
+- Footer row shows total change orders amount
+- Add/Edit modal with fields: Title (required), Date (required), Amount (required, allows negative for deductions), Description (optional), File upload (optional)
+- File upload: PDF, JPG, PNG up to 10MB, stored in `contract-change-orders` directory
+- Edit replaces existing file when new one is uploaded
+- Delete cleans up file from storage before deleting record
+- Dispatches `change-orders-updated` event to parent ContractShow to refresh financial data
+
+**Properties:**
+- `$contract` - The contract model
+- `$showModal` - Controls modal visibility
+- `$editingId` - ID of change order being edited (null for create)
+- `$title`, `$date`, `$amount`, `$description`, `$file` - Form fields
+
+### 4. ContractEdit
 
 **Location:** `app/Livewire/Contract/ContractEdit.php`
 
@@ -300,15 +360,18 @@ match ($this->contract->status) {
 ## File Handling
 
 ### Storage
-Contract files are stored in `storage/app/contracts/` using Laravel's local disk.
+- Contract files are stored in `storage/app/contracts/` using Laravel's local disk
+- Change order files are stored in `storage/app/contract-change-orders/` using Laravel's local disk
 
 ### Upload Rules
 - Accepted formats: PDF, JPG, JPEG, PNG
 - Max file size: 10MB (10240 KB)
 
 ### Cleanup
-- **On delete:** `ContractShow::delete()` manually deletes the file from storage before deleting the contract record
-- **On edit (replace):** `ContractEdit::save()` deletes the old file when a new file is uploaded or when the user clicks "Remove"
+- **Contract delete:** `ContractShow::delete()` manually deletes the contract file and all change order files from storage before deleting the contract record (cascade will delete change order DB records)
+- **Contract edit (replace):** `ContractEdit::save()` deletes the old file when a new file is uploaded or when the user clicks "Remove"
+- **Change order delete:** `ContractChangeOrders::delete()` deletes the file from storage before deleting the change order record
+- **Change order edit (replace):** `ContractChangeOrders::save()` deletes the old file when a new file is uploaded
 - **On cascade delete:** File cleanup does NOT happen automatically (no Eloquent boot event). Parent record cascade deletes will orphan files. See `docs/delete-functionality.md` for the general pattern.
 
 ---
@@ -319,16 +382,19 @@ Contract files are stored in `storage/app/contracts/` using Laravel's local disk
 - `database/migrations/2026_02_13_200000_create_contracts_table.php`
 - `database/migrations/2026_02_13_200001_create_contract_status_histories_table.php`
 - `database/migrations/2026_02_13_210000_create_contract_payments_table.php`
+- `database/migrations/2026_02_17_100000_create_contract_change_orders_table.php`
 
 ### Models
 - `app/Models/Contract.php`
 - `app/Models/ContractStatusHistory.php`
 - `app/Models/ContractPayment.php`
+- `app/Models/ContractChangeOrder.php`
 
 ### Livewire Components
 - `app/Livewire/Contract/ContractCreate.php`
 - `app/Livewire/Contract/ContractShow.php`
 - `app/Livewire/Contract/ContractEdit.php`
+- `app/Livewire/Contract/ContractChangeOrders.php` (inline, embedded in ContractShow)
 - `app/Livewire/Project/ProjectContracts.php`
 - `app/Livewire/JobSite/JobSiteContracts.php`
 
@@ -336,6 +402,7 @@ Contract files are stored in `storage/app/contracts/` using Laravel's local disk
 - `resources/views/livewire/contract/contract-create.blade.php`
 - `resources/views/livewire/contract/contract-show.blade.php`
 - `resources/views/livewire/contract/contract-edit.blade.php`
+- `resources/views/livewire/contract/contract-change-orders.blade.php`
 - `resources/views/livewire/project/project-contracts.blade.php`
 - `resources/views/livewire/job-site/job-site-contracts.blade.php`
 
@@ -354,10 +421,10 @@ Contract files are stored in `storage/app/contracts/` using Laravel's local disk
 Contract amount is stored in cents (integer) in the database and converted to dollars in the application layer using an Eloquent `Attribute` accessor on the Contract model.
 
 ### Cascade Deletes
-- Deleting a Contract cascades to ContractStatusHistory and ContractPayment records (database-level)
+- Deleting a Contract cascades to ContractStatusHistory, ContractPayment, and ContractChangeOrder records (database-level)
 - Deleting a Project cascades to its Contracts (database-level)
 - Deleting a JobSite cascades to its Contracts (database-level)
-- **Important:** Cascade deletes do NOT trigger Eloquent events, so contract files will be orphaned. Manual cleanup is required before deleting parent records.
+- **Important:** Cascade deletes do NOT trigger Eloquent events, so contract and change order files will be orphaned. `ContractShow::delete()` manually cleans up both contract file and all change order files before deleting. Manual cleanup is required before deleting parent records (Project/JobSite).
 
 ### Contract Number Generation
 `Contract::generateContractNumber()` finds the max existing contract_number, extracts the numeric part, increments it, and returns the next value (e.g., CTR-0001, CTR-0002, etc.).

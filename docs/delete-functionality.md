@@ -33,6 +33,7 @@ All delete operations are wrapped in `DB::transaction()` to ensure consistency. 
 | `ChangeOrder` | `file_path` | No boot cleanup |
 | `PurchaseOrder` | `receipt_path` | Has `boot()` cleanup, but won't fire on cascade |
 | `DailyReportImage` | `file_path` | Polymorphic (`morphMany`), linked to `DailyReport` and `DailyReportManpower` |
+| `ContractChangeOrder` | `file_path` | Cleaned up in `ContractShow::delete()` before cascade; stored in `contract-change-orders/` |
 
 ---
 

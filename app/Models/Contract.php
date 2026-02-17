@@ -116,6 +116,11 @@ class Contract extends Model
         return $this->hasMany(ContractStatusHistory::class);
     }
 
+    public function changeOrders(): HasMany
+    {
+        return $this->hasMany(ContractChangeOrder::class)->orderByDesc('date');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(ContractPayment::class)->orderByDesc('payment_date');
@@ -126,6 +131,16 @@ class Contract extends Model
         return $this->hasOne(ContractPayment::class)->latestOfMany('payment_date');
     }
 
+    public function getChangeOrdersTotal(): float
+    {
+        return round($this->changeOrders()->sum('amount') / 100, 2);
+    }
+
+    public function getAdjustedAmount(): float
+    {
+        return round($this->amount + $this->getChangeOrdersTotal(), 2);
+    }
+
     public function getAmountPaid(): float
     {
         return round($this->payments()->sum('amount') / 100, 2);
@@ -133,7 +148,7 @@ class Contract extends Model
 
     public function getBalanceDue(): float
     {
-        return round($this->amount - $this->getAmountPaid(), 2);
+        return round($this->getAdjustedAmount() - $this->getAmountPaid(), 2);
     }
 
     public function updateStatusFromPayments(): void
@@ -143,7 +158,7 @@ class Contract extends Model
         }
 
         $amountPaid = $this->getAmountPaid();
-        $contractAmount = $this->amount;
+        $contractAmount = $this->getAdjustedAmount();
 
         if ($amountPaid >= $contractAmount) {
             $newStatus = 'paid';

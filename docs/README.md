@@ -62,8 +62,8 @@
 8. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, message templates, PDF generation, email sending with tracking pixel open detection, email history log, and status change tracking
 9. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Partial → Paid)
 10. **[Invoice Payments & CardPointe](./invoice-payments-module.md)** - Payment recording (manual + credit card), CardPointe Gateway integration, client saved payment methods, partial payment tracking, void/refund support
-11. **[Contract Module](./contract-module.md)** - Subcontractor contracts with status workflow, file attachments, and audit trail
-12. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions (completed → partially_paid → paid)
+11. **[Contract Module](./contract-module.md)** - Subcontractor contracts with status workflow, change orders (additions/deductions), file attachments, and audit trail
+12. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions (completed → partially_paid → paid), balance calculated from adjusted amount (original + change orders)
 
 ### User Management
 

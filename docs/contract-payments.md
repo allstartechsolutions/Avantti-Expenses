@@ -53,9 +53,11 @@ Payment tracking for subcontractor contracts. Users can record payments made aga
 
 | Method | Returns | Description |
 |--------|---------|-------------|
+| `getChangeOrdersTotal()` | float (dollars) | Sum of all change order amounts (positive and negative) |
+| `getAdjustedAmount()` | float (dollars) | Original amount + change orders total |
 | `getAmountPaid()` | float (dollars) | Sum of all payment amounts |
-| `getBalanceDue()` | float (dollars) | Contract amount minus amount paid |
-| `updateStatusFromPayments()` | void | Auto-transitions contract status based on payment totals |
+| `getBalanceDue()` | float (dollars) | Adjusted amount minus amount paid |
+| `updateStatusFromPayments()` | void | Auto-transitions contract status based on payment totals (uses adjusted amount) |
 
 ### Auto-Status Transitions (`updateStatusFromPayments`)
 
@@ -63,8 +65,8 @@ Only applies when current status is `completed`, `partially_paid`, or `paid`:
 
 | Condition | New Status |
 |-----------|------------|
-| Amount paid >= contract amount | `paid` |
-| Amount paid > 0 but < contract amount | `partially_paid` |
+| Amount paid >= adjusted amount | `paid` |
+| Amount paid > 0 but < adjusted amount | `partially_paid` |
 | No payments remaining | `completed` |
 
 - Does **not** auto-update `active` contracts (must be manually completed first)
@@ -114,9 +116,12 @@ Only applies when current status is `completed`, `partially_paid`, or `paid`:
 **Location:** `resources/views/livewire/contract/contract-show.blade.php`
 
 ### Financial Card Enhancement
-- **Contract Amount** — always shown
+- **Original Amount** — always shown
+- **Change Orders** — green text, only shown when positive change orders exist (additions)
+- **Deductions** — red text, only shown when negative change orders exist (deductions)
+- **Adjusted Amount** — shown when any change orders exist (original + change orders)
 - **Amount Paid** — green text, only shown when payments exist
-- **Balance Due** — orange when > 0, green when fully paid
+- **Balance Due** — orange when > 0, green when fully paid (uses adjusted amount)
 
 ### Record Payment Button (Actions Card)
 - Shown when contract status is `active`, `completed`, or `partially_paid`

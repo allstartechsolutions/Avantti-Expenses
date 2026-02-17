@@ -118,13 +118,44 @@
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Financial</h3>
                 </div>
                 <div class="p-6">
+                    @php
+                        $changeOrdersPositive = $contract->changeOrders->filter(fn($co) => $co->getRawOriginal('amount') > 0)->sum(fn($co) => $co->getRawOriginal('amount')) / 100;
+                        $changeOrdersNegative = $contract->changeOrders->filter(fn($co) => $co->getRawOriginal('amount') < 0)->sum(fn($co) => $co->getRawOriginal('amount')) / 100;
+                        $hasChangeOrders = $changeOrdersPositive != 0 || $changeOrdersNegative != 0;
+                        $adjustedAmount = $contract->getAdjustedAmount();
+                        $balanceDue = $contract->getBalanceDue();
+                    @endphp
                     <dl class="space-y-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Contract Amount</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Original Amount</dt>
                             <dd class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
                                 {{ Number::currency($contract->amount, config('app.currency'), config('app.locale')) }}
                             </dd>
                         </div>
+                        @if($changeOrdersPositive != 0)
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Change Orders</dt>
+                                <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
+                                    +{{ Number::currency($changeOrdersPositive, config('app.currency'), config('app.locale')) }}
+                                </dd>
+                            </div>
+                        @endif
+                        @if($changeOrdersNegative != 0)
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Deductions</dt>
+                                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
+                                    {{ Number::currency($changeOrdersNegative, config('app.currency'), config('app.locale')) }}
+                                </dd>
+                            </div>
+                        @endif
+                        @if($hasChangeOrders)
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Adjusted Amount</dt>
+                                <dd class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                                    {{ Number::currency($adjustedAmount, config('app.currency'), config('app.locale')) }}
+                                </dd>
+                            </div>
+                        @endif
                         @if($contract->payments->count() > 0)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Amount Paid</dt>
@@ -134,7 +165,6 @@
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Balance Due</dt>
-                                @php $balanceDue = $contract->getBalanceDue(); @endphp
                                 <dd class="mt-1 text-xl font-semibold {{ $balanceDue > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }}">
                                     {{ Number::currency($balanceDue, config('app.currency'), config('app.locale')) }}
                                 </dd>
@@ -143,6 +173,9 @@
                     </dl>
                 </div>
             </div>
+
+            <!-- Change Orders -->
+            <livewire:contract.contract-change-orders :contract="$contract" />
 
             <!-- Notes Card -->
             @if($contract->notes)
