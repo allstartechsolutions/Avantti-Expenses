@@ -32,6 +32,7 @@ use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\DailyReportPdfController;
+use App\Http\Controllers\EstimatePdfController;
 use App\Http\Controllers\FileController;
 use App\Livewire\Catalog\CatalogItemIndex;
 use App\Livewire\Catalog\CatalogItemCreate;
@@ -185,6 +186,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('estimates/create', EstimateCreate::class)->name('estimates.create');
     Route::get('estimates/{estimate}', EstimateShow::class)->name('estimates.show');
     Route::get('estimates/{estimate}/edit', EstimateEdit::class)->name('estimates.edit');
+    Route::get('estimates/{estimate}/pdf', [EstimatePdfController::class, 'download'])->name('estimates.pdf.download');
+    Route::get('estimates/{estimate}/pdf/view', [EstimatePdfController::class, 'stream'])->name('estimates.pdf.view');
 
     // Invoice routes
     Route::get('invoices', InvoiceIndex::class)->name('invoices.index');
