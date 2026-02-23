@@ -5,6 +5,11 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Contract Payments') }}</h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage and process subcontractor contract payments in batch') }}</p>
         </div>
+        <div class="mt-4 md:mt-0">
+            <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
+                {{ __('Export CSV') }}
+            </x-ui.button>
+        </div>
     </div>
 
     <!-- Flash Messages -->

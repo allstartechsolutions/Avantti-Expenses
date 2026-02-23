@@ -211,6 +211,69 @@ class ContractPayments extends Component
         $this->payNotes = [];
     }
 
+    public function exportCsv()
+    {
+        $contracts = Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
+            ->withSum('payments as total_paid_cents', 'amount')
+            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+            ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
+            ->orderBy('project_id')
+            ->orderBy('job_site_id')
+            ->get();
+
+        $filename = 'contract-payments-' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($contracts) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, [
+                __('Subcontractor'),
+                __('Project'),
+                __('Client'),
+                __('Job Site'),
+                __('Contract #'),
+                __('Amount'),
+                __('Paid'),
+                __('Balance'),
+                __('Status'),
+                __('Last Payment Date'),
+                __('Last Payment Amount'),
+            ]);
+
+            foreach ($contracts as $contract) {
+                $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
+                $balance = round($contract->amount - $totalPaidDollars, 2);
+
+                fputcsv($file, [
+                    $contract->subcontractor?->company_name ?? '',
+                    $contract->project->project_name,
+                    $contract->project->client?->company_name ?? '',
+                    $contract->jobSite?->job_site_name ?? __('Project General'),
+                    $contract->contract_number,
+                    number_format($contract->amount, 2, '.', ''),
+                    number_format($totalPaidDollars, 2, '.', ''),
+                    number_format($balance, 2, '.', ''),
+                    ucfirst(str_replace('_', ' ', $contract->status)),
+                    $contract->latestPayment?->payment_date->format('Y-m-d') ?? '',
+                    $contract->latestPayment ? number_format($contract->latestPayment->amount, 2, '.', '') : '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function render()
     {
         return view('livewire.contract.contract-payments')
