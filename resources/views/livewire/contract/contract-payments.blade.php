@@ -5,11 +5,6 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Contract Payments') }}</h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage and process subcontractor contract payments in batch') }}</p>
         </div>
-        <div class="mt-4 md:mt-0">
-            <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
-                {{ __('Export CSV') }}
-            </x-ui.button>
-        </div>
     </div>
 
     <!-- Flash Messages -->
@@ -193,13 +188,18 @@
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
             </div>
             <div class="flex-1"></div>
-            <x-ui.button
-                variant="success"
-                icon="save"
-                wire:click="processPayments"
-                wire:confirm="{{ __('Process all entered payments? This action cannot be undone.') }}">
-                {{ __('Process Payments') }}
-            </x-ui.button>
+            <div class="flex items-center gap-3">
+                <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
+                    {{ __('Export CSV') }}
+                </x-ui.button>
+                <x-ui.button
+                    variant="success"
+                    icon="save"
+                    wire:click="processPayments"
+                    wire:confirm="{{ __('Process all entered payments? This action cannot be undone.') }}">
+                    {{ __('Process Payments') }}
+                </x-ui.button>
+            </div>
         </div>
     </div>
 
