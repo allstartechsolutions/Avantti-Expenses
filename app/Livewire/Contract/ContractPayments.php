@@ -7,6 +7,7 @@ use App\Models\Contract;
 use App\Models\ContractPayment;
 use App\Models\Project;
 use App\Models\Subcontractor;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -23,6 +24,9 @@ class ContractPayments extends Component
 
     #[Url(except: '')]
     public string $subcontractorFilter = '';
+
+    #[Url(except: '')]
+    public string $projectManagerFilter = '';
 
     #[Url(except: '')]
     public string $statusFilter = '';
@@ -68,6 +72,14 @@ class ContractPayments extends Component
     }
 
     #[Computed]
+    public function projectManagers()
+    {
+        return User::whereHas('managedProjects.contracts')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    #[Computed]
     public function subcontractors()
     {
         return Subcontractor::whereHas('contracts')
@@ -83,6 +95,7 @@ class ContractPayments extends Component
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
             ->orderBy('project_id')
@@ -96,7 +109,8 @@ class ContractPayments extends Component
         $baseQuery = Contract::query()
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter));
+            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
 
         // Total contract value (all non-cancelled)
         $totalValueCents = (clone $baseQuery)->whereNot('status', 'cancelled')->sum('amount');
@@ -119,7 +133,8 @@ class ContractPayments extends Component
             ->whereHas('contract', function ($q) {
                 $q->when($this->clientFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
                     ->when($this->projectFilter, fn ($q2) => $q2->where('project_id', $this->projectFilter))
-                    ->when($this->subcontractorFilter, fn ($q2) => $q2->where('subcontractor_id', $this->subcontractorFilter));
+                    ->when($this->subcontractorFilter, fn ($q2) => $q2->where('subcontractor_id', $this->subcontractorFilter))
+                    ->when($this->projectManagerFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
             })
             ->sum('amount');
 

@@ -140,6 +140,18 @@
                 </select>
             </div>
 
+            <!-- Project Manager Filter -->
+            <div class="w-full md:w-48">
+                <select
+                    wire:model.live="projectManagerFilter"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    <option value="">{{ __('All Project Managers') }}</option>
+                    @foreach($this->projectManagers as $pm)
+                        <option value="{{ $pm->id }}">{{ $pm->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Status Filter -->
             <div class="w-full md:w-44">
                 <select
