@@ -36,7 +36,7 @@ class PurchaseOrderShow extends Component
     public function submitForApproval()
     {
         if (!$this->purchaseOrder->canBeSubmitted()) {
-            session()->flash('error', 'This purchase order cannot be submitted for approval.');
+            session()->flash('error', __('This purchase order cannot be submitted for approval.'));
             return;
         }
 
@@ -44,9 +44,9 @@ class PurchaseOrderShow extends Component
 
         if ($result) {
             $this->refreshPurchaseOrder();
-            session()->flash('message', 'Purchase order submitted for approval.');
+            session()->flash('message', __('Purchase order submitted for approval.'));
         } else {
-            session()->flash('error', 'Failed to submit purchase order for approval.');
+            session()->flash('error', __('Failed to submit purchase order for approval.'));
         }
     }
 
@@ -56,7 +56,7 @@ class PurchaseOrderShow extends Component
     public function approve()
     {
         if (!$this->purchaseOrder->canBeApproved()) {
-            session()->flash('error', 'This purchase order cannot be approved.');
+            session()->flash('error', __('This purchase order cannot be approved.'));
             return;
         }
 
@@ -64,9 +64,9 @@ class PurchaseOrderShow extends Component
 
         if ($result) {
             $this->refreshPurchaseOrder();
-            session()->flash('message', 'Purchase order approved! An expense has been created.');
+            session()->flash('message', __('Purchase order approved! An expense has been created.'));
         } else {
-            session()->flash('error', 'Failed to approve purchase order.');
+            session()->flash('error', __('Failed to approve purchase order.'));
         }
     }
 
@@ -94,7 +94,7 @@ class PurchaseOrderShow extends Component
     public function reject()
     {
         if (!$this->purchaseOrder->canBeRejected()) {
-            session()->flash('error', 'This purchase order cannot be rejected.');
+            session()->flash('error', __('This purchase order cannot be rejected.'));
             $this->closeRejectModal();
             return;
         }
@@ -104,9 +104,9 @@ class PurchaseOrderShow extends Component
         if ($result) {
             $this->refreshPurchaseOrder();
             $this->closeRejectModal();
-            session()->flash('message', 'Purchase order rejected.');
+            session()->flash('message', __('Purchase order rejected.'));
         } else {
-            session()->flash('error', 'Failed to reject purchase order.');
+            session()->flash('error', __('Failed to reject purchase order.'));
             $this->closeRejectModal();
         }
     }
@@ -118,7 +118,7 @@ class PurchaseOrderShow extends Component
     {
         // Check if we can cancel (for approved POs, check expense status)
         if ($this->purchaseOrder->isApproved() && !$this->purchaseOrder->canChangeStatusFromApproved()) {
-            session()->flash('error', 'Cannot cancel this PO because the linked expense has payments or is paid.');
+            session()->flash('error', __('Cannot cancel this PO because the linked expense has payments or is paid.'));
             return;
         }
 
@@ -141,7 +141,7 @@ class PurchaseOrderShow extends Component
     public function cancel()
     {
         if ($this->purchaseOrder->isCancelled()) {
-            session()->flash('error', 'This purchase order is already cancelled.');
+            session()->flash('error', __('This purchase order is already cancelled.'));
             $this->closeCancelModal();
             return;
         }
@@ -151,9 +151,9 @@ class PurchaseOrderShow extends Component
         if ($result) {
             $this->refreshPurchaseOrder();
             $this->closeCancelModal();
-            session()->flash('message', 'Purchase order cancelled.');
+            session()->flash('message', __('Purchase order cancelled.'));
         } else {
-            session()->flash('error', 'Failed to cancel purchase order. The linked expense may have payments.');
+            session()->flash('error', __('Failed to cancel purchase order. The linked expense may have payments.'));
             $this->closeCancelModal();
         }
     }
@@ -164,7 +164,7 @@ class PurchaseOrderShow extends Component
     public function reviseAndResubmit()
     {
         if (!$this->purchaseOrder->canReviseAndResubmit()) {
-            session()->flash('error', 'This purchase order cannot be revised and resubmitted.');
+            session()->flash('error', __('This purchase order cannot be revised and resubmitted.'));
             return;
         }
 
@@ -172,9 +172,9 @@ class PurchaseOrderShow extends Component
 
         if ($result) {
             $this->refreshPurchaseOrder();
-            session()->flash('message', 'Purchase order revised and resubmitted for approval (Revision ' . $this->purchaseOrder->revision_number . ').');
+            session()->flash('message', __('Purchase order revised and resubmitted for approval (Revision :revision).', ['revision' => $this->purchaseOrder->revision_number]));
         } else {
-            session()->flash('error', 'Failed to resubmit purchase order.');
+            session()->flash('error', __('Failed to resubmit purchase order.'));
         }
     }
 

@@ -5,7 +5,7 @@
             <div>
                 <div class="flex items-center space-x-3">
                     <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-                        Purchase Order #{{ $purchaseOrder->id }}
+                        {{ __('Purchase Order') }} #{{ $purchaseOrder->id }}
                         @if($purchaseOrder->po_number)
                             <span class="text-slate-500">({{ $purchaseOrder->po_number }})</span>
                         @endif
@@ -30,7 +30,7 @@
                     @if($purchaseOrder->jobSite)
                         / {{ $purchaseOrder->jobSite->job_site_name }}
                     @else
-                        / Project Level
+                        / {{ __('Project Level') }}
                     @endif
                 </p>
             </div>
@@ -39,7 +39,7 @@
                     variant="secondary"
                     href="{{ $purchaseOrder->job_site_id ? route('jobsites.show', ['jobSite' => $purchaseOrder->job_site_id, 'tab' => 'purchaseorders']) : route('projects.purchase-orders', $purchaseOrder->project_id) }}"
                     icon="arrow-left">
-                    Back to List
+                    {{ __('Back to List') }}
                 </x-ui.button>
 
                 @if($purchaseOrder->canBeEdited())
@@ -47,7 +47,7 @@
                         variant="secondary"
                         href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
                         icon="edit">
-                        Edit
+                        {{ __('Edit') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -73,52 +73,52 @@
             <!-- PO Details Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Purchase Order Details</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Purchase Order Details') }}</h3>
                 </div>
                 <div class="p-6">
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Date</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->po_date->format('M d, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Supplier</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->supplier?->name ?? 'Not specified' }}</dd>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Supplier') }}</dt>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->supplier?->name ?? __('Not specified') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Created By</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->createdBy?->name ?? 'Unknown' }}</dd>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->createdBy?->name ?? __('Unknown') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Created At</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created At') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->created_at->format('M d, Y H:i') }}</dd>
                         </div>
                         @if($purchaseOrder->approvedBy)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved By</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved By') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->approvedBy->name }}</dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved At</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved At') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->approved_at->format('M d, Y H:i') }}</dd>
                             </div>
                         @endif
                         @if($purchaseOrder->notes)
                             <div class="md:col-span-2">
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Notes</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Notes') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->notes }}</dd>
                             </div>
                         @endif
                         @if($purchaseOrder->receipt_path)
                             <div class="md:col-span-2">
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Quote/Document</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Quote/Document') }}</dt>
                                 <dd class="mt-1">
                                     <a href="{{ route('files.show', ['path' => $purchaseOrder->receipt_path]) }}" target="_blank" class="inline-flex items-center text-sm text-[#3F5189] hover:text-[#2F3F6F]">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
-                                        View Document
+                                        {{ __('View Document') }}
                                     </a>
                                 </dd>
                             </div>
@@ -130,24 +130,24 @@
             <!-- Items Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Items</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Items') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-900/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Cost Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Item</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Qty</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Unit Price</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Cost Code') }}</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Item') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Qty') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Unit Price') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Total') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach($purchaseOrder->items as $item)
                                 <tr>
                                     <td class="px-6 py-4 text-sm text-slate-900 dark:text-white">
-                                        {{ $item->budgetItem?->code ?? 'Misc' }}
+                                        {{ $item->budgetItem?->code ?? __('Misc') }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $item->item_name }}</div>
@@ -169,7 +169,7 @@
                         </tbody>
                         <tfoot class="bg-slate-50 dark:bg-slate-900/50">
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white text-right">Total:</td>
+                                <td colspan="4" class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white text-right">{{ __('Total:') }}</td>
                                 <td class="px-6 py-4 text-lg font-bold text-slate-900 dark:text-white text-right">
                                     {{ Number::currency($purchaseOrder->total_amount, config('app.currency'), config('app.locale')) }}
                                 </td>
@@ -182,33 +182,33 @@
             <!-- Payment Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Payment Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Payment Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Payment Method</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Payment Method') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $purchaseOrder->payment_method ?? 'Not specified')) }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Installments</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Installments') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 @if($purchaseOrder->total_installments > 1)
                                     {{ $purchaseOrder->total_installments }}x ({{ ucfirst($purchaseOrder->payment_frequency) }})
                                 @else
-                                    Single payment
+                                    {{ __('Single payment') }}
                                 @endif
                             </dd>
                         </div>
                         @if($purchaseOrder->payment_due_date)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Due Date</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due Date') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->payment_due_date->format('M d, Y') }}</dd>
                             </div>
                         @endif
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Auto Payment</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->is_auto_payment ? 'Yes' : 'No' }}</dd>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Auto Payment') }}</dt>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->is_auto_payment ? __('Yes') : __('No') }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -220,7 +220,7 @@
             <!-- Actions Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     @if($purchaseOrder->isDraft())
@@ -229,16 +229,16 @@
                             variant="primary"
                             class="w-full justify-center"
                             wire:click="submitForApproval"
-                            wire:confirm="Submit this purchase order for approval?"
+                            wire:confirm="{{ __('Submit this purchase order for approval?') }}"
                             icon="paper-airplane">
-                            Submit for Approval
+                            {{ __('Submit for Approval') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="danger"
                             class="w-full justify-center"
                             wire:click="openCancelModal"
                             icon="x">
-                            Cancel PO
+                            {{ __('Cancel PO') }}
                         </x-ui.button>
 
                     @elseif($purchaseOrder->isPending())
@@ -247,23 +247,23 @@
                             variant="success"
                             class="w-full justify-center"
                             wire:click="approve"
-                            wire:confirm="Approve this purchase order? This will create an expense."
+                            wire:confirm="{{ __('Approve this purchase order? This will create an expense.') }}"
                             icon="check">
-                            Approve
+                            {{ __('Approve') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="danger"
                             class="w-full justify-center"
                             wire:click="openRejectModal"
                             icon="x">
-                            Reject
+                            {{ __('Reject') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="secondary"
                             class="w-full justify-center"
                             wire:click="openCancelModal"
                             icon="ban">
-                            Cancel PO
+                            {{ __('Cancel PO') }}
                         </x-ui.button>
 
                     @elseif($purchaseOrder->isApproved())
@@ -274,24 +274,24 @@
                                 class="w-full justify-center"
                                 wire:click="openRejectModal"
                                 icon="x">
-                                Reject PO
+                                {{ __('Reject PO') }}
                             </x-ui.button>
                             <x-ui.button
                                 variant="danger"
                                 class="w-full justify-center"
                                 wire:click="openCancelModal"
                                 icon="ban">
-                                Cancel PO
+                                {{ __('Cancel PO') }}
                             </x-ui.button>
                             <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-                                Warning: These actions will delete the linked expense.
+                                {{ __('Warning: These actions will delete the linked expense.') }}
                             </p>
                         @else
                             <div class="text-center text-sm text-slate-500 dark:text-slate-400">
                                 <svg class="w-8 h-8 mx-auto mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                                 </svg>
-                                Status cannot be changed because the linked expense has payments.
+                                {{ __('Status cannot be changed because the linked expense has payments.') }}
                             </div>
                         @endif
 
@@ -301,25 +301,25 @@
                             variant="primary"
                             class="w-full justify-center"
                             wire:click="reviseAndResubmit"
-                            wire:confirm="Resubmit this purchase order for approval? This will increment the revision number."
+                            wire:confirm="{{ __('Resubmit this purchase order for approval? This will increment the revision number.') }}"
                             icon="refresh">
-                            Revise & Resubmit
+                            {{ __('Revise & Resubmit') }}
                         </x-ui.button>
                         <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-                            You can edit the PO before resubmitting.
+                            {{ __('You can edit the PO before resubmitting.') }}
                         </p>
                         <x-ui.button
                             variant="secondary"
                             href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
                             class="w-full justify-center"
                             icon="edit">
-                            Edit PO
+                            {{ __('Edit PO') }}
                         </x-ui.button>
 
                     @elseif($purchaseOrder->isCancelled())
                         <!-- Cancelled - No actions -->
                         <div class="text-center text-sm text-slate-500 dark:text-slate-400">
-                            This purchase order has been cancelled.
+                            {{ __('This purchase order has been cancelled.') }}
                         </div>
                     @endif
                 </div>
@@ -329,22 +329,22 @@
             @if($purchaseOrder->isApproved() && $purchaseOrder->expense)
                 <div class="bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm border border-green-200 dark:border-green-800">
                     <div class="px-6 py-4">
-                        <h3 class="text-lg font-semibold text-green-800 dark:text-green-300">Linked Expense</h3>
+                        <h3 class="text-lg font-semibold text-green-800 dark:text-green-300">{{ __('Linked Expense') }}</h3>
                         <p class="mt-2 text-sm text-green-700 dark:text-green-400">
-                            This PO was approved and an expense was automatically created.
+                            {{ __('This PO was approved and an expense was automatically created.') }}
                         </p>
                         <div class="mt-4">
                             <dl class="space-y-2">
                                 <div class="flex justify-between">
-                                    <dt class="text-sm text-green-700 dark:text-green-400">Expense ID:</dt>
+                                    <dt class="text-sm text-green-700 dark:text-green-400">{{ __('Expense ID:') }}</dt>
                                     <dd class="text-sm font-medium text-green-800 dark:text-green-300">#{{ $purchaseOrder->expense->id }}</dd>
                                 </div>
                                 <div class="flex justify-between">
-                                    <dt class="text-sm text-green-700 dark:text-green-400">Status:</dt>
+                                    <dt class="text-sm text-green-700 dark:text-green-400">{{ __('Status:') }}</dt>
                                     <dd class="text-sm font-medium text-green-800 dark:text-green-300">{{ ucfirst($purchaseOrder->expense->status) }}</dd>
                                 </div>
                                 <div class="flex justify-between">
-                                    <dt class="text-sm text-green-700 dark:text-green-400">Amount:</dt>
+                                    <dt class="text-sm text-green-700 dark:text-green-400">{{ __('Amount:') }}</dt>
                                     <dd class="text-sm font-medium text-green-800 dark:text-green-300">{{ Number::currency($purchaseOrder->expense->total_amount, config('app.currency'), config('app.locale')) }}</dd>
                                 </div>
                             </dl>
@@ -356,7 +356,7 @@
             <!-- Status History Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Status History</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Status History') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($purchaseOrder->statusHistories->count() > 0)
@@ -402,7 +402,7 @@
                                                             {{ $history->getChangeDescription() }}
                                                         </p>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                            by {{ $history->changedBy?->name ?? 'System' }}
+                                                            {{ __('by') }} {{ $history->changedBy?->name ?? 'System' }}
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -421,7 +421,7 @@
                             </ul>
                         </div>
                     @else
-                        <p class="text-sm text-slate-500 dark:text-slate-400">No status changes recorded.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No status changes recorded.') }}</p>
                     @endif
                 </div>
             </div>
@@ -436,7 +436,7 @@
             <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Reject Purchase Order</h2>
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Reject Purchase Order') }}</h2>
                         <button type="button" wire:click="closeRejectModal" class="text-slate-400 hover:text-slate-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -444,21 +444,21 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Reason for Rejection (Optional)</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Reason for Rejection (Optional)') }}</label>
                             <textarea
                                 wire:model="rejectReason"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Enter the reason for rejecting this PO..."></textarea>
+                                placeholder="{{ __('Enter the reason for rejecting this PO...') }}"></textarea>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeRejectModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="danger" wire:click="reject">
-                            Reject PO
+                            {{ __('Reject PO') }}
                         </x-ui.button>
                     </div>
                 </div>
@@ -475,7 +475,7 @@
             <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Cancel Purchase Order</h2>
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Cancel Purchase Order') }}</h2>
                         <button type="button" wire:click="closeCancelModal" class="text-slate-400 hover:text-slate-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -484,28 +484,28 @@
                     @if($purchaseOrder->isApproved())
                         <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                             <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                                <strong>Warning:</strong> Cancelling this approved PO will also delete the linked expense (#{{ $purchaseOrder->expense?->id }}).
+                                <strong>{{ __('Warning:') }}</strong> {{ __('Cancelling this approved PO will also delete the linked expense (:id).', ['id' => '#' . $purchaseOrder->expense?->id]) }}
                             </p>
                         </div>
                     @endif
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Reason for Cancellation (Optional)</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Reason for Cancellation (Optional)') }}</label>
                             <textarea
                                 wire:model="cancelReason"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Enter the reason for cancelling this PO..."></textarea>
+                                placeholder="{{ __('Enter the reason for cancelling this PO...') }}"></textarea>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeCancelModal">
-                            Keep PO
+                            {{ __('Keep PO') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="danger" wire:click="cancel">
-                            Cancel PO
+                            {{ __('Cancel PO') }}
                         </x-ui.button>
                     </div>
                 </div>

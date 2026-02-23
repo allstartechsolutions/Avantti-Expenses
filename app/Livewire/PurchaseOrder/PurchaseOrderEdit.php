@@ -62,7 +62,7 @@ class PurchaseOrderEdit extends Component
     {
         // Only draft and rejected POs can be edited
         if (!$purchaseOrder->canBeEdited()) {
-            session()->flash('error', 'This purchase order cannot be edited.');
+            session()->flash('error', __('This purchase order cannot be edited.'));
             return redirect()->route('purchase-orders.show', $purchaseOrder->id);
         }
 
@@ -249,9 +249,9 @@ class PurchaseOrderEdit extends Component
             'item_quantity' => 'required|numeric|min:0.01',
             'item_unit_price' => 'required|numeric|min:0',
         ], [
-            'item_name.required' => 'Item name is required.',
-            'item_quantity.required' => 'Quantity is required.',
-            'item_unit_price.required' => 'Unit price is required.',
+            'item_name.required' => __('Item name is required.'),
+            'item_quantity.required' => __('Quantity is required.'),
+            'item_unit_price.required' => __('Unit price is required.'),
         ]);
 
         $this->calculateItemTotal();
@@ -307,7 +307,7 @@ class PurchaseOrderEdit extends Component
     {
         // Re-check if still editable
         if (!$this->purchaseOrder->canBeEdited()) {
-            session()->flash('error', 'This purchase order can no longer be edited.');
+            session()->flash('error', __('This purchase order can no longer be edited.'));
             return redirect()->route('purchase-orders.show', $this->purchaseOrder->id);
         }
 
@@ -318,8 +318,8 @@ class PurchaseOrderEdit extends Component
             'po_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',
         ], [
-            'items.required' => 'At least one item is required.',
-            'items.min' => 'At least one item is required.',
+            'items.required' => __('At least one item is required.'),
+            'items.min' => __('At least one item is required.'),
         ]);
 
         // Payment validation (if installments enabled)
@@ -413,7 +413,7 @@ class PurchaseOrderEdit extends Component
             }
         });
 
-        session()->flash('message', 'Purchase order updated successfully!');
+        session()->flash('message', __('Purchase order updated successfully!'));
 
         return redirect()->route('purchase-orders.show', $this->purchaseOrder->id);
     }

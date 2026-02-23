@@ -1,4 +1,4 @@
-<x-project-layout :project="$project" active="purchase-orders" title="Purchase Orders">
+<x-project-layout :project="$project" active="purchase-orders" title="{{ __('Purchase Orders') }}">
     <div class="space-y-6">
         <!-- Header with Search, Filter and Add Button -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -8,7 +8,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="search"
-                        placeholder="Search PO#, supplier, notes..."
+                        placeholder="{{ __('Search PO#, supplier, notes...') }}"
                         class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -18,8 +18,8 @@
                 <select
                     wire:model.live="locationFilter"
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                    <option value="">All Locations</option>
-                    <option value="project">Project (General)</option>
+                    <option value="">{{ __('All Locations') }}</option>
+                    <option value="project">{{ __('Project (General)') }}</option>
                     @foreach($jobSites as $js)
                         <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                     @endforeach
@@ -28,19 +28,19 @@
                 <select
                     wire:model.live="statusFilter"
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                    <option value="">All Statuses</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="">{{ __('All Statuses') }}</option>
+                    <option value="draft">{{ __('Draft') }}</option>
+                    <option value="pending">{{ __('Pending') }}</option>
+                    <option value="approved">{{ __('Approved') }}</option>
+                    <option value="rejected">{{ __('Rejected') }}</option>
+                    <option value="cancelled">{{ __('Cancelled') }}</option>
                 </select>
             </div>
             <x-ui.button
                 variant="primary"
                 icon="plus"
                 href="{{ route('purchase-orders.project.create', $project) }}">
-                Add Purchase Order
+                {{ __('Add Purchase Order') }}
             </x-ui.button>
         </div>
 
@@ -50,7 +50,7 @@
             <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-white/80">Total Amount</p>
+                        <p class="text-sm font-medium text-white/80">{{ __('Total Amount') }}</p>
                         <p class="text-2xl font-bold mt-1">{{ Number::currency($stats['total_amount'], config('app.currency'), config('app.locale')) }}</p>
                     </div>
                     <div class="bg-white/10 rounded-full p-3">
@@ -65,7 +65,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Approval</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Pending Approval') }}</p>
                         <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ $stats['pending'] }}</p>
                     </div>
                     <div class="bg-amber-100 dark:bg-amber-900/20 rounded-full p-3">
@@ -79,7 +79,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved') }}</p>
                         <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($stats['approved_amount'], config('app.currency'), config('app.locale')) }}</p>
                     </div>
                     <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
@@ -98,12 +98,12 @@
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-900/50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">PO # / Supplier</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('PO # / Supplier') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -124,7 +124,7 @@
                                                         <span class="text-xs text-slate-500 ml-1">Rev. {{ $po->revision_number }}</span>
                                                     @endif
                                                 </div>
-                                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ $po->supplier?->name ?? 'No Supplier' }}</span>
+                                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ $po->supplier?->name ?? __('No Supplier') }}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -133,7 +133,7 @@
                                             <span class="text-sm text-slate-900 dark:text-white">{{ $po->jobSite->job_site_name }}</span>
                                         @else
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                Project (General)
+                                                {{ __('Project (General)') }}
                                             </span>
                                         @endif
                                     </td>
@@ -177,12 +177,12 @@
                     <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No purchase orders</h3>
+                    <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No purchase orders') }}</h3>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         @if($search || $statusFilter || $locationFilter)
-                            No purchase orders match your filters.
+                            {{ __('No purchase orders match your filters.') }}
                         @else
-                            Get started by creating a purchase order.
+                            {{ __('Get started by creating a purchase order.') }}
                         @endif
                     </p>
                     @if(!$search && !$statusFilter && !$locationFilter)
@@ -191,7 +191,7 @@
                                 variant="primary"
                                 icon="plus"
                                 href="{{ route('purchase-orders.project.create', $project) }}">
-                                Add Purchase Order
+                                {{ __('Add Purchase Order') }}
                             </x-ui.button>
                         </div>
                     @endif

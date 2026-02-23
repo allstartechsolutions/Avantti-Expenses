@@ -202,7 +202,7 @@ class JobSiteShow extends Component
                 'file_path' => $filePath,
             ]);
 
-            session()->flash('message', 'Change order updated successfully!');
+            session()->flash('message', __('Change order updated successfully!'));
         } else {
             ChangeOrder::create([
                 'project_id' => $this->jobSite->project_id,
@@ -215,7 +215,7 @@ class JobSiteShow extends Component
                 'created_by' => Auth::id(),
             ]);
 
-            session()->flash('message', 'Change order created successfully!');
+            session()->flash('message', __('Change order created successfully!'));
         }
 
         $this->closeModal();
@@ -232,7 +232,7 @@ class JobSiteShow extends Component
 
         $changeOrder->delete();
 
-        session()->flash('message', 'Change order deleted successfully!');
+        session()->flash('message', __('Change order deleted successfully!'));
         $this->jobSite->refresh();
     }
 

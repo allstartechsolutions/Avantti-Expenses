@@ -481,11 +481,11 @@ class PurchaseOrder extends Model
     public function getStatusLabel(): string
     {
         return match ($this->status) {
-            'draft' => 'Draft',
-            'pending' => 'Pending Approval',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            'cancelled' => 'Cancelled',
+            'draft' => __('Draft'),
+            'pending' => __('Pending Approval'),
+            'approved' => __('Approved'),
+            'rejected' => __('Rejected'),
+            'cancelled' => __('Cancelled'),
             default => ucfirst($this->status),
         };
     }
@@ -496,9 +496,9 @@ class PurchaseOrder extends Model
     public function getLocationDisplay(): string
     {
         if ($this->isProjectLevel()) {
-            return 'Project Level';
+            return __('Project Level');
         }
 
-        return $this->jobSite?->name ?? 'Unknown';
+        return $this->jobSite?->name ?? __('Unknown');
     }
 }

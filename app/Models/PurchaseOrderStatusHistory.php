@@ -43,11 +43,11 @@ class PurchaseOrderStatusHistory extends Model
      */
     public function getChangeDescription(): string
     {
-        $oldLabel = $this->old_status ? $this->getStatusLabel($this->old_status) : 'Created';
+        $oldLabel = $this->old_status ? $this->getStatusLabel($this->old_status) : __('Created');
         $newLabel = $this->getStatusLabel($this->new_status);
 
         if (!$this->old_status) {
-            return "Created as {$newLabel}";
+            return __('Created as :status', ['status' => $newLabel]);
         }
 
         return "{$oldLabel} → {$newLabel}";
@@ -59,11 +59,11 @@ class PurchaseOrderStatusHistory extends Model
     protected function getStatusLabel(string $status): string
     {
         return match ($status) {
-            'draft' => 'Draft',
-            'pending' => 'Pending Approval',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            'cancelled' => 'Cancelled',
+            'draft' => __('Draft'),
+            'pending' => __('Pending Approval'),
+            'approved' => __('Approved'),
+            'rejected' => __('Rejected'),
+            'cancelled' => __('Cancelled'),
             default => ucfirst($status),
         };
     }

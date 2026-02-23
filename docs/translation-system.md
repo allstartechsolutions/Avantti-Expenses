@@ -136,6 +136,8 @@ No middleware or dynamic switching is needed.
 | Project Nav      | `project-nav.blade.php`, `project-layout.blade.php`, `breadcrumb.blade.php` |
 | Project Overview | `project-overview.blade.php` (+ ProjectOverview.php, ProjectStatus.php enum) |
 | Expenses         | `project-expenses.blade.php`, `partials/expense-modal.blade.php`, `expense-create.blade.php`, `job-site-show.blade.php` (expenses tab only) (+ ProjectExpenses.php, ExpenseCreate.php, JobSiteShow.php) |
+| Purchase Orders  | `project-purchase-orders.blade.php`, `purchase-order-create.blade.php`, `purchase-order-edit.blade.php`, `purchase-order-show.blade.php`, `job-site-show.blade.php` (PO tab) (+ PurchaseOrderCreate.php, PurchaseOrderEdit.php, PurchaseOrderShow.php, PurchaseOrder.php model, PurchaseOrderStatusHistory.php model) |
+| Change Orders    | `project-change-orders.blade.php`, `job-site-show.blade.php` (CO tab + CO modal) (+ ProjectChangeOrders.php, JobSiteShow.php CO methods) |
 
 ### Remaining Modules
 
@@ -145,10 +147,9 @@ No middleware or dynamic switching is needed.
 | Client           | 5             | client-index, create, edit, show, payment-methods      |
 | Estimate         | 5             | estimate-index, create, edit, show, send                |
 | Invoice          | 5             | invoice-index, create, edit, show, send                 |
-| Project (inner)  | ~6            | project-show sub-views: change-orders, daily-reports, purchase-orders, budget, contracts, job-sites |
-| Job Site         | ~4            | job-site-show (remaining tabs: change-orders, daily-reports, purchase-orders, budget), job-site-index/create/edit |
+| Project (inner)  | ~3            | project-show sub-views: daily-reports, budget, contracts |
+| Job Site         | ~3            | job-site-show (remaining tabs: daily-reports, budget), job-site-index/create/edit |
 | Daily Report     | 1             | daily-report-index (complex, inline modals)             |
-| Purchase Order   | 3             | purchase-order-index, create, edit                      |
 | Budget           | 3             | budget-index, create, edit                              |
 | Cost Code        | 4             | cost-code-index, create, edit, templates                |
 | Catalog          | 6             | catalog-index, create, edit, category-index, etc.       |
@@ -160,11 +161,11 @@ No middleware or dynamic switching is needed.
 | System Settings  | 4             | tax rates, messages, etc.                               |
 | Shared           | 1             | shared components                                       |
 
-**Total remaining: ~72 blade files across 17 modules**
+**Total remaining: ~62 blade files across 16 modules**
 
 ### Notes on Partially Translated Files
 
-- **`job-site-show.blade.php`**: Only the **expenses tab** (lines 11-232) has been translated. Other tabs (change-orders, daily-reports, purchase-orders, budget) remain untranslated.
+- **`job-site-show.blade.php`**: The **expenses tab**, **purchase orders tab**, and **change orders tab + modal** have been translated. Other tabs (daily-reports, budget) remain untranslated.
 - **`ProjectStatus.php` enum**: Status labels (`Created`, `In Progress`, `Completed`, `Cancelled`) are now translated via `__()` in the `label()` method.
 
 ## Workflow for Adding Translations

@@ -115,11 +115,11 @@ class ProjectChangeOrders extends Component
         if ($this->changeOrderModalMode === 'edit' && $this->editingChangeOrder) {
             $changeOrder = ChangeOrder::findOrFail($this->editingChangeOrder);
             $changeOrder->update($data);
-            session()->flash('message', 'Change order updated successfully!');
+            session()->flash('message', __('Change order updated successfully!'));
         } else {
             $data['created_by'] = Auth::id();
             ChangeOrder::create($data);
-            session()->flash('message', 'Change order created successfully!');
+            session()->flash('message', __('Change order created successfully!'));
         }
 
         $this->closeChangeOrderModal();
@@ -136,7 +136,7 @@ class ProjectChangeOrders extends Component
 
         $changeOrder->delete();
 
-        session()->flash('message', 'Change order deleted successfully!');
+        session()->flash('message', __('Change order deleted successfully!'));
         $this->project->refresh();
     }
 
