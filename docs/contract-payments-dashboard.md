@@ -49,6 +49,7 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 | `mount()` | Sets `$paymentDate` to today's date |
 | `updatedClientFilter()` | When client changes, resets project filter if the currently selected project doesn't belong to the new client |
 | `processPayments()` | Validates payment date, collects rows with amount > 0, validates each row (amount doesn't exceed balance), creates `ContractPayment` records in a DB transaction, calls `updateStatusFromPayments()` on each contract, resets inline inputs |
+| `exportCsv()` | Exports a CSV file with all currently filtered contracts. Uses `response()->stream()` with `fputcsv()`. Columns: Subcontractor, Project, Client, Job Site, Contract #, Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount. Filename includes current date (e.g., `contract-payments-2026-02-23.csv`) |
 
 #### Query Strategy
 
@@ -110,7 +111,8 @@ White card with a flex row containing:
 
 #### Payment Date Bar
 - Date input defaulting to today
-- "Process Payments" button with `wire:confirm` for user confirmation before batch processing
+- **"Export CSV"** button (`outline` variant, `download` icon) — downloads a CSV of all currently filtered contracts, respecting all active filters
+- **"Process Payments"** button with `wire:confirm` for user confirmation before batch processing
 
 #### Contracts Table (11 columns)
 
@@ -202,13 +204,14 @@ Route::get('contract-payments', ContractPayments::class)->name('contract-payment
 2. The page loads showing all non-paid/cancelled contracts grouped by project
 3. Use the **filter dropdowns** to narrow down by client, project, subcontractor, or status
 4. Toggle **"Show Paid/Cancelled"** to see fully paid or cancelled contracts (shown muted)
-5. Set the **Payment Date** (defaults to today)
-6. For each contract to pay, enter the amount in the **"Pay Today"** column
-7. Optionally select a **payment method** and add **notes** for each row
-8. Click **"Process Payments"** — a confirmation dialog appears
-9. On confirm, all entered payments are created in a single database transaction
-10. Contract statuses are automatically updated (completed → partially_paid → paid) via `updateStatusFromPayments()`
-11. The table refreshes showing updated balances, and inline inputs are cleared
+5. Optionally click **"Export CSV"** to download the currently filtered data as a CSV file (opens in Excel)
+6. Set the **Payment Date** (defaults to today)
+7. For each contract to pay, enter the amount in the **"Pay Today"** column
+8. Optionally select a **payment method** and add **notes** for each row
+9. Click **"Process Payments"** — a confirmation dialog appears
+10. On confirm, all entered payments are created in a single database transaction
+11. Contract statuses are automatically updated (completed → partially_paid → paid) via `updateStatusFromPayments()`
+12. The table refreshes showing updated balances, and inline inputs are cleared
 
 ---
 
