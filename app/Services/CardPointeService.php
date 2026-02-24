@@ -42,7 +42,7 @@ class CardPointeService
         if ($this->env === 'uat') {
             $base = 'https://fts-uat.cardconnect.com/itoke/ajax-tokenizer.html';
         } else {
-            $base = "https://{$this->site}.cardpointe.com/itoke/ajax-tokenizer.html";
+            $base = "https://{$this->site}.cardconnect.com/itoke/ajax-tokenizer.html";
         }
 
         $params = http_build_query([
