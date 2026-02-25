@@ -5,6 +5,8 @@
     "_sidebar_company": "---------- Company Submenu ----------",
 
     "_sidebar_projects": "---------- Projects Submenu ----------",
+    "Projects": "Job Sites",
+    "All Projects": "All Job Sites",
 
     "_sidebar_catalog": "---------- Catalog Submenu ----------",
 
@@ -70,29 +72,100 @@
 
     "_projects_index": "---------- Project Index Page ----------",
     "_projects_index_header": ".......... Page Header ..........",
+    "Manage your projects": "Manage your job sites",
+    "Add Project": "Add Job Site",
+
     "_projects_index_filters": ".......... Filters ..........",
+    "Search projects": "Search job sites",
+    "Search by project name, client, contact...": "Search by job site name, client, contact...",
+
     "_projects_index_table": ".......... Table ..........",
+    "Project": "Job Site",
+    "# Job Sites": "# Lots",
     "_projects_index_empty": ".......... Empty States ..........",
+    "No projects found": "No job sites found",
+    "No projects yet": "No job sites yet",
+    "Get started by creating a new project.": "Get started by creating a new job site.",
+
     "_projects_index_delete_modal": ".......... Delete Modal ..........",
+    "Delete Project": "Delete Job Site",
+    "Job Site(s)": "Lot(s)",
 
     "_projects_create": "---------- Project Create Page ----------",
     "_projects_create_header": ".......... Page Header ..........",
+    "Create Project": "Create Job Site",
+    "Add a new project to the system": "Add a new job site to the system",
+    "Back to Projects": "Back to Job Sites",
+
     "_projects_create_client": ".......... Client Selection ..........",
+    "Select the client for this project": "Select the client for this job site",
+
     "_projects_create_info": ".......... Project Information ..........",
+    "Project Information": "Job Site Information",
+    "Basic project details": "Basic job site details",
+    "Project Name": "Job Site Name",
+    "Enter project name": "Enter job site name",
+    "Project Status": "Job Site Status",
+    "Enter project description...": "Enter job site description...",
     "Project Manager": "Project Manager",
     "Select a project manager": "Select a project manager",
+
     "_projects_create_contact": ".......... Contact Information ..........",
+    "Primary contact for this project (editable)": "Primary contact for this job site (editable)",
+
     "_projects_create_address": ".......... Address ..........",
+    "Project Address": "Job Site Address",
+
     "_projects_create_actions": ".......... Form Actions ..........",
+    "Update Project": "Update Job Site",
 
     "_projects_edit": "---------- Project Edit Page ----------",
     "_projects_edit_header": ".......... Page Header ..........",
+    "Edit Project": "Edit Job Site",
+    "Update project information": "Update job site information",
 
     "_projects_messages": "---------- Flash Messages ----------",
+    "Project created successfully!": "Job site created successfully!",
+    "Project updated successfully!": "Job site updated successfully!",
+    "Project deleted successfully!": "Job site deleted successfully!",
+
     "_projects_validation": "---------- Validation Attributes ----------",
+    "project name": "job site name",
     "project manager": "project manager",
 
     "_job_sites": "========== Job Sites Module ==========",
+
+    "_job_sites_index": "---------- Job Sites Index (within Project) ----------",
+    "Search job sites...": "Search lots...",
+    "Add Job Site": "Add Lot",
+    "Edit Job Site": "Edit Lot",
+    "Add New Job Site": "Add New Lot",
+    "Job Site Name": "Lot Name",
+    "Enter job site name": "Enter lot name",
+    "Job Amount": "Lot Amount",
+    "Contact name": "Contact name",
+    "Create Job Site": "Create Lot",
+    "Update Job Site": "Update Lot",
+    "No Job Sites": "No Lots",
+    "Get started by creating a job site for this project.": "Get started by creating a lot for this job site.",
+    "Delete Job Site": "Delete Lot",
+
+    "_job_sites_overview": "---------- Job Site Overview ----------",
+    "Job Site Details": "Lot Details",
+    "Job Site Information": "Lot Information",
+    "Total Contract Value": "Total Contract Value",
+    "Job site is profitable": "Lot is profitable",
+    "Job site over budget": "Lot over budget",
+    "Profit": "Profit",
+    "Loss": "Loss",
+    "recorded": "recorded",
+    "View Expenses": "View Expenses",
+    "View Change Orders": "View Change Orders",
+
+    "_job_sites_layout": "---------- Job Site Layout ----------",
+    "Back to Job Sites": "Back to Lots",
+
+    "_job_sites_fields": "---------- Job Site Shared Fields ----------",
     "Supervisor": "Supervisor",
     "Select a supervisor": "Select a supervisor",
     "Supervisor History": "Supervisor History",
@@ -101,15 +174,23 @@
     "Initial assignment": "Initial assignment",
     "Removed": "Removed",
     "by": "by",
+
+    "_job_sites_messages": "---------- Job Site Flash Messages ----------",
+    "Job site created successfully!": "Lot created successfully!",
+    "Job site updated successfully!": "Lot updated successfully!",
+    "Job site deleted successfully!": "Lot deleted successfully!",
+
     "_job_sites_validation": "---------- Validation Attributes ----------",
     "supervisor": "supervisor",
+    "job site name": "lot name",
+    "job amount": "lot amount",
 
     "_breadcrumb": "========== Breadcrumb ==========",
     "Home": "Home",
 
     "_project_nav": "========== Project Navigation Menu ==========",
     "Overview": "Overview",
-    "Job Sites": "Job Sites",
+    "Job Sites": "Lots",
     "Expenses": "Expenses",
     "Purchase Orders": "Purchase Orders",
     "Change Orders": "Change Orders",
@@ -118,7 +199,7 @@
     "Budget": "Budget",
 
     "_project_layout": "========== Project Layout ==========",
-    "Project Details": "Project Details",
+    "Project Details": "Job Site Details",
 
     "_project_overview": "========== Project Overview Page ==========",
 
@@ -136,7 +217,7 @@
     "_project_overview_sidebar": "---------- Sidebar ----------",
     "Send Email": "Send Email",
     "Call Contact": "Call Contact",
-    "Project ID": "Project ID",
+    "Project ID": "Job Site ID",
 
     "_project_overview_delete": "---------- Delete Modal ----------",
 
@@ -150,7 +231,7 @@
     "_expenses_list_header": ".......... Page Header ..........",
     "Search expenses...": "Search expenses...",
     "All Locations": "All Locations",
-    "Project (General)": "Project (General)",
+    "Project (General)": "Job Site (General)",
     "All Status": "All Status",
     "Add Expense": "Add Expense",
 
@@ -346,7 +427,7 @@
 
     "_po_show": "---------- PO Show Page ----------",
     "Purchase Order": "Purchase Order",
-    "Project Level": "Project Level",
+    "Project Level": "Job Site Level",
     "Back to List": "Back to List",
     "Created At": "Created At",
     "Approved By": "Approved By",
@@ -446,7 +527,7 @@
     "Edit Change Order": "Edit Change Order",
     "Add New Change Order": "Add New Change Order",
     "Requested Date": "Requested Date",
-    "Unknown Job Site": "Unknown Job Site",
+    "Unknown Job Site": "Unknown Lot",
     "Attached File": "Attached File",
     "Download File": "Download File",
     "Enter change order title": "Enter change order title",
@@ -456,7 +537,7 @@
     "Maximum file size: 10MB": "Maximum file size: 10MB",
     "New file selected:": "New file selected:",
     "Create": "Create",
-    "Leave as \"Project (General)\" for project-level change orders": "Leave as \"Project (General)\" for project-level change orders",
+    "Leave as \"Project (General)\" for project-level change orders": "Leave as \"Job Site (General)\" for job site-level change orders",
 
     "_co_messages": "---------- Flash Messages ----------",
     "Change order updated successfully!": "Change order updated successfully!",

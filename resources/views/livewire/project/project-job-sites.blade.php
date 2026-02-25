@@ -1,16 +1,16 @@
-<x-project-layout :project="$project" active="jobsites" title="Job Sites">
+<x-project-layout :project="$project" active="jobsites" :title="__('Job Sites')">
     <div class="space-y-6">
         <!-- Header with Search and Add Button -->
         @if(!$showJobSiteForm)
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Job Sites ({{ $jobSites->count() }})</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ __('Job Sites') }} ({{ $jobSites->count() }})</h3>
                     <!-- Search Bar -->
                     <div class="relative max-w-md">
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="jobSiteSearch"
-                            placeholder="Search job sites..."
+                            placeholder="{{ __('Search job sites...') }}"
                             class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                         >
                         <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,7 +22,7 @@
                     variant="primary"
                     wire:click="openJobSiteForm"
                     icon="plus">
-                    Add Job Site
+                    {{ __('Add Job Site') }}
                 </x-ui.button>
             </div>
         @endif
@@ -37,7 +37,7 @@
                 x-init="init()">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                        {{ $editingJobSite ? 'Edit Job Site' : 'Add New Job Site' }}
+                        {{ $editingJobSite ? __('Edit Job Site') : __('Add New Job Site') }}
                     </h3>
                 </div>
                 <div class="p-6">
@@ -46,21 +46,21 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="job_site_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Job Site Name <span class="text-red-500">*</span>
+                                    {{ __('Job Site Name') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     id="job_site_name"
                                     wire:model.live="job_site_name"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="Enter job site name"
+                                    placeholder="{{ __('Enter job site name') }}"
                                 >
                                 @error('job_site_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <label for="job_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Job Amount <span class="text-red-500">*</span>
+                                    {{ __('Job Amount') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
@@ -81,21 +81,21 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label for="contact_person" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Contact Person <span class="text-red-500">*</span>
+                                    {{ __('Contact Person') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     id="contact_person"
                                     wire:model.live="contact_person"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="Contact name"
+                                    placeholder="{{ __('Contact name') }}"
                                 >
                                 @error('contact_person') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Phone
+                                    {{ __('Phone') }}
                                 </label>
                                 <input
                                     type="tel"
@@ -109,7 +109,7 @@
 
                             <div>
                                 <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Email <span class="text-red-500">*</span>
+                                    {{ __('Email') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
@@ -125,7 +125,7 @@
                         <!-- Address with Autocomplete -->
                         <div>
                             <label for="jobsite-street" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Street Address
+                                {{ __('Street Address') }}
                             </label>
                             <input
                                 type="text"
@@ -133,7 +133,7 @@
                                 x-ref="streetInput"
                                 wire:model.live="street"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Start typing an address..."
+                                placeholder="{{ __('Start typing an address...') }}"
                                 autocomplete="off"
                             >
                             @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -142,14 +142,14 @@
                         <!-- Address Line 2 -->
                         <div>
                             <label for="address_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Address Line 2
+                                {{ __('Address Line 2') }}
                             </label>
                             <input
                                 type="text"
                                 id="address_2"
                                 wire:model.live="address_2"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Suite, Apt, Unit, etc."
+                                placeholder="{{ __('Suite, Apt, Unit, etc.') }}"
                             >
                             @error('address_2') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
@@ -158,7 +158,7 @@
                         <!-- Neighborhood (Brazil only) -->
                         <div>
                             <label for="neighborhood" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Neighborhood (Bairro)
+                                {{ __('Neighborhood (Bairro)') }}
                             </label>
                             <input
                                 type="text"
@@ -174,35 +174,35 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    City
+                                    {{ __('City') }}
                                 </label>
                                 <input
                                     type="text"
                                     id="city"
                                     wire:model.live="city"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="City"
+                                    placeholder="{{ __('City') }}"
                                 >
                                 @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    State
+                                    {{ __('State') }}
                                 </label>
                                 <input
                                     type="text"
                                     id="state"
                                     wire:model.live="state"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="State"
+                                    placeholder="{{ __('State') }}"
                                 >
                                 @error('state') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <label for="postal_code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    {{ config('app.country') === 'BR' ? 'CEP' : 'Postal Code' }}
+                                    {{ config('app.country') === 'BR' ? __('CEP') : __('Postal Code') }}
                                 </label>
                                 <input
                                     type="text"
@@ -239,7 +239,7 @@
 
                             <div>
                                 <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Status <span class="text-red-500">*</span>
+                                    {{ __('Status') }} <span class="text-red-500">*</span>
                                 </label>
                                 <select
                                     id="status"
@@ -280,15 +280,15 @@
                                 type="button"
                                 variant="secondary"
                                 wire:click="cancelJobSiteForm">
-                                Cancel
+                                {{ __('Cancel') }}
                             </x-ui.button>
                             <x-ui.button
                                 type="submit"
                                 variant="primary"
                                 icon="save"
                                 wire:loading.attr="disabled">
-                                <span wire:loading.remove>{{ $editingJobSite ? 'Update' : 'Create' }} Job Site</span>
-                                <span wire:loading>Saving...</span>
+                                <span wire:loading.remove>{{ $editingJobSite ? __('Update Job Site') : __('Create Job Site') }}</span>
+                                <span wire:loading>{{ __('Saving...') }}</span>
                             </x-ui.button>
                         </div>
                     </form>
@@ -305,28 +305,28 @@
                             <thead class="bg-slate-50 dark:bg-slate-900/50">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Job Site Name
+                                        {{ __('Job Site Name') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Contact Person
+                                        {{ __('Contact Person') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Location
+                                        {{ __('Location') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Amount
+                                        {{ __('Amount') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Status
+                                        {{ __('Status') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                         {{ __('Supervisor') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Created
+                                        {{ __('Created') }}
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        Actions
+                                        {{ __('Actions') }}
                                     </th>
                                 </tr>
                             </thead>
@@ -352,7 +352,7 @@
                                                 @if($jobSite->city || $jobSite->state)
                                                     {{ $jobSite->city }}{{ $jobSite->city && $jobSite->state ? ', ' : '' }}{{ $jobSite->state }}
                                                 @else
-                                                    <span class="text-slate-400">Not specified</span>
+                                                    <span class="text-slate-400">{{ __('Not specified') }}</span>
                                                 @endif
                                             </div>
                                             @if($jobSite->street)
@@ -389,7 +389,7 @@
                                             </div>
                                             @if($jobSite->createdBy)
                                                 <div class="text-xs text-slate-500 dark:text-slate-400">
-                                                    by {{ $jobSite->createdBy->name }}
+                                                    {{ __('by') }} {{ $jobSite->createdBy->name }}
                                                 </div>
                                             @endif
                                         </td>
@@ -400,21 +400,21 @@
                                                     size="sm"
                                                     href="{{ route('jobsites.overview', $jobSite->id) }}"
                                                     icon="eye">
-                                                    View
+                                                    {{ __('View') }}
                                                 </x-ui.button>
                                                 <x-ui.button
                                                     variant="secondary"
                                                     size="sm"
                                                     wire:click="editJobSite({{ $jobSite->id }})"
                                                     icon="edit">
-                                                    Edit
+                                                    {{ __('Edit') }}
                                                 </x-ui.button>
                                                 <x-ui.button
                                                     variant="danger"
                                                     size="sm"
                                                     wire:click="confirmDeleteJobSite({{ $jobSite->id }})"
                                                     icon="trash">
-                                                    Delete
+                                                    {{ __('Delete') }}
                                                 </x-ui.button>
                                             </div>
                                         </td>
@@ -431,14 +431,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No Job Sites</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a job site for this project.</p>
+                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
                         <div class="mt-6">
                             <x-ui.button
                                 variant="primary"
                                 wire:click="openJobSiteForm"
                                 icon="plus">
-                                Add Job Site
+                                {{ __('Add Job Site') }}
                             </x-ui.button>
                         </div>
                     </div>
@@ -458,12 +458,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Job Site
+                    {{ __('Delete Job Site') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
-                    Are you sure you want to delete <strong>{{ $deleteJobSiteData['name'] ?? '' }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    {{ __('Are you sure you want to delete') }} <strong>{{ $deleteJobSiteData['name'] ?? '' }}</strong>?
+                    {{ __('This action') }} <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 @if(!empty($deleteJobSiteData))
@@ -476,30 +476,30 @@
 
                     @if($hasRelatedJobSite)
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">{{ __('The following data will be permanently deleted:') }}</p>
                             <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
                                 @if(($deleteJobSiteData['expenses'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteJobSiteData['expenses'] }} Expense(s)
+                                        {{ $deleteJobSiteData['expenses'] }} {{ __('Expense(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteJobSiteData['change_orders'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteJobSiteData['change_orders'] }} Change Order(s)
+                                        {{ $deleteJobSiteData['change_orders'] }} {{ __('Change Order(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteJobSiteData['daily_reports'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteJobSiteData['daily_reports'] }} Daily Report(s)
+                                        {{ $deleteJobSiteData['daily_reports'] }} {{ __('Daily Report(s)') }}
                                     </li>
                                 @endif
                                 @if(($deleteJobSiteData['budgets'] ?? 0) > 0)
                                     <li class="flex items-center">
                                         <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ $deleteJobSiteData['budgets'] }} Budget(s)
+                                        {{ $deleteJobSiteData['budgets'] }} {{ __('Budget(s)') }}
                                     </li>
                                 @endif
                             </ul>
@@ -512,13 +512,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteJobSite"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteJobSite"
                         icon="trash">
-                        Delete Job Site
+                        {{ __('Delete Job Site') }}
                     </x-ui.button>
                 </div>
             </div>

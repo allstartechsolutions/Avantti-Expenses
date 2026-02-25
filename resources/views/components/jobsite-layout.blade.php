@@ -1,15 +1,15 @@
 @props([
     'jobSite',
     'active' => 'overview',
-    'title' => 'Job Site Details'
+    'title' => null
 ])
 
 <div>
     {{-- Breadcrumbs --}}
     <x-ui.breadcrumb :items="[
-        ['label' => 'Projects', 'url' => route('projects.index')],
+        ['label' => __('Projects'), 'url' => route('projects.index')],
         ['label' => $jobSite->project->project_name, 'url' => route('projects.overview', $jobSite->project)],
-        ['label' => 'Job Sites', 'url' => route('projects.jobsites', $jobSite->project)],
+        ['label' => __('Job Sites'), 'url' => route('projects.jobsites', $jobSite->project)],
         ['label' => $jobSite->job_site_name, 'url' => route('jobsites.overview', $jobSite)],
         ['label' => ucwords(str_replace('-', ' ', $active))]
     ]" />
@@ -18,7 +18,7 @@
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $title }}</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $title ?? __('Job Site Details') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ $jobSite->job_site_name }}</p>
             </div>
             <div class="flex items-center space-x-3">
@@ -26,7 +26,7 @@
                     variant="secondary"
                     href="{{ route('projects.jobsites', $jobSite->project->id) }}"
                     icon="arrow-left">
-                    Back to Project
+                    {{ __('Back to Job Sites') }}
                 </x-ui.button>
                 @if(isset($actions))
                     {{ $actions }}

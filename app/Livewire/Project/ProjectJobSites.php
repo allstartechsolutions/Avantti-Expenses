@@ -70,14 +70,17 @@ class ProjectJobSites extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'job_site_name' => 'job site name',
-        'contact_person' => 'contact person',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'job_amount' => 'job amount',
-        'supervisor_id' => 'supervisor',
-    ];
+    public function validationAttributes(): array
+    {
+        return [
+            'job_site_name' => __('job site name'),
+            'contact_person' => __('contact person'),
+            'postal_code' => __('postal code'),
+            'email' => __('email address'),
+            'job_amount' => __('job amount'),
+            'supervisor_id' => __('supervisor'),
+        ];
+    }
 
     public function mount(Project $project): void
     {
@@ -173,7 +176,7 @@ class ProjectJobSites extends Component
                 );
             }
 
-            session()->flash('message', 'Job site updated successfully!');
+            session()->flash('message', __('Job site updated successfully!'));
             return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
         } else {
             $jobSite = JobSite::create([
@@ -205,7 +208,7 @@ class ProjectJobSites extends Component
                 );
             }
 
-            session()->flash('message', 'Job site created successfully!');
+            session()->flash('message', __('Job site created successfully!'));
             return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
         }
     }
@@ -257,7 +260,7 @@ class ProjectJobSites extends Component
         $this->deletingJobSiteId = null;
         $this->deleteJobSiteData = [];
 
-        session()->flash('message', 'Job site deleted successfully!');
+        session()->flash('message', __('Job site deleted successfully!'));
         $this->project->refresh();
     }
 

@@ -138,6 +138,9 @@ No middleware or dynamic switching is needed.
 | Expenses         | `project-expenses.blade.php`, `partials/expense-modal.blade.php`, `expense-create.blade.php`, `job-site-show.blade.php` (expenses tab only) (+ ProjectExpenses.php, ExpenseCreate.php, JobSiteShow.php) |
 | Purchase Orders  | `project-purchase-orders.blade.php`, `purchase-order-create.blade.php`, `purchase-order-edit.blade.php`, `purchase-order-show.blade.php`, `job-site-show.blade.php` (PO tab) (+ PurchaseOrderCreate.php, PurchaseOrderEdit.php, PurchaseOrderShow.php, PurchaseOrder.php model, PurchaseOrderStatusHistory.php model) |
 | Change Orders    | `project-change-orders.blade.php`, `job-site-show.blade.php` (CO tab + CO modal) (+ ProjectChangeOrders.php, JobSiteShow.php CO methods) |
+| Job Site (index) | `project-job-sites.blade.php` (+ ProjectJobSites.php) |
+| Job Site (overview) | `job-site-overview.blade.php` (+ JobSiteOverview.php) |
+| Job Site Nav     | `jobsite-layout.blade.php`, `jobsite-nav.blade.php`  |
 
 ### Remaining Modules
 
@@ -148,7 +151,8 @@ No middleware or dynamic switching is needed.
 | Estimate         | 5             | estimate-index, create, edit, show, send                |
 | Invoice          | 5             | invoice-index, create, edit, show, send                 |
 | Project (inner)  | ~3            | project-show sub-views: daily-reports, budget, contracts |
-| Job Site         | ~3            | job-site-show (remaining tabs: daily-reports, budget), job-site-index/create/edit |
+| Job Site (tabs)  | ~2            | job-site-show (remaining tabs: daily-reports, budget)   |
+| Job Site (other) | 1             | job-site-contracts                                      |
 | Daily Report     | 1             | daily-report-index (complex, inline modals)             |
 | Budget           | 3             | budget-index, create, edit                              |
 | Cost Code        | 4             | cost-code-index, create, edit, templates                |
@@ -161,7 +165,7 @@ No middleware or dynamic switching is needed.
 | System Settings  | 4             | tax rates, messages, etc.                               |
 | Shared           | 1             | shared components                                       |
 
-**Total remaining: ~62 blade files across 16 modules**
+**Total remaining: ~55 blade files across 16 modules**
 
 ### Notes on Partially Translated Files
 
@@ -179,6 +183,36 @@ When translating a new module:
 5. **Add translations to `pt_BR.json`** — comment keys + all translated Portuguese strings
 6. **Validate JSON** — run `json_decode()` on both files to ensure valid JSON
 7. **Test** — verify the page renders correctly in both locales
+
+## EN Customization (Client-Specific Wording)
+
+The `en.json` file is also used to customize English wording per client/deployment, not just for translating to another language. This allows different clients to use their own terminology while keeping the codebase unchanged.
+
+### Current Client Mapping
+
+This deployment uses the following terminology overrides:
+
+| System Term (key) | Client Display (EN value) | Concept                  |
+|--------------------|---------------------------|--------------------------|
+| Project            | Job Site                  | Top-level entity         |
+| Job Site           | Lot                       | Sub-level within project |
+
+### Key Examples
+
+**Project → Job Site** (sidebar, CRUD, headers):
+- `"Projects"` → `"Job Sites"`, `"Create Project"` → `"Create Job Site"`, `"Project Name"` → `"Job Site Name"`
+
+**Job Site → Lot** (nav, forms, messages):
+- `"Job Sites"` → `"Lots"`, `"Add Job Site"` → `"Add Lot"`, `"Job Site Name"` → `"Lot Name"`
+
+### Unchanged Terms
+
+- **Project Manager** — kept as-is (role name, not a module)
+- Generic field labels (`Contact Person`, `Email`, `Status`, etc.) — no renaming needed
+
+### How It Works
+
+When `APP_LOCALE=en`, Laravel's `__('Job Site Name')` looks up the key in `en.json` and returns `"Lot Name"`. Without the en.json entry, it would return the key itself (`"Job Site Name"`). This means only keys that need renaming require en.json entries for EN locale.
 
 ## Important Notes
 
