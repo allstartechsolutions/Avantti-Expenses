@@ -29,6 +29,7 @@ Full-page Livewire component that powers the entire dashboard.
 | `$payAmounts` | `array` | Keyed by contract ID — inline amount inputs from the table |
 | `$payMethods` | `array` | Keyed by contract ID — inline payment method dropdowns from the table |
 | `$payNotes` | `array` | Keyed by contract ID — inline notes text inputs from the table |
+| `$expandedContracts` | `array` | Array of contract IDs whose change order details are expanded in the table |
 
 All filter properties use the `#[Url]` attribute so filter state is preserved in the browser URL and survives page refreshes.
 
@@ -39,7 +40,7 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 | `clients` | Clients that have projects with at least one contract. Used for the client dropdown |
 | `projects` | Projects that have contracts, filtered by current client selection. Used for the project dropdown |
 | `subcontractors` | Subcontractors that have at least one contract. Used for the subcontractor dropdown |
-| `contracts` | Main data query — eager loads `project.client`, `jobSite`, `subcontractor`, `latestPayment` and uses `withSum('payments as total_paid_cents', 'amount')` to get total paid in a single subquery (avoids N+1). Applies all active filters. Excludes paid/cancelled by default unless `$showZeroBalance` is true. Ordered by `project_id` then `job_site_id` |
+| `contracts` | Main data query — eager loads `project.client`, `jobSite`, `subcontractor`, `latestPayment`, `changeOrders` and uses `withSum('payments as total_paid_cents', 'amount')` + `withSum('changeOrders as change_orders_total_cents', 'amount')` to get totals in single subqueries (avoids N+1). Applies all active filters. Excludes paid/cancelled by default unless `$showZeroBalance` is true. Ordered by `project_id` then `job_site_id` |
 | `summary` | Returns 4 metrics: pending balance, active contracts count, paid this month, total contract value. All respect the currently active filters |
 
 #### Methods
