@@ -61,7 +61,7 @@ Payment tracking for subcontractor contracts. Users can record payments made aga
 
 ### Auto-Status Transitions (`updateStatusFromPayments`)
 
-Only applies when current status is `completed`, `partially_paid`, or `paid`:
+Applies to all non-cancelled statuses (including `active`):
 
 | Condition | New Status |
 |-----------|------------|
@@ -69,8 +69,10 @@ Only applies when current status is `completed`, `partially_paid`, or `paid`:
 | Amount paid > 0 but < adjusted amount | `partially_paid` |
 | No payments remaining | `completed` |
 
-- Does **not** auto-update `active` contracts (must be manually completed first)
+- Works on **all** statuses except `cancelled` — including `active` contracts
+- Triggered by: payment recorded, payment deleted, change order created/updated/deleted
 - Records status change in history with reason "Auto-updated from payment activity"
+- Change orders affect the adjusted amount, which can push a `paid` contract back to `partially_paid` (e.g., adding a CO that increases the total)
 
 ---
 

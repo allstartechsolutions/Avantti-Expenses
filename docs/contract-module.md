@@ -117,7 +117,7 @@ See [Contract Change Orders](#contract-change-orders) section below for full det
 **Payment Methods:**
 - `getAmountPaid()` - Returns total paid in dollars
 - `getBalanceDue()` - Returns adjusted amount minus amount paid in dollars
-- `updateStatusFromPayments()` - Auto-transitions status based on payment totals (uses adjusted amount)
+- `updateStatusFromPayments()` - Auto-transitions status based on payment totals (uses adjusted amount). Works on all non-cancelled statuses including `active`. Called when payments are recorded/deleted and when change orders are created/updated/deleted
 
 **Other Methods:**
 - `generateContractNumber()` - Static method, returns next sequential CTR-XXXX number
@@ -221,6 +221,7 @@ See [Contract Change Orders](#contract-change-orders) section below for full det
 - File upload: PDF, JPG, PNG up to 10MB, stored in `contract-change-orders` directory
 - Edit replaces existing file when new one is uploaded
 - Delete cleans up file from storage before deleting record
+- Calls `$this->contract->updateStatusFromPayments()` after save and delete to recalculate contract status based on new adjusted amount
 - Dispatches `change-orders-updated` event to parent ContractShow to refresh financial data
 
 **Properties:**
@@ -294,6 +295,14 @@ Route::get('contracts/{contract}', ContractShow::class)
 Route::get('contracts/{contract}/edit', ContractEdit::class)
     ->name('contracts.edit');
 
+// Contract payments dashboard + PDF export
+Route::get('contract-payments', ContractPayments::class)
+    ->name('contract-payments.index');
+Route::get('contract-payments/pdf', [ContractPaymentsPdfController::class, 'download'])
+    ->name('contract-payments.pdf.download');
+Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])
+    ->name('contract-payments.pdf.view');
+
 // Contract creation routes (nested in project/jobsite)
 Route::get('projects/{project}/contracts/create', ContractCreate::class)
     ->name('contracts.project.create');
@@ -334,13 +343,18 @@ Route::get('job-sites/{jobSite}/contracts/create', ContractCreate::class)
 |------|-----|---------|-------------|
 | active | completed | Manual | Work is finished |
 | active | cancelled | Manual | Contract cancelled |
+| active | paid | Auto (payment) | Full payment recorded on active contract |
+| active | partially_paid | Auto (payment) | Partial payment recorded on active contract |
 | completed | paid | Auto (payment) | Full payment recorded |
 | completed | partially_paid | Auto (payment) | Partial payment recorded |
 | partially_paid | paid | Auto (payment) | Remaining balance paid |
-| paid | partially_paid | Auto (payment deleted) | Payment removed, balance remains |
+| paid | partially_paid | Auto (payment deleted / CO added) | Balance goes above zero but payments exist |
+| paid | completed | Auto (all payments deleted) | All payments removed, balance remains |
 | partially_paid | completed | Auto (all payments deleted) | All payments removed |
 
-**Note:** Statuses can also be changed manually via the Change Status modal. Auto-transitions only apply when payments are recorded or deleted on contracts with status `completed`, `partially_paid`, or `paid`.
+**Note:** Statuses can also be changed manually via the Change Status modal. Auto-transitions apply to all non-cancelled statuses when:
+- Payments are recorded or deleted
+- Change orders are created, updated, or deleted (recalculates balance and triggers status check)
 
 ### Computed Available Statuses (ContractShow)
 

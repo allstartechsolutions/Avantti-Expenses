@@ -49,25 +49,27 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 |---|---|
 | `mount()` | Sets `$paymentDate` to today's date |
 | `updatedClientFilter()` | When client changes, resets project filter if the currently selected project doesn't belong to the new client |
+| `toggleChangeOrders($contractId)` | Toggles a contract's change order details expansion in the table. Adds/removes the contract ID from `$expandedContracts` array |
 | `processPayments()` | Validates payment date, collects rows with amount > 0, validates each row (amount doesn't exceed balance), creates `ContractPayment` records in a DB transaction, calls `updateStatusFromPayments()` on each contract, resets inline inputs |
-| `exportCsv()` | Exports a CSV file with all currently filtered contracts. Uses `response()->stream()` with `fputcsv()`. Columns: Subcontractor, Project, Client, Job Site, Contract #, Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount. Filename includes current date (e.g., `contract-payments-2026-02-23.csv`) |
+| `exportCsv()` | Exports a CSV file with all currently filtered contracts. Uses `response()->stream()` with `fputcsv()`. Includes a "Type" column (Contract/Change Order) with detail rows for each change order below its contract. Columns: Type, Subcontractor, Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount. Filename: `contract-payments-YYYY-MM-DD.csv` |
 
 #### Query Strategy
 
 The main `contracts` computed property uses a single query with eager loading:
 
 ```php
-Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
+Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
     ->withSum('payments as total_paid_cents', 'amount')
+    ->withSum('changeOrders as change_orders_total_cents', 'amount')
     // filters applied via ->when()
     ->unless($showZeroBalance, exclude paid/cancelled)
     ->orderBy('project_id')->orderBy('job_site_id')
     ->get()
 ```
 
-Balance is computed in the view: `$contract->amount - ($contract->total_paid_cents ?? 0) / 100`
+Balance is computed in the view: `$contract->amount + $changeOrdersTotal - $totalPaidDollars`
 
-> **Note:** The Contract model's `getBalanceDue()` method uses `getAdjustedAmount()` (original amount + change orders) instead of the raw `amount`. The dashboard view computes balance inline for performance, so it does not account for change orders in the dashboard table. The individual contract show page displays the full adjusted breakdown.
+> The dashboard now accounts for change orders in the balance calculation, consistent with the Contract model's `getBalanceDue()` method.
 
 #### Validation Rules (processPayments)
 
@@ -112,10 +114,13 @@ White card with a flex row containing:
 
 #### Payment Date Bar
 - Date input defaulting to today
-- **"Export CSV"** button (`outline` variant, `download` icon) — downloads a CSV of all currently filtered contracts, respecting all active filters
+- **"Export CSV"** button (`outline` variant, `download` icon) — downloads a CSV of all currently filtered contracts with change order detail rows
+- **"Export PDF"** dropdown button (`outline` variant) with two options:
+  - **Summary** — PDF with contracts table and change order details (no payment history)
+  - **Detailed (w/ Payments)** — Same PDF plus full payment history per contract
 - **"Process Payments"** button with `wire:confirm` for user confirmation before batch processing
 
-#### Contracts Table (11 columns)
+#### Contracts Table (12 columns)
 
 | # | Column | Source | Notes |
 |---|---|---|---|
@@ -124,12 +129,20 @@ White card with a flex row containing:
 | 3 | Job Site / Lot | `contract.jobSite.job_site_name` | Clickable link to `jobsites.overview`. Shows plain text "Project General" if null |
 | 4 | Contract # | `contract.contract_number` | Clickable link to `contracts.show` |
 | 5 | Amount | `contract.amount` | Right-aligned, currency formatted |
-| 6 | Paid | Computed from `total_paid_cents` | Right-aligned, green text |
-| 7 | Balance | Amount - Paid | Amber if > 0, green if 0 |
-| 8 | Last Payment | `contract.latestPayment` | Date on first line, amount on second line |
-| 9 | Pay Today | Inline `<input type="number">` | `wire:model.blur`, only shown for rows with balance > 0 |
-| 10 | Method | Inline `<select>` | `wire:model`, optional, only shown for rows with balance > 0 |
-| 11 | Notes | Inline `<input type="text">` | `wire:model.blur`, only shown for rows with balance > 0 |
+| 6 | Change Orders | `change_orders_total_cents` | Green if >= 0, red if negative. Shows `+` prefix for positive values. Expand button (chevron) toggles detail sub-row. Shows "—" if no change orders |
+| 7 | Paid | Computed from `total_paid_cents` | Right-aligned, green text |
+| 8 | Balance | Amount + CO - Paid | Amber if > 0, green if 0. Now includes change orders |
+| 9 | Last Payment | `contract.latestPayment` | Date on first line, amount on second line |
+| 10 | Pay Today | Inline `<input type="number">` | `wire:model.blur`, only shown for rows with balance > 0 |
+| 11 | Method | Inline `<select>` | `wire:model`, optional, only shown for rows with balance > 0 |
+| 12 | Notes | Inline `<input type="text">` | `wire:model.blur`, only shown for rows with balance > 0 |
+
+#### Expandable Change Order Detail Row
+
+When the user clicks the chevron button in the Change Orders column, a sub-row expands below the contract showing:
+- Section header: "Change Orders (count)"
+- Nested table with columns: Date, Title, Description (truncated), Amount (green/red)
+- Chevron rotates 180° when expanded
 
 **Row styling:**
 - Paid/cancelled rows: muted with `opacity-50 bg-slate-50`, no inline inputs shown
@@ -220,7 +233,9 @@ Route::get('contract-payments', ContractPayments::class)->name('contract-payment
 
 | Scenario | Behavior |
 |---|---|
-| Active contracts | Stay `active` even with payments — `updateStatusFromPayments()` only transitions `completed`/`partially_paid`/`paid` statuses |
+| Active contracts fully paid | Auto-transitions to `paid` via `updateStatusFromPayments()` |
+| Contract with change orders | Balance includes change orders: `amount + CO total - paid` |
+| No change orders on contract | Change Orders column shows "—", no expand button |
 | Null subcontractor | Displays "-" in the table |
 | Null job site | Displays "Project General" |
 | Payment exceeds balance | Validation error shown, payment blocked |
@@ -249,3 +264,74 @@ Route::get('contract-payments', ContractPayments::class)->name('contract-payment
 
 ### Migration Applied
 - `contract_payments.payment_method` changed from NOT NULL with default `'check'` to NULLABLE with default `NULL`
+
+---
+
+## PDF Export
+
+### Controller: `app/Http/Controllers/ContractPaymentsPdfController.php`
+
+Generates a landscape-oriented PDF report using `barryvdh/laravel-dompdf`. Accepts the same filter query parameters as the dashboard.
+
+**Routes:**
+- `GET /contract-payments/pdf` → `contract-payments.pdf.download` (triggers download)
+- `GET /contract-payments/pdf/view` → `contract-payments.pdf.view` (displays in browser)
+
+**Query Parameters:**
+- `client`, `project`, `subcontractor`, `project_manager`, `status`, `show_zero_balance` — same filters as the dashboard
+- `include_payments` — when `1`, includes full payment history per contract (detailed version)
+
+**Methods:**
+| Method | Description |
+|---|---|
+| `download(Request)` | Generates and downloads the PDF |
+| `stream(Request)` | Generates and streams the PDF in browser |
+| `buildPdfData(Request)` | Shared data builder for both methods |
+| `getFilteredContracts(Request, bool)` | Queries contracts with filters, conditionally eager loads `payments` |
+| `getSummary($contracts)` | Computes totals: count, original value, change orders, paid, balance |
+| `getActiveFilters(Request)` | Resolves filter IDs to human-readable names for display |
+
+### View: `resources/views/pdf/contract-payments.blade.php`
+
+Landscape letter-size PDF with the following sections:
+
+1. **Header** — Company logo (base64), company name/address, "CONTRACT PAYMENTS" title, generated date, active filters
+2. **Summary Bar** — 5 boxes: Contracts count, Original Value, Change Orders (+/-), Total Paid, Balance Due (color-coded)
+3. **Contracts Table** — 11 columns: Subcontractor, Project, Job Site, Contract #, Amount, CO (+/-), Adjusted, Paid, Balance, Status, Last Payment
+4. **Change Order Details** — Nested under each contract with COs: date, title, description (truncated), amount (green/red)
+5. **Payment History** (detailed version only) — Nested under each contract: date, method, reference, notes, amount (green)
+6. **Footer** — Company name, report title, date
+
+**Two Export Modes:**
+- **Summary** (`include_payments=0`) — Contracts + change order details only. Filename: `contract-payments-YYYY-MM-DD.pdf`
+- **Detailed** (`include_payments=1`) — Same + full payment history per contract. Filename: `contract-payments-detailed-YYYY-MM-DD.pdf`
+
+**Styling:** Matches existing PDF templates (DejaVu Sans, 7-8pt, #3F5189 brand color, alternating row colors, inline CSS)
+
+---
+
+## CSV Export Format
+
+The CSV export includes a **Type** column to distinguish contract rows from change order detail rows:
+
+| Type | Purpose | Filled Columns |
+|---|---|---|
+| Contract | Main contract data row | All contract columns (Subcontractor through Last Payment Amount) |
+| Change Order | Detail row for each CO | Type, Contract #, CO Date, CO Title, CO Description, CO Amount |
+
+**Columns (18 total):** Type, Subcontractor, Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount
+
+This format allows users to filter by "Type" column in Excel to see just contracts or just change orders.
+
+---
+
+## Files Created/Modified (Dashboard Enhancements)
+
+### Created
+- `app/Http/Controllers/ContractPaymentsPdfController.php` — PDF export controller
+- `resources/views/pdf/contract-payments.blade.php` — PDF template (landscape)
+
+### Modified
+- `app/Livewire/Contract/ContractPayments.php` — Added `$expandedContracts`, `toggleChangeOrders()`, change orders eager loading/withSum, updated balance calc, enhanced CSV export
+- `resources/views/livewire/contract/contract-payments.blade.php` — Added Change Orders column with expand/collapse, PDF dropdown button, updated balance to include COs
+- `routes/web.php` — Added PDF download/stream routes

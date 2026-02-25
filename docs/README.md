@@ -63,22 +63,23 @@
 9. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Partial → Paid)
 10. **[Invoice Payments & CardPointe](./invoice-payments-module.md)** - Payment recording (manual + credit card), CardPointe Gateway integration, client saved payment methods, partial payment tracking, void/refund support
 11. **[Contract Module](./contract-module.md)** - Subcontractor contracts with status workflow, change orders (additions/deductions), file attachments, and audit trail
-12. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions (completed → partially_paid → paid), balance calculated from adjusted amount (original + change orders)
+12. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions for all non-cancelled statuses (including active), balance calculated from adjusted amount (original + change orders)
+13. **[Contract Payments Dashboard](./contract-payments-dashboard.md)** - Batch payment processing with filters, change orders column with expandable details, CSV export with change order detail rows, PDF export (summary and detailed with payment history)
 
 ### User Management
 
-13. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
+14. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
     - Live password requirements checklist (Alpine.js)
     - Logout on password change
 
 ### Architecture
 
-14. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
-15. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
-16. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
-17. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
-18. **[Project Manager Field](./project-manager-field.md)** - Optional project manager assignment from active users
-19. **[Job Site Supervisor Field](./jobsite-supervisor-field.md)** - Optional supervisor assignment with change history tracking
+15. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
+16. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
+17. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
+18. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+19. **[Project Manager Field](./project-manager-field.md)** - Optional project manager assignment from active users
+20. **[Job Site Supervisor Field](./jobsite-supervisor-field.md)** - Optional supervisor assignment with change history tracking
 
 ### Quick Reference
 
