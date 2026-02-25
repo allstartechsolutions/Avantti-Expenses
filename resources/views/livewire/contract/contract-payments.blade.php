@@ -192,20 +192,53 @@
                 <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
                     {{ __('Export CSV') }}
                 </x-ui.button>
-                <x-ui.button
-                    variant="outline"
-                    icon="download"
-                    href="{{ route('contract-payments.pdf.download', [
-                        'client' => $clientFilter ?: null,
-                        'project' => $projectFilter ?: null,
-                        'subcontractor' => $subcontractorFilter ?: null,
-                        'project_manager' => $projectManagerFilter ?: null,
-                        'status' => $statusFilter ?: null,
-                        'show_zero_balance' => $showZeroBalance ? 1 : null,
-                    ]) }}"
-                    target="_blank">
-                    {{ __('Export PDF') }}
-                </x-ui.button>
+                <div x-data="{ open: false }" class="relative">
+                    <x-ui.button variant="outline" icon="download" @click="open = !open" type="button">
+                        {{ __('Export PDF') }}
+                        <svg class="w-3 h-3 ml-1 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </x-ui.button>
+                    <div
+                        x-show="open"
+                        @click.outside="open = false"
+                        x-transition
+                        class="absolute right-0 mt-1 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
+                        <a href="{{ route('contract-payments.pdf.download', [
+                                'client' => $clientFilter ?: null,
+                                'project' => $projectFilter ?: null,
+                                'subcontractor' => $subcontractorFilter ?: null,
+                                'project_manager' => $projectManagerFilter ?: null,
+                                'status' => $statusFilter ?: null,
+                                'show_zero_balance' => $showZeroBalance ? 1 : null,
+                            ]) }}"
+                            target="_blank"
+                            @click="open = false"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-t-lg">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            {{ __('Summary') }}
+                        </a>
+                        <a href="{{ route('contract-payments.pdf.download', [
+                                'client' => $clientFilter ?: null,
+                                'project' => $projectFilter ?: null,
+                                'subcontractor' => $subcontractorFilter ?: null,
+                                'project_manager' => $projectManagerFilter ?: null,
+                                'status' => $statusFilter ?: null,
+                                'show_zero_balance' => $showZeroBalance ? 1 : null,
+                                'include_payments' => 1,
+                            ]) }}"
+                            target="_blank"
+                            @click="open = false"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-b-lg">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            {{ __('Detailed (w/ Payments)') }}
+                        </a>
+                    </div>
+                </div>
                 <x-ui.button
                     variant="success"
                     icon="save"

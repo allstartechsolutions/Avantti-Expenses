@@ -166,7 +166,7 @@
                 {{-- Change Order Detail Rows --}}
                 @if($contract->changeOrders->count() > 0)
                     <tr style="background-color: {{ $bgColor }};">
-                        <td colspan="11" style="border: 1px solid #ddd; border-top: none; padding: 2px 4px 6px 20px; font-size: 7pt;">
+                        <td colspan="11" style="border: 1px solid #ddd; border-top: none; padding: 2px 4px {{ $includePayments && $contract->payments->count() > 0 ? '2px' : '6px' }} 20px; font-size: 7pt;">
                             <table style="width: auto; border-collapse: collapse; margin-top: 0;">
                                 <tr>
                                     <td style="border: none; padding: 1px 8px 1px 0; font-size: 6pt; font-weight: bold; color: #3F5189; text-transform: uppercase;" colspan="4">
@@ -180,6 +180,32 @@
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ \Illuminate\Support\Str::limit($co->description, 60) ?? '' }}</td>
                                         <td style="border: none; padding: 1px 0; font-size: 7pt; font-weight: bold; text-align: right; color: {{ $co->amount >= 0 ? '#27ae60' : '#e74c3c' }}; white-space: nowrap;">
                                             {{ $co->amount >= 0 ? '+' : '' }}${{ number_format($co->amount, 2) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </td>
+                    </tr>
+                @endif
+
+                {{-- Payment History Rows --}}
+                @if($includePayments && $contract->payments->count() > 0)
+                    <tr style="background-color: {{ $bgColor }};">
+                        <td colspan="11" style="border: 1px solid #ddd; border-top: none; padding: 2px 4px 6px 20px; font-size: 7pt;">
+                            <table style="width: auto; border-collapse: collapse; margin-top: 0;">
+                                <tr>
+                                    <td style="border: none; padding: 1px 8px 1px 0; font-size: 6pt; font-weight: bold; color: #27ae60; text-transform: uppercase;" colspan="5">
+                                        {{ __('Payments') }} ({{ $contract->payments->count() }})
+                                    </td>
+                                </tr>
+                                @foreach($contract->payments as $payment)
+                                    <tr>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $payment->payment_date->format('M d, Y') }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #333;">{{ $payment->payment_method ? $payment->getPaymentMethodLabel() : '—' }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->reference_number ?? '' }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->notes ?? '' }}</td>
+                                        <td style="border: none; padding: 1px 0; font-size: 7pt; font-weight: bold; text-align: right; color: #27ae60; white-space: nowrap;">
+                                            ${{ number_format($payment->amount, 2) }}
                                         </td>
                                     </tr>
                                 @endforeach

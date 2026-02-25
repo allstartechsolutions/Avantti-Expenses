@@ -11,45 +11,43 @@ class ContractPaymentsPdfController extends Controller
 {
     public function download(Request $request)
     {
-        $contracts = $this->getFilteredContracts($request);
-        $company = Company::first();
-        $summary = $this->getSummary($contracts);
+        $data = $this->buildPdfData($request);
 
-        $pdf = Pdf::loadView('pdf.contract-payments', [
-            'contracts' => $contracts,
-            'company' => $company,
-            'summary' => $summary,
-            'filters' => $this->getActiveFilters($request),
-            'generatedAt' => now(),
-        ]);
-
+        $pdf = Pdf::loadView('pdf.contract-payments', $data);
         $pdf->setPaper('letter', 'landscape');
 
-        $filename = 'contract-payments-' . now()->format('Y-m-d') . '.pdf';
+        $suffix = $request->boolean('include_payments') ? '-detailed' : '';
+        $filename = 'contract-payments' . $suffix . '-' . now()->format('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
     }
 
     public function stream(Request $request)
     {
-        $contracts = $this->getFilteredContracts($request);
-        $company = Company::first();
-        $summary = $this->getSummary($contracts);
+        $data = $this->buildPdfData($request);
 
-        $pdf = Pdf::loadView('pdf.contract-payments', [
-            'contracts' => $contracts,
-            'company' => $company,
-            'summary' => $summary,
-            'filters' => $this->getActiveFilters($request),
-            'generatedAt' => now(),
-        ]);
-
+        $pdf = Pdf::loadView('pdf.contract-payments', $data);
         $pdf->setPaper('letter', 'landscape');
 
         return $pdf->stream('contract-payments.pdf');
     }
 
-    private function getFilteredContracts(Request $request)
+    private function buildPdfData(Request $request): array
+    {
+        $includePayments = $request->boolean('include_payments');
+        $contracts = $this->getFilteredContracts($request, $includePayments);
+
+        return [
+            'contracts' => $contracts,
+            'company' => Company::first(),
+            'summary' => $this->getSummary($contracts),
+            'filters' => $this->getActiveFilters($request),
+            'includePayments' => $includePayments,
+            'generatedAt' => now(),
+        ];
+    }
+
+    private function getFilteredContracts(Request $request, bool $includePayments = false)
     {
         $clientFilter = $request->query('client');
         $projectFilter = $request->query('project');
@@ -58,7 +56,12 @@ class ContractPaymentsPdfController extends Controller
         $statusFilter = $request->query('status');
         $showZeroBalance = $request->boolean('show_zero_balance');
 
-        return Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
+        $eagerLoad = ['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'];
+        if ($includePayments) {
+            $eagerLoad[] = 'payments';
+        }
+
+        return Contract::with($eagerLoad)
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)))
