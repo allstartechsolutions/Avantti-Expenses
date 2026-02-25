@@ -193,6 +193,20 @@
                     {{ __('Export CSV') }}
                 </x-ui.button>
                 <x-ui.button
+                    variant="outline"
+                    icon="download"
+                    href="{{ route('contract-payments.pdf.download', [
+                        'client' => $clientFilter ?: null,
+                        'project' => $projectFilter ?: null,
+                        'subcontractor' => $subcontractorFilter ?: null,
+                        'project_manager' => $projectManagerFilter ?: null,
+                        'status' => $statusFilter ?: null,
+                        'show_zero_balance' => $showZeroBalance ? 1 : null,
+                    ]) }}"
+                    target="_blank">
+                    {{ __('Export PDF') }}
+                </x-ui.button>
+                <x-ui.button
                     variant="success"
                     icon="save"
                     wire:click="processPayments"
@@ -225,6 +239,9 @@
                             {{ __('Amount') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            {{ __('Change Orders') }}
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Paid') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -248,8 +265,10 @@
                     @forelse($this->contracts as $contract)
                         @php
                             $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
-                            $balance = round($contract->amount - $totalPaidDollars, 2);
+                            $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
+                            $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
                             $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
+                            $isExpanded = in_array($contract->id, $expandedContracts);
                         @endphp
                         <tr class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
                             <!-- Subcontractor -->
@@ -291,6 +310,26 @@
                                 <span class="text-sm font-medium text-slate-900 dark:text-white">
                                     {{ Number::currency($contract->amount, config('app.currency'), config('app.locale')) }}
                                 </span>
+                            </td>
+                            <!-- Change Orders -->
+                            <td class="px-4 py-3 whitespace-nowrap text-right">
+                                @if($contract->changeOrders->count() > 0)
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-sm font-medium {{ $changeOrdersTotal >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                            {{ $changeOrdersTotal >= 0 ? '+' : '' }}{{ Number::currency($changeOrdersTotal, config('app.currency'), config('app.locale')) }}
+                                        </span>
+                                        <button
+                                            wire:click="toggleChangeOrders({{ $contract->id }})"
+                                            class="ml-1 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                            title="{{ __('Show change orders') }}">
+                                            <svg class="w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform {{ $isExpanded ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                @else
+                                    <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                @endif
                             </td>
                             <!-- Paid -->
                             <td class="px-4 py-3 whitespace-nowrap text-right">
@@ -360,9 +399,41 @@
                                 @endif
                             </td>
                         </tr>
+                        {{-- Expandable Change Orders Sub-row --}}
+                        @if($isExpanded && $contract->changeOrders->count() > 0)
+                            <tr class="bg-slate-50 dark:bg-slate-900/40">
+                                <td colspan="12" class="px-4 py-3">
+                                    <div class="ml-4">
+                                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">{{ __('Change Orders') }}</p>
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="text-xs text-slate-500 dark:text-slate-400">
+                                                    <th class="text-left pb-1 font-medium">{{ __('Date') }}</th>
+                                                    <th class="text-left pb-1 font-medium">{{ __('Title') }}</th>
+                                                    <th class="text-left pb-1 font-medium">{{ __('Description') }}</th>
+                                                    <th class="text-right pb-1 font-medium">{{ __('Amount') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                                @foreach($contract->changeOrders as $co)
+                                                    <tr>
+                                                        <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->date->format('M d, Y') }}</td>
+                                                        <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->title }}</td>
+                                                        <td class="py-1.5 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ $co->description ?? '-' }}</td>
+                                                        <td class="py-1.5 text-right font-medium {{ $co->amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                            {{ $co->amount >= 0 ? '+' : '' }}{{ Number::currency($co->amount, config('app.currency'), config('app.locale')) }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="11" class="px-6 py-12 text-center">
+                            <td colspan="12" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>

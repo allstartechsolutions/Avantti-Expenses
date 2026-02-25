@@ -31,6 +31,7 @@ use App\Livewire\JobSite\JobSiteContracts;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
+use App\Http\Controllers\ContractPaymentsPdfController;
 use App\Http\Controllers\DailyReportPdfController;
 use App\Http\Controllers\EstimatePdfController;
 use App\Http\Controllers\FileController;
@@ -180,6 +181,8 @@ Route::middleware(['auth'])->group(function () {
     // Payment routes
     Route::get('payments', PaymentDashboard::class)->name('payments.index');
     Route::get('contract-payments', ContractPayments::class)->name('contract-payments.index');
+    Route::get('contract-payments/pdf', [ContractPaymentsPdfController::class, 'download'])->name('contract-payments.pdf.download');
+    Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])->name('contract-payments.pdf.view');
 
     // Estimate routes
     Route::get('estimates', EstimateIndex::class)->name('estimates.index');
