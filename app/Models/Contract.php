@@ -153,7 +153,7 @@ class Contract extends Model
 
     public function updateStatusFromPayments(): void
     {
-        if (!in_array($this->status, ['completed', 'partially_paid', 'paid'])) {
+        if ($this->status === 'cancelled') {
             return;
         }
 

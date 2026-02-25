@@ -85,6 +85,8 @@ class ContractChangeOrders extends Component
         }
 
         $this->closeModal();
+        $this->contract->refresh();
+        $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
         session()->flash('message', 'Change order saved successfully.');
     }
@@ -99,6 +101,8 @@ class ContractChangeOrders extends Component
 
         $changeOrder->delete();
 
+        $this->contract->refresh();
+        $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
         session()->flash('message', 'Change order deleted successfully.');
     }
