@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -28,10 +29,22 @@ class Invoice extends Model
         'tax_total',
         'total_amount',
         'notes',
+        'payment_token',
         'sent_at',
         'paid_at',
         'created_by',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Invoice $invoice) {
+            if (empty($invoice->payment_token)) {
+                $invoice->payment_token = Str::uuid()->toString();
+            }
+        });
+    }
 
     protected $casts = [
         'invoice_date' => 'date',
@@ -126,12 +139,12 @@ class Invoice extends Model
 
     // Status tracking
 
-    public function recordStatusChange(\App\Models\User $user, ?string $oldStatus, string $newStatus): void
+    public function recordStatusChange(?User $user, ?string $oldStatus, string $newStatus): void
     {
         $this->statusHistories()->create([
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
-            'changed_by' => $user->id,
+            'changed_by' => $user?->id,
         ]);
     }
 
@@ -258,6 +271,11 @@ class Invoice extends Model
         if ($this->status !== $oldStatus) {
             $this->recordStatusChange(auth()->user(), $oldStatus, $this->status);
         }
+    }
+
+    public function getPaymentUrl(): string
+    {
+        return route('invoice.pay', $this->payment_token);
     }
 
     // Status display helpers

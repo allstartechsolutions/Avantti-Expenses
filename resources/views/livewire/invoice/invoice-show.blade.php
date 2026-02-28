@@ -367,6 +367,23 @@
                             icon="banknotes">
                             Record Payment
                         </x-ui.button>
+                        @if($cardPointegConfigured && $invoice->getBalanceDue() > 0)
+                            <div x-data="{ copied: false }">
+                                <button
+                                    type="button"
+                                    x-on:click="navigator.clipboard.writeText('{{ $invoice->getPaymentUrl() }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                    <svg x-show="!copied" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                    </svg>
+                                    <svg x-show="copied" x-cloak class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span x-show="!copied">Copy Payment Link</span>
+                                    <span x-show="copied" x-cloak class="text-green-600 dark:text-green-400">Copied!</span>
+                                </button>
+                            </div>
+                        @endif
                         <div class="flex gap-2">
                             <x-ui.button
                                 variant="secondary"
@@ -435,6 +452,23 @@
                             icon="banknotes">
                             Record Payment
                         </x-ui.button>
+                        @if($cardPointegConfigured && $invoice->getBalanceDue() > 0)
+                            <div x-data="{ copied: false }">
+                                <button
+                                    type="button"
+                                    x-on:click="navigator.clipboard.writeText('{{ $invoice->getPaymentUrl() }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                    <svg x-show="!copied" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                    </svg>
+                                    <svg x-show="copied" x-cloak class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span x-show="!copied">Copy Payment Link</span>
+                                    <span x-show="copied" x-cloak class="text-green-600 dark:text-green-400">Copied!</span>
+                                </button>
+                            </div>
+                        @endif
                         <x-ui.button
                             variant="primary"
                             class="w-full justify-center"

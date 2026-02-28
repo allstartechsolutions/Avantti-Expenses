@@ -25,6 +25,14 @@
                             <div style="font-size: 14px; line-height: 1.6; color: #555;">
                                 {!! $emailBody !!}
                             </div>
+                            @if(app(\App\Services\CardPointeService::class)->isConfigured() && $invoice->getBalanceDue() > 0)
+                                <div style="text-align: center; margin: 25px 0 15px;">
+                                    <a href="{{ route('invoice.pay', $invoice->payment_token) }}"
+                                       style="display: inline-block; background-color: #3F5189; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; padding: 14px 40px; border-radius: 6px;">
+                                        Pay Online
+                                    </a>
+                                </div>
+                            @endif
                             <p style="font-size: 12px; color: #999; margin-top: 15px; text-align: center;">
                                 The full invoice is attached as a PDF.
                             </p>
