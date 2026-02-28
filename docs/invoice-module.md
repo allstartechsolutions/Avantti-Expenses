@@ -21,6 +21,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 - Sequential invoice numbering (INV-0001, INV-0002, etc.)
 - Conversion from accepted estimates (copies all items, discounts, taxes)
 - Status change audit trail with user attribution
+- Public payment link for clients to pay online (no login required)
 
 ---
 
@@ -49,6 +50,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 | tax_total | unsignedBigInteger | Sum of line tax amounts in cents |
 | total_amount | unsignedBigInteger | subtotal - discount + tax in cents |
 | notes | text | Internal notes (nullable) |
+| payment_token | string(36) | UUID for public payment link (unique, nullable, auto-generated) |
 | sent_at | timestamp | When marked as sent (nullable) |
 | paid_at | timestamp | When marked as paid (nullable) |
 | created_by | bigint | FK to users |
@@ -101,7 +103,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 | invoice_id | bigint | FK to invoices (cascadeOnDelete) |
 | old_status | enum | draft, sent, pending, partial, paid (nullable — null for creation) |
 | new_status | enum | draft, sent, pending, partial, paid |
-| changed_by | bigint | FK to users |
+| changed_by | bigint | FK to users (nullable — null for guest payments) |
 | timestamps | | created_at, updated_at |
 
 **Indexes:** invoice_id
@@ -126,8 +128,11 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 **Money Accessors (cents ↔ dollars):**
 - `subtotal`, `taxTotal`, `totalAmount`, `discountAmount`
 
+**Boot Events:**
+- `creating` — Auto-generates UUID `payment_token` if not set
+
 **Status Tracking:**
-- `recordStatusChange(User $user, ?string $old, string $new)` - Creates an InvoiceStatusHistory record
+- `recordStatusChange(?User $user, ?string $old, string $new)` - Creates an InvoiceStatusHistory record (user nullable for guest payments)
 
 **Status Helpers:**
 - `isDraft()` - Status is 'draft'
@@ -144,6 +149,7 @@ The Invoice module provides a complete workflow for creating, managing, and trac
 - `getBalanceDue()` - Total minus amount paid
 - `getPaymentProgress()` - Percentage paid (0-100)
 - `updateStatusFromPayments()` - Auto-transitions status based on payments (paid/partial/pending)
+- `getPaymentUrl()` - Returns the public payment URL for this invoice
 
 **Static Methods:**
 - `generateInvoiceNumber()` - Generates next sequential INV-XXXX number
@@ -271,10 +277,12 @@ See **[Invoice Payments Module](./invoice-payments-module.md)** for full payment
 
 **Sidebar Actions (status-based):**
 - **Draft:** Email Invoice, Mark as Sent, View/Download PDF, Edit, Delete
-- **Sent:** Email Invoice, Record Payment, Mark as Pending, View/Download PDF, Edit, Delete
-- **Pending:** Past due warning (if applicable), Record Payment, Email Invoice, View/Download PDF
-- **Partial:** Past due warning (if applicable), Record Payment, Email Invoice, View/Download PDF
+- **Sent:** Email Invoice, Record Payment, Copy Payment Link*, Mark as Pending, View/Download PDF, Edit, Delete
+- **Pending:** Past due warning (if applicable), Record Payment, Copy Payment Link*, Email Invoice, View/Download PDF
+- **Partial:** Past due warning (if applicable), Record Payment, Copy Payment Link*, Email Invoice, View/Download PDF
 - **Paid:** Paid confirmation with timestamp, View/Download PDF
+
+\* Copy Payment Link only shown when CardPointe is configured and invoice has balance due. Uses `navigator.clipboard` with "Copied!" feedback.
 
 **Sidebar Cards:**
 - Summary Card: Item count, Subtotal, Discount, Tax, Total
@@ -290,7 +298,35 @@ See **[Invoice Payments Module](./invoice-payments-module.md)** for full payment
 - Only accessible when status is draft or sent
 - On save: updates invoice, deletes old items, recreates from current array
 
-### 5. InvoiceSendEmail (`app/Livewire/Invoice/InvoiceSendEmail.php`)
+### 5. PublicInvoicePay (`app/Livewire/Invoice/PublicInvoicePay.php`)
+
+**View:** `resources/views/livewire/invoice/public-invoice-pay.blade.php`
+**Layout:** `components.layouts.guest` (minimal, no sidebar/nav, no auth required)
+
+Public-facing page that allows clients to pay invoices via credit card without logging in.
+
+**Features:**
+- Mounts by `payment_token` (UUID), not invoice ID — returns 404 for draft or missing invoices
+- Invoice summary: number, client, dates, total, amount paid, balance due
+- Read-only line items table with totals breakdown
+- CardPointe iFrame for secure card tokenization (PCI compliant)
+- Card fields: name, expiry (separate Month/Year dropdowns), CVV, billing zip
+- Amount field pre-filled with balance due (allows partial payments)
+- Already-paid screen (green checkmark) when invoice is fully paid
+- Success confirmation screen after payment with remaining balance if partial
+- Fallback message when CardPointe is not configured
+- No card saving — card saving stays admin-only
+- Sets `created_by` to null for guest payments
+
+**Properties:**
+- `$paymentAmount`, `$cardToken`, `$cardName`, `$cardExpiryMonth`, `$cardExpiryYear`, `$cardCvv`, `$cardZip`
+- `$cardPaymentError`, `$paymentSuccess`, `$paidAmountDisplay`
+
+**Methods:**
+- `setCardToken($token)` — Receives token from iFrame via Alpine.js
+- `processPayment()` — Validates, calls CardPointe authorize, creates InvoicePayment with `created_by: null`, updates invoice status
+
+### 6. InvoiceSendEmail (`app/Livewire/Invoice/InvoiceSendEmail.php`)
 
 **View:** `resources/views/livewire/invoice/invoice-send-email.blade.php`
 
@@ -312,6 +348,9 @@ Inline component rendered inside `InvoiceShow` via `<livewire:invoice.invoice-se
 ## Routes
 
 ```php
+// Public (no auth)
+Route::get('pay/{token}', PublicInvoicePay::class)->name('invoice.pay')->middleware('throttle:20,1');
+
 // Authenticated
 Route::get('invoices', InvoiceIndex::class)->name('invoices.index');
 Route::get('invoices/create', InvoiceCreate::class)->name('invoices.create');
@@ -368,6 +407,7 @@ Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'
 - `app/Livewire/Invoice/InvoiceShow.php`
 - `app/Livewire/Invoice/InvoiceEdit.php`
 - `app/Livewire/Invoice/InvoiceSendEmail.php`
+- `app/Livewire/Invoice/PublicInvoicePay.php`
 
 **Views:**
 - `resources/views/livewire/invoice/invoice-index.blade.php`
@@ -375,8 +415,12 @@ Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'
 - `resources/views/livewire/invoice/invoice-show.blade.php`
 - `resources/views/livewire/invoice/invoice-edit.blade.php`
 - `resources/views/livewire/invoice/invoice-send-email.blade.php`
+- `resources/views/livewire/invoice/public-invoice-pay.blade.php`
 - `resources/views/emails/invoice.blade.php`
 - `resources/views/pdf/invoice.blade.php`
+
+**Layouts:**
+- `resources/views/components/layouts/guest.blade.php` — Minimal public-facing layout (no sidebar/nav/auth)
 
 ---
 
@@ -408,3 +452,4 @@ See **[Invoice Payments Module](./invoice-payments-module.md)** for full documen
 - CardPointe Gateway integration (authorize, void, refund)
 - Client saved payment methods (CardPointe profiles)
 - Partial payment tracking and automatic status transitions
+- Public payment link for client self-service payments

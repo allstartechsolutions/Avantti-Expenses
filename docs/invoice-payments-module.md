@@ -13,6 +13,9 @@ The Invoice Payments module handles recording payments against invoices (manual 
 - Void/refund support (auto-selects void or refund based on batch settlement status)
 - Payment method management on Client Show page (add, edit, set default, remove)
 - Automatic invoice status transitions based on payment state
+- Public payment link — clients can pay invoices online without logging in
+- "Pay Online" button in invoice emails (auto-inserted when CardPointe is configured)
+- "Copy Payment Link" button on Invoice Show sidebar
 
 ---
 
@@ -40,7 +43,7 @@ The Invoice Payments module handles recording payments against invoices (manual 
 | refund_amount | unsignedBigInteger | Refund amount in cents (nullable) |
 | refunded_at | timestamp | When refund was processed (nullable) |
 | refund_transaction_id | string | CardPointe refund retref (nullable) |
-| created_by | bigint | FK to users |
+| created_by | bigint | FK to users (nullable — null for guest payments) |
 | timestamps | | created_at, updated_at |
 
 **Indexes:** invoice_id, status, payment_date
@@ -216,6 +219,25 @@ Card numbers are never handled by the application. The CardPointe iFrame tokeniz
 3. `authorize()` with `profile: "profileid/acctid"` (no card details needed)
 4. Payment record created
 
+### Public Payment (Client Self-Service)
+
+1. Client clicks "Pay Online" button in invoice email or visits the payment link directly
+2. Public page (`/pay/{token}`) loads with invoice summary and line items
+3. Card number entered in CardPointe iFrame → token returned
+4. Name, expiry (Month/Year dropdowns), CVV, and billing zip entered
+5. Amount pre-filled with balance due (partial payments allowed)
+6. `authorize()` API call with card details — no saved card support on public page
+7. Payment record created with `created_by: null` (guest payment)
+8. Invoice status auto-updates via `updateStatusFromPayments()` (handles null user)
+9. Success confirmation screen shown; if balance remains, amount displayed
+
+**Security:**
+- UUID token (not invoice ID) prevents enumeration
+- `throttle:20,1` middleware limits to 20 requests/minute per IP
+- No link expiration — link works until invoice is fully paid
+- Draft invoices return 404
+- Card data never touches the server (iFrame tokenization)
+
 ### Void/Refund
 
 1. User clicks "Void" on a completed payment
@@ -328,6 +350,19 @@ Card management methods:
 - `setDefaultCard($id)` — Set as default, unset others
 - `deleteCard($id)` — Soft delete
 
+### PublicInvoicePay (`app/Livewire/Invoice/PublicInvoicePay.php`)
+
+Public-facing component (no auth required). Uses `components.layouts.guest` layout.
+
+**Properties:**
+- `$paymentAmount`, `$cardToken`, `$cardName`, `$cardExpiryMonth`, `$cardExpiryYear`, `$cardCvv`, `$cardZip`
+- `$cardPaymentError`, `$paymentSuccess`, `$paidAmountDisplay`
+
+**Methods:**
+- `mount(string $token)` — Loads invoice by `payment_token`, aborts 404 if not found or draft
+- `setCardToken($token)` — Receives token from iFrame
+- `processPayment()` — Validates, refreshes invoice (race condition guard), calls CardPointe authorize, creates InvoicePayment with `created_by: null`, updates invoice status
+
 ### InvoiceSendEmail (`app/Livewire/Invoice/InvoiceSendEmail.php`)
 
 Email body includes an inline HTML "Invoice Summary" block with:
@@ -354,6 +389,14 @@ The default email body (generated in `InvoiceSendEmail::mount()`) includes:
 5. Closing with company name
 
 The email template (`resources/views/emails/invoice.blade.php`) renders `{!! $emailBody !!}` which includes the summary block.
+
+### "Pay Online" Button in Email
+
+The invoice email template includes a "Pay Online" CTA button between the email body and the "PDF attached" note:
+- Only shown when CardPointe is configured (`CardPointeService::isConfigured()`) AND invoice has a balance due
+- Links to `route('invoice.pay', $invoice->payment_token)` — the public payment page
+- Styled as a centered button with `#3F5189` background and white text
+- No changes needed in `InvoiceSendEmail` or `InvoiceMail` — the `$invoice` model is already passed to the template
 
 ### Email Tracking
 
@@ -387,9 +430,17 @@ The email template (`resources/views/emails/invoice.blade.php`) renders `{!! $em
 **Exceptions:**
 - `app/Exceptions/CardPointeException.php`
 
+### New Files (Public Payment Link)
+
+- `database/migrations/2026_02_28_100000_add_payment_token_to_invoices_table.php` — Adds `payment_token` to invoices, makes `changed_by` nullable on invoice_status_histories, backfills existing invoices with UUIDs
+- `database/migrations/2026_02_28_100001_make_created_by_nullable_on_invoice_payments_table.php` — Makes `created_by` nullable on invoice_payments for guest payments
+- `app/Livewire/Invoice/PublicInvoicePay.php` — Public payment Livewire component
+- `resources/views/livewire/invoice/public-invoice-pay.blade.php` — Public payment view
+- `resources/views/components/layouts/guest.blade.php` — Minimal guest layout (no sidebar/nav/auth)
+
 ### Modified Files
 
-- `app/Models/Invoice.php` — Added `payments()` relationship, payment helpers (`getAmountPaid`, `getBalanceDue`, `getPaymentProgress`, `updateStatusFromPayments`), `partial` status support, updated `isPastDue` to include partial
+- `app/Models/Invoice.php` — Added `payment_token` to fillable, `boot()` auto-generates UUID, `recordStatusChange()` accepts nullable User, `getPaymentUrl()` helper, payments relationship, payment helpers
 - `app/Models/Client.php` — Added `cardpointe_profile_id` to fillable, `paymentMethods()` relationship
 - `app/Models/InvoiceStatusHistory.php` — Added `partial` to status enum display helpers
 - `app/Livewire/Invoice/InvoiceShow.php` — Added payment modal, card payment processing, void/refund
@@ -397,12 +448,12 @@ The email template (`resources/views/emails/invoice.blade.php`) renders `{!! $em
 - `app/Livewire/Invoice/InvoiceSendEmail.php` — Invoice Summary block in email body with paid/balance amounts
 - `app/Livewire/Client/ClientShow.php` — Added payment method management (add, edit, set default, remove)
 - `app/Http/Controllers/InvoicePdfController.php` — Updated for payment info on PDF
-- `resources/views/livewire/invoice/invoice-show.blade.php` — Payment modal, payment history, card payment form
+- `resources/views/livewire/invoice/invoice-show.blade.php` — Payment modal, payment history, card payment form, "Copy Payment Link" button in sidebar (sent/pending/partial statuses)
 - `resources/views/livewire/invoice/invoice-index.blade.php` — Partial status tab
 - `resources/views/livewire/client/client-show.blade.php` — Payment Methods card, add/edit card modals
-- `resources/views/emails/invoice.blade.php` — Simplified to render emailBody (summary now inline)
+- `resources/views/emails/invoice.blade.php` — "Pay Online" CTA button (when CardPointe configured + balance due), renders emailBody (summary now inline)
 - `resources/views/pdf/invoice.blade.php` — Payment summary on PDF
-- `routes/web.php` — Added email tracking route
+- `routes/web.php` — Added email tracking route, public payment route (`/pay/{token}`)
 - `config/services.php` — Added CardPointe configuration
 
 ---
@@ -423,6 +474,16 @@ The iFrame tokenizer URL includes inline CSS that styles the card number input t
 
 ### Timeout
 All CardPointe API calls use a 30-second timeout to accommodate UAT server latency.
+
+### Public Payment Link
+- UUID `payment_token` auto-generated on invoice creation via model `boot()` event
+- Existing invoices backfilled with tokens via migration
+- No link expiration — link works until invoice is fully paid (simpler for clients)
+- No card saving from public page — card saving stays admin-only
+- UUID token (not signed URL) — survives APP_KEY rotation, simple to embed in emails
+- `throttle:20,1` middleware prevents brute-force token guessing (20 req/min per IP)
+- Guest payments set `created_by = null` on both `invoice_payments` and `invoice_status_histories`
+- Guest layout (`components.layouts.guest`) — minimal branded page with company name header, no sidebar/nav
 
 ### Cascade Deletes
 - Deleting an Invoice cascades to all InvoicePayments
