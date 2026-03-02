@@ -60,6 +60,10 @@ use App\Livewire\Contract\ContractCreate;
 use App\Livewire\Contract\ContractShow;
 use App\Livewire\Contract\ContractEdit;
 use App\Livewire\Contract\ContractPayments;
+use App\Livewire\PaymentBatch\PaymentBatchIndex;
+use App\Livewire\PaymentBatch\PaymentBatchCreate;
+use App\Livewire\PaymentBatch\PaymentBatchShow;
+use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Livewire\Project\ProjectContracts;
 use App\Livewire\Project\ProjectPurchaseOrders;
 use App\Livewire\Estimate\EstimateIndex;
@@ -185,6 +189,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('contract-payments', ContractPayments::class)->name('contract-payments.index');
     Route::get('contract-payments/pdf', [ContractPaymentsPdfController::class, 'download'])->name('contract-payments.pdf.download');
     Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])->name('contract-payments.pdf.view');
+
+    // Payment Batch routes
+    Route::get('payment-batches', PaymentBatchIndex::class)->name('payment-batches.index');
+    Route::get('payment-batches/create', PaymentBatchCreate::class)->name('payment-batches.create');
+    Route::get('payment-batches/{paymentBatch}', PaymentBatchShow::class)->name('payment-batches.show');
+    Route::get('payment-batches/{paymentBatch}/edit', PaymentBatchEdit::class)->name('payment-batches.edit');
 
     // Estimate routes
     Route::get('estimates', EstimateIndex::class)->name('estimates.index');
