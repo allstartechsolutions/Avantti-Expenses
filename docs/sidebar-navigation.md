@@ -182,7 +182,9 @@ MENU
 │   ├── Subcontractors
 │   ├── Clients
 │   ├── Cost Codes
-│   └── Payments
+│   ├── Payments
+│   ├── Contract Payments
+│   └── Payment Batches
 ├── Catalog (submenu)
 │   ├── All Items
 │   ├── Categories
