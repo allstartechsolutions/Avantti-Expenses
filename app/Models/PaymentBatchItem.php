@@ -13,6 +13,7 @@ class PaymentBatchItem extends Model
         'contract_id',
         'amount',
         'payment_method',
+        'phase',
         'notes',
         'status',
         'approved_at',

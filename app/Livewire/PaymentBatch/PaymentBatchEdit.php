@@ -35,6 +35,7 @@ class PaymentBatchEdit extends Component
 
     public array $payAmounts = [];
     public array $payMethods = [];
+    public array $payPhases = [];
     public array $payNotes = [];
 
     public function mount(): void
@@ -66,6 +67,7 @@ class PaymentBatchEdit extends Component
         foreach ($items as $item) {
             $this->payAmounts[$item->contract_id] = $item->amount;
             $this->payMethods[$item->contract_id] = $item->payment_method ?? '';
+            $this->payPhases[$item->contract_id] = $item->phase ?? '';
             $this->payNotes[$item->contract_id] = $item->notes ?? '';
         }
     }
@@ -197,6 +199,7 @@ class PaymentBatchEdit extends Component
                     [
                         'amount' => (float) $amount,
                         'payment_method' => $this->payMethods[$contractId] ?? null,
+                        'phase' => $this->payPhases[$contractId] ?? null,
                         'notes' => $this->payNotes[$contractId] ?? null,
                         'status' => 'pending',
                     ]
@@ -242,6 +245,7 @@ class PaymentBatchEdit extends Component
                 'amount' => $item->amount,
                 'payment_date' => $this->paymentBatch->payment_date,
                 'payment_method' => $item->payment_method,
+                'phase' => $item->phase,
                 'notes' => $item->notes,
                 'created_by' => Auth::id(),
             ]);
@@ -261,6 +265,7 @@ class PaymentBatchEdit extends Component
         // Remove from inline arrays since it's now approved
         unset($this->payAmounts[$item->contract_id]);
         unset($this->payMethods[$item->contract_id]);
+        unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
 
         session()->flash('message', "Payment for {$contract->contract_number} approved and processed.");
@@ -302,6 +307,7 @@ class PaymentBatchEdit extends Component
                     'amount' => $item->amount,
                     'payment_date' => $this->paymentBatch->payment_date,
                     'payment_method' => $item->payment_method,
+                    'phase' => $item->phase,
                     'notes' => $item->notes,
                     'created_by' => Auth::id(),
                 ]);
@@ -321,6 +327,7 @@ class PaymentBatchEdit extends Component
         unset($this->batchSummary);
         $this->payAmounts = [];
         $this->payMethods = [];
+        $this->payPhases = [];
         $this->payNotes = [];
 
         session()->flash('message', $pendingItems->count() . ' payment(s) approved and processed.');
@@ -340,6 +347,7 @@ class PaymentBatchEdit extends Component
 
         unset($this->payAmounts[$item->contract_id]);
         unset($this->payMethods[$item->contract_id]);
+        unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
 
         session()->flash('message', 'Item rejected.');

@@ -13,6 +13,7 @@ class ContractPayment extends Model
         'amount',
         'payment_date',
         'payment_method',
+        'phase',
         'reference_number',
         'notes',
         'created_by',

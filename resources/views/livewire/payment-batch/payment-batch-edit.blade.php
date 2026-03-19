@@ -279,6 +279,9 @@
                             Method
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            Phase
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             Notes
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -368,7 +371,7 @@
                                         step="0.01"
                                         min="0"
                                         max="{{ $balance }}"
-                                        wire:model.blur="payAmounts.{{ $contract->id }}"
+                                        wire:model="payAmounts.{{ $contract->id }}"
                                         placeholder="0.00"
                                         class="w-28 px-2 py-1.5 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
@@ -396,6 +399,20 @@
                                     </select>
                                 @endif
                             </td>
+                            <!-- Phase -->
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @if($isApproved || $isRejected)
+                                    <div class="text-sm text-slate-600 dark:text-slate-400 text-center {{ $isRejected ? 'line-through' : '' }}">
+                                        {{ $batchItem->phase ?? '-' }}
+                                    </div>
+                                @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
+                                    <input
+                                        type="text"
+                                        wire:model="payPhases.{{ $contract->id }}"
+                                        placeholder="Phase..."
+                                        class="w-28 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                @endif
+                            </td>
                             <!-- Notes -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($isApproved || $isRejected)
@@ -405,7 +422,7 @@
                                 @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
                                     <input
                                         type="text"
-                                        wire:model.blur="payNotes.{{ $contract->id }}"
+                                        wire:model="payNotes.{{ $contract->id }}"
                                         placeholder="Notes..."
                                         class="w-36 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
@@ -464,7 +481,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="px-6 py-12 text-center">
+                            <td colspan="13" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>

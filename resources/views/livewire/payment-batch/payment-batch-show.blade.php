@@ -205,6 +205,9 @@
                                 Method
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                Phase
+                            </th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 Notes
                             </th>
                             <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -257,6 +260,11 @@
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
                                         {{ $item->getPaymentMethodLabel() }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
+                                        {{ $item->phase ?? '—' }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
