@@ -216,6 +216,7 @@ class PaymentBatchEdit extends Component
         });
 
         unset($this->batchSummary);
+        $this->loadExistingItems();
         session()->flash('message', 'Draft saved successfully!');
     }
 
