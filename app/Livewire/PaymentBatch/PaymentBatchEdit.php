@@ -223,9 +223,9 @@ class PaymentBatchEdit extends Component
                     ],
                     [
                         'amount' => $hasAmount ? (float) $amount : null,
-                        'payment_method' => $this->payMethods[$contractId] ?: null,
-                        'phase' => $this->payPhases[$contractId] ?: null,
-                        'notes' => $this->payNotes[$contractId] ?: null,
+                        'payment_method' => ($this->payMethods[$contractId] ?? null) ?: null,
+                        'phase' => ($this->payPhases[$contractId] ?? null) ?: null,
+                        'notes' => ($this->payNotes[$contractId] ?? null) ?: null,
                         'status' => 'pending',
                     ]
                 );
