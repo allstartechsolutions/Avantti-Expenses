@@ -64,11 +64,17 @@ class PaymentBatchEdit extends Component
     {
         $items = $this->paymentBatch->items()->where('status', 'pending')->get();
 
+        $this->payAmounts = [];
+        $this->payMethods = [];
+        $this->payPhases = [];
+        $this->payNotes = [];
+
         foreach ($items as $item) {
-            $this->payAmounts[$item->contract_id] = $item->amount;
-            $this->payMethods[$item->contract_id] = $item->payment_method ?? '';
-            $this->payPhases[$item->contract_id] = $item->phase ?? '';
-            $this->payNotes[$item->contract_id] = $item->notes ?? '';
+            $key = (string) $item->contract_id;
+            $this->payAmounts[$key] = $item->getRawOriginal('amount') ? $item->amount : '';
+            $this->payMethods[$key] = $item->payment_method ?? '';
+            $this->payPhases[$key] = $item->phase ?? '';
+            $this->payNotes[$key] = $item->notes ?? '';
         }
     }
 
@@ -182,25 +188,44 @@ class PaymentBatchEdit extends Component
             'show_zero_balance' => $this->showZeroBalance,
         ]);
 
-        $rowsToSave = collect($this->payAmounts)
-            ->filter(fn ($amount) => $amount !== null && $amount !== '' && (float) $amount > 0);
+        // Collect all contract IDs that have any data (amount, phase, notes, or method)
+        $allContractIds = collect($this->payAmounts)->keys()
+            ->merge(collect($this->payPhases)->keys())
+            ->merge(collect($this->payNotes)->keys())
+            ->merge(collect($this->payMethods)->keys())
+            ->unique();
 
-        $rowsToRemove = collect($this->payAmounts)
-            ->filter(fn ($amount) => $amount === null || $amount === '' || (float) $amount <= 0)
-            ->keys();
+        $rowsToSave = $allContractIds->filter(function ($contractId) {
+            $amount = $this->payAmounts[$contractId] ?? null;
+            $phase = $this->payPhases[$contractId] ?? null;
+            $notes = $this->payNotes[$contractId] ?? null;
+            $method = $this->payMethods[$contractId] ?? null;
+
+            $hasAmount = $amount !== null && $amount !== '' && (float) $amount > 0;
+            $hasPhase = !empty($phase);
+            $hasNotes = !empty($notes);
+            $hasMethod = !empty($method);
+
+            return $hasAmount || $hasPhase || $hasNotes || $hasMethod;
+        });
+
+        $rowsToRemove = $allContractIds->diff($rowsToSave);
 
         DB::transaction(function () use ($rowsToSave, $rowsToRemove) {
-            foreach ($rowsToSave as $contractId => $amount) {
+            foreach ($rowsToSave as $contractId) {
+                $amount = $this->payAmounts[$contractId] ?? null;
+                $hasAmount = $amount !== null && $amount !== '' && (float) $amount > 0;
+
                 PaymentBatchItem::updateOrCreate(
                     [
                         'payment_batch_id' => $this->paymentBatch->id,
                         'contract_id' => $contractId,
                     ],
                     [
-                        'amount' => (float) $amount,
-                        'payment_method' => $this->payMethods[$contractId] ?? null,
-                        'phase' => $this->payPhases[$contractId] ?? null,
-                        'notes' => $this->payNotes[$contractId] ?? null,
+                        'amount' => $hasAmount ? (float) $amount : null,
+                        'payment_method' => $this->payMethods[$contractId] ?: null,
+                        'phase' => $this->payPhases[$contractId] ?: null,
+                        'notes' => $this->payNotes[$contractId] ?: null,
                         'status' => 'pending',
                     ]
                 );
@@ -226,6 +251,11 @@ class PaymentBatchEdit extends Component
             ->where('id', $itemId)
             ->where('status', 'pending')
             ->firstOrFail();
+
+        if (!$item->getRawOriginal('amount') || $item->amount <= 0) {
+            session()->flash('error', 'Cannot approve an item without a payment amount.');
+            return;
+        }
 
         $contract = Contract::withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
@@ -281,8 +311,16 @@ class PaymentBatchEdit extends Component
             return;
         }
 
+        // Only approve items that have an amount
+        $approvableItems = $pendingItems->filter(fn ($item) => $item->getRawOriginal('amount') && $item->amount > 0);
+
+        if ($approvableItems->isEmpty()) {
+            session()->flash('error', 'No pending items with amounts to approve.');
+            return;
+        }
+
         $errors = [];
-        foreach ($pendingItems as $item) {
+        foreach ($approvableItems as $item) {
             $contract = Contract::withSum('payments as total_paid_cents', 'amount')
                 ->withSum('changeOrders as change_orders_total_cents', 'amount')
                 ->find($item->contract_id);
@@ -301,8 +339,8 @@ class PaymentBatchEdit extends Component
             return;
         }
 
-        DB::transaction(function () use ($pendingItems) {
-            foreach ($pendingItems as $item) {
+        DB::transaction(function () use ($approvableItems) {
+            foreach ($approvableItems as $item) {
                 ContractPayment::create([
                     'contract_id' => $item->contract_id,
                     'amount' => $item->amount,
@@ -326,12 +364,9 @@ class PaymentBatchEdit extends Component
 
         $this->updateBatchStatus();
         unset($this->batchSummary);
-        $this->payAmounts = [];
-        $this->payMethods = [];
-        $this->payPhases = [];
-        $this->payNotes = [];
+        $this->loadExistingItems();
 
-        session()->flash('message', $pendingItems->count() . ' payment(s) approved and processed.');
+        session()->flash('message', $approvableItems->count() . ' payment(s) approved and processed.');
     }
 
     public function rejectItem(int $itemId): void

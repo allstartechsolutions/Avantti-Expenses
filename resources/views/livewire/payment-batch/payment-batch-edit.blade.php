@@ -304,7 +304,7 @@
                             $isRejected = $batchItem && $batchItem->status === 'rejected';
                             $isPending = $batchItem && $batchItem->status === 'pending';
                         @endphp
-                        <tr class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : ($isApproved ? 'bg-green-50/50 dark:bg-green-900/10' : ($isRejected ? 'bg-red-50/50 dark:bg-red-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')) }}">
+                        <tr wire:key="contract-row-{{ $contract->id }}" class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : ($isApproved ? 'bg-green-50/50 dark:bg-green-900/10' : ($isRejected ? 'bg-red-50/50 dark:bg-red-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')) }}">
                             <!-- Subcontractor -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
@@ -359,11 +359,11 @@
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($isApproved)
                                     <div class="text-sm font-medium text-green-600 dark:text-green-400 text-center">
-                                        {{ Number::currency($batchItem->amount, config('app.currency'), config('app.locale')) }}
+                                        {{ $batchItem->getRawOriginal('amount') ? Number::currency($batchItem->amount, config('app.currency'), config('app.locale')) : '—' }}
                                     </div>
                                 @elseif($isRejected)
                                     <div class="text-sm font-medium text-red-400 dark:text-red-500 text-center line-through">
-                                        {{ Number::currency($batchItem->amount, config('app.currency'), config('app.locale')) }}
+                                        {{ $batchItem->getRawOriginal('amount') ? Number::currency($batchItem->amount, config('app.currency'), config('app.locale')) : '—' }}
                                     </div>
                                 @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
                                     <input
