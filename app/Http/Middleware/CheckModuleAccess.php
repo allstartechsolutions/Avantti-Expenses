@@ -20,6 +20,10 @@ class CheckModuleAccess
 
         $modules = config('modules');
 
+        if (empty($modules)) {
+            return $next($request);
+        }
+
         foreach ($modules as $key => $module) {
             if (!empty($module['is_core'])) {
                 continue;

@@ -184,6 +184,7 @@ class Estimate extends Model
     public static function calculateDueDate(string $estimateDate, string $terms): string
     {
         $days = match ($terms) {
+            'due_upon_receipt' => 0,
             'net_15' => 15,
             'net_30' => 30,
             'net_60' => 60,
@@ -221,6 +222,7 @@ class Estimate extends Model
     public function getTermsLabelAttribute(): string
     {
         return match ($this->terms) {
+            'due_upon_receipt' => 'Due Upon Receipt',
             'net_15' => 'Net 15',
             'net_30' => 'Net 30',
             'net_60' => 'Net 60',

@@ -456,7 +456,7 @@ class InvoiceCreate extends Component
         $this->validate([
             'client_id' => 'required|exists:clients,id',
             'invoice_date' => 'required|date',
-            'terms' => 'required|in:net_15,net_30,net_60,net_90',
+            'terms' => 'required|in:due_upon_receipt,net_15,net_30,net_60,net_90',
             'items' => 'required|array|min:1',
         ], [
             'client_id.required' => 'Please select a client.',
