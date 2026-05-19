@@ -79,6 +79,7 @@ use App\Http\Controllers\EmailTrackingController;
 use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
+use App\Livewire\Report\SalesTaxReport;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -213,6 +214,9 @@ Route::middleware(['auth'])->group(function () {
     // Invoice PDF routes
     Route::get('invoices/{invoice}/pdf', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
     Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'])->name('invoices.pdf.view');
+
+    // Report routes
+    Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
 
     // System Settings routes
     Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');

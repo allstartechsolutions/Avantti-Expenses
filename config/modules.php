@@ -51,4 +51,10 @@ return [
         'description' => 'Create and manage invoices and payments.',
         'route_prefixes' => ['invoices.*'],
     ],
+
+    'reports' => [
+        'name' => 'Reports',
+        'description' => 'Sales tax and other financial reports.',
+        'route_prefixes' => ['reports.*'],
+    ],
 ];

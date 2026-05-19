@@ -257,6 +257,47 @@
                 <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Invoices') }}</span>
             </a>
             @endif
+
+            <!-- Reports -->
+            @if(\App\Models\ModuleAccess::isEnabled('reports'))
+            <div class="mb-1">
+                <button @click="toggleSubmenu('reports')"
+                        class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('reports.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Reports') }}</span>
+                    </div>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'reports'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu === 'reports'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- Reports Submenu -->
+                <div x-show="activeSubmenu === 'reports' && (!sidebarCollapsed || sidebarOpen)" x-cloak
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     class="ml-8 mt-2 space-y-1">
+                    <a href="{{ route('reports.sales-tax') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('reports.sales-tax') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                        {{ __('Sales Tax Report') }}
+                    </a>
+                </div>
+            </div>
+            @endif
         </div>
     </nav>
 
