@@ -99,7 +99,7 @@ class SalesTaxReport extends Component
     public function getInvoiceBreakdownProperty()
     {
         return $this->baseInvoiceQuery()
-            ->with('client:id,name')
+            ->with('client:id,company_name')
             ->orderBy('invoice_date')
             ->orderBy('invoice_number')
             ->get(['id', 'invoice_number', 'invoice_date', 'client_id', 'status', 'subtotal', 'discount_amount', 'tax_total', 'total_amount']);
@@ -158,7 +158,7 @@ class SalesTaxReport extends Component
                 fputcsv($out, [
                     $invoice->invoice_number,
                     $invoice->invoice_date->toDateString(),
-                    $invoice->client?->name ?? '',
+                    $invoice->client?->company_name ?? '',
                     $invoice->status,
                     number_format($invoice->subtotal, 2, '.', ''),
                     number_format($invoice->discount_amount, 2, '.', ''),

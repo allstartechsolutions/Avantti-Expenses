@@ -144,7 +144,7 @@
                                 <a href="{{ route('invoices.show', $invoice->id) }}" class="text-[#3F5189] hover:underline">{{ $invoice->invoice_number }}</a>
                             </td>
                             <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $invoice->invoice_date->format('M d, Y') }}</td>
-                            <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $invoice->client?->name }}</td>
+                            <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $invoice->client?->company_name }}</td>
                             <td class="px-6 py-3 text-sm">
                                 <span class="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{{ ucfirst($invoice->status) }}</span>
                             </td>
