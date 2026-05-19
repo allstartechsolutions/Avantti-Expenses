@@ -302,6 +302,7 @@ class InvoiceEdit extends Component
             $this->item_catalog_item_id = $catalogItemId;
             $this->catalogItemSearch = $catalogItem->name;
             $this->item_name = $catalogItem->name;
+            $this->item_description = $catalogItem->description ?? '';
             $this->item_unit = $catalogItem->usage_unit ?? $catalogItem->purchase_unit ?? '';
             $this->item_unit_price = $catalogItem->unit_cost ?? $catalogItem->current_cost ?? 0;
             $this->item_is_custom = false;
