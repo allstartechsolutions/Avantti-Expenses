@@ -168,7 +168,7 @@
                                 <!-- Amount -->
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ Number::currency($project->initial_amount, config('app.currency'), config('app.locale')) }}
+                                        {{ Number::currency($project->getAdjustedContractValue(), config('app.currency'), config('app.locale')) }}
                                     </div>
                                 </td>
 

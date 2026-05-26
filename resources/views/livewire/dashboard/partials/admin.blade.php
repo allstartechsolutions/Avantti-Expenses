@@ -253,11 +253,11 @@
                 <div class="divide-y divide-slate-200 dark:divide-slate-700 flex-1">
                     @forelse ($overBudgetProjects as $project)
                         @php
-                            $initialAmountCents = $project->getRawOriginal('initial_amount');
-                            $expensesCents = $project->expenses_total ?? 0;
-                            $overageDollars = round(($expensesCents - $initialAmountCents) / 100, 2);
-                            $percentOver = $initialAmountCents > 0
-                                ? round((($expensesCents - $initialAmountCents) / $initialAmountCents) * 100, 0)
+                            $contractValueDollars = $project->getAdjustedContractValue();
+                            $expensesDollars = round(($project->expenses_total ?? 0) / 100, 2);
+                            $overageDollars = round($expensesDollars - $contractValueDollars, 2);
+                            $percentOver = $contractValueDollars > 0
+                                ? round((($expensesDollars - $contractValueDollars) / $contractValueDollars) * 100, 0)
                                 : 0;
                         @endphp
                         <a href="{{ route('projects.overview', $project->id) }}" class="block px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
@@ -267,7 +267,7 @@
                                         {{ $project->project_name }}
                                     </p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                        {{ __('Budget') }}: {{ Number::currency($project->initial_amount, $currency, $locale) }}
+                                        {{ __('Budget') }}: {{ Number::currency($contractValueDollars, $currency, $locale) }}
                                     </p>
                                 </div>
                                 <div class="text-right shrink-0">

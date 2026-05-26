@@ -300,8 +300,8 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                    {{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
+                                                <div class="text-sm font-medium {{ $changeOrder->amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
+                                                    {{ $changeOrder->amount >= 0 ? '+' : '' }}{{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -885,6 +885,7 @@
                                 placeholder="0.00"
                             >
                         </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Use a negative amount for deductive change orders (e.g., -500).') }}</p>
                         @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 

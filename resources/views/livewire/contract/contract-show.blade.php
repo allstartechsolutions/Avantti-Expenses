@@ -1,4 +1,23 @@
 <div>
+    {{-- Breadcrumbs --}}
+    @php
+        $breadcrumbs = [
+            ['label' => __('Projects'), 'url' => route('projects.index')],
+            ['label' => $contract->project->project_name, 'url' => route('projects.overview', $contract->project)],
+        ];
+
+        if ($contract->jobSite) {
+            $breadcrumbs[] = ['label' => __('Job Sites'), 'url' => route('projects.jobsites', $contract->project)];
+            $breadcrumbs[] = ['label' => $contract->jobSite->job_site_name, 'url' => route('jobsites.overview', $contract->jobSite)];
+            $breadcrumbs[] = ['label' => __('Contracts'), 'url' => route('jobsites.contracts', $contract->jobSite)];
+        } else {
+            $breadcrumbs[] = ['label' => __('Contracts'), 'url' => route('projects.contracts', $contract->project)];
+        }
+
+        $breadcrumbs[] = ['label' => 'Contract ' . $contract->contract_number];
+    @endphp
+    <x-ui.breadcrumb :items="$breadcrumbs" />
+
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between">

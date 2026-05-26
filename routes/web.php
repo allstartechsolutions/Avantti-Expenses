@@ -26,12 +26,17 @@ use App\Livewire\Project\ProjectJobSites;
 use App\Livewire\Project\ProjectChangeOrders;
 use App\Livewire\Project\ProjectDailyReports;
 use App\Livewire\Project\ProjectBudget;
+use App\Livewire\Project\ProjectFinancialReport;
+use App\Livewire\JobSite\JobSiteFinancialReport;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteContracts;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\ContractPaymentsPdfController;
+use App\Http\Controllers\AccountsPayableReportPdfController;
+use App\Http\Controllers\JobSiteFinancialReportPdfController;
+use App\Http\Controllers\ProjectFinancialReportPdfController;
 use App\Http\Controllers\DailyReportPdfController;
 use App\Http\Controllers\EstimatePdfController;
 use App\Http\Controllers\FileController;
@@ -79,12 +84,23 @@ use App\Http\Controllers\EmailTrackingController;
 use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
+use App\Livewire\Report\AccountsPayableReport;
 use App\Livewire\Report\SalesTaxReport;
 use App\Livewire\Dashboard\DashboardIndex;
+use App\Livewire\Setup\SetupWizard;
+use App\Models\User;
 
 Route::get('/', function () {
+    if (! User::query()->exists()) {
+        return redirect('/setup');
+    }
+
     return redirect('/login');
 })->name('home');
+
+// One-time installer. SetupWizard::mount() aborts 404 once any user exists,
+// so this route is effectively invisible on running systems.
+Route::get('setup', SetupWizard::class)->name('setup');
 
 // Public (no auth)
 Route::get('email/track/{token}', [EmailTrackingController::class, 'track'])->name('email.track');
@@ -132,6 +148,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/contracts', ProjectContracts::class)->name('projects.contracts');
     Route::get('projects/{project}/daily-reports', ProjectDailyReports::class)->name('projects.daily-reports');
     Route::get('projects/{project}/budget', ProjectBudget::class)->name('projects.budget');
+    Route::get('projects/{project}/report', ProjectFinancialReport::class)->name('projects.report');
+    Route::get('projects/{project}/report/pdf', [ProjectFinancialReportPdfController::class, 'download'])->name('projects.report.pdf.download');
+    Route::get('projects/{project}/report/pdf/view', [ProjectFinancialReportPdfController::class, 'stream'])->name('projects.report.pdf.view');
 
     // Legacy route alias (for backward compatibility during migration)
     Route::get('projects/{project}/show', ProjectShow::class)->name('projects.show');
@@ -144,6 +163,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('job-sites/{jobSite}/purchase-orders', JobSiteShow::class)->name('jobsites.purchase-orders');
     Route::get('job-sites/{jobSite}/daily-reports', JobSiteShow::class)->name('jobsites.daily-reports');
     Route::get('job-sites/{jobSite}/budget', JobSiteShow::class)->name('jobsites.budget');
+    Route::get('job-sites/{jobSite}/report', JobSiteFinancialReport::class)->name('jobsites.report');
+    Route::get('job-sites/{jobSite}/report/pdf', [JobSiteFinancialReportPdfController::class, 'download'])->name('jobsites.report.pdf.download');
+    Route::get('job-sites/{jobSite}/report/pdf/view', [JobSiteFinancialReportPdfController::class, 'stream'])->name('jobsites.report.pdf.view');
 
     // Legacy route alias (for backward compatibility during migration)
     Route::get('job-sites/{jobSite}/show', JobSiteShow::class)->name('jobsites.show');
@@ -218,6 +240,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Report routes
     Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
+    Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
+    Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
+    Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');
 
     // System Settings routes
     Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');

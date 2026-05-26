@@ -87,7 +87,7 @@ class JobSiteShow extends Component
             'title' => 'required|string|max:255',
             'requested_date' => 'required|date',
             'description' => 'nullable|string',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric',
         ];
 
         if ($this->modalMode === 'create') {

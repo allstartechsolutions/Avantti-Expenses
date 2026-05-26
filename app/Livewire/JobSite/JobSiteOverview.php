@@ -129,11 +129,24 @@ class JobSiteOverview extends Component
         $expenses = $this->jobSite->expenses()->get();
         $totalExpensesAmount = $expenses->sum('total_amount');
 
+        $contracts = $this->jobSite->contracts()->with(['changeOrders', 'payments'])->get();
+        $totalContractsAdjusted = 0;
+        $totalContractsPaid = 0;
+        foreach ($contracts as $contract) {
+            $totalContractsAdjusted += $contract->getAdjustedAmount();
+            $totalContractsPaid += $contract->getAmountPaid();
+        }
+        $totalContractsUnpaid = round($totalContractsAdjusted - $totalContractsPaid, 2);
+
         return view('livewire.job-site.job-site-overview', [
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
             'expenses' => $expenses,
             'totalExpensesAmount' => $totalExpensesAmount,
+            'contracts' => $contracts,
+            'totalContractsAdjusted' => $totalContractsAdjusted,
+            'totalContractsPaid' => $totalContractsPaid,
+            'totalContractsUnpaid' => $totalContractsUnpaid,
         ])->layout('components.layouts.app');
     }
 }

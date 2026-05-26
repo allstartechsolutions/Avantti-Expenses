@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProjectAmountSource;
 use App\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,7 @@ class Project extends Model
         'phone',
         'email',
         'initial_amount',
+        'amount_source',
         'description',
         'status',
         'created_by',
@@ -38,6 +40,7 @@ class Project extends Model
 
     protected $casts = [
         'status' => ProjectStatus::class,
+        'amount_source' => ProjectAmountSource::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -51,6 +54,30 @@ class Project extends Model
             get: fn ($value) => round($value / 100, 2),
             set: fn ($value) => round($value * 100),
         );
+    }
+
+    /**
+     * Base contract value (before change orders). Resolves manual vs
+     * from-jobsites mode. Returns dollars.
+     */
+    public function getContractValue(): float
+    {
+        if ($this->amount_source === ProjectAmountSource::FROM_JOBSITES) {
+            return round($this->jobSites()->sum('job_amount') / 100, 2);
+        }
+
+        return (float) $this->initial_amount;
+    }
+
+    /**
+     * Current contract value including all change orders (both project-level
+     * and jobsite-level, signed). Returns dollars.
+     */
+    public function getAdjustedContractValue(): float
+    {
+        $changeOrdersTotal = round($this->changeOrders()->sum('amount') / 100, 2);
+
+        return round($this->getContractValue() + $changeOrdersTotal, 2);
     }
 
     /**

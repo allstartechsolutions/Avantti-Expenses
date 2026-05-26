@@ -1,4 +1,23 @@
 <div>
+    {{-- Breadcrumbs --}}
+    @php
+        $breadcrumbs = [
+            ['label' => __('Projects'), 'url' => route('projects.index')],
+            ['label' => $purchaseOrder->project->project_name, 'url' => route('projects.overview', $purchaseOrder->project)],
+        ];
+
+        if ($purchaseOrder->jobSite) {
+            $breadcrumbs[] = ['label' => __('Job Sites'), 'url' => route('projects.jobsites', $purchaseOrder->project)];
+            $breadcrumbs[] = ['label' => $purchaseOrder->jobSite->job_site_name, 'url' => route('jobsites.overview', $purchaseOrder->jobSite)];
+            $breadcrumbs[] = ['label' => __('Purchase Orders'), 'url' => route('jobsites.purchase-orders', $purchaseOrder->jobSite)];
+        } else {
+            $breadcrumbs[] = ['label' => __('Purchase Orders'), 'url' => route('projects.purchase-orders', $purchaseOrder->project)];
+        }
+
+        $breadcrumbs[] = ['label' => __('Purchase Order') . ' #' . ($purchaseOrder->po_number ?: $purchaseOrder->id)];
+    @endphp
+    <x-ui.breadcrumb :items="$breadcrumbs" />
+
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between">

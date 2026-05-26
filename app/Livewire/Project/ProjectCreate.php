@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Enums\ProjectAmountSource;
 use App\Enums\ProjectStatus;
 use App\Enums\UserStatus;
 use App\Models\Client;
@@ -28,29 +29,34 @@ class ProjectCreate extends Component
     public $phone = '';
     public $email = '';
     public $initial_amount = '';
+    public $amount_source = 'manual';
     public $description = '';
     public $status = 'created';
     public $project_manager_id = '';
 
-    protected $rules = [
-        'client_id' => 'required|exists:clients,id',
-        'project_name' => 'required|string|max:255',
-        'street' => 'nullable|string|max:255',
-        'address_2' => 'nullable|string|max:255',
-        'city' => 'nullable|string|max:255',
-        'state' => 'nullable|string|max:255',
-        'postal_code' => 'nullable|string|max:20',
-        'neighborhood' => 'nullable|string|max:255',
-        'latitude' => 'nullable|numeric|between:-90,90',
-        'longitude' => 'nullable|numeric|between:-180,180',
-        'contact_person' => 'required|string|max:255',
-        'phone' => 'nullable|string|max:20',
-        'email' => 'required|email|max:255',
-        'initial_amount' => 'required|numeric|min:0',
-        'description' => 'nullable|string',
-        'status' => 'required|in:created,in_progress,completed,cancelled',
-        'project_manager_id' => 'nullable|exists:users,id',
-    ];
+    protected function rules(): array
+    {
+        return [
+            'client_id' => 'required|exists:clients,id',
+            'project_name' => 'required|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'address_2' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
+            'neighborhood' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'contact_person' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'required|email|max:255',
+            'amount_source' => 'required|in:manual,from_jobsites',
+            'initial_amount' => $this->amount_source === 'manual' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'required|in:created,in_progress,completed,cancelled',
+            'project_manager_id' => 'nullable|exists:users,id',
+        ];
+    }
 
     public function validationAttributes()
     {
@@ -114,7 +120,8 @@ class ProjectCreate extends Component
             'contact_person' => $this->contact_person,
             'phone' => $this->phone,
             'email' => $this->email,
-            'initial_amount' => $this->initial_amount,
+            'initial_amount' => $this->amount_source === 'manual' ? $this->initial_amount : 0,
+            'amount_source' => $this->amount_source,
             'description' => $this->description,
             'status' => $this->status,
             'project_manager_id' => $this->project_manager_id ?: null,

@@ -9,13 +9,19 @@
     </x-slot:actions>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    @php
+        $totalContractValue = $jobSite->job_amount + $totalChangeOrdersAmount;
+        $profitLoss = $totalContractValue - $totalExpensesAmount - $totalContractsAdjusted;
+        $isProfit = $profitLoss >= 0;
+        $cardBgClass = $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600';
+    @endphp
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         <!-- Total Contract Value Card -->
         <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-white/80">{{ __('Total Contract Value') }}</p>
-                    <p class="text-3xl font-bold mt-1">{{ Number::currency($jobSite->job_amount + $totalChangeOrdersAmount, config('app.currency'), config('app.locale')) }}</p>
+                    <p class="text-3xl font-bold mt-1">{{ Number::currency($totalContractValue, config('app.currency'), config('app.locale')) }}</p>
                 </div>
                 <div class="bg-white/10 rounded-full p-4">
                     <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,13 +48,26 @@
             <p class="mt-4 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }} {{ __('recorded') }}</p>
         </div>
 
+        <!-- Contracts Card -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-sm p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-white/80">{{ __('Contracts') }}</p>
+                    <p class="text-3xl font-bold mt-1">{{ Number::currency($totalContractsAdjusted, config('app.currency'), config('app.locale')) }}</p>
+                </div>
+                <div class="bg-white/10 rounded-full p-4">
+                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-sm text-white/90">
+                <span>{{ __('Paid') }}: <span class="font-semibold">{{ Number::currency($totalContractsPaid, config('app.currency'), config('app.locale')) }}</span></span>
+                <span>{{ __('Unpaid') }}: <span class="font-semibold">{{ Number::currency($totalContractsUnpaid, config('app.currency'), config('app.locale')) }}</span></span>
+            </div>
+        </div>
+
         <!-- Profit & Loss Card -->
-        @php
-            $totalContractValue = $jobSite->job_amount + $totalChangeOrdersAmount;
-            $profitLoss = $totalContractValue - $totalExpensesAmount;
-            $isProfit = $profitLoss >= 0;
-            $cardBgClass = $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600';
-        @endphp
         <div class="{{ $cardBgClass }} rounded-lg shadow-sm p-6 text-white">
             <div class="flex items-center justify-between">
                 <div>
@@ -67,7 +86,7 @@
                     @endif
                 </div>
             </div>
-            <p class="mt-4 text-sm text-white/80">{{ $isProfit ? __('Job site is profitable') : __('Job site over budget') }}</p>
+            <p class="mt-4 text-sm text-white/80">{{ __('Contract Value − Expenses − Contracts') }}</p>
         </div>
     </div>
 

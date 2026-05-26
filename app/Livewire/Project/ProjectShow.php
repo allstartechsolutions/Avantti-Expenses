@@ -1022,7 +1022,7 @@ class ProjectShow extends Component
             'co_title' => 'required|string|max:255',
             'co_requested_date' => 'required|date',
             'co_description' => 'nullable|string',
-            'co_amount' => 'required|numeric|min:0',
+            'co_amount' => 'required|numeric',
             'co_file' => 'nullable|file|max:10240',
             'co_job_site_id' => 'nullable|exists:job_sites,id',
         ]);

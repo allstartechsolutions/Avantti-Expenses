@@ -128,11 +128,16 @@ class DashboardIndex extends Component
             ->count();
 
         $projectsOverBudget = Project::where('status', ProjectStatus::IN_PROGRESS)
-            ->whereNotNull('initial_amount')
-            ->where('initial_amount', '>', 0)
             ->withSum('expenses as expenses_total', DB::raw('quantity * unit_price'))
             ->get()
-            ->filter(fn ($p) => ($p->expenses_total ?? 0) > $p->getRawOriginal('initial_amount'))
+            ->filter(function ($p) {
+                $contractValue = $p->getAdjustedContractValue();
+                if ($contractValue <= 0) {
+                    return false;
+                }
+                $expensesDollars = round(($p->expenses_total ?? 0) / 100, 2);
+                return $expensesDollars > $contractValue;
+            })
             ->count();
 
         $openPurchaseOrders = PurchaseOrder::where('status', 'pending')->count();
@@ -176,12 +181,20 @@ class DashboardIndex extends Component
     public function getOverBudgetProjectsProperty()
     {
         return Project::where('status', ProjectStatus::IN_PROGRESS)
-            ->whereNotNull('initial_amount')
-            ->where('initial_amount', '>', 0)
             ->withSum('expenses as expenses_total', DB::raw('quantity * unit_price'))
             ->get()
-            ->filter(fn ($p) => ($p->expenses_total ?? 0) > $p->getRawOriginal('initial_amount'))
-            ->sortByDesc(fn ($p) => ($p->expenses_total ?? 0) - $p->getRawOriginal('initial_amount'))
+            ->filter(function ($p) {
+                $contractValue = $p->getAdjustedContractValue();
+                if ($contractValue <= 0) {
+                    return false;
+                }
+                $expensesDollars = round(($p->expenses_total ?? 0) / 100, 2);
+                return $expensesDollars > $contractValue;
+            })
+            ->sortByDesc(function ($p) {
+                $expensesDollars = round(($p->expenses_total ?? 0) / 100, 2);
+                return $expensesDollars - $p->getAdjustedContractValue();
+            })
             ->take(10);
     }
 

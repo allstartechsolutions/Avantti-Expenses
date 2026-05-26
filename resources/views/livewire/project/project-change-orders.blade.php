@@ -89,8 +89,8 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $changeOrder->amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
+                                        {{ $changeOrder->amount >= 0 ? '+' : '' }}{{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         @if($changeOrder->file_path)
@@ -203,7 +203,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Amount') }}</label>
-                        <p class="text-slate-900 dark:text-white font-medium">{{ Number::currency($co_amount ?: 0, config('app.currency'), config('app.locale')) }}</p>
+                        <p class="font-medium {{ ($co_amount ?: 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">{{ ($co_amount ?: 0) >= 0 ? '+' : '' }}{{ Number::currency($co_amount ?: 0, config('app.currency'), config('app.locale')) }}</p>
                     </div>
 
                     @if($existingFilePath)
@@ -329,6 +329,7 @@
                                 placeholder="0.00"
                             >
                         </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Use a negative amount for deductive change orders (e.g., -500).') }}</p>
                         @error('co_amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 

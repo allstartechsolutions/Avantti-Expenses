@@ -107,24 +107,55 @@
                     @error('project_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
 
+                <!-- Project amount source -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        {{ __('Project Amount') }}
+                    </label>
+                    <div class="flex flex-wrap gap-4 mb-3">
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="radio" wire:model.live="amount_source" value="manual" class="text-[#3F5189] focus:ring-[#3F5189]">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ __('Enter amount manually') }}</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="radio" wire:model.live="amount_source" value="from_jobsites" class="text-[#3F5189] focus:ring-[#3F5189]">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ __('Calculate from job sites') }}</span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Initial Amount, Project Manager, and Status -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <label for="initial_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ __('Initial Amount') }} <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                id="initial_amount"
-                                wire:model.live="initial_amount"
-                                class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="0.00"
-                            >
-                        </div>
-                        @error('initial_amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @if ($amount_source === 'manual')
+                            <label for="initial_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                {{ __('Initial Amount') }} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    id="initial_amount"
+                                    wire:model.live="initial_amount"
+                                    class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    placeholder="0.00"
+                                >
+                            </div>
+                            @error('initial_amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @else
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                {{ __('Contract Value') }}
+                            </label>
+                            <div class="rounded-md border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 p-3 text-sm">
+                                <p class="font-semibold text-slate-900 dark:text-white">
+                                    {{ Number::currency($project->getContractValue(), config('app.currency'), config('app.locale')) }}
+                                </p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    {{ __('Sum of job site amounts.') }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
 
                     <div>

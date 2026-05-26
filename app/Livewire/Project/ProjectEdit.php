@@ -28,6 +28,7 @@ class ProjectEdit extends Component
     public $phone = '';
     public $email = '';
     public $initial_amount = '';
+    public $amount_source = 'manual';
     public $description = '';
     public $status = '';
     public $project_manager_id = '';
@@ -48,7 +49,8 @@ class ProjectEdit extends Component
             'contact_person' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',
-            'initial_amount' => 'required|numeric|min:0',
+            'amount_source' => 'required|in:manual,from_jobsites',
+            'initial_amount' => $this->amount_source === 'manual' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'required|in:created,in_progress,completed,cancelled',
             'project_manager_id' => 'nullable|exists:users,id',
@@ -86,6 +88,7 @@ class ProjectEdit extends Component
         $this->phone = $project->phone;
         $this->email = $project->email;
         $this->initial_amount = $project->initial_amount;
+        $this->amount_source = $project->amount_source?->value ?? 'manual';
         $this->description = $project->description;
         $this->status = $project->status->value;
         $this->project_manager_id = $project->project_manager_id ?? '';
@@ -125,7 +128,7 @@ class ProjectEdit extends Component
     {
         $this->validate();
 
-        $this->project->update([
+        $data = [
             'client_id' => $this->client_id,
             'project_name' => $this->project_name,
             'street' => $this->street,
@@ -140,11 +143,19 @@ class ProjectEdit extends Component
             'contact_person' => $this->contact_person,
             'phone' => $this->phone,
             'email' => $this->email,
-            'initial_amount' => $this->initial_amount,
+            'amount_source' => $this->amount_source,
             'description' => $this->description,
             'status' => $this->status,
             'project_manager_id' => $this->project_manager_id ?: null,
-        ]);
+        ];
+
+        // Only overwrite initial_amount in manual mode; preserve previous value
+        // when switching to from_jobsites so the original number isn't lost.
+        if ($this->amount_source === 'manual') {
+            $data['initial_amount'] = $this->initial_amount;
+        }
+
+        $this->project->update($data);
 
         session()->flash('message', __('Project updated successfully!'));
 

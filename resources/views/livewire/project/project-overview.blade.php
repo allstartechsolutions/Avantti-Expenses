@@ -41,12 +41,18 @@
                             </div>
                         </div>
 
-                        <!-- Initial Amount -->
+                        <!-- Amount -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                {{ __('Initial Amount') }}
+                                {{ __('Amount') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white font-medium">{{ Number::currency($project->initial_amount, config('app.currency'), config('app.locale')) }}</p>
+                            <p class="text-slate-900 dark:text-white font-medium">{{ Number::currency($project->getAdjustedContractValue(), config('app.currency'), config('app.locale')) }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                {{ __('Base') }}: {{ Number::currency($project->getContractValue(), config('app.currency'), config('app.locale')) }}
+                                @if ($project->amount_source?->value === 'from_jobsites')
+                                    · {{ __('from job sites') }}
+                                @endif
+                            </p>
                         </div>
 
                         <!-- Status -->
