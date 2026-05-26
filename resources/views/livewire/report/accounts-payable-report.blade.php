@@ -134,8 +134,24 @@
                                 </td>
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $row['vendor'] ?? '—' }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['item'] }}</td>
-                                <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['project'] ?? '—' }}</td>
-                                <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['job_site'] ?? __('Project-level') }}</td>
+                                <td class="px-6 py-3 text-sm">
+                                    @if ($row['project_id'])
+                                        <a href="{{ route('projects.overview', $row['project_id']) }}"
+                                           target="_blank"
+                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $row['project'] }}</a>
+                                    @else
+                                        <span class="text-slate-600 dark:text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 text-sm">
+                                    @if ($row['job_site_id'])
+                                        <a href="{{ route('jobsites.overview', $row['job_site_id']) }}"
+                                           target="_blank"
+                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $row['job_site'] }}</a>
+                                    @else
+                                        <span class="text-slate-600 dark:text-slate-400 italic">{{ __('Project-level') }}</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-xs">
                                     <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $statusClass }}">{{ ucfirst($row['status']) }}</span>
                                 </td>

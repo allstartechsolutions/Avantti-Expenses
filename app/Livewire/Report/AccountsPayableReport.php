@@ -97,7 +97,9 @@ class AccountsPayableReport extends Component
                     'vendor' => $expense?->supplier?->name,
                     'item' => $expense?->item_name . ' (#' . $p->payment_number . ')',
                     'project' => $expense?->project?->project_name,
+                    'project_id' => $expense?->project_id,
                     'job_site' => $expense?->jobSite?->job_site_name,
+                    'job_site_id' => $expense?->job_site_id,
                     'status' => $p->status,
                     'amount' => (float) $p->amount,
                 ];
@@ -128,7 +130,9 @@ class AccountsPayableReport extends Component
                     'vendor' => $e->supplier?->name,
                     'item' => $e->item_name,
                     'project' => $e->project?->project_name,
+                    'project_id' => $e->project_id,
                     'job_site' => $e->jobSite?->job_site_name,
+                    'job_site_id' => $e->job_site_id,
                     'status' => $e->status === 'unpaid' ? 'pending' : $e->status,
                     'amount' => (float) $e->total_amount,
                 ];
