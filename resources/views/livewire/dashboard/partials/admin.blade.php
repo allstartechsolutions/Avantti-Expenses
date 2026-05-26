@@ -221,7 +221,7 @@
                             <div class="flex items-center justify-between gap-3">
                                 <div class="min-w-0">
                                     <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
-                                        #{{ $invoice->invoice_number }} — {{ $invoice->client?->name ?? __('Client') }}
+                                        #{{ $invoice->invoice_number }} — {{ $invoice->client?->company_name ?? __('Client') }}
                                     </p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
                                         {{ $invoice->project?->project_name ?? __('—') }}

@@ -165,7 +165,7 @@ class DashboardIndex extends Component
             return collect();
         }
 
-        return Invoice::with(['client:id,name', 'project:id,project_name'])
+        return Invoice::with(['client:id,company_name', 'project:id,project_name'])
             ->whereIn('status', ['sent', 'pending', 'partial'])
             ->where('due_date', '<', now()->toDateString())
             ->orderBy('due_date')
