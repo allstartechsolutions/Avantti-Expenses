@@ -80,6 +80,7 @@ use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\SalesTaxReport;
+use App\Livewire\Dashboard\DashboardIndex;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -89,7 +90,7 @@ Route::get('/', function () {
 Route::get('email/track/{token}', [EmailTrackingController::class, 'track'])->name('email.track');
 Route::get('pay/{token}', PublicInvoicePay::class)->name('invoice.pay')->middleware('throttle:20,1');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', DashboardIndex::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
