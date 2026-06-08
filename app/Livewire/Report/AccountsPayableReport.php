@@ -2,9 +2,8 @@
 
 namespace App\Livewire\Report;
 
-use App\Models\Expense;
-use App\Models\ExpensePayment;
 use App\Models\Project;
+use App\Services\AccountsPayableService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -58,130 +57,29 @@ class AccountsPayableReport extends Component
         $this->toDate = Carbon::now()->endOfYear()->toDateString();
     }
 
-    protected function statusFilterValues(): array
+    protected function service(): AccountsPayableService
     {
-        return match ($this->statusFilter) {
-            'pending' => ['pending'],
-            'overdue' => ['overdue'],
-            'paid' => ['paid'],
-            'unpaid' => ['pending', 'overdue'],
-            default => ['pending', 'overdue', 'paid'],
-        };
-    }
-
-    /**
-     * Build the unified row list (installments + one-time) for a given date range.
-     */
-    protected function rowsForRange(Carbon $start, Carbon $end): Collection
-    {
-        $statuses = $this->statusFilterValues();
-
-        // Installment payments
-        $installments = ExpensePayment::query()
-            ->with(['expense.project:id,project_name', 'expense.jobSite:id,job_site_name', 'expense.supplier:id,name'])
-            ->whereIn('status', $statuses)
-            ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
-            ->whereHas('expense', function ($q) {
-                $q->where('status', '!=', 'cancelled');
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
-            })
-            ->orderBy('due_date')
-            ->get()
-            ->map(function (ExpensePayment $p) {
-                $expense = $p->expense;
-                return [
-                    'type' => 'installment',
-                    'due_date' => $p->due_date,
-                    'vendor' => $expense?->supplier?->name,
-                    'item' => $expense?->item_name . ' (#' . $p->payment_number . ')',
-                    'project' => $expense?->project?->project_name,
-                    'project_id' => $expense?->project_id,
-                    'job_site' => $expense?->jobSite?->job_site_name,
-                    'job_site_id' => $expense?->job_site_id,
-                    'status' => $p->status,
-                    'amount' => (float) $p->amount,
-                ];
-            });
-
-        // One-time expenses (single payment, not in expense_payments table)
-        $oneTimeStatuses = array_intersect($statuses, ['pending', 'overdue', 'paid']);
-        // Expense.status uses 'unpaid' rather than 'pending' for one-timers
-        $expenseStatusMap = [];
-        foreach ($oneTimeStatuses as $s) {
-            $expenseStatusMap[] = $s === 'pending' ? 'unpaid' : $s;
-        }
-        $expenseStatusMap = array_values(array_unique($expenseStatusMap));
-
-        $oneTime = Expense::query()
-            ->with(['project:id,project_name', 'jobSite:id,job_site_name', 'supplier:id,name'])
-            ->where('total_installments', 1)
-            ->where('status', '!=', 'cancelled')
-            ->whereIn('status', $expenseStatusMap)
-            ->whereBetween('payment_due_date', [$start->toDateString(), $end->toDateString()])
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->orderBy('payment_due_date')
-            ->get()
-            ->map(function (Expense $e) {
-                return [
-                    'type' => 'one_time',
-                    'due_date' => $e->payment_due_date,
-                    'vendor' => $e->supplier?->name,
-                    'item' => $e->item_name,
-                    'project' => $e->project?->project_name,
-                    'project_id' => $e->project_id,
-                    'job_site' => $e->jobSite?->job_site_name,
-                    'job_site_id' => $e->job_site_id,
-                    'status' => $e->status === 'unpaid' ? 'pending' : $e->status,
-                    'amount' => (float) $e->total_amount,
-                ];
-            });
-
-        return $installments->concat($oneTime)->sortBy('due_date')->values();
+        return new AccountsPayableService(
+            $this->fromDate,
+            $this->toDate,
+            $this->projectFilter,
+            $this->statusFilter,
+        );
     }
 
     public function getSelectedPeriodRowsProperty(): Collection
     {
-        $start = Carbon::parse($this->fromDate)->startOfDay();
-        $end = Carbon::parse($this->toDate)->endOfDay();
-
-        return $this->rowsForRange($start, $end);
+        return $this->service()->rows();
     }
 
     public function getKpisProperty(): array
     {
-        $selected = $this->selectedPeriodRows;
+        return $this->service()->kpis();
+    }
 
-        $totalDue = $selected->where('status', '!=', 'paid')->sum('amount');
-        $totalPaid = $selected->where('status', 'paid')->sum('amount');
-        $countDue = $selected->where('status', '!=', 'paid')->count();
-
-        // Overdue as of today regardless of selected period
-        $today = Carbon::now()->startOfDay();
-        $overdueInstallments = ExpensePayment::where('status', 'overdue')
-            ->whereHas('expense', function ($q) {
-                $q->where('status', '!=', 'cancelled');
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
-            })
-            ->sum('amount');
-
-        $overdueOneTime = Expense::where('total_installments', 1)
-            ->where('status', 'overdue')
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->get()
-            ->sum('total_amount');
-
-        $overdueTotal = round(($overdueInstallments / 100) + $overdueOneTime, 2);
-
-        return [
-            'total_due' => round($totalDue, 2),
-            'count_due' => $countDue,
-            'total_paid' => round($totalPaid, 2),
-            'overdue_total' => $overdueTotal,
-        ];
+    public function getOutstandingContractsProperty(): Collection
+    {
+        return $this->service()->outstandingContracts();
     }
 
     public function getProjectsProperty()
@@ -189,60 +87,9 @@ class AccountsPayableReport extends Component
         return Project::orderBy('project_name')->get(['id', 'project_name']);
     }
 
-    /**
-     * Forward-looking 12-month projection, starting the month AFTER toDate.
-     * Uses 'unpaid' (pending + overdue) regardless of the user's status filter,
-     * since projections are about what's expected to be paid.
-     */
     public function getProjectionsProperty(): array
     {
-        $start = Carbon::parse($this->toDate)->endOfMonth()->addDay()->startOfMonth();
-        $months = [];
-
-        for ($i = 0; $i < 12; $i++) {
-            $monthStart = (clone $start)->addMonths($i);
-            $monthEnd = (clone $monthStart)->endOfMonth();
-
-            // Installments
-            $installmentSum = ExpensePayment::query()
-                ->whereIn('status', ['pending', 'overdue'])
-                ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->whereHas('expense', function ($q) {
-                    $q->where('status', '!=', 'cancelled');
-                    if ($this->projectFilter) {
-                        $q->where('project_id', $this->projectFilter);
-                    }
-                })
-                ->sum('amount');
-            $installmentCount = ExpensePayment::query()
-                ->whereIn('status', ['pending', 'overdue'])
-                ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->whereHas('expense', function ($q) {
-                    $q->where('status', '!=', 'cancelled');
-                    if ($this->projectFilter) {
-                        $q->where('project_id', $this->projectFilter);
-                    }
-                })
-                ->count();
-
-            // One-time
-            $oneTimeRows = Expense::query()
-                ->where('total_installments', 1)
-                ->whereIn('status', ['unpaid', 'overdue'])
-                ->whereBetween('payment_due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-                ->get();
-            $oneTimeSum = $oneTimeRows->sum('total_amount');
-            $oneTimeCount = $oneTimeRows->count();
-
-            $months[] = [
-                'month' => $monthStart->translatedFormat('M Y'),
-                'count' => $installmentCount + $oneTimeCount,
-                'amount' => round(($installmentSum / 100) + $oneTimeSum, 2),
-            ];
-        }
-
-        return $months;
+        return $this->service()->projections();
     }
 
     public function exportCsv(): StreamedResponse
@@ -285,6 +132,7 @@ class AccountsPayableReport extends Component
             'kpis' => $this->kpis,
             'projects' => $this->projects,
             'projections' => $this->projections,
+            'outstandingContracts' => $this->outstandingContracts,
         ])->layout('components.layouts.app');
     }
 }

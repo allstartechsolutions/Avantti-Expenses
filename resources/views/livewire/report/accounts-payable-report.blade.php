@@ -8,7 +8,7 @@
     <div class="mb-6 flex items-end justify-between gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Accounts Payable') }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Expenses due across all projects, by date.') }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Expenses and subcontractor contract payments across all projects.') }}</p>
         </div>
         @php
             $exportParams = http_build_query([
@@ -75,21 +75,26 @@
     </div>
 
     {{-- KPI cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Due in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($kpis['total_due'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Overdue (today)') }}</p>
             <p class="mt-2 text-2xl font-bold text-red-600 dark:text-red-400">{{ Number::currency($kpis['overdue_total'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Past due, regardless of filter') }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Past due expenses, regardless of filter') }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Paid in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{{ Number::currency($kpis['total_paid'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Cleared in selected dates') }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Expenses + contract payments') }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Contract Balances Outstanding') }}</p>
+            <p class="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{{ Number::currency($kpis['contract_outstanding_total'], $currency, $locale) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['contract_outstanding_count'] }} {{ Str::plural('subcontractor contract', $kpis['contract_outstanding_count']) }}</p>
         </div>
     </div>
 
@@ -166,6 +171,72 @@
                             <td colspan="6" class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ __('Total') }}</td>
                             <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">
                                 {{ Number::currency($rows->sum('amount'), $currency, $locale) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        @endif
+    </div>
+
+    {{-- Subcontractor balances outstanding (point-in-time; contracts have no due dates) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Balances Outstanding') }}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {{ __('Remaining amount owed on active contracts, as of today. Contracts have no scheduled due dates, so they are shown separately from the dated figures above.') }}
+            </p>
+        </div>
+        @if ($outstandingContracts->isEmpty())
+            <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                {{ __('No outstanding contract balances.') }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract') }}</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Subcontractor') }}</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Project') }}</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Job Site') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Paid') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Balance') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach ($outstandingContracts as $c)
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ $c['contract_number'] }}</td>
+                                <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $c['subcontractor'] ?? '—' }}</td>
+                                <td class="px-6 py-3 text-sm">
+                                    @if ($c['project_id'])
+                                        <a href="{{ route('projects.overview', $c['project_id']) }}" target="_blank"
+                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $c['project'] }}</a>
+                                    @else
+                                        <span class="text-slate-600 dark:text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 text-sm">
+                                    @if ($c['job_site_id'])
+                                        <a href="{{ route('jobsites.overview', $c['job_site_id']) }}" target="_blank"
+                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $c['job_site'] }}</a>
+                                    @else
+                                        <span class="text-slate-600 dark:text-slate-400 italic">{{ __('Project-level') }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-600 dark:text-slate-400">{{ Number::currency($c['adjusted_amount'], $currency, $locale) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($c['paid'], $currency, $locale) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-amber-600 dark:text-amber-400">{{ Number::currency($c['balance'], $currency, $locale) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-slate-100 dark:bg-slate-700/60">
+                        <tr class="font-semibold">
+                            <td colspan="6" class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ __('Total Outstanding') }}</td>
+                            <td class="px-6 py-3 text-sm text-right text-amber-600 dark:text-amber-400">
+                                {{ Number::currency($outstandingContracts->sum('balance'), $currency, $locale) }}
                             </td>
                         </tr>
                     </tfoot>
