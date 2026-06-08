@@ -77,9 +77,9 @@ class AccountsPayableReport extends Component
         return $this->service()->kpis();
     }
 
-    public function getOutstandingContractsProperty(): Collection
+    public function getSubcontractorSummaryProperty(): Collection
     {
-        return $this->service()->outstandingContracts();
+        return $this->service()->subcontractorSummary();
     }
 
     public function getProjectsProperty()
@@ -132,7 +132,7 @@ class AccountsPayableReport extends Component
             'kpis' => $this->kpis,
             'projects' => $this->projects,
             'projections' => $this->projections,
-            'outstandingContracts' => $this->outstandingContracts,
+            'subcontractorSummary' => $this->subcontractorSummary,
         ])->layout('components.layouts.app');
     }
 }

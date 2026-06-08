@@ -179,65 +179,48 @@
         @endif
     </div>
 
-    {{-- Subcontractor balances outstanding (point-in-time; contracts have no due dates) --}}
+    {{-- Subcontractor payment summary (point-in-time, all-time totals per sub) --}}
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Balances Outstanding') }}</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Payment Summary') }}</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {{ __('Remaining amount owed on active contracts, as of today. Contracts have no scheduled due dates, so they are shown separately from the dated figures above.') }}
+                {{ __('Total contract value, paid to date, and remaining balance per subcontractor — as of today, across all their contracts. Contracts have no scheduled due dates, so these are point-in-time totals.') }}
             </p>
         </div>
-        @if ($outstandingContracts->isEmpty())
+        @if ($subcontractorSummary->isEmpty())
             <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                {{ __('No outstanding contract balances.') }}
+                {{ __('No subcontractor contracts.') }}
             </div>
         @else
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700/50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract') }}</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Subcontractor') }}</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Project') }}</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Job Site') }}</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract') }}</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Paid') }}</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Balance') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contracts') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract Value') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Paid to Date') }}</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Outstanding') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @foreach ($outstandingContracts as $c)
+                        @foreach ($subcontractorSummary as $s)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ $c['contract_number'] }}</td>
-                                <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $c['subcontractor'] ?? '—' }}</td>
-                                <td class="px-6 py-3 text-sm">
-                                    @if ($c['project_id'])
-                                        <a href="{{ route('projects.overview', $c['project_id']) }}" target="_blank"
-                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $c['project'] }}</a>
-                                    @else
-                                        <span class="text-slate-600 dark:text-slate-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-3 text-sm">
-                                    @if ($c['job_site_id'])
-                                        <a href="{{ route('jobsites.overview', $c['job_site_id']) }}" target="_blank"
-                                           class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $c['job_site'] }}</a>
-                                    @else
-                                        <span class="text-slate-600 dark:text-slate-400 italic">{{ __('Project-level') }}</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-600 dark:text-slate-400">{{ Number::currency($c['adjusted_amount'], $currency, $locale) }}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($c['paid'], $currency, $locale) }}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-amber-600 dark:text-amber-400">{{ Number::currency($c['balance'], $currency, $locale) }}</td>
+                                <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $s['subcontractor'] ?? '—' }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-600 dark:text-slate-400">{{ $s['contracts_count'] }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($s['contract_value'], $currency, $locale) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($s['paid'], $currency, $locale) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium {{ $s['outstanding'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-600' }}">{{ Number::currency($s['outstanding'], $currency, $locale) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="bg-slate-100 dark:bg-slate-700/60">
                         <tr class="font-semibold">
-                            <td colspan="6" class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ __('Total Outstanding') }}</td>
-                            <td class="px-6 py-3 text-sm text-right text-amber-600 dark:text-amber-400">
-                                {{ Number::currency($outstandingContracts->sum('balance'), $currency, $locale) }}
-                            </td>
+                            <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ __('Total') }}</td>
+                            <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ $subcontractorSummary->sum('contracts_count') }}</td>
+                            <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($subcontractorSummary->sum('contract_value'), $currency, $locale) }}</td>
+                            <td class="px-6 py-3 text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($subcontractorSummary->sum('paid'), $currency, $locale) }}</td>
+                            <td class="px-6 py-3 text-sm text-right text-amber-600 dark:text-amber-400">{{ Number::currency($subcontractorSummary->sum('outstanding'), $currency, $locale) }}</td>
                         </tr>
                     </tfoot>
                 </table>

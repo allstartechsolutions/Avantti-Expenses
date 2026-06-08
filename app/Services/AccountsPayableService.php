@@ -343,6 +343,36 @@ class AccountsPayableService
     }
 
     /**
+     * Per-subcontractor roll-up (point-in-time, all-time figures).
+     * Includes EVERY non-cancelled contract — even fully paid ones — so the
+     * "Paid to Date" total reflects everything paid to subcontractors, not just
+     * contracts that still carry a balance.
+     */
+    public function subcontractorSummary(): Collection
+    {
+        return Contract::query()
+            ->with(['subcontractor:id,company_name'])
+            ->where('status', '!=', 'cancelled')
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->get()
+            ->groupBy('subcontractor_id')
+            ->map(function (Collection $contracts) {
+                $contractValue = round($contracts->sum(fn (Contract $c) => $c->getAdjustedAmount()), 2);
+                $paid = round($contracts->sum(fn (Contract $c) => $c->getAmountPaid()), 2);
+
+                return [
+                    'subcontractor' => $contracts->first()->subcontractor?->company_name,
+                    'contracts_count' => $contracts->count(),
+                    'contract_value' => $contractValue,
+                    'paid' => $paid,
+                    'outstanding' => round($contractValue - $paid, 2),
+                ];
+            })
+            ->sortByDesc('outstanding')
+            ->values();
+    }
+
+    /**
      * Forward-looking 12-month projection, starting the month AFTER the period.
      * Expenses only — contracts have no payment schedule to project from.
      */
