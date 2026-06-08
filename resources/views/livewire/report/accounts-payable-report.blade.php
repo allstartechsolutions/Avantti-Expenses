@@ -74,8 +74,8 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{-- KPI cards — top row: what you owe; bottom row: what you paid (in period) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Due in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($kpis['total_due'], $currency, $locale) }}</p>
@@ -87,14 +87,24 @@
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Past due expenses, regardless of filter') }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Paid in Period') }}</p>
-            <p class="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{{ Number::currency($kpis['total_paid'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Expenses + contract payments') }}</p>
-        </div>
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Contract Balances Outstanding') }}</p>
             <p class="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{{ Number::currency($kpis['contract_outstanding_total'], $currency, $locale) }}</p>
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['contract_outstanding_count'] }} {{ Str::plural('subcontractor contract', $kpis['contract_outstanding_count']) }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Expenses Paid in Period') }}</p>
+            <p class="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{{ Number::currency($kpis['paid_expenses'], $currency, $locale) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Expense payments cleared in selected dates') }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Paid to Subcontractors in Period') }}</p>
+            <p class="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{{ Number::currency($kpis['paid_subcontractors'], $currency, $locale) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Contract payments cleared in selected dates') }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border-2 border-green-200 dark:border-green-900/50 p-5">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Total Paid in Period') }}</p>
+            <p class="mt-2 text-2xl font-bold text-green-700 dark:text-green-300">{{ Number::currency($kpis['total_paid'], $currency, $locale) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Expenses + subcontractors') }}</p>
         </div>
     </div>
 

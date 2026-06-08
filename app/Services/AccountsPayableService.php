@@ -276,7 +276,7 @@ class AccountsPayableService
         $totalDue = round(($dueInstSum / 100) + $dueOne->sum('total_amount'), 2);
         $countDue = $dueInstCount + $dueOne->count();
 
-        // Paid in period — expense paid + contract payments, by paid/payment date.
+        // Paid in period — split by source, by paid/payment date.
         $paidInstSum = $this->paidInstallments()
             ->whereRaw('COALESCE(paid_date, due_date) BETWEEN ? AND ?', [$from, $to])
             ->sum('amount');
@@ -286,7 +286,10 @@ class AccountsPayableService
         $contractPaidSum = $this->paidContractPayments()
             ->whereBetween('payment_date', [$from, $to])
             ->sum('amount');
-        $totalPaid = round(($paidInstSum / 100) + $paidOne->sum('total_amount') + ($contractPaidSum / 100), 2);
+
+        $paidExpenses = round(($paidInstSum / 100) + $paidOne->sum('total_amount'), 2);
+        $paidSubcontractors = round($contractPaidSum / 100, 2);
+        $totalPaid = round($paidExpenses + $paidSubcontractors, 2);
 
         // Overdue as of today — expense open items past due, regardless of period.
         $overdueInstSum = $this->openInstallments()->whereDate('due_date', '<', $today)->sum('amount');
@@ -301,6 +304,8 @@ class AccountsPayableService
         return [
             'total_due' => $totalDue,
             'count_due' => $countDue,
+            'paid_expenses' => $paidExpenses,
+            'paid_subcontractors' => $paidSubcontractors,
             'total_paid' => $totalPaid,
             'overdue_total' => $overdueTotal,
             'contract_outstanding_total' => round($outstanding->sum('balance'), 2),
