@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,6 +64,17 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Whether the user holds the admin role.
+     * Exposed as $user->is_admin (used across the UI and admin guards).
+     */
+    protected function isAdmin(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->role?->name === 'admin',
+        );
     }
 
     public function managedProjects(): HasMany

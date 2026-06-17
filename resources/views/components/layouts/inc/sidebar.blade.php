@@ -87,6 +87,7 @@
                         </svg>
                         {{ __('Company Info') }}
                     </a>
+                    @admin
                     <a href="{{ route('users.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('users.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,6 +95,7 @@
                         </svg>
                         {{ __('Users') }}
                     </a>
+                    @endadmin
                 </div>
             </div>
 
@@ -148,6 +150,7 @@
                         </svg>
                         {{ __('Clients') }}
                     </a>
+                    @admin
                     <a href="{{ route('cost-codes.templates.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('cost-codes.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,6 +158,7 @@
                         </svg>
                         {{ __('Cost Codes') }}
                     </a>
+                    @endadmin
                     <a href="{{ route('payments.index') }}"
                        class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('payments.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +262,8 @@
             </a>
             @endif
 
-            <!-- Reports -->
+            <!-- Reports (admin only) -->
+            @admin
             @if(\App\Models\ModuleAccess::isEnabled('reports'))
             <div class="mb-1">
                 <button @click="toggleSubmenu('reports')"
@@ -305,6 +310,7 @@
                 </div>
             </div>
             @endif
+            @endadmin
         </div>
     </nav>
 

@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Enums\JobSiteStatus;
+use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\DailyReportImage;
@@ -23,7 +24,7 @@ use Livewire\WithFileUploads;
 
 class ProjectShow extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, AuthorizesAdmin;
 
     public Project $project;
     public $activeTab = 'overview';
@@ -792,6 +793,7 @@ class ProjectShow extends Component
 
     public function deleteExpense($expenseId)
     {
+        $this->authorizeAdmin();
         $expense = Expense::findOrFail($expenseId);
         $expense->delete();
 
@@ -1062,6 +1064,7 @@ class ProjectShow extends Component
 
     public function deleteChangeOrder($changeOrderId)
     {
+        $this->authorizeAdmin();
         $changeOrder = ChangeOrder::findOrFail($changeOrderId);
 
         if ($changeOrder->file_path) {
@@ -1113,6 +1116,7 @@ class ProjectShow extends Component
 
     public function deleteProject()
     {
+        $this->authorizeAdmin();
         DB::transaction(function () {
             $this->cleanupProjectFiles($this->project->id);
             $this->project->delete();
@@ -1214,6 +1218,7 @@ class ProjectShow extends Component
 
     public function deleteJobSite()
     {
+        $this->authorizeAdmin();
         $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
 
         DB::transaction(function () use ($jobSite) {

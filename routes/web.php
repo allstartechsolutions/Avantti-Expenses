@@ -117,11 +117,13 @@ Route::middleware(['auth'])->group(function () {
     // Company info
     Route::get('company/info', CompanyInfo::class)->name('company.info');
 
-    // User routes
-    Route::get('users', UserIndex::class)->name('users.index');
-    Route::get('users/create', UserCreate::class)->name('users.create');
-    Route::get('users/{user}', UserShow::class)->name('users.show');
-    Route::get('users/{user}/edit', UserEdit::class)->name('users.edit');
+    // User routes (admin only)
+    Route::middleware('admin')->group(function () {
+        Route::get('users', UserIndex::class)->name('users.index');
+        Route::get('users/create', UserCreate::class)->name('users.create');
+        Route::get('users/{user}', UserShow::class)->name('users.show');
+        Route::get('users/{user}/edit', UserEdit::class)->name('users.edit');
+    });
 
     // Client routes
     Route::get('clients', ClientIndex::class)->name('clients.index');
@@ -238,20 +240,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('invoices/{invoice}/pdf', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
     Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'])->name('invoices.pdf.view');
 
-    // Report routes
-    Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
-    Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
-    Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
-    Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');
+    // Report routes (admin only)
+    Route::middleware('admin')->group(function () {
+        Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
+        Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
+        Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
+        Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');
+    });
 
-    // System Settings routes
-    Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');
+    // System Settings + Cost Code Templates (admin only)
+    Route::middleware('admin')->group(function () {
+        Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');
 
-    // Cost Code Template routes
-    Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');
-    Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
-    Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)->name('cost-codes.templates.show');
-    Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)->name('cost-codes.templates.edit');
+        Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');
+        Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
+        Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)->name('cost-codes.templates.show');
+        Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)->name('cost-codes.templates.edit');
+    });
 
     // Budget routes
     Route::get('budgets/{budget}', BudgetShow::class)->name('budgets.show');

@@ -511,6 +511,13 @@
                                 </p>
                             @endif
                         </div>
+                        <x-ui.button
+                            variant="primary"
+                            class="w-full justify-center mt-3"
+                            x-on:click="$dispatch('open-modal', 'send-email-modal')"
+                            icon="paper-airplane">
+                            Email Invoice
+                        </x-ui.button>
                         <div class="flex gap-2 mt-3">
                             <x-ui.button
                                 variant="secondary"
