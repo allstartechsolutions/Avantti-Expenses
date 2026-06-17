@@ -728,9 +728,7 @@
     </div>
 
     <!-- Send Email Modal -->
-    @if(!$invoice->isPaid())
-        <livewire:invoice.invoice-send-email :invoice="$invoice" />
-    @endif
+    <livewire:invoice.invoice-send-email :invoice="$invoice" />
 
     <!-- Record Payment Modal -->
     @if($showPaymentModal)
