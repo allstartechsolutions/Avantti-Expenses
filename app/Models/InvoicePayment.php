@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InvoicePayment extends Model
 {
@@ -64,11 +65,46 @@ class InvoicePayment extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(PaymentRefund::class, 'invoice_payment_id');
+    }
+
     // Status helpers
 
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    public function isPartiallyRefunded(): bool
+    {
+        return $this->status === 'partially_refunded';
+    }
+
+    /**
+     * Total amount refunded so far, in dollars.
+     */
+    public function getRefundedTotal(): float
+    {
+        return round(((int) ($this->getRawOriginal('refund_amount') ?? 0)) / 100, 2);
+    }
+
+    /**
+     * Amount still available to refund, in dollars.
+     */
+    public function getRefundableAmount(): float
+    {
+        return round($this->amount - $this->getRefundedTotal(), 2);
+    }
+
+    /**
+     * Whether this payment can still be voided or (partially) refunded.
+     */
+    public function isRefundable(): bool
+    {
+        return in_array($this->status, ['completed', 'partially_refunded'], true)
+            && $this->getRefundableAmount() > 0;
     }
 
     public function isPending(): bool
@@ -139,6 +175,7 @@ class InvoicePayment extends Model
             'completed' => 'Completed',
             'failed' => 'Failed',
             'refunded' => 'Refunded',
+            'partially_refunded' => 'Partially Refunded',
             'voided' => 'Voided',
             default => ucfirst($this->status),
         };
@@ -151,6 +188,7 @@ class InvoicePayment extends Model
             'completed' => 'bg-green-100 text-green-800',
             'failed' => 'bg-red-100 text-red-800',
             'refunded' => 'bg-purple-100 text-purple-800',
+            'partially_refunded' => 'bg-purple-100 text-purple-800',
             'voided' => 'bg-gray-100 text-gray-800',
             default => 'bg-gray-100 text-gray-800',
         };

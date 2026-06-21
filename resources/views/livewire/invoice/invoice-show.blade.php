@@ -624,17 +624,21 @@
                                             @if($payment->notes)
                                                 <p>{{ $payment->notes }}</p>
                                             @endif
+                                            @if($payment->getRefundedTotal() > 0)
+                                                <p class="text-purple-600 dark:text-purple-400">
+                                                    Refunded: ${{ number_format($payment->getRefundedTotal(), 2) }} of ${{ number_format($payment->amount, 2) }}
+                                                </p>
+                                            @endif
                                             <p>by {{ $payment->createdBy?->name ?? 'Unknown' }}</p>
                                         </div>
                                     </div>
-                                    @if($payment->isCompleted())
+                                    @if($payment->isRefundable())
                                         <x-ui.button
                                             variant="ghost"
                                             size="sm"
-                                            wire:click="voidPayment({{ $payment->id }})"
-                                            wire:confirm="Are you sure you want to void this payment? The invoice status will be recalculated."
+                                            wire:click="openRefundModal({{ $payment->id }})"
                                             icon="x">
-                                            Void
+                                            Void / Refund
                                         </x-ui.button>
                                     @endif
                                 </div>
@@ -729,6 +733,74 @@
 
     <!-- Send Email Modal -->
     <livewire:invoice.invoice-send-email :invoice="$invoice" />
+
+    <!-- Void / Refund Modal -->
+    @if($showRefundModal && $this->refundPayment)
+        <x-ui.modal name="refund-payment-modal" :show="true" maxWidth="md">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Void / Refund Payment</h3>
+            </div>
+
+            <form wire:submit="processRefund">
+                <div class="p-6 space-y-4">
+                    <div class="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 dark:text-slate-400">Payment #{{ $this->refundPayment->payment_number }}</span>
+                            <span class="font-semibold text-slate-900 dark:text-white">${{ number_format($this->refundPayment->amount, 2) }}</span>
+                        </div>
+                        @if($this->refundPayment->getRefundedTotal() > 0)
+                            <div class="flex justify-between">
+                                <span class="text-slate-500 dark:text-slate-400">Already refunded</span>
+                                <span class="text-purple-600 dark:text-purple-400">-${{ number_format($this->refundPayment->getRefundedTotal(), 2) }}</span>
+                            </div>
+                        @endif
+                        <div class="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-1 mt-1">
+                            <span class="text-slate-500 dark:text-slate-400">Available to refund</span>
+                            <span class="font-semibold text-slate-900 dark:text-white">${{ number_format($this->refundPayment->getRefundableAmount(), 2) }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="refundAmount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount to refund</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 dark:text-slate-400">$</span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                max="{{ number_format($this->refundPayment->getRefundableAmount(), 2, '.', '') }}"
+                                id="refundAmount"
+                                wire:model="refundAmount"
+                                class="w-full pl-7 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
+                            >
+                        </div>
+                        @error('refundAmount') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Refunding the full available amount will void the payment if it hasn't settled yet; otherwise it is refunded through the gateway.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-3">
+                    <x-ui.button
+                        variant="secondary"
+                        type="button"
+                        wire:click="closeRefundModal">
+                        Cancel
+                    </x-ui.button>
+                    <x-ui.button
+                        variant="danger"
+                        type="submit"
+                        icon="x"
+                        wire:loading.attr="disabled"
+                        wire:target="processRefund">
+                        <span wire:loading.remove wire:target="processRefund">Process</span>
+                        <span wire:loading wire:target="processRefund">Processing...</span>
+                    </x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 
     <!-- Record Payment Modal -->
     @if($showPaymentModal)

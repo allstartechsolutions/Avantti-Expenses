@@ -9,6 +9,7 @@ use App\Models\InvoicePayment;
 use App\Services\CardPointeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class InvoiceShow extends Component
@@ -35,6 +36,11 @@ class InvoiceShow extends Component
     public string $cardPaymentError = '';
     public array $clientPaymentMethods = [];
     public bool $cardPointegConfigured = false;
+
+    // Refund / void modal
+    public bool $showRefundModal = false;
+    public ?int $refundPaymentId = null;
+    public $refundAmount = '';
 
     public function mount(Invoice $invoice)
     {
@@ -314,48 +320,89 @@ class InvoiceShow extends Component
         session()->flash('message', 'Card payment of $' . number_format((float) $this->paymentAmount, 2) . ' processed successfully!');
     }
 
-    public function voidPayment(int $paymentId)
+    public function openRefundModal(int $paymentId)
     {
         $payment = $this->invoice->payments()->where('id', $paymentId)->first();
 
-        if (!$payment || !$payment->isCompleted()) {
-            session()->flash('error', 'Payment cannot be voided.');
+        if (!$payment || !$payment->isRefundable()) {
+            session()->flash('error', 'This payment cannot be voided or refunded.');
             return;
         }
 
-        // If it's a CardPointe payment, try void first, fall back to refund
+        $this->refundPaymentId = $payment->id;
+        // Pre-fill with the full remaining amount; the user may reduce it for a partial refund.
+        $this->refundAmount = number_format($payment->getRefundableAmount(), 2, '.', '');
+        $this->resetErrorBag();
+        $this->showRefundModal = true;
+        $this->dispatch('open-modal', 'refund-payment-modal');
+    }
+
+    public function closeRefundModal()
+    {
+        $this->showRefundModal = false;
+        $this->refundPaymentId = null;
+        $this->refundAmount = '';
+        $this->resetErrorBag();
+        $this->dispatch('close-modal', 'refund-payment-modal');
+    }
+
+    public function processRefund()
+    {
+        $payment = $this->invoice->payments()->where('id', $this->refundPaymentId)->first();
+
+        if (!$payment || !$payment->isRefundable()) {
+            session()->flash('error', 'This payment cannot be voided or refunded.');
+            $this->closeRefundModal();
+            return;
+        }
+
+        $grossCents = (int) $payment->getRawOriginal('amount');
+        $refundedCents = (int) ($payment->getRawOriginal('refund_amount') ?? 0);
+        $remainingCents = $grossCents - $refundedCents;
+
+        $this->validate([
+            'refundAmount' => 'required|numeric|min:0.01',
+        ]);
+
+        $amountCents = (int) round(((float) $this->refundAmount) * 100);
+
+        if ($amountCents < 1 || $amountCents > $remainingCents) {
+            $this->addError('refundAmount', 'Amount must be between $0.01 and $' . number_format($remainingCents / 100, 2) . '.');
+            return;
+        }
+
+        // A full reversal of an as-yet-untouched payment can be voided (pre-settlement)
+        // before falling back to a refund. Partial amounts always go straight to refund.
+        $isFullReversal = $amountCents === $remainingCents && $refundedCents === 0;
+
         if ($payment->gateway === 'cardpointe' && $payment->gateway_transaction_id) {
             $service = app(CardPointeService::class);
 
             try {
-                // Try void first (works before batch settles)
-                $result = $service->void($payment->gateway_transaction_id);
+                if ($isFullReversal) {
+                    $voidResult = $service->void($payment->gateway_transaction_id);
 
-                if ($result['success']) {
-                    $payment->markAsVoided();
-                    $this->refreshInvoice();
-                    session()->flash('message', 'Payment voided successfully.');
-                    return;
+                    if ($voidResult['success']) {
+                        $this->logRefund($payment, $amountCents, 'void', $voidResult['retref'], $voidResult['respstat'], $voidResult['resptext']);
+                        $payment->markAsVoided();
+                        $this->finishRefund('Payment voided successfully.');
+                        return;
+                    }
                 }
 
-                // Void failed — transaction likely already settled, try refund
-                $amountCents = (int) round($payment->getRawOriginal('amount'));
+                // Settled transaction, or a partial amount — issue a refund.
                 $refundResult = $service->refund($payment->gateway_transaction_id, $amountCents);
 
                 if (!$refundResult['success']) {
-                    session()->flash('error', 'Refund failed: ' . $refundResult['resptext']);
+                    session()->flash('error', 'Refund failed: ' . ($refundResult['resptext'] ?: 'declined by gateway.'));
                     return;
                 }
 
-                $payment->update([
-                    'status' => 'refunded',
-                    'refund_amount' => $payment->amount,
-                    'refunded_at' => now(),
-                    'refund_transaction_id' => $refundResult['retref'],
-                ]);
-                $this->invoice->updateStatusFromPayments();
-                $this->refreshInvoice();
-                session()->flash('message', 'Payment refunded successfully (batch already settled).');
+                $this->logRefund($payment, $amountCents, 'refund', $refundResult['retref'], $refundResult['respstat'], $refundResult['resptext']);
+                $this->applyRefundToPayment($payment, $amountCents, $refundResult['retref']);
+                $this->finishRefund($isFullReversal
+                    ? 'Payment refunded successfully (batch already settled).'
+                    : 'Partial refund of $' . number_format($amountCents / 100, 2) . ' processed successfully.');
                 return;
             } catch (CardPointeException $e) {
                 session()->flash('error', $e->getMessage());
@@ -363,10 +410,57 @@ class InvoiceShow extends Component
             }
         }
 
-        $payment->markAsVoided();
+        // Manual payment — no gateway call, just bookkeeping.
+        $this->logRefund($payment, $amountCents, $isFullReversal ? 'void' : 'refund', null);
 
+        if ($isFullReversal) {
+            $payment->markAsVoided();
+            $this->finishRefund('Payment voided successfully.');
+            return;
+        }
+
+        $this->applyRefundToPayment($payment, $amountCents, null);
+        $this->finishRefund('Partial refund of $' . number_format($amountCents / 100, 2) . ' recorded.');
+    }
+
+    /**
+     * Update a payment's cumulative refund total and status after a (partial) refund.
+     */
+    private function applyRefundToPayment(InvoicePayment $payment, int $amountCents, ?string $retref): void
+    {
+        $grossCents = (int) $payment->getRawOriginal('amount');
+        $newRefundedCents = (int) ($payment->getRawOriginal('refund_amount') ?? 0) + $amountCents;
+
+        $payment->update([
+            'status' => $newRefundedCents >= $grossCents ? 'refunded' : 'partially_refunded',
+            'refund_amount' => round($newRefundedCents / 100, 2),
+            'refunded_at' => now(),
+            'refund_transaction_id' => $retref,
+        ]);
+
+        $this->invoice->updateStatusFromPayments();
+    }
+
+    /**
+     * Write a row to the refund log for this void/refund.
+     */
+    private function logRefund(InvoicePayment $payment, int $amountCents, string $type, ?string $retref, string $respstat = '', string $resptext = ''): void
+    {
+        $payment->refunds()->create([
+            'amount' => round($amountCents / 100, 2),
+            'type' => $type,
+            'gateway_transaction_id' => $retref,
+            'respstat' => $respstat ?: null,
+            'resptext' => $resptext ?: null,
+            'created_by' => Auth::id(),
+        ]);
+    }
+
+    private function finishRefund(string $message): void
+    {
+        $this->closeRefundModal();
         $this->refreshInvoice();
-        session()->flash('message', 'Payment voided successfully.');
+        session()->flash('message', $message);
     }
 
     public function deleteInvoice()
@@ -391,6 +485,16 @@ class InvoiceShow extends Component
     protected function refreshInvoice()
     {
         $this->invoice = $this->invoice->fresh(['client', 'project', 'jobSite', 'items', 'createdBy', 'emailsSent.sentBy', 'estimate', 'statusHistories.changedBy', 'payments.createdBy']);
+    }
+
+    #[Computed]
+    public function refundPayment()
+    {
+        if (!$this->refundPaymentId) {
+            return null;
+        }
+
+        return $this->invoice->payments->firstWhere('id', $this->refundPaymentId);
     }
 
     public function render()

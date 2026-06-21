@@ -225,7 +225,13 @@ class Invoice extends Model
 
     public function getAmountPaid(): float
     {
-        return round($this->payments()->where('status', 'completed')->sum('amount') / 100, 2);
+        // Count completed and partially refunded payments, net of any amount refunded.
+        $query = $this->payments()->whereIn('status', ['completed', 'partially_refunded']);
+
+        $gross = (int) (clone $query)->sum('amount');
+        $refunded = (int) (clone $query)->sum('refund_amount');
+
+        return round(($gross - $refunded) / 100, 2);
     }
 
     public function getBalanceDue(): float

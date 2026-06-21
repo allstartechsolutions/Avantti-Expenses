@@ -104,19 +104,27 @@ class CardPointeService
     }
 
     /**
-     * Void a previous authorization.
+     * Void a previous authorization. Omit $amountCents to void the full amount;
+     * pass an amount to request a partial void/reversal (credit cards only —
+     * debit transactions are always voided in full by the gateway).
      *
      * @throws CardPointeException
      */
-    public function void(string $retref): array
+    public function void(string $retref, ?int $amountCents = null): array
     {
         try {
+            $payload = [
+                'merchid' => $this->merchantId,
+                'retref' => $retref,
+            ];
+
+            if ($amountCents !== null) {
+                $payload['amount'] = (string) $amountCents;
+            }
+
             $response = Http::withBasicAuth($this->apiUser, $this->apiPass)
                 ->timeout(30)
-                ->put($this->getGatewayUrl() . 'void', [
-                    'merchid' => $this->merchantId,
-                    'retref' => $retref,
-                ]);
+                ->put($this->getGatewayUrl() . 'void', $payload);
 
             if (!$response->successful()) {
                 Log::error('CardPointe void failed', [
