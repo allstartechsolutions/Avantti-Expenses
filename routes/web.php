@@ -35,6 +35,7 @@ use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\ContractPaymentsPdfController;
 use App\Http\Controllers\AccountsPayableReportPdfController;
+use App\Http\Controllers\ExpenseReportPdfController;
 use App\Http\Controllers\JobSiteFinancialReportPdfController;
 use App\Http\Controllers\ProjectFinancialReportPdfController;
 use App\Http\Controllers\DailyReportPdfController;
@@ -245,6 +246,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
         Route::get('reports/expenses', ExpenseReport::class)->name('reports.expenses');
+        Route::get('reports/expenses/pdf', [ExpenseReportPdfController::class, 'download'])->name('reports.expenses.pdf.download');
+        Route::get('reports/expenses/pdf/view', [ExpenseReportPdfController::class, 'stream'])->name('reports.expenses.pdf.view');
         Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
         Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
         Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');

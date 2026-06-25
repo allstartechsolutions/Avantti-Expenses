@@ -10,6 +10,7 @@ use App\Services\ExpenseReportService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseReport extends Component
 {
@@ -114,6 +115,136 @@ class ExpenseReport extends Component
     public function getVendorsProperty(): Collection
     {
         return Supplier::orderBy('name')->get(['id', 'name']);
+    }
+
+    /**
+     * Export the currently active tab (respecting all filters) as CSV.
+     */
+    public function exportCsv(): StreamedResponse
+    {
+        $service = $this->service();
+
+        [$headers, $rows, $totals] = match ($this->view) {
+            'vendor' => $this->vendorCsv($service),
+            'costcode' => $this->costCodeCsv($service),
+            'detail' => $this->detailCsv($service),
+            default => $this->projectCsv($service),
+        };
+
+        $filename = 'expense-report-' . $this->view . '-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+
+        return new StreamedResponse(function () use ($headers, $rows, $totals) {
+            $out = fopen('php://output', 'w');
+            // BOM so Excel reads UTF-8 correctly.
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, $headers);
+            foreach ($rows as $row) {
+                fputcsv($out, $row);
+            }
+            if ($totals !== null) {
+                fputcsv($out, []);
+                fputcsv($out, $totals);
+            }
+            fclose($out);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    protected function money($value): string
+    {
+        return number_format((float) $value, 2, '.', '');
+    }
+
+    protected function projectCsv(ExpenseReportService $service): array
+    {
+        $headers = ['Project', 'Job Site', 'Expenses', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $rows = [];
+
+        foreach ($service->byProject() as $proj) {
+            $rows[] = [
+                $proj['project'] ?? '',
+                '',
+                $proj['count'],
+                $this->money($proj['total']),
+                $this->money($proj['paid']),
+                $this->money($proj['outstanding']),
+                $this->money($proj['overdue']),
+            ];
+            foreach ($proj['jobsites'] as $js) {
+                $rows[] = [
+                    $proj['project'] ?? '',
+                    $js['job_site'] ?? 'Project-level',
+                    $js['count'],
+                    $this->money($js['total']),
+                    $this->money($js['paid']),
+                    $this->money($js['outstanding']),
+                    $this->money($js['overdue']),
+                ];
+            }
+        }
+
+        $k = $service->kpis();
+        $totals = ['Total', '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+
+        return [$headers, $rows, $totals];
+    }
+
+    protected function vendorCsv(ExpenseReportService $service): array
+    {
+        $headers = ['Vendor', 'Expenses', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $rows = $service->byVendor()->map(fn ($v) => [
+            $v['vendor'] ?? 'No vendor',
+            $v['count'],
+            $this->money($v['total']),
+            $this->money($v['paid']),
+            $this->money($v['outstanding']),
+            $this->money($v['overdue']),
+        ])->all();
+
+        $k = $service->kpis();
+        $totals = ['Total', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+
+        return [$headers, $rows, $totals];
+    }
+
+    protected function costCodeCsv(ExpenseReportService $service): array
+    {
+        $headers = ['Cost Code', 'Line Items', 'Total Cost'];
+        $byCostCode = $service->byCostCode();
+        $rows = $byCostCode->map(fn ($cc) => [
+            $cc['code'],
+            $cc['count'],
+            $this->money($cc['total']),
+        ])->all();
+
+        $totals = ['Total', $byCostCode->sum('count'), $this->money($byCostCode->sum('total'))];
+
+        return [$headers, $rows, $totals];
+    }
+
+    protected function detailCsv(ExpenseReportService $service): array
+    {
+        $headers = ['Date', 'Item', 'Vendor', 'Project', 'Job Site', 'Category', 'Installments', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $rows = $service->detail()->map(fn ($row) => [
+            $row['expense_date']?->format('Y-m-d'),
+            $row['item'],
+            $row['vendor'] ?? '',
+            $row['project'] ?? '',
+            $row['job_site'] ?? 'Project-level',
+            $row['category'] ? ucfirst($row['category']) : '',
+            $row['payment_label'],
+            $this->money($row['total']),
+            $this->money($row['paid']),
+            $this->money($row['outstanding']),
+            $this->money($row['overdue']),
+        ])->all();
+
+        $k = $service->kpis();
+        $totals = ['Total', '', '', '', '', '', '', $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+
+        return [$headers, $rows, $totals];
     }
 
     public function render()

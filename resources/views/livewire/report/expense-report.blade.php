@@ -23,6 +23,30 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Expense Report') }}</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Expenses rolled up by project, job site, vendor, and cost code — with paid, outstanding, and overdue totals.') }}</p>
         </div>
+        @php
+            $exportParams = http_build_query([
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'clientFilter' => $clientFilter,
+                'projectFilter' => $projectFilter,
+                'jobSiteFilter' => $jobSiteFilter,
+                'vendorFilter' => $vendorFilter,
+                'categoryFilter' => $categoryFilter,
+                'statusFilter' => $statusFilter,
+                'view' => $view,
+            ]);
+        @endphp
+        <div class="flex items-center gap-2">
+            <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">
+                {{ __('Export CSV') }}
+            </x-ui.button>
+            <x-ui.button variant="secondary" href="{{ route('reports.expenses.pdf.view') }}?{{ $exportParams }}" icon="eye" target="_blank">
+                {{ __('View PDF') }}
+            </x-ui.button>
+            <x-ui.button variant="primary" href="{{ route('reports.expenses.pdf.download') }}?{{ $exportParams }}" icon="arrow-down-tray">
+                {{ __('Download PDF') }}
+            </x-ui.button>
+        </div>
     </div>
 
     {{-- Filters --}}
