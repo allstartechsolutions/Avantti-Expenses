@@ -85,6 +85,7 @@ use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\AccountsPayableReport;
+use App\Livewire\Report\ExpenseReport;
 use App\Livewire\Report\SalesTaxReport;
 use App\Livewire\Dashboard\DashboardIndex;
 use App\Livewire\Setup\SetupWizard;
@@ -243,6 +244,7 @@ Route::middleware(['auth'])->group(function () {
     // Report routes (admin only)
     Route::middleware('admin')->group(function () {
         Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
+        Route::get('reports/expenses', ExpenseReport::class)->name('reports.expenses');
         Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
         Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
         Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');

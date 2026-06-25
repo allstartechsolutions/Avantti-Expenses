@@ -307,6 +307,13 @@
                         </svg>
                         {{ __('Accounts Payable') }}
                     </a>
+                    <a href="{{ route('reports.expenses') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('reports.expenses') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        {{ __('Expense Report') }}
+                    </a>
                 </div>
             </div>
             @endif

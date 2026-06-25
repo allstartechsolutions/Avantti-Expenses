@@ -47,6 +47,9 @@
                 @if($project)
                     <div style="font-size: 7pt; color: #888;">{{ __('Project') }}: {{ $project->project_name }}</div>
                 @endif
+                @if($client)
+                    <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
+                @endif
                 <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ ucfirst($statusFilter) }}</div>
             </td>
         </tr>
