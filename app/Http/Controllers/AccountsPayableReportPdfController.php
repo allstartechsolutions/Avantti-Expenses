@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Company;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
@@ -38,36 +39,37 @@ class AccountsPayableReportPdfController extends Controller
         $fromDate = $request->query('fromDate') ?: Carbon::now()->startOfMonth()->toDateString();
         $toDate = $request->query('toDate') ?: Carbon::now()->endOfMonth()->toDateString();
         $projectFilter = $request->query('projectFilter') ?: '';
+        $clientFilter = $request->query('clientFilter') ?: '';
         $statusFilter = $request->query('statusFilter') ?: 'unpaid';
 
         $start = Carbon::parse($fromDate)->startOfDay();
         $end = Carbon::parse($toDate)->endOfDay();
         $today = Carbon::now()->startOfDay();
 
-        $rows = $this->buildRows($start, $end, $statusFilter, $projectFilter, $today);
+        $rows = $this->buildRows($start, $end, $statusFilter, $projectFilter, $clientFilter, $today);
 
         $from = $start->toDateString();
         $to = $end->toDateString();
         $todayStr = $today->toDateString();
 
         // Due in period — open items, by due date.
-        $dueInstSum = $this->openInstallments($projectFilter)->whereBetween('due_date', [$from, $to])->sum('amount');
-        $dueInstCount = $this->openInstallments($projectFilter)->whereBetween('due_date', [$from, $to])->count();
-        $dueOne = $this->openOneTime($projectFilter)
+        $dueInstSum = $this->openInstallments($projectFilter, $clientFilter)->whereBetween('due_date', [$from, $to])->sum('amount');
+        $dueInstCount = $this->openInstallments($projectFilter, $clientFilter)->whereBetween('due_date', [$from, $to])->count();
+        $dueOne = $this->openOneTime($projectFilter, $clientFilter)
             ->whereRaw('COALESCE(payment_due_date, expense_date) BETWEEN ? AND ?', [$from, $to])
             ->get();
 
         // Paid in period — paid items, by paid date.
-        $paidInstSum = $this->paidInstallments($projectFilter)
+        $paidInstSum = $this->paidInstallments($projectFilter, $clientFilter)
             ->whereRaw('COALESCE(paid_date, due_date) BETWEEN ? AND ?', [$from, $to])
             ->sum('amount');
-        $paidOne = $this->paidOneTime($projectFilter)
+        $paidOne = $this->paidOneTime($projectFilter, $clientFilter)
             ->whereRaw('COALESCE(paid_date, expense_date) BETWEEN ? AND ?', [$from, $to])
             ->get();
 
         // Overdue as of today — open items past due, regardless of period.
-        $overdueInstSum = $this->openInstallments($projectFilter)->whereDate('due_date', '<', $todayStr)->sum('amount');
-        $overdueOne = $this->openOneTime($projectFilter)
+        $overdueInstSum = $this->openInstallments($projectFilter, $clientFilter)->whereDate('due_date', '<', $todayStr)->sum('amount');
+        $overdueOne = $this->openOneTime($projectFilter, $clientFilter)
             ->whereRaw('COALESCE(payment_due_date, expense_date) < ?', [$todayStr])
             ->get();
 
@@ -78,9 +80,10 @@ class AccountsPayableReportPdfController extends Controller
             'overdue_total' => round(($overdueInstSum / 100) + $overdueOne->sum('total_amount'), 2),
         ];
 
-        $projections = $this->buildProjections($end, $projectFilter);
+        $projections = $this->buildProjections($end, $projectFilter, $clientFilter);
 
         $project = $projectFilter ? Project::find($projectFilter) : null;
+        $client = $clientFilter ? Client::find($clientFilter) : null;
 
         return [
             'rows' => $rows,
@@ -90,6 +93,7 @@ class AccountsPayableReportPdfController extends Controller
             'toDate' => $toDate,
             'statusFilter' => $statusFilter,
             'project' => $project,
+            'client' => $client,
             'company' => Company::first(),
             'generatedAt' => now(),
         ];
@@ -98,44 +102,52 @@ class AccountsPayableReportPdfController extends Controller
     // Open = not yet paid (parent not cancelled). Overdue is derived from the
     // due date vs. today, not from a stored 'overdue' status.
 
-    private function openInstallments(?string $projectFilter)
+    private function openInstallments(?string $projectFilter, ?string $clientFilter = null)
     {
         return ExpensePayment::query()
             ->where('status', '!=', 'paid')
-            ->whereHas('expense', function ($q) use ($projectFilter) {
+            ->whereHas('expense', function ($q) use ($projectFilter, $clientFilter) {
                 $q->where('status', '!=', 'cancelled');
                 if ($projectFilter) {
                     $q->where('project_id', $projectFilter);
                 }
+                if ($clientFilter) {
+                    $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter));
+                }
             });
     }
 
-    private function paidInstallments(?string $projectFilter)
+    private function paidInstallments(?string $projectFilter, ?string $clientFilter = null)
     {
         return ExpensePayment::query()
             ->where('status', 'paid')
-            ->whereHas('expense', function ($q) use ($projectFilter) {
+            ->whereHas('expense', function ($q) use ($projectFilter, $clientFilter) {
                 $q->where('status', '!=', 'cancelled');
                 if ($projectFilter) {
                     $q->where('project_id', $projectFilter);
                 }
+                if ($clientFilter) {
+                    $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter));
+                }
             });
     }
 
-    private function openOneTime(?string $projectFilter)
+    private function openOneTime(?string $projectFilter, ?string $clientFilter = null)
     {
         return Expense::query()
             ->where('total_installments', 1)
             ->whereNotIn('status', ['paid', 'cancelled'])
-            ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter));
+            ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter))
+            ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)));
     }
 
-    private function paidOneTime(?string $projectFilter)
+    private function paidOneTime(?string $projectFilter, ?string $clientFilter = null)
     {
         return Expense::query()
             ->where('total_installments', 1)
             ->where('status', 'paid')
-            ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter));
+            ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter))
+            ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)));
     }
 
     private function mapInstallmentRow(ExpensePayment $p, Carbon $today): array
@@ -174,7 +186,7 @@ class AccountsPayableReportPdfController extends Controller
         ];
     }
 
-    private function buildRows(Carbon $start, Carbon $end, string $statusFilter, ?string $projectFilter, Carbon $today): Collection
+    private function buildRows(Carbon $start, Carbon $end, string $statusFilter, ?string $projectFilter, ?string $clientFilter, Carbon $today): Collection
     {
         $from = $start->toDateString();
         $to = $end->toDateString();
@@ -188,14 +200,14 @@ class AccountsPayableReportPdfController extends Controller
         $oneWith = ['project:id,project_name', 'jobSite:id,job_site_name', 'supplier:id,name'];
 
         if ($wantOpen) {
-            $openInst = $this->openInstallments($projectFilter)
+            $openInst = $this->openInstallments($projectFilter, $clientFilter)
                 ->with($instWith)
                 ->whereBetween('due_date', [$from, $to])
                 ->orderBy('due_date')
                 ->get()
                 ->map(fn (ExpensePayment $p) => $this->mapInstallmentRow($p, $today));
 
-            $openOne = $this->openOneTime($projectFilter)
+            $openOne = $this->openOneTime($projectFilter, $clientFilter)
                 ->with($oneWith)
                 ->whereRaw('COALESCE(payment_due_date, expense_date) BETWEEN ? AND ?', [$from, $to])
                 ->orderByRaw('COALESCE(payment_due_date, expense_date)')
@@ -212,14 +224,14 @@ class AccountsPayableReportPdfController extends Controller
         }
 
         if ($wantPaid) {
-            $paidInst = $this->paidInstallments($projectFilter)
+            $paidInst = $this->paidInstallments($projectFilter, $clientFilter)
                 ->with($instWith)
                 ->whereRaw('COALESCE(paid_date, due_date) BETWEEN ? AND ?', [$from, $to])
                 ->orderByRaw('COALESCE(paid_date, due_date)')
                 ->get()
                 ->map(fn (ExpensePayment $p) => $this->mapInstallmentRow($p, $today));
 
-            $paidOne = $this->paidOneTime($projectFilter)
+            $paidOne = $this->paidOneTime($projectFilter, $clientFilter)
                 ->with($oneWith)
                 ->whereRaw('COALESCE(paid_date, expense_date) BETWEEN ? AND ?', [$from, $to])
                 ->orderByRaw('COALESCE(paid_date, expense_date)')
@@ -232,7 +244,7 @@ class AccountsPayableReportPdfController extends Controller
         return $rows->sortBy('due_date')->values();
     }
 
-    private function buildProjections(Carbon $toDate, ?string $projectFilter): array
+    private function buildProjections(Carbon $toDate, ?string $projectFilter, ?string $clientFilter = null): array
     {
         $start = (clone $toDate)->endOfMonth()->addDay()->startOfMonth();
         $months = [];
@@ -243,19 +255,25 @@ class AccountsPayableReportPdfController extends Controller
 
             $installmentSum = ExpensePayment::whereIn('status', ['pending', 'overdue'])
                 ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->whereHas('expense', function ($q) use ($projectFilter) {
+                ->whereHas('expense', function ($q) use ($projectFilter, $clientFilter) {
                     $q->where('status', '!=', 'cancelled');
                     if ($projectFilter) {
                         $q->where('project_id', $projectFilter);
+                    }
+                    if ($clientFilter) {
+                        $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter));
                     }
                 })
                 ->sum('amount');
             $installmentCount = ExpensePayment::whereIn('status', ['pending', 'overdue'])
                 ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->whereHas('expense', function ($q) use ($projectFilter) {
+                ->whereHas('expense', function ($q) use ($projectFilter, $clientFilter) {
                     $q->where('status', '!=', 'cancelled');
                     if ($projectFilter) {
                         $q->where('project_id', $projectFilter);
+                    }
+                    if ($clientFilter) {
+                        $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter));
                     }
                 })
                 ->count();
@@ -264,6 +282,7 @@ class AccountsPayableReportPdfController extends Controller
                 ->whereIn('status', ['unpaid', 'overdue'])
                 ->whereBetween('payment_due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
                 ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter))
+                ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)))
                 ->get();
 
             $months[] = [

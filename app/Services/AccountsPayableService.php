@@ -38,6 +38,7 @@ class AccountsPayableService
         string $toDate,
         protected string $projectFilter = '',
         protected string $statusFilter = 'unpaid',
+        protected string $clientFilter = '',
     ) {
         $this->start = Carbon::parse($fromDate)->startOfDay();
         $this->end = Carbon::parse($toDate)->endOfDay();
@@ -62,6 +63,7 @@ class AccountsPayableService
                 if ($this->projectFilter) {
                     $q->where('project_id', $this->projectFilter);
                 }
+                $this->applyClientScope($q);
             });
     }
 
@@ -74,6 +76,7 @@ class AccountsPayableService
                 if ($this->projectFilter) {
                     $q->where('project_id', $this->projectFilter);
                 }
+                $this->applyClientScope($q);
             });
     }
 
@@ -82,7 +85,8 @@ class AccountsPayableService
         return Expense::query()
             ->where('total_installments', 1)
             ->whereNotIn('status', ['paid', 'cancelled'])
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter));
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->applyClientScope($q));
     }
 
     protected function paidOneTime()
@@ -90,7 +94,19 @@ class AccountsPayableService
         return Expense::query()
             ->where('total_installments', 1)
             ->where('status', 'paid')
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter));
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->applyClientScope($q));
+    }
+
+    /**
+     * Constrain a query whose model belongs to a Project (Expense or Contract)
+     * to a single client, since payables link to clients through their project.
+     */
+    protected function applyClientScope($q): void
+    {
+        if ($this->clientFilter) {
+            $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter));
+        }
     }
 
     protected function paidContractPayments()
@@ -106,6 +122,7 @@ class AccountsPayableService
                 if ($this->projectFilter) {
                     $q->where('project_id', $this->projectFilter);
                 }
+                $this->applyClientScope($q);
             });
     }
 
@@ -327,6 +344,7 @@ class AccountsPayableService
             ])
             ->where('status', '!=', 'cancelled')
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()
             ->map(function (Contract $c) {
                 return [
@@ -359,6 +377,7 @@ class AccountsPayableService
             ->with(['subcontractor:id,company_name'])
             ->where('status', '!=', 'cancelled')
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()
             ->groupBy('subcontractor_id')
             ->map(function (Collection $contracts) {

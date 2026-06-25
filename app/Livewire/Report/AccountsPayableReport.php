@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Report;
 
+use App\Models\Client;
 use App\Models\Project;
 use App\Services\AccountsPayableService;
 use Carbon\Carbon;
@@ -14,12 +15,14 @@ class AccountsPayableReport extends Component
     public string $fromDate = '';
     public string $toDate = '';
     public string $projectFilter = '';
+    public string $clientFilter = '';
     public string $statusFilter = 'unpaid';
 
     protected $queryString = [
         'fromDate' => ['except' => ''],
         'toDate' => ['except' => ''],
         'projectFilter' => ['except' => ''],
+        'clientFilter' => ['except' => ''],
         'statusFilter' => ['except' => 'unpaid'],
     ];
 
@@ -64,6 +67,7 @@ class AccountsPayableReport extends Component
             $this->toDate,
             $this->projectFilter,
             $this->statusFilter,
+            $this->clientFilter,
         );
     }
 
@@ -85,6 +89,13 @@ class AccountsPayableReport extends Component
     public function getProjectsProperty()
     {
         return Project::orderBy('project_name')->get(['id', 'project_name']);
+    }
+
+    public function getClientsProperty()
+    {
+        return Client::whereHas('projects')
+            ->orderBy('company_name')
+            ->get(['id', 'company_name']);
     }
 
     public function getProjectionsProperty(): array
@@ -131,6 +142,7 @@ class AccountsPayableReport extends Component
             'rows' => $this->selectedPeriodRows,
             'kpis' => $this->kpis,
             'projects' => $this->projects,
+            'clients' => $this->clients,
             'projections' => $this->projections,
             'subcontractorSummary' => $this->subcontractorSummary,
         ])->layout('components.layouts.app');
