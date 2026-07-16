@@ -2,17 +2,20 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\DocumentType;
 use App\Models\Subcontractor;
 use App\Models\SubcontractorDocument;
+use App\Models\SubcontractorEmployee;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class SubcontractorShow extends Component
 {
-    use WithFileUploads;
+    use AuthorizesAdmin, WithFileUploads;
 
     public Subcontractor $subcontractor;
     public string $activeTab = 'overview';
@@ -23,6 +26,17 @@ class SubcontractorShow extends Component
     public $expiration_date = '';
     public $document_notes = '';
     public bool $showUploadForm = false;
+
+    // Employee form
+    public $employee_title = '';
+    public $employee_name = '';
+    public $employee_phone = '';
+    public $employee_email = '';
+    public $employee_notes = '';
+    public bool $showEmployeeForm = false;
+
+    // Delete modal
+    public $showDeleteModal = false;
 
     protected function rules()
     {
@@ -50,6 +64,11 @@ class SubcontractorShow extends Component
         'document_file' => 'document file',
         'expiration_date' => 'expiration date',
         'document_notes' => 'notes',
+        'employee_name' => 'name',
+        'employee_title' => 'title',
+        'employee_phone' => 'phone',
+        'employee_email' => 'email',
+        'employee_notes' => 'notes',
     ];
 
     public function mount(Subcontractor $subcontractor)
@@ -110,6 +129,60 @@ class SubcontractorShow extends Component
         session()->flash('message', 'Document uploaded successfully!');
     }
 
+    public function toggleEmployeeForm()
+    {
+        $this->showEmployeeForm = !$this->showEmployeeForm;
+        if (!$this->showEmployeeForm) {
+            $this->resetEmployeeForm();
+        }
+    }
+
+    public function resetEmployeeForm()
+    {
+        $this->employee_title = '';
+        $this->employee_name = '';
+        $this->employee_phone = '';
+        $this->employee_email = '';
+        $this->employee_notes = '';
+        $this->resetValidation();
+    }
+
+    public function saveEmployee()
+    {
+        $this->validate([
+            'employee_name' => 'required|string|max:255',
+            'employee_title' => 'nullable|string|max:255',
+            'employee_phone' => 'nullable|string|max:50',
+            'employee_email' => 'nullable|email|max:255',
+            'employee_notes' => 'nullable|string|max:1000',
+        ]);
+
+        SubcontractorEmployee::create([
+            'subcontractor_id' => $this->subcontractor->id,
+            'title' => $this->employee_title ?: null,
+            'name' => $this->employee_name,
+            'phone' => $this->employee_phone ?: null,
+            'email' => $this->employee_email ?: null,
+            'notes' => $this->employee_notes ?: null,
+        ]);
+
+        $this->resetEmployeeForm();
+        $this->showEmployeeForm = false;
+
+        session()->flash('message', 'Employee added successfully!');
+    }
+
+    public function deleteEmployee(int $employeeId)
+    {
+        $employee = SubcontractorEmployee::where('id', $employeeId)
+            ->where('subcontractor_id', $this->subcontractor->id)
+            ->firstOrFail();
+
+        $employee->delete();
+
+        session()->flash('message', 'Employee deleted successfully!');
+    }
+
     public function deleteDocument(int $documentId)
     {
         $document = SubcontractorDocument::where('id', $documentId)
@@ -119,6 +192,45 @@ class SubcontractorShow extends Component
         $document->delete();
 
         session()->flash('message', 'Document deleted successfully!');
+    }
+
+    public function confirmDeleteSubcontractor()
+    {
+        $this->authorizeAdmin();
+
+        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {
+            return;
+        }
+
+        $this->showDeleteModal = true;
+        $this->dispatch('open-modal', 'delete-subcontractor-modal');
+    }
+
+    public function deleteSubcontractor()
+    {
+        $this->authorizeAdmin();
+
+        // Re-check as a safety guard
+        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {
+            $this->cancelDeleteSubcontractor();
+            return;
+        }
+
+        DB::transaction(function () {
+            // Delete documents via Eloquent so the file cleanup hook fires
+            $this->subcontractor->documents->each->delete();
+            $this->subcontractor->delete();
+        });
+
+        session()->flash('message', 'Subcontractor deleted successfully!');
+
+        return redirect()->route('subcontractors.index');
+    }
+
+    public function cancelDeleteSubcontractor()
+    {
+        $this->showDeleteModal = false;
+        $this->dispatch('close-modal', 'delete-subcontractor-modal');
     }
 
     public function getSelectedDocumentTypeProperty()
@@ -137,9 +249,19 @@ class SubcontractorShow extends Component
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $employees = $this->subcontractor->employees()
+            ->orderBy('name')
+            ->get();
+
+        $linkedContracts = $this->subcontractor->contracts()->count();
+        $linkedPaymentBatches = $this->subcontractor->paymentBatches()->count();
+
         return view('livewire.subcontractor.subcontractor-show', [
             'documentTypes' => $documentTypes,
             'documents' => $documents,
+            'employees' => $employees,
+            'linkedContracts' => $linkedContracts,
+            'linkedPaymentBatches' => $linkedPaymentBatches,
         ])->layout('components.layouts.app');
     }
 }

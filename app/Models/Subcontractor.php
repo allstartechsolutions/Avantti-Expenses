@@ -62,6 +62,22 @@ class Subcontractor extends Model
     }
 
     /**
+     * Get all employees for this subcontractor
+     */
+    public function employees(): HasMany
+    {
+        return $this->hasMany(SubcontractorEmployee::class);
+    }
+
+    /**
+     * Get all payment batches for this subcontractor
+     */
+    public function paymentBatches(): HasMany
+    {
+        return $this->hasMany(PaymentBatch::class);
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

@@ -6,7 +6,9 @@ use App\Models\Contract;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
+use App\Models\SubcontractorEmployee;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -21,6 +23,7 @@ class ContractCreate extends Component
     // Form fields
     public $subcontractor_id = null;
     public $subcontractorSearch = '';
+    public $subcontractor_employee_id = null;
     public $job_site_id = null;
     public $start_date;
     public $end_date = '';
@@ -49,6 +52,7 @@ class ContractCreate extends Component
         if ($subcontractor) {
             $this->subcontractor_id = $id;
             $this->subcontractorSearch = $subcontractor->company_name;
+            $this->subcontractor_employee_id = null;
         }
     }
 
@@ -56,12 +60,14 @@ class ContractCreate extends Component
     {
         $this->subcontractor_id = null;
         $this->subcontractorSearch = '';
+        $this->subcontractor_employee_id = null;
     }
 
     public function save()
     {
         $this->validate([
             'subcontractor_id' => 'nullable|exists:subcontractors,id',
+            'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],
             'job_site_id' => 'nullable|exists:job_sites,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -78,6 +84,7 @@ class ContractCreate extends Component
             'project_id' => $this->project->id,
             'job_site_id' => $this->job_site_id ?: null,
             'subcontractor_id' => $this->subcontractor_id ?: null,
+            'subcontractor_employee_id' => $this->subcontractor_employee_id ?: null,
             'contract_number' => Contract::generateContractNumber(),
             'status' => 'active',
             'start_date' => $this->start_date,
@@ -110,9 +117,14 @@ class ContractCreate extends Component
 
         $jobSites = $this->project->jobSites()->orderBy('job_site_name')->get();
 
+        $employees = $this->subcontractor_id
+            ? SubcontractorEmployee::where('subcontractor_id', $this->subcontractor_id)->orderBy('name')->get()
+            : collect();
+
         return view('livewire.contract.contract-create', [
             'subcontractors' => $subcontractors,
             'jobSites' => $jobSites,
+            'employees' => $employees,
         ])->layout('components.layouts.app');
     }
 }

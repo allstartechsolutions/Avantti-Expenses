@@ -15,6 +15,7 @@ class Contract extends Model
         'project_id',
         'job_site_id',
         'subcontractor_id',
+        'subcontractor_employee_id',
         'contract_number',
         'status',
         'start_date',
@@ -104,6 +105,11 @@ class Contract extends Model
     public function subcontractor(): BelongsTo
     {
         return $this->belongsTo(Subcontractor::class);
+    }
+
+    public function subcontractorEmployee(): BelongsTo
+    {
+        return $this->belongsTo(SubcontractorEmployee::class);
     }
 
     public function createdBy(): BelongsTo

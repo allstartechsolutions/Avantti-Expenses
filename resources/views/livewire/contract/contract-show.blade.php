@@ -104,6 +104,12 @@
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? 'Not specified' }}</dd>
                         </div>
                         <div>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Contact</dt>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">
+                                {{ $contract->subcontractorEmployee?->name ?? 'Not specified' }}@if($contract->subcontractorEmployee?->title) ({{ $contract->subcontractorEmployee->title }})@endif
+                            </dd>
+                        </div>
+                        <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Location</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 @if($contract->isProjectLevel())

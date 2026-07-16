@@ -1,8 +1,8 @@
-# Delete Functionality: Projects, Job Sites & Clients
+# Delete Functionality: Projects, Job Sites, Clients & Subcontractors
 
 ## Overview
 
-Delete functionality for Projects, Job Sites, and Clients with confirmation modals that warn about irreversible data loss. Project and Job Site modals display counts of all related data that will be permanently deleted, with file cleanup before cascade delete. Client delete is only allowed when the client has no linked projects.
+Delete functionality for Projects, Job Sites, Clients, and Subcontractors with confirmation modals that warn about irreversible data loss. Project and Job Site modals display counts of all related data that will be permanently deleted, with file cleanup before cascade delete. Client delete is only allowed when the client has no linked projects. Subcontractor delete is admin-only and only allowed when the subcontractor has no linked contracts or payment batches.
 
 ---
 
@@ -349,6 +349,42 @@ Since clients can only be deleted when they have no linked data, the modal is si
 | `app/Livewire/Client/ClientShow.php` | Added `$projectsCount` property loaded in `mount()`, added `confirmDeleteClient()`, `deleteClient()`, `cancelDeleteClient()` methods and modal state properties |
 | `resources/views/livewire/client/client-index.blade.php` | Replaced `x-ui.view-edit-buttons` with View/Edit/Delete buttons (Delete disabled when has projects), added delete modal |
 | `resources/views/livewire/client/client-show.blade.php` | Added Delete button in header (disabled when has projects), added delete modal |
+
+---
+
+## Subcontractor Delete
+
+### Behavior
+
+Subcontractor delete is **admin-only and conditional**:
+- The Delete button only renders for administrators (`auth()->user()->is_admin`), and every server-side method is guarded with the `AuthorizesAdmin` trait (`$this->authorizeAdmin()` aborts 403 for non-admins even if the wire:click is invoked directly).
+- A subcontractor can only be deleted if it has **zero linked contracts and zero linked payment batches**. When tied, the Delete button is disabled with a tooltip: "Cannot delete: linked to X contract(s) and X payment batch(es)".
+- Documents and employees do NOT block deletion — they belong to the subcontractor and are deleted with it. The modal lists their counts as "data that will be permanently deleted".
+
+### File Cleanup
+
+`SubcontractorDocument` has a `booted()` deleting hook that removes the stored file, but DB-level cascade would bypass it. `deleteSubcontractor()` therefore deletes documents via Eloquent first (`$subcontractor->documents->each->delete()`), inside a `DB::transaction()`, before deleting the subcontractor (employees are handled by DB cascade — they store no files).
+
+### Where Delete Buttons Appear
+
+| Page | Component | Route | Button Location |
+|------|-----------|-------|-----------------|
+| Subcontractors Index | `SubcontractorIndex` | `subcontractors.index` | Actions column (alongside View/Edit) |
+| Subcontractor Show | `SubcontractorShow` | `subcontractors.show` | Header (alongside Back/Edit buttons) |
+
+### Data Loading
+
+- **SubcontractorIndex**: `->withCount(['contracts', 'paymentBatches'])` so each row has `contracts_count` / `payment_batches_count`
+- **SubcontractorShow**: `render()` passes `$linkedContracts` and `$linkedPaymentBatches` counts
+
+### Model Change
+
+`Subcontractor::paymentBatches()` HasMany relationship was added (`payment_batches.subcontractor_id`, `nullOnDelete`).
+
+### After Deletion
+
+- From `SubcontractorIndex`: stays on the page (list refreshes)
+- From `SubcontractorShow`: redirects to `route('subcontractors.index')` with a success flash message
 
 ---
 

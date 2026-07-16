@@ -4,7 +4,9 @@ namespace App\Livewire\Contract;
 
 use App\Models\Contract;
 use App\Models\Subcontractor;
+use App\Models\SubcontractorEmployee;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -17,6 +19,7 @@ class ContractEdit extends Component
     // Form fields
     public $subcontractor_id = null;
     public $subcontractorSearch = '';
+    public $subcontractor_employee_id = null;
     public $job_site_id = null;
     public $start_date;
     public $end_date = '';
@@ -32,6 +35,7 @@ class ContractEdit extends Component
 
         $this->subcontractor_id = $contract->subcontractor_id;
         $this->subcontractorSearch = $contract->subcontractor?->company_name ?? '';
+        $this->subcontractor_employee_id = $contract->subcontractor_employee_id;
         $this->job_site_id = $contract->job_site_id;
         $this->start_date = $contract->start_date->format('Y-m-d');
         $this->end_date = $contract->end_date?->format('Y-m-d') ?? '';
@@ -46,6 +50,7 @@ class ContractEdit extends Component
         if ($subcontractor) {
             $this->subcontractor_id = $id;
             $this->subcontractorSearch = $subcontractor->company_name;
+            $this->subcontractor_employee_id = null;
         }
     }
 
@@ -53,6 +58,7 @@ class ContractEdit extends Component
     {
         $this->subcontractor_id = null;
         $this->subcontractorSearch = '';
+        $this->subcontractor_employee_id = null;
     }
 
     public function removeExistingFile()
@@ -65,6 +71,7 @@ class ContractEdit extends Component
     {
         $this->validate([
             'subcontractor_id' => 'nullable|exists:subcontractors,id',
+            'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],
             'job_site_id' => 'nullable|exists:job_sites,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -91,6 +98,7 @@ class ContractEdit extends Component
 
         $this->contract->update([
             'subcontractor_id' => $this->subcontractor_id ?: null,
+            'subcontractor_employee_id' => $this->subcontractor_employee_id ?: null,
             'job_site_id' => $this->job_site_id ?: null,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date ?: null,
@@ -115,9 +123,14 @@ class ContractEdit extends Component
 
         $jobSites = $this->contract->project->jobSites()->orderBy('job_site_name')->get();
 
+        $employees = $this->subcontractor_id
+            ? SubcontractorEmployee::where('subcontractor_id', $this->subcontractor_id)->orderBy('name')->get()
+            : collect();
+
         return view('livewire.contract.contract-edit', [
             'subcontractors' => $subcontractors,
             'jobSites' => $jobSites,
+            'employees' => $employees,
         ])->layout('components.layouts.app');
     }
 }

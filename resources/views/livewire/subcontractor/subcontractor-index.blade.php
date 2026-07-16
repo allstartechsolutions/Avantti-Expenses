@@ -133,9 +133,29 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <x-ui.view-edit-buttons
-                                        :viewRoute="route('subcontractors.show', $subcontractor->id)"
-                                        :editRoute="route('subcontractors.edit', $subcontractor->id)" />
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <x-ui.view-edit-buttons
+                                            :viewRoute="route('subcontractors.show', $subcontractor->id)"
+                                            :editRoute="route('subcontractors.edit', $subcontractor->id)" />
+                                        @if(auth()->user()->is_admin)
+                                            @php $linkedCount = $subcontractor->contracts_count + $subcontractor->payment_batches_count; @endphp
+                                            @if($linkedCount > 0)
+                                                <span title="Cannot delete: linked to {{ $subcontractor->contracts_count }} contract(s) and {{ $subcontractor->payment_batches_count }} payment batch(es)">
+                                                    <x-ui.button variant="danger" size="sm" icon="trash" disabled>
+                                                        Delete
+                                                    </x-ui.button>
+                                                </span>
+                                            @else
+                                                <x-ui.button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    wire:click="confirmDeleteSubcontractor({{ $subcontractor->id }})"
+                                                    icon="trash">
+                                                    Delete
+                                                </x-ui.button>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -180,4 +200,55 @@
             </div>
         @endif
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <x-ui.modal name="delete-subcontractor-modal" :show="true" maxWidth="lg">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
+                    Delete Subcontractor
+                </h3>
+
+                <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
+                    Are you sure you want to delete <strong>{{ $deleteSubcontractorData['name'] ?? '' }}</strong>?
+                    This action <strong>cannot be undone</strong>.
+                </p>
+
+                @if(($deleteSubcontractorData['documents'] ?? 0) > 0 || ($deleteSubcontractorData['employees'] ?? 0) > 0)
+                    <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                        <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
+                            @if(($deleteSubcontractorData['documents'] ?? 0) > 0)
+                                <li>{{ $deleteSubcontractorData['documents'] }} document(s)</li>
+                            @endif
+                            @if(($deleteSubcontractorData['employees'] ?? 0) > 0)
+                                <li>{{ $deleteSubcontractorData['employees'] }} employee(s)</li>
+                            @endif
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="flex justify-end space-x-3">
+                    <x-ui.button
+                        variant="secondary"
+                        wire:click="cancelDeleteSubcontractor"
+                        icon="x">
+                        Cancel
+                    </x-ui.button>
+                    <x-ui.button
+                        variant="danger"
+                        wire:click="deleteSubcontractor"
+                        icon="trash">
+                        Delete Subcontractor
+                    </x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
+    @endif
 </div>
