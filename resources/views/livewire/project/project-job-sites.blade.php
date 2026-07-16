@@ -100,7 +100,7 @@
                                 <input
                                     type="tel"
                                     id="phone"
-                                    wire:model.live="phone"
+                                    wire:model.live="phone" x-data x-phone-mask
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                     placeholder="+1 (555) 123-4567"
                                 >
@@ -344,7 +344,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-slate-900 dark:text-white">{{ $jobSite->contact_person }}</div>
                                             @if($jobSite->phone)
-                                                <div class="text-sm text-slate-500 dark:text-slate-400">{{ $jobSite->phone }}</div>
+                                                <div class="text-sm text-slate-500 dark:text-slate-400">{{ $jobSite->formatted_phone }}</div>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4">

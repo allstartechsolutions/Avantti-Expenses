@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasFormattedPhone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubcontractorEmployee extends Model
 {
+    use HasFormattedPhone;
+
     protected $fillable = [
         'subcontractor_id',
         'title',

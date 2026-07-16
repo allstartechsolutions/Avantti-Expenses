@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-country="{{ config('app.country') }}">
 @include('components.layouts.inc.head')
 <body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col" x-data="{
     sidebarOpen: false,

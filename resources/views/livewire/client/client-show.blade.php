@@ -150,7 +150,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 Phone Number
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->phone ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->formatted_phone ?? 'Not provided' }}</p>
                         </div>
                     </div>
                 </div>

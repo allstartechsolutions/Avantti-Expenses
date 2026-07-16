@@ -121,7 +121,7 @@
                                     <div class="text-sm text-slate-900 dark:text-white">{{ $client->email }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-900 dark:text-white">{{ $client->phone ?? 'N/A' }}</div>
+                                    <div class="text-sm text-slate-900 dark:text-white">{{ $client->formatted_phone ?? 'N/A' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">

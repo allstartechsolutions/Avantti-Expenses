@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\JobSiteStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class JobSite extends Model
 {
-    use HasFactory;
+    use HasFormattedPhone, HasFactory;
 
     protected $fillable = [
         'project_id',

@@ -140,7 +140,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-slate-900 dark:text-white">{{ $user->email }}</div>
                                 @if($user->phone)
-                                    <div class="text-sm text-slate-500 dark:text-slate-400">{{ $user->phone }}</div>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">{{ $user->formatted_phone }}</div>
                                 @endif
                             </td>
 

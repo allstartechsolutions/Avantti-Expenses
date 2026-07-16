@@ -133,7 +133,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Phone Number') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->phone ?? __('Not provided') }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->formatted_phone ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Email -->

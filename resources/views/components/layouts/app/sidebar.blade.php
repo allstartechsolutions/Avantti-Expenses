@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-country="{{ config('app.country') }}" class="dark">
     <head>
         @include('partials.head')
     </head>

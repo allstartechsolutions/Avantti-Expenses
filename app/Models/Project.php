@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\ProjectAmountSource;
 use App\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Project extends Model
 {
-    use HasFactory;
+    use HasFormattedPhone, HasFactory;
 
     protected $fillable = [
         'client_id',

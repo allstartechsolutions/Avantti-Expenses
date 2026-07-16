@@ -71,7 +71,7 @@
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone</label>
                                 <input
                                     type="tel"
-                                    wire:model.live="phone"
+                                    wire:model.live="phone" x-data x-phone-mask
                                     placeholder="+1 (555) 123-4567"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @error('phone') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
