@@ -134,25 +134,31 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <x-ui.view-edit-buttons
-                                            :viewRoute="route('subcontractors.show', $subcontractor->id)"
-                                            :editRoute="route('subcontractors.edit', $subcontractor->id)" />
+                                        <x-ui.icon-button
+                                            variant="secondary"
+                                            size="sm"
+                                            icon="eye"
+                                            title="View"
+                                            href="{{ route('subcontractors.show', $subcontractor->id) }}" />
+                                        <x-ui.icon-button
+                                            variant="secondary"
+                                            size="sm"
+                                            icon="edit"
+                                            title="Edit"
+                                            href="{{ route('subcontractors.edit', $subcontractor->id) }}" />
                                         @if(auth()->user()->is_admin)
                                             @php $linkedCount = $subcontractor->contracts_count + $subcontractor->payment_batches_count; @endphp
                                             @if($linkedCount > 0)
                                                 <span title="Cannot delete: linked to {{ $subcontractor->contracts_count }} contract(s) and {{ $subcontractor->payment_batches_count }} payment batch(es)">
-                                                    <x-ui.button variant="danger" size="sm" icon="trash" disabled>
-                                                        Delete
-                                                    </x-ui.button>
+                                                    <x-ui.icon-button variant="danger" size="sm" icon="trash" disabled />
                                                 </span>
                                             @else
-                                                <x-ui.button
+                                                <x-ui.icon-button
                                                     variant="danger"
                                                     size="sm"
-                                                    wire:click="confirmDeleteSubcontractor({{ $subcontractor->id }})"
-                                                    icon="trash">
-                                                    Delete
-                                                </x-ui.button>
+                                                    icon="trash"
+                                                    title="Delete"
+                                                    wire:click="confirmDeleteSubcontractor({{ $subcontractor->id }})" />
                                             @endif
                                         @endif
                                     </div>
