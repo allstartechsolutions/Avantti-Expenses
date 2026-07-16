@@ -71,6 +71,7 @@ class SubcontractorIndex extends Component
         $this->showDeleteModal = false;
         $this->deletingSubcontractorId = null;
         $this->deleteSubcontractorData = [];
+        $this->resetPage();
 
         session()->flash('message', 'Subcontractor deleted successfully!');
     }

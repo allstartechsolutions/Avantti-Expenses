@@ -42,8 +42,8 @@ Phone inputs format as the user types via a custom Alpine directive registered i
 ```
 
 - Active only when `<html data-country="US">` (set from `config('app.country')` in the three layouts: `components/layouts/app.blade.php`, `guest.blade.php`, `app/sidebar.blade.php`). In any other country the directive is a no-op.
-- Progressive mask: `3055551234` becomes `(305) 555-1234` as typed; backspacing rebuilds the format from remaining digits.
-- Values starting with `+` (international) and values with more than 10 digits are left exactly as typed.
+- Progressive mask: `3055551234` becomes `(305) 555-1234` as typed; backspacing rebuilds the format from remaining digits; the caret is kept next to the digit being edited on mid-string edits.
+- Values starting with `+` (international) are left exactly as typed. Without `+`, input is capped at 10 digits (an 11-digit value with a leading `1` is normalized to the 10-digit format), so the field always holds a well-formed number.
 - The directive re-dispatches the `input` event after reformatting so Livewire's `wire:model` syncs the formatted value (i.e., new phones are stored formatted). Existing stored values are not touched until the field is edited.
 - Applied to all phone inputs across client, project, job site, subcontractor (incl. employee form), supplier, user, profile, and company forms.
 

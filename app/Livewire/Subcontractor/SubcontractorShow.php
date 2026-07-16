@@ -95,7 +95,12 @@ class SubcontractorShow extends Component
         $this->document_file = null;
         $this->expiration_date = '';
         $this->document_notes = '';
-        $this->resetValidation();
+        $this->resetValidation([
+            'document_type_id',
+            'document_file',
+            'expiration_date',
+            'document_notes',
+        ]);
     }
 
     public function updatedDocumentTypeId($value)
@@ -144,7 +149,13 @@ class SubcontractorShow extends Component
         $this->employee_phone = '';
         $this->employee_email = '';
         $this->employee_notes = '';
-        $this->resetValidation();
+        $this->resetValidation([
+            'employee_title',
+            'employee_name',
+            'employee_phone',
+            'employee_email',
+            'employee_notes',
+        ]);
     }
 
     public function saveEmployee()
