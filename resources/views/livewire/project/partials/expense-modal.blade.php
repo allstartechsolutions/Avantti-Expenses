@@ -172,6 +172,9 @@
                                                 </td>
                                                 <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
                                                     {{ $payment->paid_date ? $payment->paid_date->format('M d, Y') : '-' }}
+                                                    @if($payment->status === 'paid' && $payment->paidBy)
+                                                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $payment->paidBy->name }}</span>
+                                                    @endif
                                                 </td>
                                                 <td class="px-4 py-2 text-right">
                                                     @if($payment->status === 'pending')
@@ -179,6 +182,10 @@
                                                         <button wire:click="markPaymentAsOverdue({{ $payment->id }})" class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">{{ __('Overdue') }}</button>
                                                     @elseif($payment->status === 'overdue')
                                                         <button wire:click="markPaymentAsPaid({{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                    @elseif($payment->status === 'paid')
+                                                        @admin
+                                                            <button wire:click="unmarkPaymentPaid({{ $payment->id }})" wire:confirm="{{ __('Revert this payment to pending?') }}" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">{{ __('Revert') }}</button>
+                                                        @endadmin
                                                     @endif
                                                 </td>
                                             </tr>
@@ -197,7 +204,12 @@
                             @if($expense_status === 'paid' && $expense_paid_date)
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Paid Date') }}</label>
-                                    <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}</p>
+                                    <p class="text-slate-900 dark:text-white">
+                                        {{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}
+                                        @if($viewingExpense?->paidBy)
+                                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $viewingExpense->paidBy->name }}</span>
+                                        @endif
+                                    </p>
                                 </div>
                             @elseif($expense_status === 'unpaid' && $expense_payment_due_date)
                                 <div>
@@ -209,6 +221,17 @@
                     @endif
                 </div>
             </div>
+
+            @if($viewingExpense)
+                <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <livewire:shared.attachments
+                        model-type="expense"
+                        :model-id="$viewingExpense->id"
+                        :key="'expense-attachments-'.$viewingExpense->id" />
+                </div>
+            @endif
+
+            @include('livewire.project.partials.expense-history')
 
             <div class="flex items-center justify-end space-x-4 mt-6">
                 <x-ui.button type="button" variant="secondary" wire:click="closeExpenseModal">{{ __('Close') }}</x-ui.button>

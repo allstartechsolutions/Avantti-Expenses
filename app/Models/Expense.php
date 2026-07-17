@@ -37,6 +37,7 @@ class Expense extends Model
         'payment_frequency',
         'payment_due_date',
         'paid_date',
+        'paid_by',
     ];
 
     protected $casts = [
@@ -53,6 +54,12 @@ class Expense extends Model
     protected static function boot()
     {
         parent::boot();
+
+        static::creating(function ($expense) {
+            if ($expense->status === 'paid' && !$expense->paid_by) {
+                $expense->paid_by = auth()->id();
+            }
+        });
 
         static::deleting(function ($expense) {
             if ($expense->receipt_path && Storage::exists($expense->receipt_path)) {
@@ -145,6 +152,43 @@ class Expense extends Model
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    /**
+     * Get the user who marked this expense as paid
+     */
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    /**
+     * Get the change history for this expense (payment status changes and admin edits)
+     */
+    public function changeHistories(): HasMany
+    {
+        return $this->hasMany(ExpenseChangeHistory::class)->latest();
+    }
+
+    /**
+     * Get the file attachments for this expense
+     */
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable')->latest();
+    }
+
+    /**
+     * Record a change history entry for this expense
+     */
+    public function recordChange(string $action, ?array $changes = null, ?int $expensePaymentId = null): void
+    {
+        $this->changeHistories()->create([
+            'expense_payment_id' => $expensePaymentId,
+            'action' => $action,
+            'changed_by' => auth()->id(),
+            'changes' => $changes,
+        ]);
     }
 
     /**
@@ -244,6 +288,79 @@ class Expense extends Model
 
         // Installment expenses: editable if no payments have been made
         return $this->getPaidInstallmentsCount() === 0;
+    }
+
+    /**
+     * Check if the given user can edit this expense.
+     * Admins can edit expenses even after payments have been made.
+     */
+    public function isEditableBy(?User $user): bool
+    {
+        return $this->isEditable() || ($user?->is_admin ?? false);
+    }
+
+    /**
+     * Check if the payment structure is locked (installments already paid)
+     */
+    public function hasLockedPayments(): bool
+    {
+        return $this->getPaidInstallmentsCount() > 0;
+    }
+
+    /**
+     * Update the expense and record a change history entry with the field diff.
+     * When installments have already been paid, payment-structure fields are
+     * preserved so the existing schedule and status are not clobbered.
+     */
+    public function updateWithHistory(array $data): void
+    {
+        if ($this->hasLockedPayments()) {
+            unset(
+                $data['status'],
+                $data['paid_date'],
+                $data['payment_due_date'],
+                $data['total_installments'],
+                $data['payment_frequency'],
+            );
+        }
+
+        // Track who marked a one-time expense paid (or clear it when reverting)
+        if (($data['total_installments'] ?? $this->total_installments) == 1 && array_key_exists('status', $data)) {
+            if ($data['status'] === 'paid' && $this->status !== 'paid') {
+                $data['paid_by'] = auth()->id();
+            } elseif ($data['status'] !== 'paid') {
+                $data['paid_by'] = null;
+            }
+        }
+
+        $before = $this->getAttributes();
+
+        $this->update($data);
+
+        $diff = [];
+        foreach ($this->getChanges() as $field => $new) {
+            if (in_array($field, ['created_at', 'updated_at', 'paid_by'])) {
+                continue;
+            }
+
+            $old = $before[$field] ?? null;
+
+            // Money columns are stored as cents
+            if (in_array($field, ['total_amount', 'unit_price'])) {
+                $old = $old !== null ? $old / 100 : null;
+                $new = $new !== null ? $new / 100 : null;
+            }
+
+            // Trim midnight time from date values for readability
+            $old = is_string($old) ? str_replace(' 00:00:00', '', $old) : $old;
+            $new = is_string($new) ? str_replace(' 00:00:00', '', $new) : $new;
+
+            $diff[$field] = ['old' => $old, 'new' => $new];
+        }
+
+        if ($diff) {
+            $this->recordChange('edited', $diff);
+        }
     }
 
     /**
@@ -415,14 +532,40 @@ class Expense extends Model
             return;
         }
 
+        $oldStatus = $this->status;
+
         $this->status = 'paid';
         $this->paid_date = $paidDate ?? now();
+        $this->paid_by = auth()->id();
 
         if ($paymentMethod) {
             $this->payment_method = $paymentMethod;
         }
 
         $this->save();
+
+        $this->recordChange('marked_paid', [
+            'status' => ['old' => $oldStatus, 'new' => 'paid'],
+        ]);
+    }
+
+    /**
+     * Revert a paid one-time expense back to unpaid (admin correction)
+     */
+    public function unmarkAsPaid(): void
+    {
+        if (!$this->isOneTime() || $this->status !== 'paid') {
+            return;
+        }
+
+        $this->status = 'unpaid';
+        $this->paid_date = null;
+        $this->paid_by = null;
+        $this->save();
+
+        $this->recordChange('unmarked_paid', [
+            'status' => ['old' => 'paid', 'new' => 'unpaid'],
+        ]);
     }
 
     /**

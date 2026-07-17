@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Expense;
 use App\Models\Project;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,8 @@ use Livewire\Component;
 
 class ProjectExpenses extends Component
 {
+    use AuthorizesAdmin;
+
     public Project $project;
 
     // Filters
@@ -37,6 +40,7 @@ class ProjectExpenses extends Component
     public $expense_paid_date = '';
     public $existingReceiptPath = null;
     public $expenseItems = [];
+    public $expenseHistory = [];
 
     public function mount(Project $project): void
     {
@@ -45,7 +49,7 @@ class ProjectExpenses extends Component
 
     public function openExpenseViewModal(int $expenseId): void
     {
-        $expense = Expense::with(['payments', 'items.budgetItem', 'items.catalogItem', 'supplier', 'jobSite'])
+        $expense = Expense::with(['payments.paidBy', 'paidBy', 'items.budgetItem', 'items.catalogItem', 'supplier', 'jobSite'])
             ->findOrFail($expenseId);
 
         $this->viewingExpense = $expense;
@@ -86,6 +90,18 @@ class ProjectExpenses extends Component
         $this->expense_payment_due_date = $expense->payment_due_date?->format('Y-m-d');
         $this->expense_paid_date = $expense->paid_date?->format('Y-m-d');
 
+        $this->expenseHistory = $expense->changeHistories()
+            ->with(['changedBy', 'expensePayment'])
+            ->get()
+            ->map(fn ($h) => [
+                'label' => $h->getActionLabel(),
+                'color' => $h->getActionColor(),
+                'user' => $h->changedBy?->name,
+                'date' => $h->created_at->format('M d, Y H:i'),
+                'changes' => $h->changes,
+            ])
+            ->toArray();
+
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-view-modal');
     }
@@ -94,6 +110,7 @@ class ProjectExpenses extends Component
     {
         $this->showExpenseModal = false;
         $this->viewingExpense = null;
+        $this->expenseHistory = [];
         $this->dispatch('close-modal', 'expense-view-modal');
     }
 
@@ -102,47 +119,69 @@ class ProjectExpenses extends Component
         $expense = Expense::findOrFail($expenseId);
 
         if ($expense->isOneTime() && $expense->status !== 'paid') {
-            $expense->update([
-                'status' => 'paid',
-                'paid_date' => now(),
-            ]);
+            $expense->markAsPaid();
             session()->flash('message', __('Expense marked as paid.'));
         }
+    }
+
+    public function unmarkExpensePaid(int $expenseId): void
+    {
+        $this->authorizeAdmin();
+
+        $expense = Expense::findOrFail($expenseId);
+        $expense->unmarkAsPaid();
+
+        session()->flash('message', __('Expense payment reverted to unpaid.'));
     }
 
     public function markPaymentAsPaid(int $paymentId): void
     {
         $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
-        $payment->update([
-            'status' => 'paid',
-            'paid_date' => now(),
-        ]);
+        $payment->markAsPaid();
 
         // Refresh the viewing expense
         if ($this->viewingExpense) {
             $this->viewingExpense->refresh();
             $this->viewingExpense->load('payments');
-            $this->viewingExpense->updateStatusFromPayments();
         }
 
         session()->flash('message', __('Payment marked as paid.'));
     }
 
-    public function markPaymentAsOverdue(int $paymentId): void
+    public function unmarkPaymentPaid(int $paymentId): void
     {
+        $this->authorizeAdmin();
+
         $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
-        $payment->update(['status' => 'overdue']);
+
+        if ($payment->isPaid()) {
+            $payment->markAsPending();
+            session()->flash('message', __('Payment reverted to pending.'));
+        }
 
         // Refresh the viewing expense
         if ($this->viewingExpense) {
             $this->viewingExpense->refresh();
             $this->viewingExpense->load('payments');
-            $this->viewingExpense->updateStatusFromPayments();
+        }
+    }
+
+    public function markPaymentAsOverdue(int $paymentId): void
+    {
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment->markAsOverdue();
+
+        // Refresh the viewing expense
+        if ($this->viewingExpense) {
+            $this->viewingExpense->refresh();
+            $this->viewingExpense->load('payments');
         }
     }
 
     public function deleteExpense(int $expenseId): void
     {
+        $this->authorizeAdmin();
+
         $expense = Expense::findOrFail($expenseId);
 
         // Delete receipt file if exists

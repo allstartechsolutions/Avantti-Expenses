@@ -939,7 +939,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </button>
-                                                    @if($expense->isEditable())
+                                                    @if($expense->isEditableBy(auth()->user()))
                                                         <button
                                                             wire:click="openExpenseEditModal({{ $expense->id }})"
                                                             class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
@@ -964,6 +964,18 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                             </svg>
                                                         </button>
+                                                    @elseif($expense->status === 'paid' && $expense->isOneTime())
+                                                        @admin
+                                                        <button
+                                                            wire:click="unmarkExpensePaid({{ $expense->id }})"
+                                                            wire:confirm="{{ __('Revert this expense to unpaid?') }}"
+                                                            class="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300"
+                                                            title="{{ __('Revert to Unpaid') }}">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v1m-15-6l4-4m-4 4l4 4"></path>
+                                                            </svg>
+                                                        </button>
+                                                        @endadmin
                                                     @endif
                                                     @admin
                                                     <button

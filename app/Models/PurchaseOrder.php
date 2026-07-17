@@ -91,6 +91,11 @@ class PurchaseOrder extends Model
         return $this->hasMany(PurchaseOrderStatusHistory::class)->orderBy('created_at', 'desc');
     }
 
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable')->latest();
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

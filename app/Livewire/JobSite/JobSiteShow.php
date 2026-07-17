@@ -2,6 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
+use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
@@ -19,7 +20,7 @@ use Livewire\WithFileUploads;
 
 class JobSiteShow extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, AuthorizesAdmin;
 
     public JobSite $jobSite;
     public $activeTab = 'overview';
@@ -49,6 +50,7 @@ class JobSiteShow extends Component
     public $showExpenseModal = false;
     public $expenseModalMode = 'create';
     public $editingExpense = null;
+    public $expenseHistory = [];
 
     // Expense form properties
     public $catalogItemSearch = '';
@@ -331,6 +333,7 @@ class JobSiteShow extends Component
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
             'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
@@ -353,8 +356,8 @@ class JobSiteShow extends Component
     {
         $expense = Expense::with('payments')->findOrFail($expenseId);
 
-        // Check if expense is editable
-        if (!$expense->isEditable()) {
+        // Check if expense is editable (admins can edit paid expenses)
+        if (!$expense->isEditableBy(auth()->user())) {
             session()->flash('error', __('This expense cannot be edited because it has payments.'));
             return;
         }
@@ -436,9 +439,26 @@ class JobSiteShow extends Component
         $this->expense_payment_due_date = $expense->payment_due_date?->format('Y-m-d');
         $this->expense_paid_date = $expense->paid_date?->format('Y-m-d');
 
+        $this->loadExpenseHistory($expense);
+
         $this->expenseModalMode = 'view';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
+    }
+
+    protected function loadExpenseHistory(Expense $expense): void
+    {
+        $this->expenseHistory = $expense->changeHistories()
+            ->with(['changedBy', 'expensePayment'])
+            ->get()
+            ->map(fn ($h) => [
+                'label' => $h->getActionLabel(),
+                'color' => $h->getActionColor(),
+                'user' => $h->changedBy?->name,
+                'date' => $h->created_at->format('M d, Y H:i'),
+                'changes' => $h->changes,
+            ])
+            ->toArray();
     }
 
     public function saveExpense()
@@ -521,21 +541,24 @@ class JobSiteShow extends Component
         if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
             $expense = Expense::findOrFail($this->editingExpense);
 
-            // Check if editable
-            if (!$expense->isEditable()) {
+            // Check if editable (admins can edit paid expenses)
+            if (!$expense->isEditableBy(auth()->user())) {
                 session()->flash('error', __('This expense cannot be edited because it has payments.'));
                 return;
             }
 
-            $expense->update($data);
+            $expense->updateWithHistory($data);
 
             // Regenerate payment schedule if installments changed
-            if ($this->expense_has_installments) {
-                $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
-                $expense->generatePaymentSchedule($customAmounts);
-            } else {
-                // Remove any existing payments if changed to one-time
-                $expense->payments()->delete();
+            // (locked once any installment has been paid)
+            if (!$expense->hasLockedPayments()) {
+                if ($this->expense_has_installments) {
+                    $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                    $expense->generatePaymentSchedule($customAmounts);
+                } else {
+                    // Remove any existing payments if changed to one-time
+                    $expense->payments()->delete();
+                }
             }
 
             session()->flash('message', __('Expense updated successfully!'));
@@ -558,6 +581,8 @@ class JobSiteShow extends Component
 
     public function deleteExpense($expenseId)
     {
+        $this->authorizeAdmin();
+
         $expense = Expense::findOrFail($expenseId);
         $expense->delete();
 
@@ -573,6 +598,7 @@ class JobSiteShow extends Component
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
             'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
@@ -737,6 +763,37 @@ class JobSiteShow extends Component
         }
     }
 
+    // Revert a paid one-time expense back to unpaid (admin only)
+    public function unmarkExpensePaid($expenseId)
+    {
+        $this->authorizeAdmin();
+
+        $expense = Expense::findOrFail($expenseId);
+        $expense->unmarkAsPaid();
+
+        session()->flash('message', __('Expense payment reverted to unpaid.'));
+        $this->jobSite->refresh();
+    }
+
+    // Revert a paid installment back to pending (admin only)
+    public function unmarkPaymentPaid($paymentId)
+    {
+        $this->authorizeAdmin();
+
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+
+        if ($payment->isPaid()) {
+            $payment->markAsPending();
+            session()->flash('message', __('Payment reverted to pending.'));
+        }
+
+        $this->jobSite->refresh();
+
+        if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
+            $this->openExpenseViewModal($payment->expense_id);
+        }
+    }
+
     // =========================================================================
     // DELETE JOB SITE
     // =========================================================================
@@ -884,7 +941,7 @@ class JobSiteShow extends Component
         // Get the viewing expense with payments for the modal
         $viewingExpense = null;
         if ($this->editingExpense && $this->expenseModalMode === 'view') {
-            $viewingExpense = Expense::with('payments')->find($this->editingExpense);
+            $viewingExpense = Expense::with(['payments.paidBy', 'paidBy'])->find($this->editingExpense);
         }
 
         // Budget

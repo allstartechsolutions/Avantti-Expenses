@@ -15,6 +15,7 @@ class ExpensePayment extends Model
         'amount',
         'due_date',
         'paid_date',
+        'paid_by',
         'status',
         'payment_method',
         'notes',
@@ -45,12 +46,23 @@ class ExpensePayment extends Model
     }
 
     /**
+     * Get the user who marked this payment as paid
+     */
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    /**
      * Mark this payment as paid
      */
     public function markAsPaid(?string $paymentMethod = null, ?Carbon $paidDate = null): void
     {
+        $oldStatus = $this->status;
+
         $this->status = 'paid';
         $this->paid_date = $paidDate ?? now();
+        $this->paid_by = auth()->id();
 
         if ($paymentMethod) {
             $this->payment_method = $paymentMethod;
@@ -60,6 +72,10 @@ class ExpensePayment extends Model
 
         // Update parent expense status
         $this->expense->updateStatusFromPayments();
+
+        $this->expense->recordChange('marked_paid', [
+            'status' => ['old' => $oldStatus, 'new' => 'paid'],
+        ], $this->id);
     }
 
     /**
@@ -67,23 +83,43 @@ class ExpensePayment extends Model
      */
     public function markAsOverdue(): void
     {
+        $oldStatus = $this->status;
+
         $this->status = 'overdue';
         $this->save();
 
         // Update parent expense status to overdue
         $this->expense->update(['status' => 'overdue']);
+
+        $this->expense->recordChange('marked_overdue', [
+            'status' => ['old' => $oldStatus, 'new' => 'overdue'],
+        ], $this->id);
     }
 
     /**
-     * Mark this payment as pending (revert from overdue)
+     * Mark this payment as pending (revert from overdue or paid)
      */
     public function markAsPending(): void
     {
+        $oldStatus = $this->status;
+
         $this->status = 'pending';
+
+        if ($oldStatus === 'paid') {
+            $this->paid_date = null;
+            $this->paid_by = null;
+        }
+
         $this->save();
 
         // Recalculate parent expense status
         $this->expense->updateStatusFromPayments();
+
+        $this->expense->recordChange(
+            $oldStatus === 'paid' ? 'unmarked_paid' : 'marked_pending',
+            ['status' => ['old' => $oldStatus, 'new' => 'pending']],
+            $this->id
+        );
     }
 
     /**

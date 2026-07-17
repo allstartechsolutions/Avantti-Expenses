@@ -166,7 +166,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </button>
-                                                    @if($expense->isEditable())
+                                                    @if($expense->isEditableBy(auth()->user()))
                                                         <button
                                                             wire:click="openExpenseEditModal({{ $expense->id }})"
                                                             class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
@@ -191,7 +191,20 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                             </svg>
                                                         </button>
+                                                    @elseif($expense->status === 'paid' && $expense->isOneTime())
+                                                        @admin
+                                                        <button
+                                                            wire:click="unmarkExpensePaid({{ $expense->id }})"
+                                                            wire:confirm="{{ __('Revert this expense to unpaid?') }}"
+                                                            class="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300"
+                                                            title="{{ __('Revert to Unpaid') }}">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v1m-15-6l4-4m-4 4l4 4"></path>
+                                                            </svg>
+                                                        </button>
+                                                        @endadmin
                                                     @endif
+                                                    @admin
                                                     <button
                                                         wire:click="deleteExpense({{ $expense->id }})"
                                                         wire:confirm="{{ __('Are you sure you want to delete this expense?') }}"
@@ -201,6 +214,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
                                                     </button>
+                                                    @endadmin
                                                 </div>
                                             </td>
                                         </tr>
@@ -1089,6 +1103,9 @@
                                                     </td>
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
                                                         {{ $payment->paid_date ? $payment->paid_date->format('M d, Y') : '-' }}
+                                                        @if($payment->status === 'paid' && $payment->paidBy)
+                                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $payment->paidBy->name }}</span>
+                                                        @endif
                                                     </td>
                                                     <td class="px-4 py-2 text-right">
                                                         @if($payment->status === 'pending')
@@ -1108,6 +1125,15 @@
                                                                 class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
                                                                 Mark Paid
                                                             </button>
+                                                        @elseif($payment->status === 'paid')
+                                                            @admin
+                                                                <button
+                                                                    wire:click="unmarkPaymentPaid({{ $payment->id }})"
+                                                                    wire:confirm="{{ __('Revert this payment to pending?') }}"
+                                                                    class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">
+                                                                    {{ __('Revert') }}
+                                                                </button>
+                                                            @endadmin
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -1131,7 +1157,12 @@
                                 @if($expense_status === 'paid' && $expense_paid_date)
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Paid Date</label>
-                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}</p>
+                                        <p class="text-slate-900 dark:text-white">
+                                            {{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}
+                                            @if($viewingExpense?->paidBy)
+                                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $viewingExpense->paidBy->name }}</span>
+                                            @endif
+                                        </p>
                                     </div>
                                 @elseif($expense_status === 'unpaid' && $expense_payment_due_date)
                                     <div>
@@ -1142,6 +1173,17 @@
                             </div>
                         @endif
                     </div>
+
+                    @if($viewingExpense)
+                        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+                            <livewire:shared.attachments
+                                model-type="expense"
+                                :model-id="$viewingExpense->id"
+                                :key="'expense-attachments-'.$viewingExpense->id" />
+                        </div>
+                    @endif
+
+                    @include('livewire.project.partials.expense-history')
 
                     <div class="flex justify-end pt-4">
                         <x-ui.button

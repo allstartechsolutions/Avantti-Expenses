@@ -49,6 +49,9 @@ class ProjectShow extends Component
     public $existingReceiptPath = null;
     public $expense_total_amount = 0;
 
+    // Expense change history (shown in view modal)
+    public $expenseHistory = [];
+
     // Expense items (multi-item support)
     public $expenseItems = [];
     public $catalogItemSearches = []; // Search text per item row
@@ -467,8 +470,8 @@ class ProjectShow extends Component
     {
         $expense = Expense::with(['payments', 'items.budgetItem', 'items.catalogItem', 'supplier'])->findOrFail($expenseId);
 
-        // Check if expense is editable
-        if (!$expense->isEditable()) {
+        // Check if expense is editable (admins can edit paid expenses)
+        if (!$expense->isEditableBy(auth()->user())) {
             session()->flash('error', 'This expense cannot be edited because it has payments.');
             return;
         }
@@ -590,10 +593,26 @@ class ProjectShow extends Component
         $this->expense_paid_date = $expense->paid_date?->format('Y-m-d');
 
         $this->loadBudgetItems();
+        $this->loadExpenseHistory($expense);
 
         $this->expenseModalMode = 'view';
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-modal');
+    }
+
+    protected function loadExpenseHistory(Expense $expense): void
+    {
+        $this->expenseHistory = $expense->changeHistories()
+            ->with(['changedBy', 'expensePayment'])
+            ->get()
+            ->map(fn ($h) => [
+                'label' => $h->getActionLabel(),
+                'color' => $h->getActionColor(),
+                'user' => $h->changedBy?->name,
+                'date' => $h->created_at->format('M d, Y H:i'),
+                'changes' => $h->changes,
+            ])
+            ->toArray();
     }
 
     public function saveExpense()
@@ -682,11 +701,11 @@ class ProjectShow extends Component
             if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
                 $expense = Expense::findOrFail($this->editingExpense);
 
-                if (!$expense->isEditable()) {
+                if (!$expense->isEditableBy(auth()->user())) {
                     throw new \Exception('This expense cannot be edited because it has payments.');
                 }
 
-                $expense->update($data);
+                $expense->updateWithHistory($data);
 
                 // Get existing item IDs
                 $existingItemIds = $expense->items()->pluck('id')->toArray();
@@ -737,11 +756,14 @@ class ProjectShow extends Component
                 }
 
                 // Regenerate payment schedule if installments changed
-                if ($this->expense_has_installments) {
-                    $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
-                    $expense->generatePaymentSchedule($customAmounts);
-                } else {
-                    $expense->payments()->delete();
+                // (locked once any installment has been paid)
+                if (!$expense->hasLockedPayments()) {
+                    if ($this->expense_has_installments) {
+                        $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
+                        $expense->generatePaymentSchedule($customAmounts);
+                    } else {
+                        $expense->payments()->delete();
+                    }
                 }
 
                 session()->flash('message', 'Expense updated successfully!');
@@ -807,7 +829,7 @@ class ProjectShow extends Component
         $this->reset([
             'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
-            'expenseItems', 'catalogItemSearches', 'budgetItems', 'expense_total_amount',
+            'expenseItems', 'catalogItemSearches', 'budgetItems', 'expense_total_amount', 'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
@@ -970,6 +992,37 @@ class ProjectShow extends Component
             $expense->markAsPaid();
             session()->flash('message', 'Expense marked as paid!');
             $this->project->refresh();
+        }
+    }
+
+    // Revert a paid one-time expense back to unpaid (admin only)
+    public function unmarkExpensePaid($expenseId)
+    {
+        $this->authorizeAdmin();
+
+        $expense = Expense::findOrFail($expenseId);
+        $expense->unmarkAsPaid();
+
+        session()->flash('message', 'Expense payment reverted to unpaid.');
+        $this->project->refresh();
+    }
+
+    // Revert a paid installment back to pending (admin only)
+    public function unmarkPaymentPaid($paymentId)
+    {
+        $this->authorizeAdmin();
+
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+
+        if ($payment->isPaid()) {
+            $payment->markAsPending();
+            session()->flash('message', 'Payment reverted to pending.');
+        }
+
+        $this->project->refresh();
+
+        if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
+            $this->openExpenseViewModal($payment->expense_id);
         }
     }
 
@@ -1410,7 +1463,7 @@ class ProjectShow extends Component
         // Get the viewing expense with payments for the modal
         $viewingExpense = null;
         if ($this->editingExpense && $this->expenseModalMode === 'view') {
-            $viewingExpense = Expense::with('payments')->find($this->editingExpense);
+            $viewingExpense = Expense::with(['payments.paidBy', 'paidBy'])->find($this->editingExpense);
         }
 
         // Budget data
