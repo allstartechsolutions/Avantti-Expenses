@@ -109,10 +109,11 @@ class ExpenseReportService
         $total = (float) $e->total_amount;
 
         if ($e->total_installments > 1) {
-            $paid = round($e->payments->where('status', 'paid')->sum('amount') / 100, 2);
+            // Collection sums go through the dollar accessor — no cents conversion here.
+            $paid = round($e->payments->where('status', 'paid')->sum('amount'), 2);
             $overdue = round($e->payments
                 ->filter(fn (ExpensePayment $p) => $p->status !== 'paid' && $p->due_date && $p->due_date->lt($this->today))
-                ->sum('amount') / 100, 2);
+                ->sum('amount'), 2);
         } else {
             $isPaid = $e->status === 'paid';
             $paid = $isPaid ? $total : 0.0;

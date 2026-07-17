@@ -35,6 +35,7 @@ use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\ContractPaymentsPdfController;
 use App\Http\Controllers\AccountsPayableReportPdfController;
+use App\Http\Controllers\PaymentDetailReportPdfController;
 use App\Http\Controllers\PaymentScheduleReportPdfController;
 use App\Http\Controllers\ExpenseReportPdfController;
 use App\Http\Controllers\JobSiteFinancialReportPdfController;
@@ -87,6 +88,7 @@ use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\AccountsPayableReport;
+use App\Livewire\Report\PaymentDetailReport;
 use App\Livewire\Report\PaymentScheduleReport;
 use App\Livewire\Report\ExpenseReport;
 use App\Livewire\Report\SalesTaxReport;
@@ -256,6 +258,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
         Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
         Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');
+        Route::get('reports/payment-details', PaymentDetailReport::class)->name('reports.payment-details');
+        Route::get('reports/payment-details/pdf', [PaymentDetailReportPdfController::class, 'download'])->name('reports.payment-details.pdf.download');
+        Route::get('reports/payment-details/pdf/view', [PaymentDetailReportPdfController::class, 'stream'])->name('reports.payment-details.pdf.view');
     });
 
     // System Settings + Cost Code Templates (admin only)
