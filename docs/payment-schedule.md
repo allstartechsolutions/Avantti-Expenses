@@ -14,6 +14,14 @@ Both render the same shared partials and the same service, so numbers always agr
 3. **Combined summary** — Expenses + Contracts × Committed / Paid / Outstanding.
 4. **Upcoming Payments by Month** — an *Overdue (past due)* bucket, then one row per month until the last scheduled open payment (capped at 24 months), then a *Later* bucket if anything falls beyond the cap. Nothing is silently dropped: Overdue + months + Later = total open.
 
+## PDF / CSV Exports
+- **PDF buttons build their URL at click time** from `window.location.search` (Alpine `x-on:click.prevent`), because Livewire keeps the browser query string in sync with the active filters. This guarantees the PDF always matches what is on screen — static hrefs went stale when the DOM morph didn't update anchor attributes. The same pattern is applied to the Expense Report and Accounts Payable report export buttons. Requirement: the component's `$queryString` property names must match the query params the PDF controller reads (they do on all three reports).
+- The PDF header prints the active scope (Client / Project / Job Site) and the Period when a date range is set; unfiltered shows "All clients, projects, and job sites".
+- CSV is a Livewire action (`exportCsv`) and always reads current component state; the filename carries the date range.
+
+## Terminology note (lang/en.json)
+This install remaps terminology app-wide: code "Project" displays as **"Job Site"**, code "Job Sites" display as **"Lots"**. The singular mapping `"Job Site": "Lot"` (plus `"All projects"`/`"All job sites"`) was added July 2026 so report filter labels are unambiguous — before that, the project filter and the job-site filter both displayed as "Job Site". In the UI/PDFs this report therefore shows: **Job Site** = a project, **Lot** = a job site.
+
 ## Rules & Semantics
 - **Due dates**: installment expenses use `expense_payments.due_date`; one-time expenses use `COALESCE(payment_due_date, expense_date)`.
 - **Overdue is derived** (`due date < today`); the stored `'overdue'` status is never consulted (nothing auto-marks it).

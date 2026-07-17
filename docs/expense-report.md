@@ -44,6 +44,11 @@ cost-code rows cannot be prorated (payments are per expense, not per line item).
 Invalid `dateBasis` values from the query string are coerced to `expense`. CSV/PDF filenames
 include the basis.
 
+### PDF export links
+The View/Download PDF buttons build their URL at click time from `window.location.search`
+(Livewire keeps the query string synced with the filters), so the PDF always matches the
+on-screen filters. See `docs/payment-schedule.md` → "PDF / CSV Exports" for the pattern.
+
 ### Status filter (derived)
 
 `outstanding` and `overdue` are computed, not stored, so the status filter is applied in
