@@ -1,7 +1,12 @@
-# Payment Schedule (Project & Job Site Financial Reports)
+# Payment Schedule
 
 ## Overview
-A **Payment Schedule** section on the project financial report (`projects/{project}/report`) and job site financial report (`job-sites/{jobSite}/report`), including their PDFs. It answers: what have we paid, what is still open, when is it due, and what's coming month by month — combining **expenses** (scheduled by due date) and **subcontractor contracts** (totals only).
+Answers: what have we paid, what is still open, when is it due, and what's coming month by month — combining **expenses** (scheduled by due date) and **subcontractor contracts** (totals only). Available in two places:
+
+1. **Standalone report** — `reports/payment-schedule` (Reports menu, admin-only): **system-wide by default**, filterable by Client, Project, and Job Site (dependent selects). CSV export + PDF (download/view). Component: `app/Livewire/Report/PaymentScheduleReport.php`; PDF: `PaymentScheduleReportPdfController` + `pdf/payment-schedule-report.blade.php`.
+2. **Section on the financial reports** — the project financial report (`projects/{project}/report`) and job site financial report (`job-sites/{jobSite}/report`), including their PDFs, show the same content scoped to that project/job site.
+
+Both render the same shared partials and the same service, so numbers always agree.
 
 ## What It Shows
 1. **Expense tiles** — Expense Commitments / Paid / Upcoming / Overdue, by payment due date, with payment counts.
@@ -17,7 +22,7 @@ A **Payment Schedule** section on the project financial report (`projects/{proje
 - **Scope**: project report = whole project (project-level + all job sites); job site report = that job site only.
 
 ## Implementation
-- **`app/Services/PaymentScheduleService.php`** — the single source of the numbers. `PaymentScheduleService::forProject($project)->build()` / `forJobSite($jobSite)->build()` returns `['expenses','contracts','combined','projection']`. Query patterns mirror `AccountsPayableService` (deliberately not merged: AP is period-driven and cross-project; this is point-in-time and scoped).
+- **`app/Services/PaymentScheduleService.php`** — the single source of the numbers. `PaymentScheduleService::forSystem($clientId, $projectId, $jobSiteId)` (all args optional) / `forProject($project)` / `forJobSite($jobSite)`, then `->build()` returns `['expenses','contracts','combined','projection']`. Query patterns mirror `AccountsPayableService` (deliberately not merged: AP is period-driven; this is point-in-time).
 - Consumed by 4 call sites so screen and PDF always match:
   - `app/Livewire/Project/ProjectFinancialReport.php`, `app/Livewire/JobSite/JobSiteFinancialReport.php` (`getPaymentScheduleProperty()`)
   - `ProjectFinancialReportPdfController`, `JobSiteFinancialReportPdfController`

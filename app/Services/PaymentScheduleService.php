@@ -12,8 +12,9 @@ use Carbon\Carbon;
 /**
  * Payment Schedule for the project / job site financial reports.
  *
- * Answers "what have we paid, what is still open, and when is it due" for a
- * single project (all job sites + project-level) or a single job site:
+ * Answers "what have we paid, what is still open, and when is it due" —
+ * system-wide (all projects), for a single project (all job sites +
+ * project-level), or for a single job site:
  *   - Expenses are scheduled: installments via expense_payments.due_date,
  *     one-time expenses via COALESCE(payment_due_date, expense_date).
  *   - Overdue is DERIVED (due date < today) — nothing marks payments overdue
@@ -35,8 +36,9 @@ class PaymentScheduleService
     protected ?array $expenseScheduleCache = null;
 
     public function __construct(
-        protected int $projectId,
+        protected ?int $projectId = null,
         protected ?int $jobSiteId = null,
+        protected ?int $clientId = null,
     ) {
         $this->today = Carbon::now()->startOfDay();
     }
@@ -49,6 +51,14 @@ class PaymentScheduleService
     public static function forJobSite(JobSite $jobSite): self
     {
         return new self($jobSite->project_id, $jobSite->id);
+    }
+
+    /**
+     * System-wide scope (all projects), optionally narrowed by filters.
+     */
+    public static function forSystem(?int $clientId = null, ?int $projectId = null, ?int $jobSiteId = null): self
+    {
+        return new self($projectId, $jobSiteId, $clientId);
     }
 
     /**
@@ -71,8 +81,9 @@ class PaymentScheduleService
 
     protected function applyScope($q): void
     {
-        $q->where('project_id', $this->projectId)
-            ->when($this->jobSiteId, fn ($q) => $q->where('job_site_id', $this->jobSiteId));
+        $q->when($this->projectId, fn ($q) => $q->where('project_id', $this->projectId))
+            ->when($this->jobSiteId, fn ($q) => $q->where('job_site_id', $this->jobSiteId))
+            ->when($this->clientId, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientId)));
     }
 
     protected function openInstallments()

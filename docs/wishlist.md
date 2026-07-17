@@ -8,6 +8,8 @@ Items agreed as good additions but not yet scheduled. Keep entries short; move t
 
 - **`<x-ui.phone-input>` component** — the `x-phone-mask` attribute is hand-added to 16 phone inputs, which already drifted (`type="text"` vs `type="tel"`, inconsistent placeholders). A shared Blade component would make the mask, `type=tel`, and country-aware placeholder automatic for every future phone field. *(from code review, July 2026)*
 
+- **`fputcsv()` PHP 8.4 deprecation** — all report CSV exports (Expense, Accounts Payable, Payment Schedule) call `fputcsv()` without the explicit `$escape` parameter, which logs deprecation notices on PHP 8.4. One-line fix per call site when touching those files.
+
 ## Open Decisions
 
 - **Employee management permissions** — subcontractor employee add/delete is currently open to all users (same as documents); deleting an employee unlinks it from contracts. Decide: leave open, delete admin-only, or all employee management admin-only.
