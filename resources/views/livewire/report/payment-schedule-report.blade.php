@@ -15,6 +15,8 @@
                 'clientFilter' => $clientFilter,
                 'projectFilter' => $projectFilter,
                 'jobSiteFilter' => $jobSiteFilter,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
             ]);
         @endphp
         <div class="flex items-center gap-2">
@@ -32,7 +34,17 @@
 
     {{-- Filters --}}
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('From') }}</label>
+                <input type="date" wire:model.live="fromDate"
+                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('To') }}</label>
+                <input type="date" wire:model.live="toDate"
+                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+            </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Client') }}</label>
                 <select wire:model.live="clientFilter"
@@ -64,7 +76,26 @@
                 </select>
             </div>
         </div>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+            <button type="button" wire:click="setAllTime" class="px-3 py-1 text-xs rounded-md {{ !$fromDate && !$toDate ? 'bg-[#3F5189] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600' }}">{{ __('All time') }}</button>
+            <button type="button" wire:click="setCurrentMonth" class="px-3 py-1 text-xs rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600">{{ __('This month') }}</button>
+            <button type="button" wire:click="setNextMonth" class="px-3 py-1 text-xs rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600">{{ __('Next month') }}</button>
+            <button type="button" wire:click="setNext3Months" class="px-3 py-1 text-xs rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600">{{ __('Next 3 months') }}</button>
+            <button type="button" wire:click="setThisYear" class="px-3 py-1 text-xs rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600">{{ __('This year') }}</button>
+        </div>
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {{ __('Open items are matched by due date; payments made are matched by paid date. Expenses without a due date are dated by their expense date, so nothing is left out.') }}
+        </p>
     </div>
+
+    @if ($fromDate || $toDate)
+        <div class="mb-6 px-6 py-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg">
+            <p class="text-xs text-blue-800 dark:text-blue-300">
+                {{ __('Showing period') }}: <strong>{{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }}</strong> — <strong>{{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}</strong>.
+                {{ __('Contract balances are point-in-time and not affected by the date range.') }}
+            </p>
+        </div>
+    @endif
 
     {{-- Payment schedule body (shared with the project/jobsite financial reports) --}}
     @include('livewire.shared.payment-schedule-section', ['schedule' => $schedule])

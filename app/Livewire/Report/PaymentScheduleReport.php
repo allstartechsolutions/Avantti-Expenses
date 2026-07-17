@@ -15,12 +15,46 @@ class PaymentScheduleReport extends Component
     public string $clientFilter = '';
     public string $projectFilter = '';
     public string $jobSiteFilter = '';
+    public string $fromDate = '';
+    public string $toDate = '';
 
     protected $queryString = [
         'clientFilter' => ['except' => ''],
         'projectFilter' => ['except' => ''],
         'jobSiteFilter' => ['except' => ''],
+        'fromDate' => ['except' => ''],
+        'toDate' => ['except' => ''],
     ];
+
+    public function setAllTime(): void
+    {
+        $this->fromDate = '';
+        $this->toDate = '';
+    }
+
+    public function setCurrentMonth(): void
+    {
+        $this->fromDate = now()->startOfMonth()->toDateString();
+        $this->toDate = now()->endOfMonth()->toDateString();
+    }
+
+    public function setNextMonth(): void
+    {
+        $this->fromDate = now()->addMonthNoOverflow()->startOfMonth()->toDateString();
+        $this->toDate = now()->addMonthNoOverflow()->endOfMonth()->toDateString();
+    }
+
+    public function setNext3Months(): void
+    {
+        $this->fromDate = now()->startOfMonth()->toDateString();
+        $this->toDate = now()->addMonthsNoOverflow(2)->endOfMonth()->toDateString();
+    }
+
+    public function setThisYear(): void
+    {
+        $this->fromDate = now()->startOfYear()->toDateString();
+        $this->toDate = now()->endOfYear()->toDateString();
+    }
 
     /**
      * Job site list depends on the selected project, so clear a stale selection
@@ -37,6 +71,9 @@ class PaymentScheduleReport extends Component
             $this->clientFilter !== '' ? (int) $this->clientFilter : null,
             $this->projectFilter !== '' ? (int) $this->projectFilter : null,
             $this->jobSiteFilter !== '' ? (int) $this->jobSiteFilter : null,
+        )->between(
+            $this->fromDate !== '' ? $this->fromDate : null,
+            $this->toDate !== '' ? $this->toDate : null,
         );
     }
 
@@ -67,7 +104,10 @@ class PaymentScheduleReport extends Component
     public function exportCsv(): StreamedResponse
     {
         $schedule = $this->service()->build();
-        $filename = 'payment-schedule-' . now()->format('Y-m-d') . '.csv';
+        $range = ($this->fromDate || $this->toDate)
+            ? '-' . ($this->fromDate ?: 'start') . '-to-' . ($this->toDate ?: 'open')
+            : '';
+        $filename = 'payment-schedule' . $range . '-' . now()->format('Y-m-d') . '.csv';
 
         return new StreamedResponse(function () use ($schedule) {
             $out = fopen('php://output', 'w');

@@ -45,6 +45,11 @@
                         {{ __('All clients, projects, and job sites') }}
                     @endif
                 </div>
+                @if($fromDate || $toDate)
+                    <div style="font-size: 8pt; color: #555;">
+                        {{ __('Period') }}: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }} — {{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}
+                    </div>
+                @endif
                 <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>

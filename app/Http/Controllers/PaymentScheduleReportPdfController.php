@@ -35,12 +35,20 @@ class PaymentScheduleReportPdfController extends Controller
         $clientFilter = (int) $request->query('clientFilter') ?: null;
         $projectFilter = (int) $request->query('projectFilter') ?: null;
         $jobSiteFilter = (int) $request->query('jobSiteFilter') ?: null;
+        $fromDate = $request->query('fromDate') ?: null;
+        $toDate = $request->query('toDate') ?: null;
+
+        $paymentSchedule = PaymentScheduleService::forSystem($clientFilter, $projectFilter, $jobSiteFilter)
+            ->between($fromDate, $toDate)
+            ->build();
 
         return [
-            'paymentSchedule' => PaymentScheduleService::forSystem($clientFilter, $projectFilter, $jobSiteFilter)->build(),
+            'paymentSchedule' => $paymentSchedule,
             'client' => $clientFilter ? Client::find($clientFilter) : null,
             'project' => $projectFilter ? Project::find($projectFilter) : null,
             'jobSite' => $jobSiteFilter ? JobSite::find($jobSiteFilter) : null,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
             'company' => Company::first(),
             'generatedAt' => now(),
         ];

@@ -33,6 +33,9 @@ class PaymentScheduleService
 
     protected Carbon $today;
 
+    protected ?Carbon $from = null;
+    protected ?Carbon $to = null;
+
     protected ?array $expenseScheduleCache = null;
 
     public function __construct(
@@ -59,6 +62,23 @@ class PaymentScheduleService
     public static function forSystem(?int $clientId = null, ?int $projectId = null, ?int $jobSiteId = null): self
     {
         return new self($projectId, $jobSiteId, $clientId);
+    }
+
+    /**
+     * Limit the schedule to a date window: open items by DUE date, paid items
+     * by PAID date (falling back to the due date when paid_date is missing).
+     * Either bound may be null for an open-ended range.
+     */
+    public function between(?string $from, ?string $to): self
+    {
+        $this->from = $from ? Carbon::parse($from)->startOfDay() : null;
+        $this->to = $to ? Carbon::parse($to)->endOfDay() : null;
+
+        if ($this->from && $this->to && $this->to->lt($this->from)) {
+            [$this->from, $this->to] = [$this->to, $this->from];
+        }
+
+        return $this;
     }
 
     /**
@@ -93,7 +113,9 @@ class PaymentScheduleService
             ->whereHas('expense', function ($q) {
                 $q->where('status', '!=', 'cancelled');
                 $this->applyScope($q);
-            });
+            })
+            ->when($this->from, fn ($q) => $q->whereDate('due_date', '>=', $this->from->toDateString()))
+            ->when($this->to, fn ($q) => $q->whereDate('due_date', '<=', $this->to->toDateString()));
     }
 
     protected function paidInstallments()
@@ -103,7 +125,9 @@ class PaymentScheduleService
             ->whereHas('expense', function ($q) {
                 $q->where('status', '!=', 'cancelled');
                 $this->applyScope($q);
-            });
+            })
+            ->when($this->from, fn ($q) => $q->whereRaw('COALESCE(paid_date, due_date) >= ?', [$this->from->toDateString()]))
+            ->when($this->to, fn ($q) => $q->whereRaw('COALESCE(paid_date, due_date) <= ?', [$this->to->toDateString()]));
     }
 
     protected function openOneTime()
@@ -111,7 +135,9 @@ class PaymentScheduleService
         return Expense::query()
             ->where('total_installments', 1)
             ->whereNotIn('status', ['paid', 'cancelled'])
-            ->tap(fn ($q) => $this->applyScope($q));
+            ->tap(fn ($q) => $this->applyScope($q))
+            ->when($this->from, fn ($q) => $q->whereRaw('COALESCE(payment_due_date, expense_date) >= ?', [$this->from->toDateString()]))
+            ->when($this->to, fn ($q) => $q->whereRaw('COALESCE(payment_due_date, expense_date) <= ?', [$this->to->toDateString()]));
     }
 
     protected function paidOneTime()
@@ -119,7 +145,9 @@ class PaymentScheduleService
         return Expense::query()
             ->where('total_installments', 1)
             ->where('status', 'paid')
-            ->tap(fn ($q) => $this->applyScope($q));
+            ->tap(fn ($q) => $this->applyScope($q))
+            ->when($this->from, fn ($q) => $q->whereRaw('COALESCE(paid_date, expense_date) >= ?', [$this->from->toDateString()]))
+            ->when($this->to, fn ($q) => $q->whereRaw('COALESCE(paid_date, expense_date) <= ?', [$this->to->toDateString()]));
     }
 
     protected function contracts()
@@ -282,7 +310,11 @@ class PaymentScheduleService
         $capped = false;
 
         if ($months->isNotEmpty()) {
-            $monthCursor = $this->today->copy()->startOfMonth();
+            // Start at the current month or the first month with data, whichever
+            // is later (a future date filter would otherwise emit leading zero rows).
+            $firstDataMonth = Carbon::createFromFormat('Y-m-d', $months->first() . '-01')->startOfMonth();
+            $currentMonth = $this->today->copy()->startOfMonth();
+            $monthCursor = $firstDataMonth->gt($currentMonth) ? $firstDataMonth : $currentMonth;
             $lastMonth = Carbon::createFromFormat('Y-m-d', $months->last() . '-01')->startOfMonth();
 
             for ($i = 0; $monthCursor->lte($lastMonth); $i++, $monthCursor->addMonth()) {
