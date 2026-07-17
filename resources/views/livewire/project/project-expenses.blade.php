@@ -175,14 +175,34 @@
                                                 </svg>
                                             </button>
                                             @if($expense->status !== 'paid' && $expense->isOneTime())
-                                                <button
-                                                    wire:click="markExpenseAsPaid({{ $expense->id }})"
-                                                    class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
-                                                    title="{{ __('Mark as Paid') }}">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                    </svg>
-                                                </button>
+                                                @if($markPaidType === 'expense' && $markPaidId === $expense->id)
+                                                    <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                    <button
+                                                        wire:click="confirmMarkPaid"
+                                                        class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                        title="{{ __('Confirm') }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        wire:click="cancelMarkPaid"
+                                                        class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                                                        title="{{ __('Cancel') }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                    </button>
+                                                @else
+                                                    <button
+                                                        wire:click="startMarkPaid('expense', {{ $expense->id }})"
+                                                        class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                        title="{{ __('Mark as Paid') }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                        </svg>
+                                                    </button>
+                                                @endif
                                             @elseif($expense->status === 'paid' && $expense->isOneTime())
                                                 @admin
                                                 <button
@@ -385,7 +405,26 @@
                                             @foreach($viewingExpense->payments as $payment)
                                                 <tr>
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->payment_number }}</td>
-                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $payment->due_date->format('M d, Y') }}</td>
+                                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
+                                                        @if($editDueDateId === $payment->id)
+                                                            <div class="flex items-center gap-1">
+                                                                <input type="date" wire:model="editDueDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                                <button wire:click="confirmEditDueDate" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300" title="{{ __('Confirm') }}">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                                </button>
+                                                                <button wire:click="cancelEditDueDate" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300" title="{{ __('Cancel') }}">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                                </button>
+                                                            </div>
+                                                        @else
+                                                            {{ $payment->due_date->format('M d, Y') }}
+                                                            @if($payment->status !== 'paid')
+                                                                <button wire:click="startEditDueDate({{ $payment->id }})" class="ml-1 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6] align-middle" title="{{ __('Change due date') }}">
+                                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                                </button>
+                                                            @endif
+                                                        @endif
+                                                    </td>
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ Number::currency($payment->amount, config('app.currency'), config('app.locale')) }}</td>
                                                     <td class="px-4 py-2">
                                                         @php
@@ -406,11 +445,17 @@
                                                         @endif
                                                     </td>
                                                     <td class="px-4 py-2 text-right">
-                                                        @if($payment->status === 'pending')
-                                                            <button wire:click="markPaymentAsPaid({{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                        @if($markPaidType === 'payment' && $markPaidId === $payment->id)
+                                                            <div class="flex items-center justify-end gap-2">
+                                                                <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                                <button wire:click="confirmMarkPaid" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Confirm') }}</button>
+                                                                <button wire:click="cancelMarkPaid" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium">{{ __('Cancel') }}</button>
+                                                            </div>
+                                                        @elseif($payment->status === 'pending')
+                                                            <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
                                                             <button wire:click="markPaymentAsOverdue({{ $payment->id }})" class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">{{ __('Overdue') }}</button>
                                                         @elseif($payment->status === 'overdue')
-                                                            <button wire:click="markPaymentAsPaid({{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                            <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
                                                         @elseif($payment->status === 'paid')
                                                             @admin
                                                                 <button wire:click="unmarkPaymentPaid({{ $payment->id }})" wire:confirm="{{ __('Revert this payment to pending?') }}" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">{{ __('Revert') }}</button>

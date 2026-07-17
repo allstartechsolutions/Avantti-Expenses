@@ -52,6 +52,7 @@ class ExpenseChangeHistory extends Model
             'unmarked_paid' => __('Payment reverted'),
             'marked_overdue' => __('Marked as overdue'),
             'marked_pending' => __('Marked as pending'),
+            'due_date_changed' => __('Due date changed'),
             'edited' => __('Edited'),
             default => ucfirst(str_replace('_', ' ', $this->action)),
         };
@@ -73,6 +74,7 @@ class ExpenseChangeHistory extends Model
             'unmarked_paid' => 'yellow',
             'marked_overdue' => 'red',
             'marked_pending' => 'blue',
+            'due_date_changed' => 'blue',
             'edited' => 'gray',
             default => 'gray',
         };

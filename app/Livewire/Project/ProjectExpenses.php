@@ -42,6 +42,15 @@ class ProjectExpenses extends Component
     public $expenseItems = [];
     public $expenseHistory = [];
 
+    // Mark-as-paid confirmation state (inline date picker)
+    public $markPaidType = null; // 'expense' or 'payment'
+    public $markPaidId = null;
+    public $markPaidDate = '';
+
+    // Installment due-date editing state
+    public $editDueDateId = null;
+    public $editDueDate = '';
+
     public function mount(Project $project): void
     {
         $this->project = $project;
@@ -111,16 +120,79 @@ class ProjectExpenses extends Component
         $this->showExpenseModal = false;
         $this->viewingExpense = null;
         $this->expenseHistory = [];
+        $this->cancelMarkPaid();
+        $this->cancelEditDueDate();
         $this->dispatch('close-modal', 'expense-view-modal');
     }
 
-    public function markExpenseAsPaid(int $expenseId): void
+    public function startMarkPaid(string $type, int $id): void
     {
-        $expense = Expense::findOrFail($expenseId);
+        $this->markPaidType = $type;
+        $this->markPaidId = $id;
+        $this->markPaidDate = now()->format('Y-m-d');
+    }
 
-        if ($expense->isOneTime() && $expense->status !== 'paid') {
-            $expense->markAsPaid();
+    public function cancelMarkPaid(): void
+    {
+        $this->reset(['markPaidType', 'markPaidId', 'markPaidDate']);
+    }
+
+    public function confirmMarkPaid(): void
+    {
+        $this->validate(['markPaidDate' => 'required|date']);
+
+        $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
+
+        if ($this->markPaidType === 'payment') {
+            $payment = \App\Models\ExpensePayment::findOrFail($this->markPaidId);
+            $payment->markAsPaid(null, $paidDate);
+            session()->flash('message', __('Payment marked as paid.'));
+        } else {
+            $expense = Expense::findOrFail($this->markPaidId);
+            if ($expense->isOneTime() && $expense->status !== 'paid') {
+                $expense->markAsPaid(null, $paidDate);
+            }
             session()->flash('message', __('Expense marked as paid.'));
+        }
+
+        $this->cancelMarkPaid();
+
+        // Refresh the viewing expense
+        if ($this->viewingExpense) {
+            $this->viewingExpense->refresh();
+            $this->viewingExpense->load('payments.paidBy');
+        }
+    }
+
+    public function startEditDueDate(int $paymentId): void
+    {
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $this->editDueDateId = $payment->id;
+        $this->editDueDate = $payment->due_date->format('Y-m-d');
+    }
+
+    public function cancelEditDueDate(): void
+    {
+        $this->reset(['editDueDateId', 'editDueDate']);
+    }
+
+    public function confirmEditDueDate(): void
+    {
+        $this->validate(['editDueDate' => 'required|date']);
+
+        $payment = \App\Models\ExpensePayment::findOrFail($this->editDueDateId);
+
+        if (!$payment->isPaid()) {
+            $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
+            session()->flash('message', __('Due date updated.'));
+        }
+
+        $this->cancelEditDueDate();
+
+        // Refresh the viewing expense
+        if ($this->viewingExpense) {
+            $this->viewingExpense->refresh();
+            $this->viewingExpense->load('payments.paidBy');
         }
     }
 
@@ -132,20 +204,6 @@ class ProjectExpenses extends Component
         $expense->unmarkAsPaid();
 
         session()->flash('message', __('Expense payment reverted to unpaid.'));
-    }
-
-    public function markPaymentAsPaid(int $paymentId): void
-    {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
-        $payment->markAsPaid();
-
-        // Refresh the viewing expense
-        if ($this->viewingExpense) {
-            $this->viewingExpense->refresh();
-            $this->viewingExpense->load('payments');
-        }
-
-        session()->flash('message', __('Payment marked as paid.'));
     }
 
     public function unmarkPaymentPaid(int $paymentId): void

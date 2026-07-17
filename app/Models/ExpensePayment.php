@@ -123,6 +123,40 @@ class ExpensePayment extends Model
     }
 
     /**
+     * Change the due date of this payment (negotiated postponements).
+     * An overdue payment moved to today or later goes back to pending.
+     */
+    public function changeDueDate(Carbon $newDate): void
+    {
+        $oldDate = $this->due_date;
+
+        if ($oldDate->isSameDay($newDate)) {
+            return;
+        }
+
+        $this->due_date = $newDate;
+
+        $statusChange = null;
+        if ($this->status === 'overdue' && $newDate->gte(today())) {
+            $this->status = 'pending';
+            $statusChange = ['old' => 'overdue', 'new' => 'pending'];
+        }
+
+        $this->save();
+
+        if ($statusChange) {
+            $this->expense->updateStatusFromPayments();
+        }
+
+        $changes = ['due_date' => ['old' => $oldDate->format('Y-m-d'), 'new' => $newDate->format('Y-m-d')]];
+        if ($statusChange) {
+            $changes['status'] = $statusChange;
+        }
+
+        $this->expense->recordChange('due_date_changed', $changes, $this->id);
+    }
+
+    /**
      * Check if payment is pending
      */
     public function isPending(): bool

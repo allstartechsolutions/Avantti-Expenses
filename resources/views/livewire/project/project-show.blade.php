@@ -956,14 +956,34 @@
                                                         </span>
                                                     @endif
                                                     @if($expense->status !== 'paid' && $expense->isOneTime())
-                                                        <button
-                                                            wire:click="markExpenseAsPaid({{ $expense->id }})"
-                                                            class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
-                                                            title="Mark as Paid">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                            </svg>
-                                                        </button>
+                                                        @if($markPaidType === 'expense' && $markPaidId === $expense->id)
+                                                            <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                            <button
+                                                                wire:click="confirmMarkPaid"
+                                                                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                                title="{{ __('Confirm') }}">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                wire:click="cancelMarkPaid"
+                                                                class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                                                                title="{{ __('Cancel') }}">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                </svg>
+                                                            </button>
+                                                        @else
+                                                            <button
+                                                                wire:click="startMarkPaid('expense', {{ $expense->id }})"
+                                                                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                                title="Mark as Paid">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                            </button>
+                                                        @endif
                                                     @elseif($expense->status === 'paid' && $expense->isOneTime())
                                                         @admin
                                                         <button

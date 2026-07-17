@@ -52,6 +52,15 @@ class JobSiteShow extends Component
     public $editingExpense = null;
     public $expenseHistory = [];
 
+    // Mark-as-paid confirmation state (inline date picker)
+    public $markPaidType = null; // 'expense' or 'payment'
+    public $markPaidId = null;
+    public $markPaidDate = '';
+
+    // Installment due-date editing state
+    public $editDueDateId = null;
+    public $editDueDate = '';
+
     // Expense form properties
     public $catalogItemSearch = '';
     public $selectedCatalogItem = null;
@@ -338,7 +347,9 @@ class JobSiteShow extends Component
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
-            'expense_custom_amounts', 'expense_payment_schedule_preview'
+            'expense_custom_amounts', 'expense_payment_schedule_preview',
+            'markPaidType', 'markPaidId', 'markPaidDate',
+            'editDueDateId', 'editDueDate'
         ]);
         $this->expense_date = now()->format('Y-m-d');
         $this->expense_paid_date = now()->format('Y-m-d');
@@ -603,7 +614,9 @@ class JobSiteShow extends Component
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
-            'expense_custom_amounts', 'expense_payment_schedule_preview'
+            'expense_custom_amounts', 'expense_payment_schedule_preview',
+            'markPaidType', 'markPaidId', 'markPaidDate',
+            'editDueDateId', 'editDueDate'
         ]);
         $this->dispatch('close-modal', 'expense-modal');
     }
@@ -722,18 +735,46 @@ class JobSiteShow extends Component
         return array_sum($this->expense_custom_amounts ?? []);
     }
 
-    // Mark payment as paid
-    public function markPaymentAsPaid($paymentId)
+    // Start marking a payment/expense as paid (shows inline date picker)
+    public function startMarkPaid(string $type, $id)
     {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
-        $payment->markAsPaid($this->expense_payment_method);
+        $this->markPaidType = $type;
+        $this->markPaidId = $id;
+        $this->markPaidDate = now()->format('Y-m-d');
+    }
 
-        session()->flash('message', __('Payment marked as paid.'));
+    public function cancelMarkPaid()
+    {
+        $this->reset(['markPaidType', 'markPaidId', 'markPaidDate']);
+    }
+
+    // Confirm mark as paid with the chosen date
+    public function confirmMarkPaid()
+    {
+        $this->validate(['markPaidDate' => 'required|date']);
+
+        $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
+
+        if ($this->markPaidType === 'payment') {
+            $payment = \App\Models\ExpensePayment::findOrFail($this->markPaidId);
+            $payment->markAsPaid($this->expense_payment_method, $paidDate);
+            $expenseId = $payment->expense_id;
+            session()->flash('message', __('Payment marked as paid.'));
+        } else {
+            $expense = Expense::findOrFail($this->markPaidId);
+            if ($expense->isOneTime()) {
+                $expense->markAsPaid(null, $paidDate);
+            }
+            $expenseId = $expense->id;
+            session()->flash('message', __('Expense marked as paid.'));
+        }
+
+        $this->cancelMarkPaid();
         $this->jobSite->refresh();
 
         // Refresh the view modal if open
         if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
-            $this->openExpenseViewModal($payment->expense_id);
+            $this->openExpenseViewModal($expenseId);
         }
     }
 
@@ -751,15 +792,36 @@ class JobSiteShow extends Component
         }
     }
 
-    // Mark one-time expense as paid
-    public function markExpenseAsPaid($expenseId)
+    // Change the due date of an installment (shows inline date picker)
+    public function startEditDueDate($paymentId)
     {
-        $expense = Expense::findOrFail($expenseId);
+        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $this->editDueDateId = $payment->id;
+        $this->editDueDate = $payment->due_date->format('Y-m-d');
+    }
 
-        if ($expense->isOneTime()) {
-            $expense->markAsPaid();
-            session()->flash('message', __('Expense marked as paid.'));
-            $this->jobSite->refresh();
+    public function cancelEditDueDate()
+    {
+        $this->reset(['editDueDateId', 'editDueDate']);
+    }
+
+    public function confirmEditDueDate()
+    {
+        $this->validate(['editDueDate' => 'required|date']);
+
+        $payment = \App\Models\ExpensePayment::findOrFail($this->editDueDateId);
+
+        if (!$payment->isPaid()) {
+            $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
+            session()->flash('message', __('Due date updated.'));
+        }
+
+        $expenseId = $payment->expense_id;
+        $this->cancelEditDueDate();
+        $this->jobSite->refresh();
+
+        if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
+            $this->openExpenseViewModal($expenseId);
         }
     }
 
