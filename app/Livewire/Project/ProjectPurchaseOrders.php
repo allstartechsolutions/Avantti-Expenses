@@ -59,12 +59,17 @@ class ProjectPurchaseOrders extends Component
 
         // Apply search filter
         if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('po_number', 'like', '%' . $this->search . '%')
-                    ->orWhere('notes', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('supplier', function ($sq) {
-                        $sq->where('name', 'like', '%' . $this->search . '%');
+            $search = ltrim(trim($this->search), '#');
+            $query->where(function ($q) use ($search) {
+                $q->where('po_number', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhereHas('supplier', function ($sq) use ($search) {
+                        $sq->where('name', 'like', '%' . $search . '%');
                     });
+
+                if (is_numeric($search)) {
+                    $q->orWhere('id', $search);
+                }
             });
         }
 
