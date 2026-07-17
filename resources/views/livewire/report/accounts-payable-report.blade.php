@@ -10,23 +10,18 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Accounts Payable') }}</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Expenses and subcontractor contract payments across all projects.') }}</p>
         </div>
-        @php
-            $exportParams = http_build_query([
-                'fromDate' => $fromDate,
-                'toDate' => $toDate,
-                'projectFilter' => $projectFilter,
-                'clientFilter' => $clientFilter,
-                'statusFilter' => $statusFilter,
-            ]);
-        @endphp
         <div class="flex items-center gap-2">
             <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">
                 {{ __('Export CSV') }}
             </x-ui.button>
-            <x-ui.button variant="secondary" href="{{ route('reports.accounts-payable.pdf.view') }}?{{ $exportParams }}" icon="eye" target="_blank">
+            {{-- PDF links build their URL at click time from the address bar, which
+                 Livewire keeps in sync with the active filters. --}}
+            <x-ui.button variant="secondary" href="{{ route('reports.accounts-payable.pdf.view') }}" icon="eye"
+                x-data x-on:click.prevent="window.open($el.getAttribute('href') + window.location.search, '_blank')">
                 {{ __('View PDF') }}
             </x-ui.button>
-            <x-ui.button variant="primary" href="{{ route('reports.accounts-payable.pdf.download') }}?{{ $exportParams }}" icon="arrow-down-tray">
+            <x-ui.button variant="primary" href="{{ route('reports.accounts-payable.pdf.download') }}" icon="arrow-down-tray"
+                x-data x-on:click.prevent="window.location.href = $el.getAttribute('href') + window.location.search">
                 {{ __('Download PDF') }}
             </x-ui.button>
         </div>

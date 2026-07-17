@@ -10,23 +10,19 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Payment Schedule') }}</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Everything the company owes and has paid — expenses by due date with monthly projections, plus contract balances — across the whole system or filtered by client, project, or job site.') }}</p>
         </div>
-        @php
-            $exportParams = http_build_query([
-                'clientFilter' => $clientFilter,
-                'projectFilter' => $projectFilter,
-                'jobSiteFilter' => $jobSiteFilter,
-                'fromDate' => $fromDate,
-                'toDate' => $toDate,
-            ]);
-        @endphp
         <div class="flex items-center gap-2">
             <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">
                 {{ __('Export CSV') }}
             </x-ui.button>
-            <x-ui.button variant="secondary" href="{{ route('reports.payment-schedule.pdf.view') }}?{{ $exportParams }}" icon="eye" target="_blank">
+            {{-- PDF links build their URL at click time from the address bar, which
+                 Livewire keeps in sync with the active filters — so the export always
+                 matches what is on screen. --}}
+            <x-ui.button variant="secondary" href="{{ route('reports.payment-schedule.pdf.view') }}" icon="eye"
+                x-data x-on:click.prevent="window.open($el.getAttribute('href') + window.location.search, '_blank')">
                 {{ __('View PDF') }}
             </x-ui.button>
-            <x-ui.button variant="primary" href="{{ route('reports.payment-schedule.pdf.download') }}?{{ $exportParams }}" icon="arrow-down-tray">
+            <x-ui.button variant="primary" href="{{ route('reports.payment-schedule.pdf.download') }}" icon="arrow-down-tray"
+                x-data x-on:click.prevent="window.location.href = $el.getAttribute('href') + window.location.search">
                 {{ __('Download PDF') }}
             </x-ui.button>
         </div>
