@@ -503,6 +503,8 @@
     "Pending:": "Pendente:",
     "Payment Preview": "Prévia do Pagamento",
     "Confirm": "Confirmar",
+    "Show Zero Balance": "Mostrar Saldo Zero",
+    "No subcontractors with an outstanding balance.": "Nenhum subempreiteiro com saldo pendente.",
     "Change due date": "Alterar data de vencimento",
     "Due date updated.": "Data de vencimento atualizada.",
     "Due date changed": "Data de vencimento alterada",

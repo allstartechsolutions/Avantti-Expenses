@@ -284,6 +284,8 @@
     "Pending:": "Pending:",
     "Payment Preview": "Payment Preview",
     "Confirm": "Confirm",
+    "Show Zero Balance": "Show Zero Balance",
+    "No subcontractors with an outstanding balance.": "No subcontractors with an outstanding balance.",
     "Change due date": "Change due date",
     "Due date updated.": "Due date updated.",
     "Due date changed": "Due date changed",

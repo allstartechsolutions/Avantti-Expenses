@@ -197,15 +197,26 @@
 
     {{-- Subcontractor payment summary (point-in-time, all-time totals per sub) --}}
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Payment Summary') }}</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {{ __('Total contract value, paid to date, and remaining balance per subcontractor — as of today, across all their contracts. Contracts have no scheduled due dates, so these are point-in-time totals.') }}
-            </p>
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Payment Summary') }}</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {{ __('Total contract value, paid to date, and remaining balance per subcontractor — as of today, across all their contracts. Contracts have no scheduled due dates, so these are point-in-time totals.') }}
+                </p>
+            </div>
+            <label class="flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" wire:model.live="showZeroBalance" class="sr-only peer">
+                <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#3F5189] dark:peer-focus:ring-[#4A5A96] rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-500 peer-checked:bg-[#3F5189]"></div>
+                <span class="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ __('Show Zero Balance') }}</span>
+            </label>
         </div>
         @if ($subcontractorSummary->isEmpty())
             <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                {{ __('No subcontractor contracts.') }}
+                @if(!$showZeroBalance)
+                    {{ __('No subcontractors with an outstanding balance.') }}
+                @else
+                    {{ __('No subcontractor contracts.') }}
+                @endif
             </div>
         @else
             <div class="overflow-x-auto">

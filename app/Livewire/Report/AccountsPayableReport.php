@@ -17,6 +17,7 @@ class AccountsPayableReport extends Component
     public string $projectFilter = '';
     public string $clientFilter = '';
     public string $statusFilter = 'unpaid';
+    public bool $showZeroBalance = false;
 
     protected $queryString = [
         'fromDate' => ['except' => ''],
@@ -24,6 +25,7 @@ class AccountsPayableReport extends Component
         'projectFilter' => ['except' => ''],
         'clientFilter' => ['except' => ''],
         'statusFilter' => ['except' => 'unpaid'],
+        'showZeroBalance' => ['except' => false],
     ];
 
     public function mount(): void
@@ -83,7 +85,10 @@ class AccountsPayableReport extends Component
 
     public function getSubcontractorSummaryProperty(): Collection
     {
-        return $this->service()->subcontractorSummary();
+        return $this->service()->subcontractorSummary()
+            ->unless($this->showZeroBalance, fn (Collection $rows) => $rows->filter(
+                fn (array $row) => round($row['outstanding'], 2) != 0.0
+            )->values());
     }
 
     public function getProjectsProperty()
