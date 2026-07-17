@@ -234,7 +234,7 @@
         <table style="width: 100%; border: 1px solid #ddd; border-collapse: collapse; font-size: 7pt;">
             <thead>
                 <tr style="background-color: #f3f4f6;">
-                    <th style="border: 1px solid #ddd; padding: 4px 5px; text-align: left;">{{ __('Date') }}</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 5px; text-align: left;">{{ $dateBasis === 'due' ? __('Due Date') : __('Date') }}</th>
                     <th style="border: 1px solid #ddd; padding: 4px 5px; text-align: left;">{{ __('Item') }}</th>
                     <th style="border: 1px solid #ddd; padding: 4px 5px; text-align: left;">{{ __('Vendor') }}</th>
                     <th style="border: 1px solid #ddd; padding: 4px 5px; text-align: left;">{{ __('Project') }}</th>
@@ -249,7 +249,7 @@
             <tbody>
                 @forelse($detail as $row)
                     <tr>
-                        <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['expense_date']?->format('M d, Y') }}</td>
+                        <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ ($dateBasis === 'due' ? $row['due_date'] : $row['expense_date'])?->format('M d, Y') }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['item'] }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['vendor'] ?? '—' }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['project'] ?? '—' }}</td>

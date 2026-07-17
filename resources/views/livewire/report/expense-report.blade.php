@@ -332,7 +332,7 @@
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-700/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ $dateBasis === 'due' ? __('Due Date') : __('Date') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Item') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Vendor') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Project') }}</th>
@@ -347,7 +347,7 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach ($detail as $row)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ $row['expense_date']?->format('M d, Y') }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ ($dateBasis === 'due' ? $row['due_date'] : $row['expense_date'])?->format('M d, Y') }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['item'] }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $row['vendor'] ?? '—' }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['project'] ?? '—' }}</td>

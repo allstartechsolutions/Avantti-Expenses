@@ -240,9 +240,10 @@ class ExpenseReport extends Component
 
     protected function detailCsv(ExpenseReportService $service): array
     {
-        $headers = ['Date', 'Item', 'Vendor', 'Project', 'Job Site', 'Category', 'Installments', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $dueBasis = $this->dateBasis === 'due';
+        $headers = [$dueBasis ? 'Due Date' : 'Date', 'Item', 'Vendor', 'Project', 'Job Site', 'Category', 'Installments', 'Total', 'Paid', 'Outstanding', 'Overdue'];
         $rows = $service->detail()->map(fn ($row) => [
-            $row['expense_date']?->format('Y-m-d'),
+            ($dueBasis ? $row['due_date'] : $row['expense_date'])?->format('Y-m-d'),
             $row['item'],
             $row['vendor'] ?? '',
             $row['project'] ?? '',

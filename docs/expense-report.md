@@ -44,6 +44,13 @@ cost-code rows cannot be prorated (payments are per expense, not per line item).
 Invalid `dateBasis` values from the query string are coerced to `expense`. CSV/PDF filenames
 include the basis.
 
+When due basis is active, the **Detail tab (web, CSV, and PDF) shows and sorts by the due date**
+instead of the expense date (column header switches to "Due Date"). The row's representative
+due date (`normalize()`'s `due_date`) is: one-time = `COALESCE(payment_due_date, expense_date)`;
+installments = the earliest installment due **within the filtered range** (the reason the row
+matched), falling back to the earliest installment overall. For true per-installment period
+amounts use the Payment Details report (`docs/payment-detail-report.md`).
+
 ### PDF export links
 The View/Download PDF buttons build their URL at click time from `window.location.search`
 (Livewire keeps the query string synced with the filters), so the PDF always matches the

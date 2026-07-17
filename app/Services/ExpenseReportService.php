@@ -121,9 +121,20 @@ class ExpenseReportService
             $overdue = (! $isPaid && $due && $due->lt($this->today)) ? round($total - $paid, 2) : 0.0;
         }
 
+        // Representative due date: one-time = its due date; installments = the
+        // earliest installment due in the filtered range (why the row matched),
+        // falling back to the earliest installment overall.
+        if ($e->total_installments > 1) {
+            $dueDates = $e->payments->pluck('due_date')->filter()->sort();
+            $dueDate = $dueDates->first(fn (Carbon $d) => $d->between($this->start, $this->end)) ?? $dueDates->first();
+        } else {
+            $dueDate = $e->payment_due_date ?? $e->expense_date;
+        }
+
         return [
             'expense' => $e,
             'expense_date' => $e->expense_date,
+            'due_date' => $dueDate,
             'item' => $e->item_name,
             'project' => $e->project?->project_name,
             'project_id' => $e->project_id,
@@ -272,6 +283,13 @@ class ExpenseReportService
      */
     public function detail(): Collection
     {
-        return $this->expenses()->map(fn (array $r) => collect($r)->except('expense')->all());
+        // Sort by the date the detail table displays: due date on due basis,
+        // expense date otherwise.
+        $dateKey = $this->dateBasis === 'due' ? 'due_date' : 'expense_date';
+
+        return $this->expenses()
+            ->map(fn (array $r) => collect($r)->except('expense')->all())
+            ->sortByDesc(fn (array $r) => $r[$dateKey]?->format('Y-m-d') ?? '')
+            ->values();
     }
 }
