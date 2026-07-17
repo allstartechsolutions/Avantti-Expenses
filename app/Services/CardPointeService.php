@@ -16,11 +16,14 @@ class CardPointeService
 
     public function __construct()
     {
-        $this->env = config('services.cardpointe.env', 'uat');
-        $this->merchantId = config('services.cardpointe.merchant_id', '');
-        $this->apiUser = config('services.cardpointe.api_user', '');
-        $this->apiPass = config('services.cardpointe.api_pass', '');
-        $this->site = config('services.cardpointe.site', 'fts-uat');
+        // config() values can be null when the env var is unset (the second
+        // argument only covers missing keys), so coalesce to keep the typed
+        // properties safe and let isConfigured() handle the unconfigured case.
+        $this->env = config('services.cardpointe.env') ?? 'uat';
+        $this->merchantId = config('services.cardpointe.merchant_id') ?? '';
+        $this->apiUser = config('services.cardpointe.api_user') ?? '';
+        $this->apiPass = config('services.cardpointe.api_pass') ?? '';
+        $this->site = config('services.cardpointe.site') ?? 'fts-uat';
     }
 
     public function isConfigured(): bool

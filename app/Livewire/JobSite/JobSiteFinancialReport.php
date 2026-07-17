@@ -3,6 +3,7 @@
 namespace App\Livewire\JobSite;
 
 use App\Models\JobSite;
+use App\Services\PaymentScheduleService;
 use Livewire\Component;
 
 class JobSiteFinancialReport extends Component
@@ -88,6 +89,11 @@ class JobSiteFinancialReport extends Component
         ];
     }
 
+    public function getPaymentScheduleProperty(): array
+    {
+        return PaymentScheduleService::forJobSite($this->jobSite)->build();
+    }
+
     public function render()
     {
         return view('livewire.job-site.job-site-financial-report', [
@@ -95,6 +101,7 @@ class JobSiteFinancialReport extends Component
             'expensesDetail' => $this->expensesDetail,
             'contractsDetail' => $this->contractsDetail,
             'revenueDetail' => $this->revenueDetail,
+            'paymentSchedule' => $this->paymentSchedule,
         ])->layout('components.layouts.app');
     }
 }

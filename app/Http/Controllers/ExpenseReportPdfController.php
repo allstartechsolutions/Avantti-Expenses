@@ -20,7 +20,8 @@ class ExpenseReportPdfController extends Controller
         $pdf = Pdf::loadView('pdf.expense-report', $data);
         $pdf->setPaper('letter', $data['view'] === 'detail' ? 'landscape' : 'portrait');
 
-        $filename = 'expense-report-' . $data['view'] . '-' . $data['fromDate'] . '-to-' . $data['toDate'] . '.pdf';
+        $basis = $data['dateBasis'] === 'due' ? 'due-date' : 'expense-date';
+        $filename = 'expense-report-' . $data['view'] . '-' . $basis . '-' . $data['fromDate'] . '-to-' . $data['toDate'] . '.pdf';
 
         return $pdf->download($filename);
     }
@@ -44,6 +45,9 @@ class ExpenseReportPdfController extends Controller
         $vendorFilter = $request->query('vendorFilter') ?: '';
         $categoryFilter = $request->query('categoryFilter') ?: '';
         $statusFilter = $request->query('statusFilter') ?: 'all';
+        $dateBasis = in_array($request->query('dateBasis'), ['expense', 'due'], true)
+            ? $request->query('dateBasis')
+            : 'expense';
 
         $view = in_array($request->query('view'), ['project', 'vendor', 'costcode', 'detail'], true)
             ? $request->query('view')
@@ -58,6 +62,7 @@ class ExpenseReportPdfController extends Controller
             $categoryFilter,
             $clientFilter,
             $statusFilter,
+            $dateBasis,
         );
 
         return [
@@ -70,6 +75,7 @@ class ExpenseReportPdfController extends Controller
             'fromDate' => $fromDate,
             'toDate' => $toDate,
             'statusFilter' => $statusFilter,
+            'dateBasis' => $dateBasis,
             'categoryFilter' => $categoryFilter,
             'project' => $projectFilter ? Project::find($projectFilter) : null,
             'jobSite' => $jobSiteFilter ? JobSite::find($jobSiteFilter) : null,

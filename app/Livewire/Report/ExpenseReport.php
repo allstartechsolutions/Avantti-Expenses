@@ -22,6 +22,7 @@ class ExpenseReport extends Component
     public string $vendorFilter = '';
     public string $categoryFilter = '';
     public string $statusFilter = 'all';
+    public string $dateBasis = 'expense'; // expense | due
 
     public string $view = 'project'; // project | vendor | costcode | detail
 
@@ -34,6 +35,7 @@ class ExpenseReport extends Component
         'vendorFilter' => ['except' => ''],
         'categoryFilter' => ['except' => ''],
         'statusFilter' => ['except' => 'all'],
+        'dateBasis' => ['except' => 'expense'],
         'view' => ['except' => 'project'],
     ];
 
@@ -54,6 +56,16 @@ class ExpenseReport extends Component
     public function updatedProjectFilter(): void
     {
         $this->jobSiteFilter = '';
+    }
+
+    /**
+     * dateBasis is query-string bound, so guard against arbitrary values.
+     */
+    public function updatedDateBasis(): void
+    {
+        if (! in_array($this->dateBasis, ['expense', 'due'], true)) {
+            $this->dateBasis = 'expense';
+        }
     }
 
     public function setCurrentMonth(): void
@@ -91,6 +103,7 @@ class ExpenseReport extends Component
             $this->categoryFilter,
             $this->clientFilter,
             $this->statusFilter,
+            in_array($this->dateBasis, ['expense', 'due'], true) ? $this->dateBasis : 'expense',
         );
     }
 
@@ -131,7 +144,8 @@ class ExpenseReport extends Component
             default => $this->projectCsv($service),
         };
 
-        $filename = 'expense-report-' . $this->view . '-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+        $basis = $this->dateBasis === 'due' ? 'due-date' : 'expense-date';
+        $filename = 'expense-report-' . $this->view . '-' . $basis . '-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
 
         return new StreamedResponse(function () use ($headers, $rows, $totals) {
             $out = fopen('php://output', 'w');

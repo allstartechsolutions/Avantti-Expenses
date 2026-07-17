@@ -21,10 +21,28 @@ subcontractor contracts); the Expense Report answers *"where did the money go?"*
 
 ## Filters
 
-Date range (filters by `expense_date`), Client, Project, Job Site (auto-scopes to the
-selected project), Vendor (supplier), Category (`item_type`: product/service/rental), and
-Status. Quick-date buttons: current month, current quarter, year to date, last year.
+Date range, Client, Project, Job Site (auto-scopes to the
+selected project), Vendor (supplier), Category (`item_type`: product/service/rental),
+Status, and **Date Basis**. Quick-date buttons: current month, current quarter, year to date, last year.
 All filters are synced to the URL query string.
+
+### Date Basis (expense vs due)
+
+The date range can match on either basis (`dateBasis`, default `expense`):
+
+- **Expense date (incurred)** — original behavior: `expense_date BETWEEN from AND to`.
+- **Payment due date** — one-time expenses match on `COALESCE(payment_due_date, expense_date)`;
+  installment expenses match when **any** installment's `expense_payments.due_date` falls in the range.
+
+**Amounts are always whole-expense figures** regardless of basis (an installment plan with one
+payment due in the range shows its full total). This was a deliberate decision: every grouping
+(project/vendor/cost-code/detail, CSV, PDF) consumes the per-expense `normalize()` figures, and
+cost-code rows cannot be prorated (payments are per expense, not per line item). Period-portioned
+"due in window" amounts are what the Accounts Payable report and the Payment Schedule section
+(see `docs/payment-schedule.md`) answer. When due basis is active, the UI and PDF show a caveat:
+"Showing expenses with a payment due in this period. Amounts are full expense totals…".
+Invalid `dateBasis` values from the query string are coerced to `expense`. CSV/PDF filenames
+include the basis.
 
 ### Status filter (derived)
 

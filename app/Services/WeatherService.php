@@ -13,8 +13,11 @@ class WeatherService
 
     public function __construct()
     {
-        $this->apiKey = config('services.visual_crossing.api_key');
-        $this->baseUrl = config('services.visual_crossing.base_url');
+        // Coalesce: config values are null when the env var is unset, which
+        // would fatal on the typed properties before isConfigured() can run.
+        $this->apiKey = config('services.visual_crossing.api_key') ?? '';
+        $this->baseUrl = config('services.visual_crossing.base_url')
+            ?? 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline';
     }
 
     /**

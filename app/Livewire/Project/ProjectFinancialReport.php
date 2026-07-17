@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Models\Project;
+use App\Services\PaymentScheduleService;
 use Livewire\Component;
 
 class ProjectFinancialReport extends Component
@@ -181,6 +182,11 @@ class ProjectFinancialReport extends Component
         ];
     }
 
+    public function getPaymentScheduleProperty(): array
+    {
+        return PaymentScheduleService::forProject($this->project)->build();
+    }
+
     public function render()
     {
         return view('livewire.project.project-financial-report', [
@@ -189,6 +195,7 @@ class ProjectFinancialReport extends Component
             'revenueDetail' => $this->revenueDetail,
             'expensesDetail' => $this->expensesDetail,
             'contractsDetail' => $this->contractsDetail,
+            'paymentSchedule' => $this->paymentSchedule,
         ])->layout('components.layouts.app');
     }
 }

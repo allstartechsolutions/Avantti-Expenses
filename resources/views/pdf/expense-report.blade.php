@@ -76,6 +76,10 @@
                     <div style="font-size: 7pt; color: #888;">{{ __('Category') }}: {{ $categoryLabels[$categoryFilter] ?? ucfirst($categoryFilter) }}</div>
                 @endif
                 <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ ucfirst($statusFilter) }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Date basis') }}: {{ $dateBasis === 'due' ? __('Payment due date') : __('Expense date (incurred)') }}</div>
+                @if($dateBasis === 'due')
+                    <div style="font-size: 6.5pt; color: #b45309;">{{ __('Showing expenses with a payment due in this period. Amounts are full expense totals, not the portion due in the period.') }}</div>
+                @endif
             </td>
         </tr>
     </table>

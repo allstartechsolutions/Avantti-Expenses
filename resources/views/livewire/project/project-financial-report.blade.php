@@ -247,6 +247,9 @@
         @endif
     </div>
 
+    <!-- Payment Schedule -->
+    @include('livewire.shared.payment-schedule-section', ['schedule' => $paymentSchedule])
+
     <!-- Expenses detail -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\JobSite;
+use App\Services\PaymentScheduleService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -86,6 +87,7 @@ class JobSiteFinancialReportPdfController extends Controller
             'changeOrders' => $changeOrders,
             'expenses' => $expensesCollection,
             'contracts' => $contractsCollection,
+            'paymentSchedule' => PaymentScheduleService::forJobSite($jobSite)->build(),
             'generatedAt' => now(),
         ];
     }

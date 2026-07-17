@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Project;
+use App\Services\PaymentScheduleService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -91,6 +92,7 @@ class ProjectFinancialReportPdfController extends Controller
             'revenueDetail' => $revenueDetail,
             'expenses' => $expensesCollection,
             'contracts' => $contractsCollection,
+            'paymentSchedule' => PaymentScheduleService::forProject($project)->build(),
             'generatedAt' => now(),
         ];
     }

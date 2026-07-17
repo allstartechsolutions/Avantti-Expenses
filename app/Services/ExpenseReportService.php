@@ -18,7 +18,11 @@ use Illuminate\Support\Collection;
  *
  * Scope:
  *   - Expenses only (one-time + installment). Contracts are NOT included.
- *   - The date range filters by expense_date (when the cost was incurred).
+ *   - The date range filters by expense_date (when the cost was incurred) or,
+ *     in due-date basis, by payment due date: one-time expenses match on
+ *     COALESCE(payment_due_date, expense_date); installment expenses match
+ *     when ANY installment is due in the range. Row amounts are always
+ *     whole-expense figures regardless of basis.
  *   - Overdue is DERIVED from due date vs. today, not a stored status.
  *   - Cancelled expenses are always excluded.
  *
@@ -42,6 +46,7 @@ class ExpenseReportService
         protected string $categoryFilter = '',
         protected string $clientFilter = '',
         protected string $statusFilter = 'all',
+        protected string $dateBasis = 'expense',
     ) {
         $this->start = Carbon::parse($fromDate)->startOfDay();
         $this->end = Carbon::parse($toDate)->endOfDay();
@@ -58,9 +63,23 @@ class ExpenseReportService
      */
     public function expenses(): Collection
     {
+        $from = $this->start->toDateString();
+        $to = $this->end->toDateString();
+
         return $this->cache ??= Expense::query()
             ->where('status', '!=', 'cancelled')
-            ->whereBetween('expense_date', [$this->start->toDateString(), $this->end->toDateString()])
+            ->when($this->dateBasis !== 'due', fn ($q) => $q->whereBetween('expense_date', [$from, $to]))
+            ->when($this->dateBasis === 'due', function ($q) use ($from, $to) {
+                $q->where(function ($q) use ($from, $to) {
+                    $q->where(function ($q) use ($from, $to) {
+                        $q->where('total_installments', 1)
+                            ->whereRaw('COALESCE(payment_due_date, expense_date) BETWEEN ? AND ?', [$from, $to]);
+                    })->orWhere(function ($q) use ($from, $to) {
+                        $q->where('total_installments', '>', 1)
+                            ->whereHas('payments', fn ($p) => $p->whereBetween('due_date', [$from, $to]));
+                    });
+                });
+            })
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->vendorFilter, fn ($q) => $q->where('supplier_id', $this->vendorFilter))

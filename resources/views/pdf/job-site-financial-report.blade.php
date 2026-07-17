@@ -146,6 +146,9 @@
         </tbody>
     </table>
 
+    {{-- Payment Schedule --}}
+    @include('pdf.partials.payment-schedule', ['paymentSchedule' => $paymentSchedule])
+
     {{-- Expenses --}}
     <div style="font-size: 10pt; font-weight: bold; color: #3F5189; margin: 12px 0 4px 0;">
         {{ __('Expenses') }} <span style="font-size: 8pt; color: #888;">({{ $financials['expenses_count'] }})</span>
