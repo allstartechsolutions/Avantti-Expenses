@@ -198,13 +198,16 @@
     {{-- By Cost Code --}}
     @if($view === 'costcode')
         <div style="font-size: 10pt; font-weight: bold; color: #3F5189; margin: 12px 0 2px 0;">{{ __('By Cost Code') }}</div>
-        <div style="font-size: 7pt; color: #888; margin-bottom: 4px;">{{ __('Committed cost per cost code (line-item level). Total cost only.') }}</div>
+        <div style="font-size: 7pt; color: #888; margin-bottom: 4px;">{{ __('Expense line items plus subcontractor contracts. Contracted is the full allocated value; Contract Paid counts payments dated inside the range.') }}</div>
         <table style="width: 100%; border: 1px solid #ddd; border-collapse: collapse; font-size: 7.5pt;">
             <thead>
                 <tr style="background-color: #f3f4f6;">
                     <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: left;">{{ __('Cost Code') }}</th>
                     <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Line Items') }}</th>
-                    <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Total Cost') }}</th>
+                    <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Expenses') }}</th>
+                    <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Contracted') }}</th>
+                    <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Contract Paid') }}</th>
+                    <th style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ __('Total Committed') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -212,15 +215,21 @@
                     <tr>
                         <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $cc['code'] }}</td>
                         <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">{{ $cc['count'] }}</td>
-                        <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">{{ $money($cc['total']) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">{{ $money($cc['expenses']) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">{{ $money($cc['contracted']) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">{{ $money($cc['contract_paid']) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right; font-weight: bold;">{{ $money($cc['total']) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" style="border: 1px solid #ddd; padding: 6px; text-align: center; color: #999; font-style: italic;">{{ __('No expenses match the selected filters.') }}</td></tr>
+                    <tr><td colspan="6" style="border: 1px solid #ddd; padding: 6px; text-align: center; color: #999; font-style: italic;">{{ __('No expenses match the selected filters.') }}</td></tr>
                 @endforelse
                 @if($byCostCode->isNotEmpty())
                     <tr style="background-color: #f3f4f6; font-weight: bold;">
                         <td style="border: 1px solid #ddd; padding: 5px 6px;">{{ __('Total') }}</td>
                         <td style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ $byCostCode->sum('count') }}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ $money($byCostCode->sum('expenses')) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ $money($byCostCode->sum('contracted')) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ $money($byCostCode->sum('contract_paid')) }}</td>
                         <td style="border: 1px solid #ddd; padding: 5px 6px; text-align: right;">{{ $money($byCostCode->sum('total')) }}</td>
                     </tr>
                 @endif

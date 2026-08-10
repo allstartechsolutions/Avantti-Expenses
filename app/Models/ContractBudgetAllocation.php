@@ -6,21 +6,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ContractChangeOrder extends Model
+class ContractBudgetAllocation extends Model
 {
     protected $fillable = [
         'contract_id',
-        'title',
-        'date',
-        'amount',
         'budget_item_id',
-        'description',
-        'file_path',
-        'created_by',
-    ];
-
-    protected $casts = [
-        'date' => 'date',
+        'amount',
     ];
 
     protected function amount(): Attribute
@@ -36,19 +27,13 @@ class ContractChangeOrder extends Model
         return $this->belongsTo(Contract::class);
     }
 
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
     public function budgetItem(): BelongsTo
     {
         return $this->belongsTo(BudgetItem::class);
     }
 
     /**
-     * Get the cost code display string. A change order without its own
-     * cost code follows the contract's allocation ("Unassigned" bucket).
+     * Get the cost code display string.
      */
     public function getCostCodeDisplayAttribute(): string
     {

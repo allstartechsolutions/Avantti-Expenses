@@ -112,14 +112,21 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Status') }}</label>
-                <select wire:model.live="statusFilter"
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
-                    <option value="all">{{ __('All') }}</option>
-                    <option value="pending">{{ __('Pending (not overdue)') }}</option>
-                    <option value="overdue">{{ __('Overdue') }}</option>
-                    <option value="paid">{{ __('Paid') }}</option>
-                </select>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    {{ __('Status') }}
+                    <span class="text-xs font-normal text-slate-400 dark:text-slate-500">({{ __('none selected = all') }})</span>
+                </label>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-2">
+                    @foreach(['pending' => __('Pending'), 'overdue' => __('Overdue'), 'paid' => __('Paid')] as $statusValue => $statusLabel)
+                        <label class="inline-flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox"
+                                   wire:model.live="statusFilter"
+                                   value="{{ $statusValue }}"
+                                   class="rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189] dark:bg-slate-700">
+                            {{ $statusLabel }}
+                        </label>
+                    @endforeach
+                </div>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-2">

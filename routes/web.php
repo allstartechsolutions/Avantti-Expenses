@@ -61,6 +61,7 @@ use App\Livewire\CostCode\CostCodeTemplateEdit;
 use App\Livewire\Budget\BudgetCreate;
 use App\Livewire\Budget\BudgetShow;
 use App\Livewire\Budget\BudgetEdit;
+use App\Livewire\Budget\BudgetCostGrid;
 use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
 use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
 use App\Livewire\PurchaseOrder\PurchaseOrderShow;
@@ -276,6 +277,7 @@ Route::middleware(['auth'])->group(function () {
     // Budget routes
     Route::get('budgets/{budget}', BudgetShow::class)->name('budgets.show');
     Route::get('budgets/{budget}/edit', BudgetEdit::class)->name('budgets.edit');
+    Route::get('budgets/{budget}/cost-grid', BudgetCostGrid::class)->name('budgets.cost-grid');
     Route::get('projects/{project}/budgets/create', BudgetCreate::class)->name('projects.budgets.create');
     Route::get('job-sites/{jobSite}/budgets/create', BudgetCreate::class)->name('job-sites.budgets.create');
 

@@ -225,15 +225,25 @@ class ExpenseReport extends Component
 
     protected function costCodeCsv(ExpenseReportService $service): array
     {
-        $headers = ['Cost Code', 'Line Items', 'Total Cost'];
+        $headers = ['Cost Code', 'Line Items', 'Expenses', 'Contracted', 'Contract Paid', 'Total Committed'];
         $byCostCode = $service->byCostCode();
         $rows = $byCostCode->map(fn ($cc) => [
             $cc['code'],
             $cc['count'],
+            $this->money($cc['expenses']),
+            $this->money($cc['contracted']),
+            $this->money($cc['contract_paid']),
             $this->money($cc['total']),
         ])->all();
 
-        $totals = ['Total', $byCostCode->sum('count'), $this->money($byCostCode->sum('total'))];
+        $totals = [
+            'Total',
+            $byCostCode->sum('count'),
+            $this->money($byCostCode->sum('expenses')),
+            $this->money($byCostCode->sum('contracted')),
+            $this->money($byCostCode->sum('contract_paid')),
+            $this->money($byCostCode->sum('total')),
+        ];
 
         return [$headers, $rows, $totals];
     }

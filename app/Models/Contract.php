@@ -132,6 +132,11 @@ class Contract extends Model
         return $this->hasMany(ContractPayment::class)->orderByDesc('payment_date');
     }
 
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ContractBudgetAllocation::class);
+    }
+
     public function latestPayment(): HasOne
     {
         return $this->hasOne(ContractPayment::class)->latestOfMany('payment_date');
@@ -155,6 +160,120 @@ class Contract extends Model
     public function getBalanceDue(): float
     {
         return round($this->getAdjustedAmount() - $this->getAmountPaid(), 2);
+    }
+
+    public function getAllocatedTotal(): float
+    {
+        return round($this->allocations()->sum('amount') / 100, 2);
+    }
+
+    public function getUnallocatedAmount(): float
+    {
+        return round($this->amount - $this->getAllocatedTotal(), 2);
+    }
+
+    /**
+     * Schedule-of-values rows for this contract: one row per cost code
+     * touched by an allocation, change order, or payment item, plus an
+     * fallback bucket that absorbs the unallocated contract remainder,
+     * change orders without a code, and payment amounts not covered by
+     * line items — so pre-existing contracts and payments keep adding
+     * up without any backfill. The fallback resolves to the budget's
+     * default item when one is marked, otherwise to "Unassigned".
+     *
+     * Each row: budget_item_id, code_display, sort_code, scheduled,
+     * paid, percent_complete (latest cumulative), balance.
+     *
+     * $paidFrom / $paidTo optionally restrict which payments count toward
+     * paid / % (for date-windowed reports); scheduled is never windowed.
+     */
+    public function costCodeSchedule(?\Carbon\CarbonInterface $paidFrom = null, ?\Carbon\CarbonInterface $paidTo = null): \Illuminate\Support\Collection
+    {
+        $this->loadMissing([
+            'allocations.budgetItem',
+            'changeOrders.budgetItem',
+            'payments.items.budgetItem',
+        ]);
+
+        $fallbackItem = Budget::where('project_id', $this->project_id)
+            ->where('job_site_id', $this->job_site_id)
+            ->first()
+            ?->defaultItem();
+
+        $rows = [];
+
+        $ensureRow = function ($budgetItem) use (&$rows, $fallbackItem): int {
+            $budgetItem = $budgetItem ?? $fallbackItem;
+            $key = $budgetItem?->id ?? 0;
+            if (! isset($rows[$key])) {
+                $rows[$key] = [
+                    'budget_item_id' => $budgetItem?->id,
+                    'code_display' => $budgetItem ? ($budgetItem->code . ' - ' . $budgetItem->name) : __('Unassigned'),
+                    'sort_code' => $budgetItem?->code,
+                    'scheduled' => 0.0,
+                    'paid' => 0.0,
+                    'percent_complete' => null,
+                ];
+            }
+
+            return $key;
+        };
+
+        foreach ($this->allocations as $allocation) {
+            $key = $ensureRow($allocation->budgetItem);
+            $rows[$key]['scheduled'] += $allocation->amount;
+        }
+
+        // Unallocated remainder of the base contract amount.
+        $allocatedTotal = round($this->allocations->sum(fn ($a) => $a->getRawOriginal('amount')) / 100, 2);
+        $remainder = round($this->amount - $allocatedTotal, 2);
+        if (abs($remainder) >= 0.01) {
+            $key = $ensureRow(null);
+            $rows[$key]['scheduled'] += $remainder;
+        }
+
+        foreach ($this->changeOrders as $changeOrder) {
+            $key = $ensureRow($changeOrder->budgetItem);
+            $rows[$key]['scheduled'] += $changeOrder->amount;
+        }
+
+        // Payments in chronological order so the latest percent wins.
+        $orderedPayments = $this->payments->sortBy([['payment_date', 'asc'], ['id', 'asc']]);
+        foreach ($orderedPayments as $payment) {
+            if ($paidFrom && $payment->payment_date->lt($paidFrom)) {
+                continue;
+            }
+            if ($paidTo && $payment->payment_date->gt($paidTo)) {
+                continue;
+            }
+            foreach ($payment->items as $item) {
+                $key = $ensureRow($item->budgetItem);
+                $rows[$key]['paid'] += $item->amount;
+                if ($item->percent_complete !== null) {
+                    $rows[$key]['percent_complete'] = (float) $item->percent_complete;
+                }
+            }
+
+            $unitemized = round($payment->amount - $payment->getItemizedTotal(), 2);
+            if (abs($unitemized) >= 0.01) {
+                $key = $ensureRow(null);
+                $rows[$key]['paid'] += $unitemized;
+            }
+        }
+
+        return collect($rows)
+            ->map(function (array $row) {
+                $row['scheduled'] = round($row['scheduled'], 2);
+                $row['paid'] = round($row['paid'], 2);
+                $row['balance'] = round($row['scheduled'] - $row['paid'], 2);
+
+                return $row;
+            })
+            ->sortBy([
+                fn ($a, $b) => ($a['budget_item_id'] === null) <=> ($b['budget_item_id'] === null),
+                fn ($a, $b) => strnatcasecmp($a['sort_code'] ?? '', $b['sort_code'] ?? ''),
+            ])
+            ->values();
     }
 
     public function updateStatusFromPayments(): void

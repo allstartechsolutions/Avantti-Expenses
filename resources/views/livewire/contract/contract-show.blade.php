@@ -199,6 +199,74 @@
                 </div>
             </div>
 
+            <!-- Schedule of Values (Cost Codes) -->
+            @if($costCodeSchedule)
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Cost Codes') }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Contract amount, payments and progress per cost code') }}</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-slate-50 dark:bg-slate-900/50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Cost Code') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Scheduled') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Paid') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('% Complete') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Balance') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                @foreach($costCodeSchedule as $row)
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                        <td class="px-6 py-3 text-sm {{ $row['budget_item_id'] === null ? 'italic text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white' }}">
+                                            {{ $row['code_display'] }}
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">
+                                            {{ Number::currency($row['scheduled'], config('app.currency'), config('app.locale')) }}
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-right {{ $row['paid'] > 0 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-slate-500 dark:text-slate-400' }}">
+                                            {{ Number::currency($row['paid'], config('app.currency'), config('app.locale')) }}
+                                        </td>
+                                        <td class="px-6 py-3 text-right">
+                                            @if($row['percent_complete'] !== null)
+                                                <div class="flex items-center justify-end gap-2">
+                                                    <div class="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div class="h-full bg-[#3F5189] dark:bg-[#4A5A96] rounded-full" style="width: {{ min(100, max(0, $row['percent_complete'])) }}%"></div>
+                                                    </div>
+                                                    <span class="text-sm text-slate-900 dark:text-white">{{ rtrim(rtrim(number_format($row['percent_complete'], 2, '.', ''), '0'), '.') }}%</span>
+                                                </div>
+                                            @else
+                                                <span class="text-sm text-slate-400 dark:text-slate-500">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-right font-medium {{ $row['balance'] > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }}">
+                                            {{ Number::currency($row['balance'], config('app.currency'), config('app.locale')) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-slate-50 dark:bg-slate-900/50 border-t-2 border-slate-300 dark:border-slate-600">
+                                <tr>
+                                    <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-semibold text-slate-900 dark:text-white">
+                                        {{ Number::currency($costCodeSchedule->sum('scheduled'), config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm text-right font-semibold text-green-600 dark:text-green-400">
+                                        {{ Number::currency($costCodeSchedule->sum('paid'), config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                    <td class="px-6 py-3"></td>
+                                    <td class="px-6 py-3 text-sm text-right font-semibold text-slate-900 dark:text-white">
+                                        {{ Number::currency($costCodeSchedule->sum('balance'), config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
             <!-- Change Orders -->
             <livewire:contract.contract-change-orders :contract="$contract" />
 
@@ -471,7 +539,7 @@
     <div class="fixed inset-0 z-50 overflow-y-auto">
         <div class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80" wire:click="closePaymentModal"></div>
         <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+            <div class="relative w-full {{ count($paymentItems) > 0 ? 'max-w-3xl' : 'max-w-md' }} bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Record Payment</h2>
@@ -481,6 +549,75 @@
                     </div>
 
                     <div class="space-y-4">
+                        @if(count($paymentItems) > 0)
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Cost Codes') }}</label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">{{ __('Enter the new % complete for a code to get a suggested amount (you can adjust it), or type amounts directly. Leave lines empty to record an uncoded payment.') }}</p>
+                                @error('paymentItems')
+                                    <div class="mb-2 p-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                                <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-slate-50 dark:bg-slate-900/50">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Cost Code') }}</th>
+                                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Scheduled') }}</th>
+                                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Paid / %') }}</th>
+                                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase w-24">{{ __('New %') }}</th>
+                                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase w-32">{{ __('Amount') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                            @foreach($paymentItems as $index => $item)
+                                                <tr wire:key="payment-item-{{ $item['budget_item_id'] }}">
+                                                    <td class="px-3 py-2 text-sm text-slate-900 dark:text-white">{{ $item['code_display'] }}</td>
+                                                    <td class="px-3 py-2 text-sm text-right text-slate-700 dark:text-slate-300">
+                                                        {{ Number::currency($item['scheduled'], config('app.currency'), config('app.locale')) }}
+                                                    </td>
+                                                    <td class="px-3 py-2 text-sm text-right text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                                        {{ Number::currency($item['prior_paid'], config('app.currency'), config('app.locale')) }}
+                                                        @if($item['prior_percent'] !== null)
+                                                            · {{ rtrim(rtrim(number_format($item['prior_percent'], 2, '.', ''), '0'), '.') }}%
+                                                        @endif
+                                                    </td>
+                                                    <td class="px-3 py-2">
+                                                        <input
+                                                            type="number"
+                                                            step="0.1"
+                                                            min="0"
+                                                            max="100"
+                                                            wire:model.live.debounce.500ms="paymentItems.{{ $index }}.percent"
+                                                            placeholder="{{ $item['prior_percent'] !== null ? rtrim(rtrim(number_format($item['prior_percent'], 2, '.', ''), '0'), '.') : '0' }}"
+                                                            class="w-20 px-2 py-1.5 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                    </td>
+                                                    <td class="px-3 py-2">
+                                                        <div class="relative">
+                                                            <span class="absolute left-2 top-1.5 text-slate-500 text-sm">$</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                wire:model.live.debounce.500ms="paymentItems.{{ $index }}.amount"
+                                                                placeholder="0.00"
+                                                                class="w-28 pl-6 pr-2 py-1.5 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @error('paymentItems.' . $index . '.percent')
+                                                    <tr><td colspan="5" class="px-3 pb-1 text-sm text-red-500">{{ $message }}</td></tr>
+                                                @enderror
+                                                @error('paymentItems.' . $index . '.amount')
+                                                    <tr><td colspan="5" class="px-3 pb-1 text-sm text-red-500">{{ $message }}</td></tr>
+                                                @enderror
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Amount *</label>
                             <div class="relative">

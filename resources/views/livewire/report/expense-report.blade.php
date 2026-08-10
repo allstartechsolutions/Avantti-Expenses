@@ -289,7 +289,9 @@
 
         {{-- By Cost Code --}}
         @if ($view === 'costcode')
-            <div class="px-6 pt-4 text-xs text-slate-500 dark:text-slate-400">{{ __('Committed cost per cost code (line-item level). Payments are tracked per expense, so this view shows total cost only.') }}</div>
+            <div class="px-6 pt-4 text-xs text-slate-500 dark:text-slate-400">
+                {{ __('Expense line items plus subcontractor contracts per cost code. Contracted is the full allocated value; Contract Paid counts payments dated inside the range. Contracts are hidden when a vendor, category or status filter is applied.') }}
+            </div>
             @if ($byCostCode->isEmpty())
                 <div class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">{{ __('No expenses match the selected filters.') }}</div>
             @else
@@ -299,7 +301,10 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Cost Code') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Line Items') }}</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total Cost') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Expenses') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contracted') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract Paid') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total Committed') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -307,7 +312,10 @@
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                     <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $cc['code'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-slate-600 dark:text-slate-400">{{ $cc['count'] }}</td>
-                                    <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($cc['total'], $currency, $locale) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($cc['expenses'], $currency, $locale) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($cc['contracted'], $currency, $locale) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right {{ $cc['contract_paid'] > 0 ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400' }}">{{ Number::currency($cc['contract_paid'], $currency, $locale) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-slate-900 dark:text-white">{{ Number::currency($cc['total'], $currency, $locale) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -315,6 +323,9 @@
                             <tr class="font-semibold">
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ __('Total') }}</td>
                                 <td class="px-6 py-3 text-sm text-right text-slate-600 dark:text-slate-400">{{ $byCostCode->sum('count') }}</td>
+                                <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($byCostCode->sum('expenses'), $currency, $locale) }}</td>
+                                <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($byCostCode->sum('contracted'), $currency, $locale) }}</td>
+                                <td class="px-6 py-3 text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($byCostCode->sum('contract_paid'), $currency, $locale) }}</td>
                                 <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($byCostCode->sum('total'), $currency, $locale) }}</td>
                             </tr>
                         </tfoot>

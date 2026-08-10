@@ -86,7 +86,7 @@
                     <div style="font-size: 7pt; color: #888;">{{ __('Subcontractor') }}: {{ $subcontractor->company_name }}</div>
                 @endif
                 <div style="font-size: 7pt; color: #888;">{{ __('Type') }}: {{ $typeLabels[$typeFilter] }}</div>
-                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ ucfirst($statusFilter) }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ $statusFilter }}</div>
             </td>
         </tr>
     </table>

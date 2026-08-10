@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContractPayment extends Model
 {
@@ -34,6 +35,20 @@ class ContractPayment extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(ContractPaymentItem::class);
+    }
+
+    /**
+     * Total of the payment's cost-code line items. A payment without
+     * items (all pre-existing payments) counts entirely as unallocated.
+     */
+    public function getItemizedTotal(): float
+    {
+        return round($this->items->sum(fn ($item) => $item->getRawOriginal('amount')) / 100, 2);
     }
 
     public function createdBy(): BelongsTo

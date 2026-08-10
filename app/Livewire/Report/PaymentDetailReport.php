@@ -22,7 +22,10 @@ class PaymentDetailReport extends Component
     public string $jobSiteFilter = '';
     public string $vendorFilter = '';
     public string $subcontractorFilter = '';
-    public string $statusFilter = 'all';
+
+    /** Multi-select: any of paid|pending|overdue. Empty = all statuses. */
+    public $statusFilter = [];
+
     public string $typeFilter = 'all';
 
     public string $view = 'detail'; // detail | project | vendor
@@ -35,7 +38,7 @@ class PaymentDetailReport extends Component
         'jobSiteFilter' => ['except' => ''],
         'vendorFilter' => ['except' => ''],
         'subcontractorFilter' => ['except' => ''],
-        'statusFilter' => ['except' => 'all'],
+        'statusFilter' => ['except' => []],
         'typeFilter' => ['except' => 'all'],
         'view' => ['except' => 'detail'],
     ];
@@ -48,6 +51,13 @@ class PaymentDetailReport extends Component
         if ($this->toDate === '') {
             $this->toDate = Carbon::now()->endOfMonth()->toDateString();
         }
+
+        // Tolerate old bookmarked links where statusFilter was a single
+        // string ('all', 'paid', ...) — anything invalid just drops out.
+        $this->statusFilter = array_values(array_intersect(
+            (array) $this->statusFilter,
+            ['paid', 'pending', 'overdue']
+        ));
     }
 
     /**

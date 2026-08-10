@@ -17,10 +17,12 @@ class BudgetItem extends Model
         'description',
         'budgeted_amount',
         'sort_order',
+        'is_default',
     ];
 
     protected $casts = [
         'sort_order' => 'integer',
+        'is_default' => 'boolean',
     ];
 
     /**

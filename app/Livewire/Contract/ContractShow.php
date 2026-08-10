@@ -4,7 +4,9 @@ namespace App\Livewire\Contract;
 
 use App\Models\Contract;
 use App\Models\ContractPayment;
+use App\Models\ContractPaymentItem;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Number;
 use Livewire\Component;
@@ -25,6 +27,14 @@ class ContractShow extends Component
     public $paymentDate = '';
     public $paymentReference = '';
     public $paymentNotes = '';
+
+    /**
+     * Cost-code lines for the payment being recorded. One row per code in
+     * the contract's schedule; a row participates when it gets an amount
+     * or a new % complete. Entering a new % suggests the amount
+     * (Δ% × scheduled value), which stays editable.
+     */
+    public array $paymentItems = [];
 
     public function mount(Contract $contract)
     {
@@ -94,6 +104,23 @@ class ContractShow extends Component
         $this->paymentDate = now()->format('Y-m-d');
         $this->paymentReference = '';
         $this->paymentNotes = '';
+
+        $this->paymentItems = $this->hasCostCoding()
+            ? $this->contract->costCodeSchedule()
+                ->filter(fn (array $row) => $row['budget_item_id'] !== null)
+                ->map(fn (array $row) => [
+                    'budget_item_id' => $row['budget_item_id'],
+                    'code_display' => $row['code_display'],
+                    'scheduled' => $row['scheduled'],
+                    'prior_paid' => $row['paid'],
+                    'prior_percent' => $row['percent_complete'],
+                    'percent' => '',
+                    'amount' => '',
+                ])
+                ->values()
+                ->all()
+            : [];
+
         $this->showPaymentModal = true;
     }
 
@@ -105,6 +132,40 @@ class ContractShow extends Component
         $this->paymentDate = '';
         $this->paymentReference = '';
         $this->paymentNotes = '';
+        $this->paymentItems = [];
+    }
+
+    public function updatedPaymentItems($value, $key)
+    {
+        [$index, $field] = explode('.', $key, 2);
+
+        if ($field === 'percent' && is_numeric($value) && isset($this->paymentItems[$index])) {
+            $row = $this->paymentItems[$index];
+            $delta = (float) $value - (float) ($row['prior_percent'] ?? 0);
+            $suggested = round($delta * $row['scheduled'] / 100, 2);
+            $this->paymentItems[$index]['amount'] = $suggested > 0 ? number_format($suggested, 2, '.', '') : '';
+        }
+
+        $this->syncPaymentAmountFromItems();
+    }
+
+    protected function syncPaymentAmountFromItems(): void
+    {
+        $total = round(collect($this->paymentItems)->sum(fn ($row) => (float) ($row['amount'] ?: 0)), 2);
+
+        if ($total > 0) {
+            $this->paymentAmount = number_format($total, 2, '.', '');
+        }
+    }
+
+    /**
+     * Rows taking part in this payment: any with an amount or a new %.
+     */
+    protected function activePaymentItems(): array
+    {
+        return array_values(array_filter($this->paymentItems, function ($row) {
+            return (float) ($row['amount'] ?: 0) > 0 || $row['percent'] !== '';
+        }));
     }
 
     public function recordPayment()
@@ -117,19 +178,43 @@ class ContractShow extends Component
             'paymentMethod' => ['required', 'in:cash,check,credit_card,debit_card,bank_transfer,pix,other'],
             'paymentReference' => ['nullable', 'string', 'max:255'],
             'paymentNotes' => ['nullable', 'string'],
+            'paymentItems.*.amount' => ['nullable', 'numeric', 'min:0'],
+            'paymentItems.*.percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ], [
             'paymentAmount.max' => 'Payment amount cannot exceed the balance due of ' . Number::currency($balanceDue, config('app.currency'), config('app.locale')) . '.',
+            'paymentItems.*.percent.max' => __('% complete cannot exceed 100.'),
         ]);
 
-        ContractPayment::create([
-            'contract_id' => $this->contract->id,
-            'amount' => $this->paymentAmount,
-            'payment_date' => $this->paymentDate,
-            'payment_method' => $this->paymentMethod,
-            'reference_number' => $this->paymentReference ?: null,
-            'notes' => $this->paymentNotes ?: null,
-            'created_by' => Auth::id(),
-        ]);
+        $activeItems = $this->activePaymentItems();
+
+        if ($activeItems !== []) {
+            $itemsTotal = round(collect($activeItems)->sum(fn ($row) => (float) ($row['amount'] ?: 0)), 2);
+            if (abs($itemsTotal - (float) $this->paymentAmount) > 0.009) {
+                $this->addError('paymentItems', __('The cost code lines must add up to the payment amount.'));
+
+                return;
+            }
+        }
+
+        DB::transaction(function () use ($activeItems) {
+            $payment = ContractPayment::create([
+                'contract_id' => $this->contract->id,
+                'amount' => $this->paymentAmount,
+                'payment_date' => $this->paymentDate,
+                'payment_method' => $this->paymentMethod,
+                'reference_number' => $this->paymentReference ?: null,
+                'notes' => $this->paymentNotes ?: null,
+                'created_by' => Auth::id(),
+            ]);
+
+            foreach ($activeItems as $row) {
+                $payment->items()->create([
+                    'budget_item_id' => $row['budget_item_id'],
+                    'amount' => $row['amount'] ?: 0,
+                    'percent_complete' => $row['percent'] !== '' ? $row['percent'] : null,
+                ]);
+            }
+        });
 
         $this->contract->updateStatusFromPayments();
         $this->refreshContract();
@@ -190,9 +275,25 @@ class ContractShow extends Component
         return redirect()->route('projects.contracts', $projectId);
     }
 
+    /**
+     * The schedule-of-values grid is only shown once the contract has
+     * some cost coding (allocations, coded change orders, or itemized
+     * payments) — an entirely uncoded contract adds no information.
+     */
+    protected function hasCostCoding(): bool
+    {
+        return $this->contract->allocations()->exists()
+            || $this->contract->changeOrders()->whereNotNull('budget_item_id')->exists()
+            || ContractPaymentItem::whereIn(
+                'contract_payment_id',
+                $this->contract->payments()->select('id')
+            )->exists();
+    }
+
     public function render()
     {
-        return view('livewire.contract.contract-show')
-            ->layout('components.layouts.app');
+        return view('livewire.contract.contract-show', [
+            'costCodeSchedule' => $this->hasCostCoding() ? $this->contract->costCodeSchedule() : null,
+        ])->layout('components.layouts.app');
     }
 }

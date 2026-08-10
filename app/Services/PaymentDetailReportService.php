@@ -44,7 +44,7 @@ class PaymentDetailReportService
         protected string $vendorFilter = '',
         protected string $subcontractorFilter = '',
         protected string $clientFilter = '',
-        protected string $statusFilter = 'all',
+        protected string|array $statusFilter = 'all',
         protected string $typeFilter = 'all',
     ) {
         $start = Carbon::parse($fromDate)->startOfDay();
@@ -106,14 +106,19 @@ class PaymentDetailReportService
         return $this->typeFilter !== 'expenses' && $this->vendorFilter === '';
     }
 
+    /**
+     * Accepts one status, several, or none: a string or array of
+     * paid / pending / overdue. Anything else ('all', empty array,
+     * legacy values) means no status restriction.
+     */
     protected function passesStatus(array $row): bool
     {
-        return match ($this->statusFilter) {
-            'paid' => $row['status'] === 'paid',
-            'pending' => $row['status'] === 'pending',
-            'overdue' => $row['status'] === 'overdue',
-            default => true,
-        };
+        $statuses = array_values(array_intersect(
+            (array) $this->statusFilter,
+            ['paid', 'pending', 'overdue']
+        ));
+
+        return $statuses === [] || in_array($row['status'], $statuses, true);
     }
 
     // =========================================================================

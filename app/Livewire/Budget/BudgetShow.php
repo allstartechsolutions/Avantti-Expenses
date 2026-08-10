@@ -132,6 +132,29 @@ class BudgetShow extends Component
         $this->refreshBudget();
     }
 
+    /**
+     * Mark an item as the default cost code for this budget (uncoded
+     * contract/payment amounts roll into it). Clicking the current
+     * default clears it.
+     */
+    public function toggleDefaultItem($itemId)
+    {
+        $item = BudgetItem::where('budget_id', $this->budget->id)->findOrFail($itemId);
+
+        if ($item->is_default) {
+            $item->update(['is_default' => false]);
+            session()->flash('message', 'Default cost code cleared.');
+        } else {
+            BudgetItem::where('budget_id', $this->budget->id)
+                ->where('is_default', true)
+                ->update(['is_default' => false]);
+            $item->update(['is_default' => true]);
+            session()->flash('message', $item->code . ' - ' . $item->name . ' is now the default cost code.');
+        }
+
+        $this->refreshBudget();
+    }
+
     public function deleteItem($itemId)
     {
         $item = BudgetItem::findOrFail($itemId);

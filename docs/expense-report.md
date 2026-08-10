@@ -72,13 +72,19 @@ PHP after loading:
 1. **By Project / Job Site** — projects with job sites nested; project-level expenses
    (no job site) appear as a "Project-level" sub-row. Columns: Total / Paid / Outstanding / Overdue.
 2. **By Vendor** — same columns grouped by supplier.
-3. **By Cost Code** — committed cost per `budget_item`, at the **line-item** level. Shows
-   **total cost only** (no paid/outstanding split) because payments are tracked per expense,
-   not per line. Line items with no cost code, and expenses with no line items, fall under
-   "Unassigned".
-   > ⚠️ **Pending rework (next session):** the cost-code grouping will change as part of a
-   > broader cost-code improvement that also brings cost codes into **contracts**. Treat the
-   > current `byCostCode()` implementation and the "By Cost Code" tab as provisional.
+3. **By Cost Code** *(reworked 2026-08-10)* — expense line items **plus subcontractor
+   contracts** per `budget_item`. Columns: Line Items / Expenses / Contracted / Contract
+   Paid / Total Committed (= Expenses + Contracted).
+   - **Expenses**: committed cost at the line-item level, as before (expense payments live
+     per expense, not per line, so still no expense paid split). Uncoded items and
+     item-less expenses fall under "Unassigned".
+   - **Contracted**: full scheduled value per code of non-cancelled contracts matching the
+     location filters with `start_date` ≤ range end — allocations + change orders via
+     `Contract::costCodeSchedule()`, so contract amounts without a code roll into the
+     budget's **default** cost code (see docs/contract-costcode-payments.md).
+   - **Contract Paid**: contract payments **dated inside the range** per code.
+   - Contracts are **omitted** whenever a vendor, category, or status filter is applied
+     (those are expense concepts) — `ExpenseReportService::includesContracts()`.
 4. **Detail** — flat transaction list with installment label (e.g. `3/10`).
 
 ## Amount semantics
@@ -121,7 +127,7 @@ Decisions made with the user:
 - "Category" = `item_type` filter **and** cost-code grouping ("Both").
 - Date range filters by `expense_date`; overdue derived from due dates; cancelled excluded.
 
-**Open / next session:** rework the **By Cost Code** view as part of a wider cost-code
-improvement that also adds cost codes to **contracts** (see ⚠️ note above). Everything else
-on this report is considered complete pending the user's manual verification in their dev
-environment (this checkout had no `vendor/`, so it could not be booted here).
+**Open / next session:** ~~rework the **By Cost Code** view~~ — done 2026-08-10 as phase 6
+of the contract cost-code project (docs/contract-costcode-payments.md): the tab now folds
+in contract committed/paid per code (see updated view description above). CSV and PDF
+exports updated to the new columns.

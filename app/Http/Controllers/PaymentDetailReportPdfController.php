@@ -44,7 +44,12 @@ class PaymentDetailReportPdfController extends Controller
         $jobSiteFilter = $request->query('jobSiteFilter') ?: '';
         $vendorFilter = $request->query('vendorFilter') ?: '';
         $subcontractorFilter = $request->query('subcontractorFilter') ?: '';
-        $statusFilter = $request->query('statusFilter') ?: 'all';
+        // Multi-select: array from the report page (statusFilter[0]=paid...),
+        // but old single-string links still work; invalid values drop out.
+        $statusFilter = array_values(array_intersect(
+            (array) ($request->query('statusFilter') ?: []),
+            ['paid', 'pending', 'overdue']
+        ));
         $typeFilter = in_array($request->query('typeFilter'), ['all', 'expenses', 'contracts'], true)
             ? $request->query('typeFilter')
             : 'all';
@@ -73,7 +78,9 @@ class PaymentDetailReportPdfController extends Controller
             'byVendor' => $service->byVendor(),
             'fromDate' => $fromDate,
             'toDate' => $toDate,
-            'statusFilter' => $statusFilter,
+            'statusFilter' => $statusFilter === []
+                ? __('All')
+                : implode(', ', array_map('ucfirst', $statusFilter)),
             'typeFilter' => $typeFilter,
             'client' => $clientFilter ? Client::find($clientFilter) : null,
             'project' => $projectFilter ? Project::find($projectFilter) : null,

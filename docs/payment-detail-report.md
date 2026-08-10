@@ -25,7 +25,9 @@ Rows:
 
 ## Filters
 
-Period (presets: current month, next month, next 3 months, this year), Client, Project, Job Site (dependent select), Vendor (suppliers), Subcontractor, Type (Expenses + Contracts / Expenses only / Contracts only), Status (all/pending/overdue/paid). All URL-synced.
+Period (presets: current month, next month, next 3 months, this year), Client, Project, Job Site (dependent select), Vendor (suppliers), Subcontractor, Type (Expenses + Contracts / Expenses only / Contracts only), Status (**multi-select** checkboxes — any combination of Pending / Overdue / Paid; none selected = all — reworked 2026-08-10). All URL-synced.
+
+Status filter compatibility: `PaymentDetailReportService` accepts a string or array for `$statusFilter` ('all', a single status, or an array of statuses — invalid values drop out), so old single-status bookmarked URLs and the PDF controller's array query params (`statusFilter[0]=paid…`) both work. The PDF header shows the selected statuses joined by commas.
 
 Filter interaction rule: a **Vendor** filter hides contract rows (a supplier can't match a contract) and a **Subcontractor** filter hides expense rows — enforced in the service (`includesExpenses()` / `includesContracts()`).
 

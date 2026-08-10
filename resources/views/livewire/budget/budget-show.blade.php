@@ -17,6 +17,12 @@
                     {{ $this->backLabel }}
                 </x-ui.button>
                 <x-ui.button
+                    variant="secondary"
+                    href="{{ route('budgets.cost-grid', $budget->id) }}"
+                    icon="eye">
+                    {{ __('Cost Grid') }}
+                </x-ui.button>
+                <x-ui.button
                     variant="primary"
                     href="{{ route('budgets.edit', $budget->id) }}"
                     icon="edit">
@@ -85,6 +91,9 @@
                                             </span>
                                             <div class="flex-1 min-w-0">
                                                 <span class="font-medium text-slate-900 dark:text-white">{{ $parentItem->name }}</span>
+                                                @if($parentItem->is_default)
+                                                    <span class="ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">{{ __('Default') }}</span>
+                                                @endif
                                                 @if($parentItem->description)
                                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ $parentItem->description }}</p>
                                                 @endif
@@ -95,6 +104,14 @@
                                                 {{ Number::currency($parentItem->budgeted_amount, config('app.currency'), config('app.locale')) }}
                                             </span>
                                             <div class="flex items-center gap-1">
+                                                <x-ui.button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    wire:click="toggleDefaultItem({{ $parentItem->id }})"
+                                                    icon="star"
+                                                    title="{{ $parentItem->is_default ? 'Clear default cost code' : 'Set as default cost code' }}"
+                                                    class="{{ $parentItem->is_default ? 'text-amber-500 hover:text-amber-600' : '' }}">
+                                                </x-ui.button>
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
@@ -135,6 +152,9 @@
                                                         </span>
                                                         <div class="flex-1 min-w-0">
                                                             <span class="text-sm text-slate-900 dark:text-white">{{ $childItem->name }}</span>
+                                                            @if($childItem->is_default)
+                                                                <span class="ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">{{ __('Default') }}</span>
+                                                            @endif
                                                             @if($childItem->description)
                                                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ $childItem->description }}</p>
                                                             @endif
@@ -145,6 +165,14 @@
                                                             {{ Number::currency($childItem->budgeted_amount, config('app.currency'), config('app.locale')) }}
                                                         </span>
                                                         <div class="flex items-center gap-1">
+                                                            <x-ui.button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                wire:click="toggleDefaultItem({{ $childItem->id }})"
+                                                                icon="star"
+                                                                title="{{ $childItem->is_default ? 'Clear default cost code' : 'Set as default cost code' }}"
+                                                                class="{{ $childItem->is_default ? 'text-amber-500 hover:text-amber-600' : '' }}">
+                                                            </x-ui.button>
                                                             <x-ui.button
                                                                 variant="ghost"
                                                                 size="sm"

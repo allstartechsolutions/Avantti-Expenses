@@ -58,6 +58,108 @@ class Budget extends Model
     }
 
     /**
+     * Excel-style cost grid for this budget's location: every cost code
+     * grouped section → lines, with contract commitments and payments
+     * aggregated per code (via each contract's costCodeSchedule(), so
+     * default-code fallback applies). Cancelled contracts are excluded.
+     *
+     * Returns ['sections' => [...], 'unassigned' => ?row, 'totals' => row].
+     * Section: ['item' => parent BudgetItem, 'rows' => [row...], 'subtotal' => row, 'pct_of_budget' => ?float]
+     * Row: budget_item_id, code, name, budgeted, contracted, paid, percent (weighted, nullable), balance.
+     */
+    public function costCodeGrid(): array
+    {
+        $contracts = Contract::where('project_id', $this->project_id)
+            ->where('job_site_id', $this->job_site_id)
+            ->where('status', '!=', 'cancelled')
+            ->get();
+
+        $agg = [];
+        foreach ($contracts as $contract) {
+            foreach ($contract->costCodeSchedule() as $row) {
+                $key = $row['budget_item_id'] ?? 0;
+                $agg[$key] ??= ['contracted' => 0.0, 'paid' => 0.0, 'wsum' => 0.0, 'wtot' => 0.0];
+                $agg[$key]['contracted'] += $row['scheduled'];
+                $agg[$key]['paid'] += $row['paid'];
+                if ($row['percent_complete'] !== null && $row['scheduled'] > 0) {
+                    $agg[$key]['wsum'] += $row['percent_complete'] * $row['scheduled'];
+                    $agg[$key]['wtot'] += $row['scheduled'];
+                }
+            }
+        }
+
+        $makeRow = function (?BudgetItem $item) use ($agg): array {
+            $a = $agg[$item?->id ?? 0] ?? ['contracted' => 0.0, 'paid' => 0.0, 'wsum' => 0.0, 'wtot' => 0.0];
+
+            return [
+                'budget_item_id' => $item?->id,
+                'code' => $item?->code ?? '',
+                'name' => $item?->name ?? __('Unassigned'),
+                'is_default' => (bool) ($item?->is_default ?? false),
+                'budgeted' => $item?->budgeted_amount ?? 0.0,
+                'contracted' => round($a['contracted'], 2),
+                'paid' => round($a['paid'], 2),
+                'percent' => $a['wtot'] > 0 ? round($a['wsum'] / $a['wtot'], 2) : null,
+                'balance' => round($a['contracted'] - $a['paid'], 2),
+            ];
+        };
+
+        $sumRows = function (array $rows): array {
+            $wsum = 0.0;
+            $wtot = 0.0;
+            foreach ($rows as $r) {
+                if ($r['percent'] !== null && $r['contracted'] > 0) {
+                    $wsum += $r['percent'] * $r['contracted'];
+                    $wtot += $r['contracted'];
+                }
+            }
+
+            return [
+                'budgeted' => round(array_sum(array_column($rows, 'budgeted')), 2),
+                'contracted' => round(array_sum(array_column($rows, 'contracted')), 2),
+                'paid' => round(array_sum(array_column($rows, 'paid')), 2),
+                'percent' => $wtot > 0 ? round($wsum / $wtot, 2) : null,
+                'balance' => round(array_sum(array_column($rows, 'balance')), 2),
+            ];
+        };
+
+        $sections = [];
+        $allRows = [];
+        foreach ($this->parentItems()->with(['children'])->get() as $parent) {
+            $rows = [$makeRow($parent)];
+            foreach ($parent->children as $child) {
+                $rows[] = $makeRow($child);
+            }
+            $subtotal = $sumRows($rows);
+            $sections[] = ['item' => $parent, 'rows' => $rows, 'subtotal' => $subtotal];
+            $allRows = array_merge($allRows, $rows);
+        }
+
+        $unassigned = isset($agg[0]) ? $makeRow(null) : null;
+        if ($unassigned) {
+            $allRows[] = $unassigned;
+        }
+
+        $totals = $sumRows($allRows);
+
+        foreach ($sections as &$section) {
+            $section['pct_of_budget'] = $totals['budgeted'] > 0
+                ? round($section['subtotal']['budgeted'] / $totals['budgeted'] * 100, 2)
+                : null;
+        }
+
+        return ['sections' => $sections, 'unassigned' => $unassigned, 'totals' => $totals];
+    }
+
+    /**
+     * Get the item that uncoded (unallocated) amounts roll into.
+     */
+    public function defaultItem(): ?BudgetItem
+    {
+        return $this->items()->where('is_default', true)->first();
+    }
+
+    /**
      * Get only parent (top-level) budget items.
      */
     public function parentItems(): HasMany

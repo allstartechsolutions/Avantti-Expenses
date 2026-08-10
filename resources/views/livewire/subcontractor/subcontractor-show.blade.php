@@ -716,6 +716,7 @@
                                                     <span class="text-sm text-slate-500 dark:text-slate-400">{{ $employee->notes ? \Illuminate\Support\Str::limit($employee->notes, 50) : '—' }}</span>
                                                 </td>
                                                 <td class="px-4 py-4 text-right">
+                                                    @admin
                                                     <button
                                                         wire:click="deleteEmployee({{ $employee->id }})"
                                                         wire:confirm="Are you sure you want to delete this employee? Any contracts linked to them will be unlinked."
@@ -725,6 +726,7 @@
                                                         </svg>
                                                         Delete
                                                     </button>
+                                                    @endadmin
                                                 </td>
                                             </tr>
                                         @endforeach

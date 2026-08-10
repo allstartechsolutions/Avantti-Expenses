@@ -27,6 +27,9 @@
                                 <tr>
                                     <td class="px-3 py-3 text-sm text-slate-900 dark:text-white">
                                         {{ $co->title }}
+                                        @if($co->budgetItem)
+                                            <span class="ml-1 px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">{{ $co->budgetItem->code }}</span>
+                                        @endif
                                         @if($co->description)
                                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs">{{ $co->description }}</p>
                                         @endif
@@ -142,6 +145,21 @@
                             </div>
                             @error('amount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
+
+                        @if($budgetItems->isNotEmpty())
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Cost Code') }} <span class="text-xs font-normal text-slate-400">({{ __('optional — empty follows the contract allocation') }})</span></label>
+                                <select
+                                    wire:model="budget_item_id"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <option value="">{{ __('No specific cost code') }}</option>
+                                    @foreach($budgetItems as $item)
+                                        <option value="{{ $item->id }}">{{ $item->parent_id ? '— ' : '' }}{{ $item->code }} - {{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('budget_item_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>

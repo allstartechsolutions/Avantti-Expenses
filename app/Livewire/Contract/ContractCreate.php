@@ -2,19 +2,21 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\ManagesContractAllocations;
 use App\Models\Contract;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\SubcontractorEmployee;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class ContractCreate extends Component
 {
-    use WithFileUploads;
+    use ManagesContractAllocations, WithFileUploads;
 
     // Context
     public Project $project;
@@ -46,6 +48,11 @@ class ContractCreate extends Component
         $this->start_date = now()->format('Y-m-d');
     }
 
+    protected function allocationProjectId(): int
+    {
+        return $this->project->id;
+    }
+
     public function selectSubcontractor($id)
     {
         $subcontractor = Subcontractor::find($id);
@@ -75,27 +82,37 @@ class ContractCreate extends Component
             'contract_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
+        if (! $this->allocationsValid()) {
+            return;
+        }
+
         $filePath = null;
         if ($this->contract_file) {
             $filePath = $this->contract_file->store('contracts', 'local');
         }
 
-        $contract = Contract::create([
-            'project_id' => $this->project->id,
-            'job_site_id' => $this->job_site_id ?: null,
-            'subcontractor_id' => $this->subcontractor_id ?: null,
-            'subcontractor_employee_id' => $this->subcontractor_employee_id ?: null,
-            'contract_number' => Contract::generateContractNumber(),
-            'status' => 'active',
-            'start_date' => $this->start_date,
-            'end_date' => $this->end_date ?: null,
-            'amount' => $this->amount,
-            'notes' => $this->notes ?: null,
-            'contract_file_path' => $filePath,
-            'created_by' => Auth::id(),
-        ]);
+        $contract = DB::transaction(function () use ($filePath) {
+            $contract = Contract::create([
+                'project_id' => $this->project->id,
+                'job_site_id' => $this->job_site_id ?: null,
+                'subcontractor_id' => $this->subcontractor_id ?: null,
+                'subcontractor_employee_id' => $this->subcontractor_employee_id ?: null,
+                'contract_number' => Contract::generateContractNumber(),
+                'status' => 'active',
+                'start_date' => $this->start_date,
+                'end_date' => $this->end_date ?: null,
+                'amount' => $this->amount,
+                'notes' => $this->notes ?: null,
+                'contract_file_path' => $filePath,
+                'created_by' => Auth::id(),
+            ]);
 
-        $contract->recordStatusChange(Auth::user(), null, 'active');
+            $this->syncAllocations($contract);
+
+            $contract->recordStatusChange(Auth::user(), null, 'active');
+
+            return $contract;
+        });
 
         session()->flash('message', 'Contract created successfully!');
 
@@ -121,10 +138,15 @@ class ContractCreate extends Component
             ? SubcontractorEmployee::where('subcontractor_id', $this->subcontractor_id)->orderBy('name')->get()
             : collect();
 
+        $allocationBudget = $this->allocationBudget();
+
         return view('livewire.contract.contract-create', [
             'subcontractors' => $subcontractors,
             'jobSites' => $jobSites,
             'employees' => $employees,
+            'allocationBudget' => $allocationBudget,
+            'allocationItems' => $this->allocationSearchResults(),
+            'allocationDefaultItem' => $allocationBudget?->defaultItem(),
         ])->layout('components.layouts.app');
     }
 }

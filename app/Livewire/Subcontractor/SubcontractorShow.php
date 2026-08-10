@@ -185,6 +185,8 @@ class SubcontractorShow extends Component
 
     public function deleteEmployee(int $employeeId)
     {
+        $this->authorizeAdmin();
+
         $employee = SubcontractorEmployee::where('id', $employeeId)
             ->where('subcontractor_id', $this->subcontractor->id)
             ->firstOrFail();

@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Contract;
 
+use App\Models\Budget;
+use App\Models\BudgetItem;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -20,8 +23,16 @@ class ContractChangeOrders extends Component
     public $title = '';
     public $date = '';
     public $amount = '';
+    public $budget_item_id = '';
     public $description = '';
     public $file;
+
+    protected function locationBudget(): ?Budget
+    {
+        return Budget::where('project_id', $this->contract->project_id)
+            ->where('job_site_id', $this->contract->job_site_id)
+            ->first();
+    }
 
     public function openCreateModal()
     {
@@ -38,6 +49,7 @@ class ContractChangeOrders extends Component
         $this->title = $changeOrder->title;
         $this->date = $changeOrder->date->format('Y-m-d');
         $this->amount = number_format($changeOrder->amount, 2, '.', '');
+        $this->budget_item_id = $changeOrder->budget_item_id ?? '';
         $this->description = $changeOrder->description ?? '';
         $this->file = null;
         $this->showModal = true;
@@ -51,10 +63,16 @@ class ContractChangeOrders extends Component
 
     public function save()
     {
+        $budget = $this->locationBudget();
+
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'date' => ['required', 'date'],
             'amount' => ['required', 'numeric'],
+            'budget_item_id' => [
+                'nullable',
+                Rule::exists('budget_items', 'id')->where('budget_id', $budget?->id ?? 0),
+            ],
             'description' => ['nullable', 'string'],
             'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
@@ -63,6 +81,7 @@ class ContractChangeOrders extends Component
             'title' => $this->title,
             'date' => $this->date,
             'amount' => $this->amount,
+            'budget_item_id' => $this->budget_item_id ?: null,
             'description' => $this->description ?: null,
         ];
 
@@ -113,6 +132,7 @@ class ContractChangeOrders extends Component
         $this->title = '';
         $this->date = '';
         $this->amount = '';
+        $this->budget_item_id = '';
         $this->description = '';
         $this->file = null;
         $this->resetValidation();
@@ -120,10 +140,21 @@ class ContractChangeOrders extends Component
 
     public function render()
     {
-        $changeOrders = $this->contract->changeOrders()->with('createdBy')->get();
+        $changeOrders = $this->contract->changeOrders()->with(['createdBy', 'budgetItem'])->get();
+
+        $budget = $this->locationBudget();
+        $budgetItems = $budget
+            ? BudgetItem::where('budget_id', $budget->id)
+                ->with('parent')
+                ->orderBy('sort_order')
+                ->get()
+                ->sortBy(fn ($item) => [$item->parent?->sort_order ?? $item->sort_order, $item->parent_id ? 1 : 0, $item->sort_order])
+                ->values()
+            : collect();
 
         return view('livewire.contract.contract-change-orders', [
             'changeOrders' => $changeOrders,
+            'budgetItems' => $budgetItems,
         ]);
     }
 }

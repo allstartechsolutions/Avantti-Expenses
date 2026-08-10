@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\ExpenseItem;
 use App\Models\ExpensePayment;
@@ -17,7 +18,9 @@ use Illuminate\Support\Collection;
  * cost code, with paid / outstanding / overdue columns for each grouping.
  *
  * Scope:
- *   - Expenses only (one-time + installment). Contracts are NOT included.
+ *   - Expenses only (one-time + installment) — except the By Cost Code view,
+ *     which also folds in subcontractor contracts (committed + paid per code)
+ *     when no vendor/category/status filter is applied.
  *   - The date range filters by expense_date (when the cost was incurred) or,
  *     in due-date basis, by payment due date: one-time expenses match on
  *     COALESCE(payment_due_date, expense_date); installment expenses match
@@ -36,6 +39,8 @@ class ExpenseReportService
     protected Carbon $today;
 
     protected ?Collection $cache = null;
+
+    protected ?Collection $contractCache = null;
 
     public function __construct(
         string $fromDate,
@@ -233,10 +238,47 @@ class ExpenseReportService
     }
 
     /**
-     * Committed cost rolled up per cost code (budget item), at the line-item
-     * level. Payments are tracked per expense, not per line, so this view shows
-     * total committed cost only (no paid/outstanding split). Line items without
-     * a cost code — and expenses with no line items — fall under "Unassigned".
+     * Whether subcontractor contracts are folded into the By Cost Code view.
+     * Vendor, category and status filters are expense concepts, so any of
+     * them narrows the view to expenses only.
+     */
+    public function includesContracts(): bool
+    {
+        return $this->vendorFilter === ''
+            && $this->categoryFilter === ''
+            && $this->statusFilter === 'all';
+    }
+
+    /**
+     * Non-cancelled contracts matching the location filters that exist by
+     * the end of the range (commitments are not dated, so the range only
+     * caps the start date; payments ARE windowed — see byCostCode()).
+     */
+    protected function contracts(): Collection
+    {
+        return $this->contractCache ??= Contract::query()
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('start_date', '<=', $this->end)
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
+            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->with([
+                'allocations.budgetItem',
+                'changeOrders.budgetItem',
+                'payments.items.budgetItem',
+            ])
+            ->get();
+    }
+
+    /**
+     * Cost rolled up per cost code (budget item): expense line items plus
+     * subcontractor contracts. Contract "contracted" is the full scheduled
+     * value per code (allocations + change orders, with uncoded amounts
+     * resolved to the budget's default item); "contract paid" counts
+     * contract payments dated inside the report range. Expense line items
+     * without a cost code — and expenses with no line items — fall under
+     * "Unassigned". Expense payments live per expense, not per line, so
+     * expenses still show committed cost only.
      */
     public function byCostCode(): Collection
     {
@@ -248,33 +290,55 @@ class ExpenseReportService
 
             if ($expense->items->isNotEmpty()) {
                 foreach ($expense->items as $item) {
-                    $this->addToCostBucket($buckets, $item->budgetItem, (float) $item->total_amount);
+                    $this->addToCostBucket($buckets, $item->budgetItem?->id, $item->cost_code_display, (float) $item->total_amount);
                 }
             } else {
-                $this->addToCostBucket($buckets, null, $r['total']);
+                $this->addToCostBucket($buckets, null, __('Unassigned'), $r['total']);
+            }
+        }
+
+        if ($this->includesContracts()) {
+            foreach ($this->contracts() as $contract) {
+                foreach ($contract->costCodeSchedule($this->start, $this->end) as $row) {
+                    $key = $row['budget_item_id'] ?? 0;
+                    $label = $row['budget_item_id'] === null ? __('Unassigned') : $row['code_display'];
+                    $this->ensureCostBucket($buckets, $key, $label);
+                    $buckets[$key]['contracted'] += $row['scheduled'];
+                    $buckets[$key]['contract_paid'] += $row['paid'];
+                }
             }
         }
 
         return collect($buckets)
             ->map(fn (array $b) => [
                 'code' => $b['code'],
-                'total' => round($b['total'], 2),
                 'count' => $b['count'],
+                'expenses' => round($b['expenses'], 2),
+                'contracted' => round($b['contracted'], 2),
+                'contract_paid' => round($b['contract_paid'], 2),
+                'total' => round($b['expenses'] + $b['contracted'], 2),
             ])
             ->sortByDesc('total')
             ->values();
     }
 
-    protected function addToCostBucket(array &$buckets, $budgetItem, float $amount): void
+    protected function ensureCostBucket(array &$buckets, int $key, string $label): void
     {
-        $key = $budgetItem?->id ?? 0;
-        $label = $budgetItem ? ($budgetItem->code . ' - ' . $budgetItem->name) : __('Unassigned');
+        $buckets[$key] ??= [
+            'code' => $label,
+            'count' => 0,
+            'expenses' => 0.0,
+            'contracted' => 0.0,
+            'contract_paid' => 0.0,
+        ];
+    }
 
-        if (! isset($buckets[$key])) {
-            $buckets[$key] = ['code' => $label, 'total' => 0.0, 'count' => 0];
-        }
+    protected function addToCostBucket(array &$buckets, ?int $budgetItemId, string $label, float $amount): void
+    {
+        $key = $budgetItemId ?? 0;
+        $this->ensureCostBucket($buckets, $key, $label);
 
-        $buckets[$key]['total'] += $amount;
+        $buckets[$key]['expenses'] += $amount;
         $buckets[$key]['count']++;
     }
 
