@@ -3,12 +3,10 @@
     "_sidebar_menu": "---------- Menu Section ----------",
     "Menu": "Menu",
     "Dashboard": "Painel",
-
     "_sidebar_company": "---------- Company Submenu ----------",
     "Company": "Empresa",
     "Company Info": "Info da Empresa",
     "Users": "Usuários",
-
     "_sidebar_projects": "---------- Projects Submenu ----------",
     "Projects": "Projetos",
     "All Projects": "Todos os Projetos",
@@ -16,33 +14,27 @@
     "Clients": "Clientes",
     "Cost Codes": "Códigos de Custo",
     "Payments": "Pagamentos",
-
     "_sidebar_catalog": "---------- Catalog Submenu ----------",
     "Catalog": "Catálogo",
     "All Items": "Todos os Itens",
     "Categories": "Categorias",
     "Suppliers": "Fornecedores",
-
     "_sidebar_single_items": "---------- Single Menu Items ----------",
     "Estimates": "Orçamentos",
     "Invoices": "Faturas",
-
     "_sidebar_user_section": "---------- User Profile Section ----------",
     "Profile": "Perfil",
     "Settings": "Configurações",
     "Logout": "Sair",
     "User": "Usuário",
-
     "_footer": "========== Footer ==========",
     "Design & Developed by": "Design & Desenvolvido por",
-
     "_company_info": "========== Company Info Page ==========",
     "_company_info_header": "---------- Page Header ----------",
     "Setup Company": "Configurar Empresa",
     "Update your company information": "Atualize as informações da sua empresa",
     "Configure your company details": "Configure os detalhes da sua empresa",
     "Back to Dashboard": "Voltar ao Painel",
-
     "_company_info_basic": "---------- Basic Information ----------",
     "Basic Information": "Informações Básicas",
     "Company name and primary details": "Nome da empresa e dados principais",
@@ -50,7 +42,6 @@
     "Enter company name": "Digite o nome da empresa",
     "Email": "E-mail",
     "Website": "Website",
-
     "_company_info_address": "---------- Address Information ----------",
     "Address Information": "Informações de Endereço",
     "Company location details": "Detalhes de localização da empresa",
@@ -60,14 +51,12 @@
     "State/Province": "Estado",
     "State": "Estado",
     "Postal Code": "CEP",
-
     "_company_info_contact": "---------- Contact Information ----------",
     "Contact Information": "Informações de Contato",
     "Phone numbers and contact details": "Números de telefone e detalhes de contato",
     "Phone": "Telefone",
     "Mobile": "Celular",
     "Fax": "Fax",
-
     "_company_info_logo": "---------- Company Logo ----------",
     "Company Logo": "Logo da Empresa",
     "Upload a logo image (max 2MB)": "Envie uma imagem de logo (máx 2MB)",
@@ -79,7 +68,6 @@
     "Remove": "Remover",
     "Click to upload or drag and drop": "Clique para enviar ou arraste e solte",
     "PNG, JPG, GIF up to 2MB": "PNG, JPG, GIF até 2MB",
-
     "_company_info_actions": "---------- Form Actions ----------",
     "Cancel": "Cancelar",
     "Update Company": "Atualizar Empresa",
@@ -87,14 +75,12 @@
     "Updating...": "Atualizando...",
     "Saving...": "Salvando...",
     "Save": "Salvar",
-
     "_company_info_messages": "---------- Flash Messages ----------",
     "Logo removed successfully!": "Logo removido com sucesso!",
     "Company updated successfully!": "Empresa atualizada com sucesso!",
     "Company created successfully!": "Empresa criada com sucesso!",
     "company name": "nome da empresa",
     "postal code": "CEP",
-
     "_company_index": "========== Company Index Page ==========",
     "Companies": "Empresas",
     "Manage your company database": "Gerencie seu banco de dados de empresas",
@@ -103,14 +89,11 @@
     "Coming soon - full company listing and management": "Em breve - listagem completa e gerenciamento de empresas",
     "Company list will be available after the create functionality is tested": "A lista de empresas estará disponível após a funcionalidade de criação ser testada",
     "Create Your First Company": "Crie sua Primeira Empresa",
-
     "_users": "========== Users Module ==========",
-
     "_users_index": "---------- User Index Page ----------",
     "_users_index_header": ".......... Page Header ..........",
     "Manage system users": "Gerenciar usuários do sistema",
     "Add User": "Adicionar Usuário",
-
     "_users_index_filters": ".......... Filters ..........",
     "Search": "Buscar",
     "Search by name, email, or phone...": "Buscar por nome, e-mail ou telefone...",
@@ -122,18 +105,15 @@
     "Role": "Função",
     "All Roles": "Todas as Funções",
     "Clear Filters": "Limpar Filtros",
-
     "_users_index_table": ".......... Table ..........",
     "Contact": "Contato",
     "Joined": "Cadastro",
     "Actions": "Ações",
     "No Role": "Sem Função",
-
     "_users_index_empty": ".......... Empty States ..........",
     "No users found matching your filters.": "Nenhum usuário encontrado com os filtros aplicados.",
     "No users yet. Create your first user to get started.": "Nenhum usuário ainda. Crie seu primeiro usuário para começar.",
     "Showing :from to :to of :total users": "Exibindo :from a :to de :total usuários",
-
     "_users_create": "---------- User Create Page ----------",
     "_users_create_header": ".......... Page Header ..........",
     "Create User": "Criar Usuário",
@@ -144,75 +124,61 @@
     "Enter full name": "Digite o nome completo",
     "Email Address": "Endereço de E-mail",
     "Phone Number": "Número de Telefone",
-
     "_users_create_password": ".......... Password Section ..........",
     "Password": "Senha",
     "Set initial password for the user": "Definir senha inicial para o usuário",
     "Minimum 8 characters": "Mínimo de 8 caracteres",
     "Confirm Password": "Confirmar Senha",
     "Re-enter password": "Digite a senha novamente",
-
     "_users_create_role": ".......... Role & Status Section ..........",
     "Role & Status": "Função & Status",
     "Assign role and set account status": "Atribuir função e definir status da conta",
     "Select a role": "Selecione uma função",
-
     "_users_create_actions": ".......... Form Actions ..........",
     "Creating...": "Criando...",
-
     "_users_edit": "---------- User Edit Page ----------",
     "_users_edit_header": ".......... Page Header ..........",
     "Edit User": "Editar Usuário",
     "Update user information": "Atualizar informações do usuário",
     "Back to User": "Voltar para Usuário",
     "Update User": "Atualizar Usuário",
-
     "_users_edit_sidebar": ".......... Sidebar ..........",
     "Current User": "Usuário Atual",
     "User ID:": "ID do Usuário:",
     "Joined:": "Cadastro:",
-
     "_users_edit_password": ".......... Password Reset ..........",
     "Send a password reset link to the user's email address.": "Enviar um link de redefinição de senha para o e-mail do usuário.",
     "Send Password Reset": "Enviar Redefinição de Senha",
     "Sending...": "Enviando...",
-
     "_users_edit_warning": ".......... Warning ..........",
     "Changes will affect user access": "Alterações afetarão o acesso do usuário",
     "Changing the role or status will immediately update the user's access permissions.": "Alterar a função ou o status atualizará imediatamente as permissões de acesso do usuário.",
-
     "_users_show": "---------- User Show Page ----------",
     "_users_show_header": ".......... Page Header ..........",
     "User Details": "Detalhes do Usuário",
     "View user information": "Visualizar informações do usuário",
-
     "_users_show_profile": ".......... Profile Card ..........",
     "Profile Information": "Informações do Perfil",
     "Not provided": "Não informado",
-
     "_users_show_account": ".......... Account Details ..........",
     "Account Details": "Detalhes da Conta",
     "Email Verified": "E-mail Verificado",
     "Verified on :date": "Verificado em :date",
     "Not verified": "Não verificado",
     "Last Updated": "Última Atualização",
-
     "_users_show_sidebar": ".......... Sidebar ..........",
     "Quick Actions": "Ações Rápidas",
     "Account Stats": "Estatísticas da Conta",
     "User ID": "ID do Usuário",
     "Account Age": "Idade da Conta",
-
     "_users_profile": "---------- User Profile Page ----------",
     "_users_profile_header": ".......... Page Header ..........",
     "My Profile": "Meu Perfil",
     "Manage your account information and password": "Gerencie suas informações de conta e senha",
-
     "_users_profile_info": ".......... Profile Information ..........",
     "Update your name, email address and phone number": "Atualize seu nome, endereço de e-mail e número de telefone",
     "Name": "Nome",
     "Your name": "Seu nome",
-
     "_users_profile_password": ".......... Change Password ..........",
     "Change Password": "Alterar Senha",
     "Ensure your account is using a secure password": "Certifique-se de que sua conta está usando uma senha segura",
@@ -223,7 +189,6 @@
     "Confirm New Password": "Confirmar Nova Senha",
     "Confirm new password": "Confirme a nova senha",
     "Update Password": "Atualizar Senha",
-
     "_users_profile_requirements": ".......... Password Requirements ..........",
     "Password requirements:": "Requisitos de senha:",
     "At least 8 characters": "No mínimo 8 caracteres",
@@ -232,14 +197,12 @@
     "At least one symbol (!@#$%...)": "Pelo menos um símbolo (!@#$%...)",
     "Different from current password": "Diferente da senha atual",
     "Passwords match": "Senhas conferem",
-
     "_users_messages": "---------- Flash Messages ----------",
     "User created successfully!": "Usuário criado com sucesso!",
     "User updated successfully!": "Usuário atualizado com sucesso!",
     "Profile updated successfully.": "Perfil atualizado com sucesso.",
     "Password reset link sent to :email": "Link de redefinição de senha enviado para :email",
     "Failed to send password reset link. Please try again.": "Falha ao enviar link de redefinição de senha. Por favor, tente novamente.",
-
     "_users_validation": "---------- Validation Attributes ----------",
     "name": "nome",
     "email address": "endereço de e-mail",
@@ -247,21 +210,17 @@
     "password": "senha",
     "role": "função",
     "status": "status",
-
     "_projects": "========== Projects Module ==========",
-
     "_projects_index": "---------- Project Index Page ----------",
     "_projects_index_header": ".......... Page Header ..........",
     "Manage your projects": "Gerencie seus projetos",
     "Add Project": "Adicionar Projeto",
-
     "_projects_index_filters": ".......... Filters ..........",
     "Search projects": "Buscar projetos",
     "Search by project name, client, contact...": "Buscar por nome do projeto, cliente, contato...",
     "Filter by status": "Filtrar por status",
     "Filter by client": "Filtrar por cliente",
     "All Clients": "Todos os Clientes",
-
     "_projects_index_table": ".......... Table ..........",
     "Project": "Projeto",
     "Job Site": "Local",
@@ -272,13 +231,11 @@
     "View": "Ver",
     "Edit": "Editar",
     "Delete": "Excluir",
-
     "_projects_index_empty": ".......... Empty States ..........",
     "No projects found": "Nenhum projeto encontrado",
     "No projects yet": "Nenhum projeto ainda",
     "Try adjusting your search or filters.": "Tente ajustar sua busca ou filtros.",
     "Get started by creating a new project.": "Comece criando um novo projeto.",
-
     "_projects_index_delete_modal": ".......... Delete Modal ..........",
     "Delete Project": "Excluir Projeto",
     "Are you sure you want to delete": "Tem certeza que deseja excluir",
@@ -291,13 +248,11 @@
     "Daily Report(s)": "Relatório(s) Diário(s)",
     "Purchase Order(s)": "Ordem(ns) de Compra",
     "Budget(s)": "Orçamento(s)",
-
     "_projects_create": "---------- Project Create Page ----------",
     "_projects_create_header": ".......... Page Header ..........",
     "Create Project": "Criar Projeto",
     "Add a new project to the system": "Adicionar um novo projeto ao sistema",
     "Back to Projects": "Voltar para Projetos",
-
     "_projects_create_client": ".......... Client Selection ..........",
     "Client Selection": "Seleção de Cliente",
     "Select the client for this project": "Selecione o cliente para este projeto",
@@ -305,7 +260,6 @@
     "Type to search for a client...": "Digite para buscar um cliente...",
     "No clients found.": "Nenhum cliente encontrado.",
     "Create a new client": "Criar um novo cliente",
-
     "_projects_create_info": ".......... Project Information ..........",
     "Project Information": "Informações do Projeto",
     "Basic project details": "Detalhes básicos do projeto",
@@ -317,12 +271,10 @@
     "Enter project description...": "Digite a descrição do projeto...",
     "Project Manager": "Gerente do Projeto",
     "Select a project manager": "Selecione um gerente de projeto",
-
     "_projects_create_contact": ".......... Contact Information ..........",
     "Primary contact for this project (editable)": "Contato principal deste projeto (editável)",
     "Contact Person": "Pessoa de Contato",
     "Enter contact person name": "Digite o nome da pessoa de contato",
-
     "_projects_create_address": ".......... Address ..........",
     "Project Address": "Endereço do Projeto",
     "Start typing to search for an address or enter manually": "Comece a digitar para buscar um endereço ou insira manualmente",
@@ -331,29 +283,23 @@
     "Suite, Apt, Unit, etc.": "Sala, Apto, Unidade, etc.",
     "Neighborhood (Bairro)": "Bairro",
     "CEP": "CEP",
-
     "_projects_create_actions": ".......... Form Actions ..........",
     "Update Project": "Atualizar Projeto",
-
     "_projects_edit": "---------- Project Edit Page ----------",
     "_projects_edit_header": ".......... Page Header ..........",
     "Edit Project": "Editar Projeto",
     "Update project information": "Atualizar informações do projeto",
-
     "_projects_messages": "---------- Flash Messages ----------",
     "Project created successfully!": "Projeto criado com sucesso!",
     "Project updated successfully!": "Projeto atualizado com sucesso!",
     "Project deleted successfully!": "Projeto excluído com sucesso!",
-
     "_projects_validation": "---------- Validation Attributes ----------",
     "client": "cliente",
     "project name": "nome do projeto",
     "contact person": "pessoa de contato",
     "initial amount": "valor inicial",
     "project manager": "gerente do projeto",
-
     "_job_sites": "========== Job Sites Module ==========",
-
     "_job_sites_index": "---------- Job Sites Index (within Project) ----------",
     "Search job sites...": "Buscar locais...",
     "Add Job Site": "Adicionar Local",
@@ -368,7 +314,6 @@
     "No Job Sites": "Nenhum Local",
     "Get started by creating a job site for this project.": "Comece criando um local para este projeto.",
     "Delete Job Site": "Excluir Local",
-
     "_job_sites_overview": "---------- Job Site Overview ----------",
     "Job Site Details": "Detalhes do Local",
     "Job Site Information": "Informações do Local",
@@ -380,10 +325,8 @@
     "recorded": "registrada(s)",
     "View Expenses": "Ver Despesas",
     "View Change Orders": "Ver Ordens de Alteração",
-
     "_job_sites_layout": "---------- Job Site Layout ----------",
     "Back to Job Sites": "Voltar para Locais",
-
     "_job_sites_fields": "---------- Job Site Shared Fields ----------",
     "Supervisor": "Supervisor",
     "Select a supervisor": "Selecione um supervisor",
@@ -393,20 +336,16 @@
     "Initial assignment": "Atribuição inicial",
     "Removed": "Removido",
     "by": "por",
-
     "_job_sites_messages": "---------- Job Site Flash Messages ----------",
     "Job site created successfully!": "Local criado com sucesso!",
     "Job site updated successfully!": "Local atualizado com sucesso!",
     "Job site deleted successfully!": "Local excluído com sucesso!",
-
     "_job_sites_validation": "---------- Validation Attributes ----------",
     "supervisor": "supervisor",
     "job site name": "nome do local",
     "job amount": "valor do local",
-
     "_breadcrumb": "========== Breadcrumb ==========",
     "Home": "Início",
-
     "_project_nav": "========== Project Navigation Menu ==========",
     "Overview": "Visão Geral",
     "Job Sites": "Locais",
@@ -416,36 +355,25 @@
     "Contracts": "Contratos",
     "Daily Reports": "Relatórios Diários",
     "Budget": "Orçamento",
-
     "_project_layout": "========== Project Layout ==========",
     "Project Details": "Detalhes do Projeto",
-
     "_project_overview": "========== Project Overview Page ==========",
-
     "_project_overview_info": "---------- Project Information Card ----------",
     "Created On": "Criado Em",
     "Created By": "Criado Por",
     "Not assigned": "Não atribuído",
     "Full Address": "Endereço Completo",
-    "Not provided": "Não informado",
-
     "_project_overview_contact": "---------- Contact Card ----------",
-
     "_project_overview_address": "---------- Address Card ----------",
-
     "_project_overview_sidebar": "---------- Sidebar ----------",
     "Send Email": "Enviar E-mail",
     "Call Contact": "Ligar para Contato",
     "Project ID": "ID do Projeto",
-
     "_project_overview_delete": "---------- Delete Modal ----------",
-
     "_project_status_labels": "---------- Project Status Labels ----------",
     "In Progress": "Em Andamento",
     "Cancelled": "Cancelado",
-
     "_expenses": "========== Expenses Module ==========",
-
     "_expenses_list": "---------- Expense List Page ----------",
     "_expenses_list_header": ".......... Page Header ..........",
     "Search expenses...": "Buscar despesas...",
@@ -453,26 +381,21 @@
     "Project (General)": "Projeto (Geral)",
     "All Status": "Todos os Status",
     "Add Expense": "Adicionar Despesa",
-
     "_expenses_list_summary": ".......... Summary Cards ..........",
     "Total Expenses": "Total de Despesas",
     "Paid": "Pago",
     "Pending": "Pendente",
-
     "_expenses_list_table": ".......... Table ..........",
     "Date": "Data",
     "Supplier / Items": "Fornecedor / Itens",
     "Location": "Local",
     "Total": "Total",
-    "Payments": "Pagamentos",
     "No Supplier": "Sem Fornecedor",
     "Mark as Paid": "Marcar como Pago",
     "Are you sure you want to delete this expense?": "Tem certeza que deseja excluir esta despesa?",
-
     "_expenses_list_empty": ".......... Empty State ..........",
     "No expenses": "Nenhuma despesa",
     "Get started by adding an expense.": "Comece adicionando uma despesa.",
-
     "_expenses_view_modal": "---------- Expense View Modal ----------",
     "Expense Details": "Detalhes da Despesa",
     "Supplier": "Fornecedor",
@@ -487,7 +410,6 @@
     "Receipt": "Comprovante",
     "View Receipt": "Ver Comprovante",
     "Close": "Fechar",
-
     "_expenses_payment": "---------- Payment Information ----------",
     "Payment Information": "Informações de Pagamento",
     "Payment Method": "Método de Pagamento",
@@ -550,7 +472,6 @@
     "Expense payment reverted to unpaid.": "Pagamento da despesa revertido para não pago.",
     "Payment reverted to pending.": "Pagamento revertido para pendente.",
     "History": "Histórico",
-    "by": "por",
     "Marked as paid": "Marcado como pago",
     "Payment reverted": "Pagamento revertido",
     "Marked as overdue": "Marcado como vencido",
@@ -565,7 +486,6 @@
     "File uploaded successfully.": "Arquivo enviado com sucesso.",
     "File deleted.": "Arquivo excluído.",
     "Are you sure you want to delete this file?": "Tem certeza de que deseja excluir este arquivo?",
-
     "_expenses_payment_methods": ".......... Payment Methods ..........",
     "Select method": "Selecione o método",
     "Cash": "Dinheiro",
@@ -575,7 +495,6 @@
     "Bank Transfer": "Transferência Bancária",
     "Other": "Outro",
     "Auto Payment": "Pagamento Automático",
-
     "_expenses_payment_installments": ".......... Installments ..........",
     "Split into installments": "Dividir em parcelas",
     "Enable for multiple payments": "Habilitar para múltiplos pagamentos",
@@ -588,19 +507,16 @@
     "Monthly": "Mensal",
     "First Payment": "Primeiro Pagamento",
     "First Payment Date": "Data do Primeiro Pagamento",
-
     "_expenses_create": "---------- Expense Create/Edit Page ----------",
     "_expenses_create_header": ".......... Page Header ..........",
     "Edit Expense": "Editar Despesa",
     "Back": "Voltar",
-
     "_expenses_create_details": ".......... Expense Details ..........",
     "Basic information about this expense": "Informações básicas sobre esta despesa",
     "Search supplier...": "Buscar fornecedor...",
     "Expense Date": "Data da Despesa",
     "Optional notes about this expense...": "Observações opcionais sobre esta despesa...",
     "Optional notes...": "Observações opcionais...",
-
     "_expenses_create_items": ".......... Items Section ..........",
     "Add the items for this expense": "Adicione os itens para esta despesa",
     "Add Item": "Adicionar Item",
@@ -617,12 +533,10 @@
     "No items": "Nenhum item",
     "Add at least one item to this expense.": "Adicione pelo menos um item a esta despesa.",
     "Unknown": "Desconhecido",
-
     "_expenses_create_payment": ".......... Payment Section ..........",
     "Payment method and schedule": "Método de pagamento e cronograma",
     "Payment Due Date": "Data de Vencimento do Pagamento",
     "Save Expense": "Salvar Despesa",
-
     "_expenses_item_modal": "---------- Item Modal ----------",
     "Edit Item": "Editar Item",
     "Search cost code...": "Buscar código de custo...",
@@ -636,16 +550,13 @@
     "Each, Hour...": "Cada, Hora...",
     "Update Item": "Atualizar Item",
     "Update": "Atualizar",
-
     "_expenses_jobsite": "---------- Job Site Expense Extras ----------",
     "Cannot edit - has payments": "Não é possível editar - possui pagamentos",
     "Current receipt attached": "Comprovante atual anexado",
     "Download": "Baixar",
-
     "_expenses_status_labels": "---------- Expense Status Labels ----------",
     "Unpaid": "Não Pago",
     "Partial": "Parcial",
-
     "_expenses_messages": "---------- Flash Messages ----------",
     "Expense created successfully!": "Despesa criada com sucesso!",
     "Expense updated successfully!": "Despesa atualizada com sucesso!",
@@ -656,15 +567,12 @@
     "Payment marked as paid.": "Pagamento marcado como pago.",
     "Payment marked as overdue.": "Pagamento marcado como vencido.",
     "This expense cannot be edited because it has payments.": "Esta despesa não pode ser editada porque possui pagamentos.",
-
     "_expenses_validation": "---------- Validation Messages ----------",
     "Item name is required.": "O nome do item é obrigatório.",
     "Quantity is required.": "A quantidade é obrigatória.",
     "Unit price is required.": "O preço unitário é obrigatório.",
     "At least one item is required.": "Pelo menos um item é obrigatório.",
-
     "_purchase_orders": "========== Purchase Orders Module ==========",
-
     "_po_list": "---------- PO List Page ----------",
     "Search PO#, supplier, notes...": "Buscar PO#, fornecedor, notas...",
     "Draft": "Rascunho",
@@ -676,7 +584,6 @@
     "No purchase orders": "Nenhuma ordem de compra",
     "No purchase orders match your filters.": "Nenhuma ordem de compra corresponde aos seus filtros.",
     "Get started by creating a purchase order.": "Comece criando uma ordem de compra.",
-
     "_po_jobsite_tab": "---------- Job Site PO Tab ----------",
     "Total POs": "Total de OCs",
     "Approved Total": "Total Aprovado",
@@ -684,7 +591,6 @@
     "PO #": "OC #",
     "Get started by creating a new purchase order.": "Comece criando uma nova ordem de compra.",
     "New Purchase Order": "Nova Ordem de Compra",
-
     "_po_create": "---------- PO Create Page ----------",
     "Create Purchase Order": "Criar Ordem de Compra",
     "Purchase Order Details": "Detalhes da Ordem de Compra",
@@ -700,13 +606,11 @@
     "Submit for Approval": "Enviar para Aprovação",
     "Payment settings (will be applied when PO is approved and expense is created)": "Configurações de pagamento (serão aplicadas quando a OC for aprovada e a despesa criada)",
     "Enable to divide this into multiple payments when expense is created": "Habilitar para dividir em múltiplos pagamentos quando a despesa for criada",
-
     "_po_edit": "---------- PO Edit Page ----------",
     "Edit Purchase Order": "Editar Ordem de Compra",
     "Revision": "Revisão",
     "View Current Document": "Ver Documento Atual",
     "Save Changes": "Salvar Alterações",
-
     "_po_show": "---------- PO Show Page ----------",
     "Purchase Order": "Ordem de Compra",
     "Project Level": "Nível do Projeto",
@@ -720,7 +624,6 @@
     "Single payment": "Pagamento único",
     "Yes": "Sim",
     "No": "Não",
-
     "_po_show_actions": ".......... Actions ..........",
     "Submit this purchase order for approval?": "Enviar esta ordem de compra para aprovação?",
     "Cancel PO": "Cancelar OC",
@@ -735,23 +638,19 @@
     "You can edit the PO before resubmitting.": "Você pode editar a OC antes de reenviar.",
     "Edit PO": "Editar OC",
     "This purchase order has been cancelled.": "Esta ordem de compra foi cancelada.",
-
     "_po_show_linked_expense": ".......... Linked Expense ..........",
     "Linked Expense": "Despesa Vinculada",
     "This PO was approved and an expense was automatically created.": "Esta OC foi aprovada e uma despesa foi criada automaticamente.",
     "Expense ID:": "ID da Despesa:",
     "Status:": "Status:",
     "Amount:": "Valor:",
-
     "_po_show_history": ".......... Status History ..........",
     "Status History": "Histórico de Status",
     "No status changes recorded.": "Nenhuma alteração de status registrada.",
-
     "_po_reject_modal": ".......... Reject Modal ..........",
     "Reject Purchase Order": "Rejeitar Ordem de Compra",
     "Reason for Rejection (Optional)": "Motivo da Rejeição (Opcional)",
     "Enter the reason for rejecting this PO...": "Digite o motivo da rejeição desta OC...",
-
     "_po_cancel_modal": ".......... Cancel Modal ..........",
     "Cancel Purchase Order": "Cancelar Ordem de Compra",
     "Warning:": "Aviso:",
@@ -759,11 +658,8 @@
     "Reason for Cancellation (Optional)": "Motivo do Cancelamento (Opcional)",
     "Enter the reason for cancelling this PO...": "Digite o motivo do cancelamento desta OC...",
     "Keep PO": "Manter OC",
-
     "_po_status_history_model": "---------- PO Status History Model ----------",
-    "Created": "Criado",
     "Created as :status": "Criado como :status",
-
     "_po_messages": "---------- Flash Messages ----------",
     "Submitted for approval": "Enviado para aprovação",
     "Purchase Order saved as draft!": "Ordem de Compra salva como rascunho!",
@@ -787,9 +683,7 @@
     "This purchase order cannot be revised and resubmitted.": "Esta ordem de compra não pode ser revisada e reenviada.",
     "Purchase order revised and resubmitted for approval (Revision :revision).": "Ordem de compra revisada e reenviada para aprovação (Revisão :revision).",
     "Failed to resubmit purchase order.": "Falha ao reenviar ordem de compra.",
-
     "_change_orders": "========== Change Orders Module ==========",
-
     "_co_list": "---------- CO List Page ----------",
     "Search change orders...": "Buscar ordens de alteração...",
     "Total Change Orders": "Total de Ordens de Alteração",
@@ -798,12 +692,10 @@
     "File": "Arquivo",
     "No change orders": "Nenhuma ordem de alteração",
     "Get started by adding a change order.": "Comece adicionando uma ordem de alteração.",
-
     "_co_jobsite_tab": "---------- Job Site CO Tab ----------",
     "No file": "Sem arquivo",
     "Are you sure you want to delete this change order?": "Tem certeza que deseja excluir esta ordem de alteração?",
     "Get started by creating a new change order.": "Comece criando uma nova ordem de alteração.",
-
     "_co_modal": "---------- CO Modal ----------",
     "View Change Order": "Ver Ordem de Alteração",
     "Edit Change Order": "Editar Ordem de Alteração",
@@ -820,9 +712,77 @@
     "New file selected:": "Novo arquivo selecionado:",
     "Create": "Criar",
     "Leave as \"Project (General)\" for project-level change orders": "Deixe como \"Projeto (Geral)\" para ordens de alteração a nível de projeto",
-
     "_co_messages": "---------- Flash Messages ----------",
     "Change order updated successfully!": "Ordem de alteração atualizada com sucesso!",
     "Change order created successfully!": "Ordem de alteração criada com sucesso!",
-    "Change order deleted successfully!": "Ordem de alteração excluída com sucesso!"
+    "Change order deleted successfully!": "Ordem de alteração excluída com sucesso!",
+    "Cost Code Allocation": "Alocação por Código de Custo",
+    "Optional — split the contract amount across cost codes.": "Opcional — divida o valor do contrato entre códigos de custo.",
+    "Unallocated amounts go to": "Valores não alocados vão para",
+    "Unallocated amounts show as Unassigned.": "Valores não alocados aparecem como Não atribuído.",
+    "Search cost code to add...": "Buscar código de custo para adicionar...",
+    "Allocated": "Alocado",
+    "Remaining": "Restante",
+    "The allocated total cannot exceed the contract amount.": "O total alocado não pode exceder o valor do contrato.",
+    "One or more cost codes do not belong to this location's budget. Remove them and pick codes again.": "Um ou mais códigos de custo não pertencem ao orçamento deste local. Remova-os e selecione novamente.",
+    "Contract amount, payments and progress per cost code": "Valor do contrato, pagamentos e progresso por código de custo",
+    "Scheduled": "Previsto",
+    "% Complete": "% Concluído",
+    "Enter the new % complete for a code to get a suggested amount (you can adjust it), or type amounts directly. Leave lines empty to record an uncoded payment.": "Informe o novo % concluído de um código para obter o valor sugerido (você pode ajustá-lo), ou digite os valores diretamente. Deixe as linhas vazias para registrar um pagamento sem código.",
+    "Paid / %": "Pago / %",
+    "New %": "Novo %",
+    "% complete cannot exceed 100.": "% concluído não pode ser maior que 100.",
+    "The cost code lines must add up to the payment amount.": "As linhas de código de custo devem somar o valor do pagamento.",
+    "optional — empty follows the contract allocation": "opcional — vazio segue a alocação do contrato",
+    "No specific cost code": "Nenhum código de custo específico",
+    "Default": "Padrão",
+    "Cost Code Grid": "Planilha de Códigos de Custo",
+    "Cost Grid": "Planilha de Custos",
+    "Budgeted": "Orçado",
+    "Contracted": "Contratado",
+    "Contract Paid": "Pago em Contratos",
+    "Total Committed": "Total Comprometido",
+    "Back to Budget": "Voltar ao Orçamento",
+    "Sub-Total": "Sub-Total",
+    "of budget": "do orçamento",
+    "This budget has no cost codes yet.": "Este orçamento ainda não possui códigos de custo.",
+    "Unassigned": "Não atribuído",
+    "Line Items": "Itens",
+    "Total Cost": "Custo Total",
+    "All": "Todos",
+    "none selected = all": "nenhum selecionado = todos",
+    "Expense line items plus subcontractor contracts per cost code. Contracted is the full allocated value; Contract Paid counts payments dated inside the range. Contracts are hidden when a vendor, category or status filter is applied.": "Itens de despesa mais contratos de subcontratados por código de custo. Contratado é o valor total alocado; Pago em Contratos considera pagamentos com data dentro do período. Contratos são ocultados quando um filtro de fornecedor, categoria ou status é aplicado.",
+    "Expense line items plus subcontractor contracts. Contracted is the full allocated value; Contract Paid counts payments dated inside the range.": "Itens de despesa mais contratos de subcontratados. Contratado é o valor total alocado; Pago em Contratos considera pagamentos com data dentro do período.",
+
+    "_income": "========== Income Module ==========",
+    "_income_page": "---------- Income Page ----------",
+    "Income": "Entradas",
+    "Search income...": "Buscar entradas...",
+    "Add Income": "Adicionar Entrada",
+    "_income_summary": ".......... Summary Cards ..........",
+    "Total Income": "Total de Entradas",
+    "This Month": "Este Mês",
+    "_income_table": ".......... Table / Empty State ..........",
+    "Added By": "Adicionado Por",
+    "No income recorded": "Nenhuma entrada registrada",
+    "Get started by adding an income record.": "Comece adicionando uma entrada.",
+    "Are you sure you want to delete this income record?": "Tem certeza de que deseja excluir esta entrada?",
+    "_income_form": ".......... Form / View Modal ..........",
+    "Edit Income": "Editar Entrada",
+    "Income Details": "Detalhes da Entrada",
+    "e.g. Client deposit, Draw payment": "ex.: Depósito do cliente, Pagamento de medição",
+    "PDF, JPG or PNG, up to 10MB each.": "PDF, JPG ou PNG, até 10MB cada.",
+    "New files are added to the existing attachments. Manage them from the income record view.": "Novos arquivos são adicionados aos anexos existentes. Gerencie-os na visualização da entrada.",
+    "_income_messages": "---------- Flash Messages ----------",
+    "Income added successfully.": "Entrada adicionada com sucesso.",
+    "Income updated successfully.": "Entrada atualizada com sucesso.",
+    "Income deleted successfully.": "Entrada excluída com sucesso.",
+    "The selected location is invalid.": "A localização selecionada é inválida.",
+    "_income_attributes": "---------- Validation Attributes ----------",
+    "date": "data",
+    "title": "título",
+    "description": "descrição",
+    "amount": "valor",
+    "location": "localização",
+    "file": "arquivo"
 }

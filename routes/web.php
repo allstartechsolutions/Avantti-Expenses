@@ -22,6 +22,7 @@ use App\Livewire\Project\ProjectIndex;
 use App\Livewire\Project\ProjectShow;
 use App\Livewire\Project\ProjectOverview;
 use App\Livewire\Project\ProjectExpenses;
+use App\Livewire\Project\ProjectIncome;
 use App\Livewire\Project\ProjectJobSites;
 use App\Livewire\Project\ProjectChangeOrders;
 use App\Livewire\Project\ProjectDailyReports;
@@ -153,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}', ProjectOverview::class)->name('projects.overview');
     Route::get('projects/{project}/jobsites', ProjectJobSites::class)->name('projects.jobsites');
     Route::get('projects/{project}/expenses', ProjectExpenses::class)->name('projects.expenses');
+    Route::get('projects/{project}/income', ProjectIncome::class)->name('projects.income');
     Route::get('projects/{project}/change-orders', ProjectChangeOrders::class)->name('projects.change-orders');
     Route::get('projects/{project}/contracts', ProjectContracts::class)->name('projects.contracts');
     Route::get('projects/{project}/daily-reports', ProjectDailyReports::class)->name('projects.daily-reports');

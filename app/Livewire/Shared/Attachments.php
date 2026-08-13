@@ -5,6 +5,7 @@ namespace App\Livewire\Shared;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Attachment;
 use App\Models\Expense;
+use App\Models\Income;
 use App\Models\PurchaseOrder;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Component;
@@ -14,7 +15,7 @@ class Attachments extends Component
 {
     use WithFileUploads, AuthorizesAdmin;
 
-    public string $modelType; // 'expense' or 'purchase-order'
+    public string $modelType; // 'expense', 'purchase-order' or 'income'
     public int $modelId;
     public $upload = null;
 
@@ -23,6 +24,7 @@ class Attachments extends Component
         return match ($this->modelType) {
             'expense' => Expense::findOrFail($this->modelId),
             'purchase-order' => PurchaseOrder::findOrFail($this->modelId),
+            'income' => Income::findOrFail($this->modelId),
         };
     }
 
@@ -31,6 +33,7 @@ class Attachments extends Component
         return match ($this->modelType) {
             'expense' => 'expenses',
             'purchase-order' => 'purchase-orders',
+            'income' => 'income',
         };
     }
 

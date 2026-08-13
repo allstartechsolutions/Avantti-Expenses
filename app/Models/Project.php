@@ -130,6 +130,22 @@ class Project extends Model
     }
 
     /**
+     * Get all income for this project (including job site income)
+     */
+    public function income(): HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    /**
+     * Get only project-level income (not tied to a job site)
+     */
+    public function projectLevelIncome(): HasMany
+    {
+        return $this->hasMany(Income::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Get all change orders for this project (including job site change orders)
      */
     public function changeOrders(): HasMany

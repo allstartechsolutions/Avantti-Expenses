@@ -12,4 +12,12 @@ Items agreed as good additions but not yet scheduled. Keep entries short; move t
 
 ## Open Decisions
 
-- **Employee management permissions** — subcontractor employee add/delete is currently open to all users (same as documents); deleting an employee unlinks it from contracts. Decide: leave open, delete admin-only, or all employee management admin-only.
+*(none currently)*
+
+- ~~**Employee management permissions**~~ — resolved 2026-08-10: employee **delete is admin-only** (server-side guard + hidden button in `SubcontractorShow`); adding employees stays open to all users.
+
+## Possible follow-ups (cost-code project, not scheduled)
+
+- Itemized (per-cost-code) payment entry in the bulk Contract Payments screen and Payment Batches — they currently create itemless payments, which roll into the default code.
+- CSV/PDF export for the budget Cost Grid page.
+- A project-level cost grid that rolls up all lots' budgets (the current grid covers one budget/location at a time).

@@ -115,6 +115,14 @@ class JobSite extends Model
     }
 
     /**
+     * Get the income for this job site
+     */
+    public function income(): HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    /**
      * Get the daily reports for this job site
      */
     public function dailyReports(): HasMany
