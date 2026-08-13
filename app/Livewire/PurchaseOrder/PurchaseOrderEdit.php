@@ -313,7 +313,7 @@ class PurchaseOrderEdit extends Component
 
         $this->validate([
             'po_date' => 'required|date',
-            'po_supplier_id' => 'nullable|exists:suppliers,id',
+            'po_supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
             'po_job_site_id' => 'nullable|exists:job_sites,id',
             'po_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',

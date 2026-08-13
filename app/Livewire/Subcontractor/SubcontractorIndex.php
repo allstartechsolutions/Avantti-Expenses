@@ -44,6 +44,7 @@ class SubcontractorIndex extends Component
             'name' => $subcontractor->company_name,
             'documents' => $subcontractor->documents()->count(),
             'employees' => $subcontractor->employees()->count(),
+            'is_dual' => (bool) $subcontractor->is_supplier,
         ];
 
         $this->showDeleteModal = true;
@@ -63,9 +64,16 @@ class SubcontractorIndex extends Component
         }
 
         DB::transaction(function () use ($subcontractor) {
-            // Delete documents via Eloquent so the file cleanup hook fires
-            $subcontractor->documents->each->delete();
-            $subcontractor->delete();
+            // A company that is also a supplier only loses its subcontractor
+            // classification — the record survives on the Suppliers page, and
+            // its documents and employees are kept (restored by re-flagging).
+            // Full deletes clean up document files via the model hook.
+            if ($subcontractor->is_supplier) {
+                $subcontractor->is_subcontractor = false;
+                $subcontractor->save();
+            } else {
+                $subcontractor->delete();
+            }
         });
 
         $this->showDeleteModal = false;
@@ -73,7 +81,9 @@ class SubcontractorIndex extends Component
         $this->deleteSubcontractorData = [];
         $this->resetPage();
 
-        session()->flash('message', 'Subcontractor deleted successfully!');
+        session()->flash('message', $subcontractor->is_supplier
+            ? __('Subcontractor classification removed. The company still exists as a supplier.')
+            : 'Subcontractor deleted successfully!');
     }
 
     public function cancelDeleteSubcontractor()
@@ -91,7 +101,7 @@ class SubcontractorIndex extends Component
             ->withCount(['contracts', 'paymentBatches'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('company_name', 'like', '%' . $this->search . '%')
+                    $q->where('name', 'like', '%' . $this->search . '%')
                       ->orWhere('contact_name', 'like', '%' . $this->search . '%')
                       ->orWhere('contact_email', 'like', '%' . $this->search . '%')
                       ->orWhere('phone', 'like', '%' . $this->search . '%');

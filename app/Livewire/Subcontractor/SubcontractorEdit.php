@@ -12,6 +12,7 @@ class SubcontractorEdit extends Component
     // Company Information
     public $company_name = '';
     public $website = '';
+    public $also_supplier = false;
 
     // Contact Person
     public $contact_name = '';
@@ -77,6 +78,7 @@ class SubcontractorEdit extends Component
         $this->country = $subcontractor->country ?? config('app.country', 'US');
         $this->latitude = $subcontractor->latitude;
         $this->longitude = $subcontractor->longitude;
+        $this->also_supplier = (bool) $subcontractor->is_supplier;
     }
 
     public function updated($propertyName)
@@ -87,6 +89,17 @@ class SubcontractorEdit extends Component
     public function updateSubcontractor()
     {
         $this->validate();
+
+        // Removing the supplier classification is blocked while expenses,
+        // catalog items or purchase orders reference this company.
+        if (! $this->also_supplier && $this->subcontractor->is_supplier
+            && \App\Models\Vendor::hasSupplierRecords($this->subcontractor->id)) {
+            $this->addError('also_supplier', __('This company has expenses, catalog items or purchase orders and cannot stop being a supplier.'));
+
+            return;
+        }
+
+        $this->subcontractor->is_supplier = $this->also_supplier;
 
         $this->subcontractor->update([
             'company_name' => $this->company_name,

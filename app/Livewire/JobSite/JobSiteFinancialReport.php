@@ -64,7 +64,7 @@ class JobSiteFinancialReport extends Component
     {
         return $this->jobSite->contracts()
             ->with([
-                'subcontractor:id,company_name',
+                'subcontractor:id,name',
                 'changeOrders',
                 'payments',
             ])

@@ -6,7 +6,14 @@
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Subcontractors</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your subcontractors</p>
             </div>
-            <div>
+            <div class="flex items-center space-x-3">
+                @admin
+                <x-ui.button
+                    variant="secondary"
+                    href="{{ route('vendors.duplicates') }}">
+                    {{ __('Merge Duplicates') }}
+                </x-ui.button>
+                @endadmin
                 <x-ui.button
                     variant="primary"
                     href="{{ route('subcontractors.create') }}"
@@ -100,6 +107,14 @@
                                         <div class="ml-4">
                                             <div class="text-sm font-medium text-slate-900 dark:text-white">
                                                 {{ $subcontractor->company_name }}
+                                            </div>
+                                            <div class="mt-0.5 flex flex-wrap gap-1">
+                                                @if($subcontractor->is_supplier)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ __('Supplier') }}</span>
+                                                @endif
+                                                @if($subcontractor->is_subcontractor)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
+                                                @endif
                                             </div>
                                             @if($subcontractor->website)
                                                 <div class="text-sm text-slate-500 dark:text-slate-400">
@@ -222,11 +237,16 @@
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
-                    Are you sure you want to delete <strong>{{ $deleteSubcontractorData['name'] ?? '' }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    @if($deleteSubcontractorData['is_dual'] ?? false)
+                        {{ __('This company is also a supplier.') }}
+                        {{ __('Only the subcontractor classification will be removed — the record, its documents and employees are kept.') }}
+                    @else
+                        Are you sure you want to delete <strong>{{ $deleteSubcontractorData['name'] ?? '' }}</strong>?
+                        This action <strong>cannot be undone</strong>.
+                    @endif
                 </p>
 
-                @if(($deleteSubcontractorData['documents'] ?? 0) > 0 || ($deleteSubcontractorData['employees'] ?? 0) > 0)
+                @if(!($deleteSubcontractorData['is_dual'] ?? false) && (($deleteSubcontractorData['documents'] ?? 0) > 0 || ($deleteSubcontractorData['employees'] ?? 0) > 0))
                     <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                         <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
                         <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">

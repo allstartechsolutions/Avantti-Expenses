@@ -135,7 +135,7 @@ class ProjectFinancialReport extends Component
     {
         return $this->project->contracts()
             ->with([
-                'subcontractor:id,company_name',
+                'subcontractor:id,name',
                 'jobSite:id,job_site_name',
                 'changeOrders',
                 'payments',

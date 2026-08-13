@@ -229,9 +229,19 @@ class SubcontractorShow extends Component
             return;
         }
 
+        // A company that is also a supplier only loses its subcontractor
+        // classification — the record survives on the Suppliers page, and its
+        // documents and employees are kept (restored by re-flagging).
+        if ($this->subcontractor->is_supplier) {
+            $this->subcontractor->is_subcontractor = false;
+            $this->subcontractor->save();
+
+            session()->flash('message', __('Subcontractor classification removed. The company still exists as a supplier.'));
+
+            return redirect()->route('subcontractors.index');
+        }
+
         DB::transaction(function () {
-            // Delete documents via Eloquent so the file cleanup hook fires
-            $this->subcontractor->documents->each->delete();
             $this->subcontractor->delete();
         });
 

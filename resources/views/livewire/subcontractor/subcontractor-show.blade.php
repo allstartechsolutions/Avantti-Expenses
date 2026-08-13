@@ -116,6 +116,14 @@
                                 </div>
                                 <div>
                                     <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $subcontractor->company_name }}</h2>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @if($subcontractor->is_supplier)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ __('Supplier') }}</span>
+                                        @endif
+                                        @if($subcontractor->is_subcontractor)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
+                                        @endif
+                                    </div>
                                     <p class="text-slate-500 dark:text-slate-400">{{ $subcontractor->contact_email }}</p>
                                     @if($subcontractor->website)
                                         <a href="{{ $subcontractor->website }}" target="_blank" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">
@@ -776,11 +784,16 @@
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
-                    Are you sure you want to delete <strong>{{ $subcontractor->company_name }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    @if($subcontractor->is_supplier)
+                        {{ __('This company is also a supplier.') }}
+                        {{ __('Only the subcontractor classification will be removed — the record, its documents and employees are kept.') }}
+                    @else
+                        Are you sure you want to delete <strong>{{ $subcontractor->company_name }}</strong>?
+                        This action <strong>cannot be undone</strong>.
+                    @endif
                 </p>
 
-                @if($documents->count() > 0 || $employees->count() > 0)
+                @if(!$subcontractor->is_supplier && ($documents->count() > 0 || $employees->count() > 0))
                     <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                         <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
                         <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">

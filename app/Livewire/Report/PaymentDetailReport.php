@@ -133,7 +133,7 @@ class PaymentDetailReport extends Component
 
     public function getSubcontractorsProperty(): Collection
     {
-        return Subcontractor::orderBy('company_name')->get(['id', 'company_name']);
+        return Subcontractor::orderBy('name')->get(['id', 'name']);
     }
 
     /**

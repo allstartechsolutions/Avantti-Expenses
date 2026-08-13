@@ -40,7 +40,7 @@ class CatalogItemCreate extends Component
             'sku' => 'nullable|string|max:255|unique:catalog_items,sku',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:catalog_categories,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
             'is_active' => 'boolean',
             'current_cost' => 'required|numeric|min:0',
         ];

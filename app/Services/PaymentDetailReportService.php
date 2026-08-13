@@ -249,7 +249,7 @@ class PaymentDetailReportService
             ->whereBetween('payment_date', [$from, $to])
             ->whereHas('contract', fn ($q) => $this->contractScope($q))
             ->with([
-                'contract.subcontractor:id,company_name',
+                'contract.subcontractor:id,name',
                 'contract.project:id,project_name',
                 'contract.jobSite:id,job_site_name',
                 'createdBy:id,name',
@@ -291,7 +291,7 @@ class PaymentDetailReportService
                 $q->whereNull('end_date')->orWhereBetween('end_date', [$from, $to]);
             })
             ->with([
-                'subcontractor:id,company_name',
+                'subcontractor:id,name',
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
             ])

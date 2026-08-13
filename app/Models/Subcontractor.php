@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasFormattedPhone;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +13,38 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Subcontractor extends Model
 {
     use HasFormattedPhone, HasFactory;
+    use \App\Models\Concerns\DeletesVendorDocuments;
+
+    /**
+     * Subcontractors live in the unified `vendors` table (shared with
+     * Supplier), scoped to rows flagged is_subcontractor. One vendor row can
+     * be flagged as both. See docs/vendor-unification.md.
+     */
+    protected $table = 'vendors';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('subcontractor', function (Builder $query) {
+            $query->where('vendors.is_subcontractor', true);
+        });
+
+        static::creating(function ($subcontractor) {
+            $subcontractor->is_subcontractor = true;
+        });
+    }
+
+    /**
+     * The legacy `company_name` attribute maps to the unified `name` column.
+     * Queries (where/orderBy/select) must use `name`; property access and
+     * mass assignment may keep using `company_name`.
+     */
+    protected function companyName(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, array $attributes) => $attributes['name'] ?? null,
+            set: fn ($value) => ['name' => $value],
+        );
+    }
 
     protected $fillable = [
         'company_name',

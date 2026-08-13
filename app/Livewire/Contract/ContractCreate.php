@@ -73,7 +73,7 @@ class ContractCreate extends Component
     public function save()
     {
         $this->validate([
-            'subcontractor_id' => 'nullable|exists:subcontractors,id',
+            'subcontractor_id' => 'nullable|exists:vendors,id,is_subcontractor,1',
             'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],
             'job_site_id' => 'nullable|exists:job_sites,id',
             'start_date' => 'required|date',
@@ -127,7 +127,7 @@ class ContractCreate extends Component
     {
         $subcontractors = collect();
         if ($this->subcontractorSearch && strlen($this->subcontractorSearch) >= 2 && !$this->subcontractor_id) {
-            $subcontractors = Subcontractor::where('company_name', 'like', '%' . $this->subcontractorSearch . '%')
+            $subcontractors = Subcontractor::where('name', 'like', '%' . $this->subcontractorSearch . '%')
                 ->take(10)
                 ->get();
         }

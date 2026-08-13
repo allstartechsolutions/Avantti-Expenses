@@ -145,6 +145,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('subcontractors/{subcontractor}', SubcontractorShow::class)->name('subcontractors.show');
     Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)->name('subcontractors.edit');
 
+    // Vendor merge tool (suppliers + subcontractors share the vendors table)
+    Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)->name('vendors.duplicates');
+
     // Project routes
     Route::get('projects', ProjectIndex::class)->name('projects.index');
     Route::get('projects/create', ProjectCreate::class)->name('projects.create');

@@ -631,7 +631,7 @@ class ProjectShow extends Component
             'expense_date' => 'required|date',
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'expense_job_site_id' => 'nullable|exists:job_sites,id',
-            'expense_supplier_id' => 'nullable|exists:suppliers,id',
+            'expense_supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
             'expense_payment_method' => 'nullable|in:cash,check,credit_card,debit_card,bank_transfer,pix,other',
             'expenseItems' => 'required|array|min:1',
             'expenseItems.*.item_name' => 'required|string|max:255',

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasFormattedPhone;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supplier extends Model
 {
     use HasFormattedPhone, HasFactory;
+    use \App\Models\Concerns\DeletesVendorDocuments;
+
+    /**
+     * Suppliers live in the unified `vendors` table (shared with
+     * Subcontractor), scoped to rows flagged is_supplier. One vendor row can
+     * be flagged as both. See docs/vendor-unification.md.
+     */
+    protected $table = 'vendors';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('supplier', function (Builder $query) {
+            $query->where('vendors.is_supplier', true);
+        });
+
+        static::creating(function ($supplier) {
+            $supplier->is_supplier = true;
+        });
+    }
 
     protected $fillable = [
         'name',

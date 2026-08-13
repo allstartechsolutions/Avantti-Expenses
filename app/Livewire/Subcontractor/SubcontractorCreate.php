@@ -2,15 +2,20 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\ChecksVendorDuplicates;
 use App\Models\Subcontractor;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class SubcontractorCreate extends Component
 {
+    use ChecksVendorDuplicates;
+
     // Company Information
     public $company_name = '';
     public $website = '';
+    public $also_supplier = false;
 
     // Contact Person
     public $contact_name = '';
@@ -63,13 +68,32 @@ class SubcontractorCreate extends Component
     public function updated($propertyName)
     {
         $this->validateOnly($propertyName);
+
+        if ($propertyName === 'company_name') {
+            $this->refreshDuplicateMatches($this->company_name);
+        }
+    }
+
+    /**
+     * Flag an existing vendor (found by the duplicate check) as a
+     * subcontractor instead of creating a second record for the same company.
+     */
+    public function markAsSubcontractor(int $vendorId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $vendor->is_subcontractor = true;
+        $vendor->save();
+
+        session()->flash('message', __(':name is now also registered as a subcontractor.', ['name' => $vendor->name]));
+
+        return redirect()->route('subcontractors.index');
     }
 
     public function createSubcontractor()
     {
         $this->validate();
 
-        Subcontractor::create([
+        $subcontractor = new Subcontractor([
             'company_name' => $this->company_name,
             'website' => $this->website,
             'contact_name' => $this->contact_name,
@@ -87,6 +111,8 @@ class SubcontractorCreate extends Component
             'longitude' => $this->longitude,
             'created_by' => Auth::id(),
         ]);
+        $subcontractor->is_supplier = (bool) $this->also_supplier;
+        $subcontractor->save();
 
         session()->flash('message', 'Subcontractor created successfully!');
 

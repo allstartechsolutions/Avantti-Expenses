@@ -115,7 +115,7 @@ class AccountsPayableService
             ->with([
                 'contract.project:id,project_name',
                 'contract.jobSite:id,job_site_name',
-                'contract.subcontractor:id,company_name',
+                'contract.subcontractor:id,name',
             ])
             ->whereHas('contract', function ($q) {
                 $q->where('status', '!=', 'cancelled');
@@ -340,7 +340,7 @@ class AccountsPayableService
             ->with([
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
-                'subcontractor:id,company_name',
+                'subcontractor:id,name',
             ])
             ->where('status', '!=', 'cancelled')
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
@@ -374,7 +374,7 @@ class AccountsPayableService
     public function subcontractorSummary(): Collection
     {
         return Contract::query()
-            ->with(['subcontractor:id,company_name'])
+            ->with(['subcontractor:id,name'])
             ->where('status', '!=', 'cancelled')
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))

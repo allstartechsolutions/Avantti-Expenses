@@ -47,6 +47,14 @@
                         </div>
                         <div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $supplier->name }}</h2>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @if($supplier->is_supplier)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ __('Supplier') }}</span>
+                                @endif
+                                @if($supplier->is_subcontractor)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
+                                @endif
+                            </div>
                             @if($supplier->email)
                                 <p class="text-slate-500 dark:text-slate-400">{{ $supplier->email }}</p>
                             @endif

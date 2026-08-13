@@ -41,6 +41,19 @@
                     @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
 
+                <!-- Classification -->
+                <div>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            wire:model="also_subcontractor"
+                            class="rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189] dark:bg-slate-700">
+                        <span class="text-sm text-slate-700 dark:text-slate-300">{{ __('This company is also a subcontractor') }}</span>
+                    </label>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('It will also appear on the Subcontractors page, where you can complete the contact person details.') }}</p>
+                    @error('also_subcontractor') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                </div>
+
                 <!-- Email and Phone -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>

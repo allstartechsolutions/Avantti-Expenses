@@ -6,7 +6,16 @@
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Suppliers</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your suppliers</p>
             </div>
-            <div>
+            <div class="flex items-center space-x-3">
+                @admin
+                @if(\App\Models\ModuleAccess::isEnabled('projects'))
+                    <x-ui.button
+                        variant="secondary"
+                        href="{{ route('vendors.duplicates') }}">
+                        {{ __('Merge Duplicates') }}
+                    </x-ui.button>
+                @endif
+                @endadmin
                 <x-ui.button
                     variant="primary"
                     href="{{ route('suppliers.create') }}"
@@ -21,6 +30,12 @@
     @if (session()->has('message'))
         <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
             {{ session('message') }}
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">
+            {{ session('error') }}
         </div>
     @endif
 
@@ -98,6 +113,14 @@
                                             <div class="text-sm font-medium text-slate-900 dark:text-white">
                                                 {{ $supplier->name }}
                                             </div>
+                                            <div class="mt-0.5 flex flex-wrap gap-1">
+                                                @if($supplier->is_supplier)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ __('Supplier') }}</span>
+                                                @endif
+                                                @if($supplier->is_subcontractor)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
+                                                @endif
+                                            </div>
                                             @if($supplier->description)
                                                 <div class="text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">
                                                     {{ Str::limit($supplier->description, 50) }}
@@ -126,14 +149,16 @@
                                         <x-ui.view-edit-buttons
                                             :viewRoute="route('suppliers.show', $supplier->id)"
                                             :editRoute="route('suppliers.edit', $supplier->id)" />
+                                        @admin
                                         <x-ui.button
                                             variant="danger"
                                             size="sm"
                                             wire:click="deleteSupplier({{ $supplier->id }})"
-                                            wire:confirm="Are you sure you want to delete this supplier?"
+                                            wire:confirm="{{ $supplier->is_subcontractor ? __('This company is also a subcontractor. Only the supplier classification will be removed — the record is kept. Continue?') : __('Are you sure you want to delete this supplier?') }}"
                                             icon="trash">
                                             Delete
                                         </x-ui.button>
+                                        @endadmin
                                     </div>
                                 </td>
                             </tr>

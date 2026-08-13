@@ -68,8 +68,8 @@ class PaymentBatchCreate extends Component
     public function subcontractors()
     {
         return Subcontractor::whereHas('contracts')
-            ->orderBy('company_name')
-            ->get(['id', 'company_name']);
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     public function save(): void

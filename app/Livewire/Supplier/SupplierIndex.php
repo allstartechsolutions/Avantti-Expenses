@@ -2,13 +2,14 @@
 
 namespace App\Livewire\Supplier;
 
+use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Supplier;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class SupplierIndex extends Component
 {
-    use WithPagination;
+    use AuthorizesAdmin, WithPagination;
 
     public $search = '';
     public $perPage = 10;
@@ -24,12 +25,37 @@ class SupplierIndex extends Component
 
     public function deleteSupplier($id)
     {
+        $this->authorizeAdmin();
+
         $supplier = Supplier::find($id);
 
-        if ($supplier) {
+        if (! $supplier) {
+            return;
+        }
+
+        // Expenses, catalog items and purchase orders must never lose their
+        // supplier — matching how subcontractors with contracts cannot be
+        // deleted. Merge or reassign first.
+        if (\App\Models\Vendor::hasSupplierRecords($supplier->id)) {
+            session()->flash('error', $supplier->is_subcontractor
+                ? __('This company has expenses, catalog items or purchase orders and cannot stop being a supplier.')
+                : __('This company has expenses, catalog items or purchase orders and cannot be deleted.'));
+
+            return;
+        }
+
+        // A company that is also a subcontractor only loses its supplier
+        // classification — the record survives on the Subcontractors page.
+        if ($supplier->is_subcontractor) {
+            $supplier->is_supplier = false;
+            $supplier->save();
+            session()->flash('message', __('Supplier classification removed. The company still exists as a subcontractor.'));
+        } else {
             $supplier->delete();
             session()->flash('message', 'Supplier deleted successfully!');
         }
+
+        $this->resetPage();
     }
 
     public function render()

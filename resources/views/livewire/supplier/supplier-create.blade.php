@@ -39,6 +39,26 @@
                         placeholder="Enter supplier name"
                     >
                     @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                    @include('livewire.shared.vendor-duplicate-matches', [
+                        'matches' => $duplicateMatches,
+                        'flagKey' => 'is_supplier',
+                        'flagAction' => 'markAsSupplier',
+                        'alreadyLabel' => __('Already a supplier'),
+                        'confirmText' => __('Flag this existing company as a supplier instead of creating a new record?'),
+                    ])
+                </div>
+
+                <!-- Classification -->
+                <div>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            wire:model="also_subcontractor"
+                            class="rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189] dark:bg-slate-700">
+                        <span class="text-sm text-slate-700 dark:text-slate-300">{{ __('This company is also a subcontractor') }}</span>
+                    </label>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('It will also appear on the Subcontractors page, where you can complete the contact person details.') }}</p>
                 </div>
 
                 <!-- Email and Phone -->

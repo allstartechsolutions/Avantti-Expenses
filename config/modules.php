@@ -31,6 +31,10 @@ return [
             'budgets.*',
             'job-sites.*',
             'projects.budgets.*',
+            // vendors.* (merge tool) is owned by this module; the button on
+            // the Suppliers page (catalog module) checks this module's state
+            // before rendering.
+            'vendors.*',
         ],
     ],
 

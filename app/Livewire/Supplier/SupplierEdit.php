@@ -9,6 +9,7 @@ class SupplierEdit extends Component
 {
     public Supplier $supplier;
     public $name = '';
+    public $also_subcontractor = false;
     public $street = '';
     public $address_2 = '';
     public $neighborhood = '';
@@ -56,6 +57,7 @@ class SupplierEdit extends Component
         $this->phone = $supplier->phone;
         $this->email = $supplier->email;
         $this->description = $supplier->description;
+        $this->also_subcontractor = (bool) $supplier->is_subcontractor;
     }
 
     public function updated($propertyName)
@@ -66,6 +68,17 @@ class SupplierEdit extends Component
     public function updateSupplier()
     {
         $this->validate();
+
+        // Removing the subcontractor classification is blocked while
+        // contracts or payment batches reference this company.
+        if (! $this->also_subcontractor && $this->supplier->is_subcontractor
+            && \App\Models\Vendor::hasSubcontractorRecords($this->supplier->id)) {
+            $this->addError('also_subcontractor', __('This company has contracts or payment batches and cannot stop being a subcontractor.'));
+
+            return;
+        }
+
+        $this->supplier->is_subcontractor = $this->also_subcontractor;
 
         $this->supplier->update([
             'name' => $this->name,

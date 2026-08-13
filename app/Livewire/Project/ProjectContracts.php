@@ -43,7 +43,7 @@ class ProjectContracts extends Component
                 $q->where('contract_number', 'like', '%' . $this->search . '%')
                     ->orWhere('notes', 'like', '%' . $this->search . '%')
                     ->orWhereHas('subcontractor', function ($sq) {
-                        $sq->where('company_name', 'like', '%' . $this->search . '%');
+                        $sq->where('name', 'like', '%' . $this->search . '%');
                     });
             });
         }

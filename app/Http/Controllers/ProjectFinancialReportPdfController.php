@@ -50,7 +50,7 @@ class ProjectFinancialReportPdfController extends Controller
 
         $contractsCollection = $project->contracts()
             ->with([
-                'subcontractor:id,company_name',
+                'subcontractor:id,name',
                 'jobSite:id,job_site_name',
                 'changeOrders',
                 'payments',
