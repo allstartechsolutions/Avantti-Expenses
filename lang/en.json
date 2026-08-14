@@ -705,5 +705,25 @@
     "Total Paid": "Total Paid",
     "Balance Due": "Balance Due",
     "CO (+/-)": "CO (+/-)",
-    "Adjusted": "Adjusted"
+    "Adjusted": "Adjusted",
+
+    "_payments_dashboard": "========== Payments Dashboard ==========",
+    "Payments Dashboard": "Payments Dashboard",
+    "Track and manage upcoming and overdue payments": "Track and manage upcoming and overdue payments",
+    "Total Pending": "Total Pending",
+    "Due This Month": "Due This Month",
+    "Upcoming": "Upcoming",
+    "All Pending": "All Pending",
+    "to": "to",
+    "Project / Job Site": "Project / Job Site",
+    "Pay": "Pay",
+    "Mark this payment as overdue?": "Mark this payment as overdue?",
+    "No payments found": "No payments found",
+    "No upcoming payments in the selected date range.": "No upcoming payments in the selected date range.",
+    "Great! No overdue payments.": "Great! No overdue payments.",
+    "No pending payments found.": "No pending payments found.",
+    "Mark Payment as Paid": "Mark Payment as Paid",
+    "Confirm Payment": "Confirm Payment",
+    "Payment marked as paid successfully.": "Payment marked as paid successfully.",
+    "Pix": "PIX"
 }

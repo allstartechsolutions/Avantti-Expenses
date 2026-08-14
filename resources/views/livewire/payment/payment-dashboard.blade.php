@@ -2,8 +2,8 @@
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Payments Dashboard</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Track and manage upcoming and overdue payments</p>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Payments Dashboard') }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Track and manage upcoming and overdue payments') }}</p>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Pending</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Total Pending') }}</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($summary['pending'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -47,7 +47,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Overdue') }}</p>
                     <p class="text-2xl font-bold text-red-600 dark:text-red-400">
                         {{ Number::currency($summary['overdue'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -64,7 +64,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Due This Month</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due This Month') }}</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($summary['this_month'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -81,7 +81,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Paid This Month</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Paid This Month') }}</p>
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                         {{ Number::currency($summary['paid_this_month'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -98,17 +98,17 @@
                 <button
                     wire:click="$set('viewMode', 'upcoming')"
                     class="px-4 py-2 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'upcoming' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                    Upcoming
+                    {{ __('Upcoming') }}
                 </button>
                 <button
                     wire:click="$set('viewMode', 'overdue')"
                     class="px-4 py-2 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'overdue' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                    Overdue
+                    {{ __('Overdue') }}
                 </button>
                 <button
                     wire:click="$set('viewMode', 'all')"
                     class="px-4 py-2 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
-                    All Pending
+                    {{ __('All Pending') }}
                 </button>
             </div>
 
@@ -119,7 +119,7 @@
                 <select
                     wire:model.live="projectFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Projects</option>
+                    <option value="">{{ __('All Projects') }}</option>
                     @foreach($projects as $project)
                         <option value="{{ $project->id }}">{{ $project->name }}</option>
                     @endforeach
@@ -132,7 +132,7 @@
                     type="date"
                     wire:model.live="dateFrom"
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                <span class="text-slate-500 dark:text-slate-400">to</span>
+                <span class="text-slate-500 dark:text-slate-400">{{ __('to') }}</span>
                 <input
                     type="date"
                     wire:model.live="dateTo"
@@ -148,25 +148,25 @@
                 <thead class="bg-slate-50 dark:bg-slate-900">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Description
+                            {{ __('Description') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Project / Job Site
+                            {{ __('Project / Job Site') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Payment
+                            {{ __('Payment') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Due Date
+                            {{ __('Due Date') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Amount
+                            {{ __('Amount') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Status
+                            {{ __('Status') }}
                         </th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Actions
+                            {{ __('Actions') }}
                         </th>
                     </tr>
                 </thead>
@@ -179,7 +179,7 @@
                                 </div>
                                 @if($payment['payment_method'])
                                     <div class="text-xs text-slate-500 dark:text-slate-400">
-                                        {{ ucfirst(str_replace('_', ' ', $payment['payment_method'])) }}
+                                        {{ __(ucwords(str_replace('_', ' ', $payment['payment_method']))) }}
                                     </div>
                                 @endif
                             </td>
@@ -212,11 +212,11 @@
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 @if($payment['status'] === 'overdue' || $payment['is_overdue'])
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
-                                        Overdue
+                                        {{ __('Overdue') }}
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
-                                        Pending
+                                        {{ __('Pending') }}
                                     </span>
                                 @endif
                             </td>
@@ -228,17 +228,17 @@
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
-                                        Pay
+                                        {{ __('Pay') }}
                                     </button>
                                     @if(!$payment['is_overdue'] && $payment['status'] !== 'overdue')
                                         <button
                                             wire:click="markAsOverdue({{ $payment['id'] }}, '{{ $payment['type'] }}')"
-                                            wire:confirm="Mark this payment as overdue?"
+                                            wire:confirm="{{ __('Mark this payment as overdue?') }}"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
-                                            Overdue
+                                            {{ __('Overdue') }}
                                         </button>
                                     @endif
                                 </div>
@@ -250,14 +250,14 @@
                                 <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No payments found</h3>
+                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No payments found') }}</h3>
                                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                                     @if($viewMode === 'upcoming')
-                                        No upcoming payments in the selected date range.
+                                        {{ __('No upcoming payments in the selected date range.') }}
                                     @elseif($viewMode === 'overdue')
-                                        Great! No overdue payments.
+                                        {{ __('Great! No overdue payments.') }}
                                     @else
-                                        No pending payments found.
+                                        {{ __('No pending payments found.') }}
                                     @endif
                                 </p>
                             </td>
@@ -277,31 +277,31 @@
                 </svg>
             </div>
             <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-white text-center mb-4">
-                Mark Payment as Paid
+                {{ __('Mark Payment as Paid') }}
             </h3>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Payment Method
+                        {{ __('Payment Method') }}
                     </label>
                     <select
                         wire:model="paymentMethod"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        <option value="">Select method</option>
-                        <option value="cash">Cash</option>
-                        <option value="check">Check</option>
-                        <option value="credit_card">Credit Card</option>
-                        <option value="debit_card">Debit Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="">{{ __('Select method') }}</option>
+                        <option value="cash">{{ __('Cash') }}</option>
+                        <option value="check">{{ __('Check') }}</option>
+                        <option value="credit_card">{{ __('Credit Card') }}</option>
+                        <option value="debit_card">{{ __('Debit Card') }}</option>
+                        <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
                         @if(config('app.country') === 'BR')
                             <option value="pix">PIX</option>
                         @endif
-                        <option value="other">Other</option>
+                        <option value="other">{{ __('Other') }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Paid Date
+                        {{ __('Paid Date') }}
                     </label>
                     <input
                         type="date"
@@ -314,13 +314,13 @@
                     type="button"
                     variant="secondary"
                     x-on:click="$dispatch('close-modal', 'pay-modal')">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     type="button"
                     variant="success"
                     wire:click="confirmPayment">
-                    Confirm Payment
+                    {{ __('Confirm Payment') }}
                 </x-ui.button>
             </div>
         </div>

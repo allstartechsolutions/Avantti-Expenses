@@ -887,5 +887,25 @@
     "Total Paid": "Total Pago",
     "Balance Due": "Saldo Devedor",
     "CO (+/-)": "OA (+/-)",
-    "Adjusted": "Ajustado"
+    "Adjusted": "Ajustado",
+
+    "_payments_dashboard": "========== Payments Dashboard ==========",
+    "Payments Dashboard": "Painel de Pagamentos",
+    "Track and manage upcoming and overdue payments": "Acompanhe e gerencie pagamentos futuros e vencidos",
+    "Total Pending": "Total Pendente",
+    "Due This Month": "Vence Este Mês",
+    "Upcoming": "Futuros",
+    "All Pending": "Todos Pendentes",
+    "to": "até",
+    "Project / Job Site": "Projeto / Local",
+    "Pay": "Pagar",
+    "Mark this payment as overdue?": "Marcar este pagamento como vencido?",
+    "No payments found": "Nenhum pagamento encontrado",
+    "No upcoming payments in the selected date range.": "Nenhum pagamento futuro no período selecionado.",
+    "Great! No overdue payments.": "Ótimo! Nenhum pagamento vencido.",
+    "No pending payments found.": "Nenhum pagamento pendente encontrado.",
+    "Mark Payment as Paid": "Marcar Pagamento como Pago",
+    "Confirm Payment": "Confirmar Pagamento",
+    "Payment marked as paid successfully.": "Pagamento marcado como pago com sucesso.",
+    "Pix": "PIX"
 }

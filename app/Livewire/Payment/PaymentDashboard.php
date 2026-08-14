@@ -294,7 +294,7 @@ class PaymentDashboard extends Component
         $this->payingPaymentId = null;
         $this->payingPaymentType = null;
         $this->paymentMethod = null;
-        session()->flash('message', 'Payment marked as paid successfully.');
+        session()->flash('message', __('Payment marked as paid successfully.'));
     }
 
     public function markAsOverdue($paymentId, $paymentType)
@@ -312,7 +312,7 @@ class PaymentDashboard extends Component
             }
         }
 
-        session()->flash('message', 'Payment marked as overdue.');
+        session()->flash('message', __('Payment marked as overdue.'));
     }
 
     public function render()
