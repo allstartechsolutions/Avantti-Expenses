@@ -162,13 +162,12 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <x-ui.button
+                                    <x-ui.icon-button
                                         variant="secondary"
+                                        size="sm"
                                         href="{{ route('catalog.edit', $item->id) }}"
                                         icon="edit"
-                                        class="inline-flex">
-                                        Edit
-                                    </x-ui.button>
+                                        title="Edit" />
                                 </td>
                             </tr>
                         @endforeach

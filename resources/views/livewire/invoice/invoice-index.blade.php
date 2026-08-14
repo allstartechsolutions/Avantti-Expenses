@@ -181,14 +181,13 @@
                                             :viewRoute="route('invoices.show', $invoice->id)"
                                             :editRoute="$invoice->canBeEdited() ? route('invoices.edit', $invoice->id) : null" />
                                         @if($invoice->canBeEdited())
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteInvoice({{ $invoice->id }})"
                                                 wire:confirm="Are you sure you want to delete this invoice?"
-                                                icon="trash">
-                                                Delete
-                                            </x-ui.button>
+                                                icon="trash"
+                                                title="Delete" />
                                         @endif
                                     </div>
                                 </td>

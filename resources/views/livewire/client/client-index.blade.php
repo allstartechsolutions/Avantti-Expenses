@@ -134,38 +134,33 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('clients.show', $client->id) }}"
-                                            icon="eye">
-                                            View
-                                        </x-ui.button>
-                                        <x-ui.button
+                                            icon="eye"
+                                            title="View" />
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('clients.edit', $client->id) }}"
-                                            icon="edit">
-                                            Edit
-                                        </x-ui.button>
+                                            icon="edit"
+                                            title="Edit" />
                                         @if($client->projects_count > 0)
                                             <span title="Cannot delete: linked to {{ $client->projects_count }} project(s)">
-                                                <x-ui.button
+                                                <x-ui.icon-button
                                                     variant="danger"
                                                     size="sm"
                                                     icon="trash"
-                                                    disabled>
-                                                    Delete
-                                                </x-ui.button>
+                                                    disabled />
                                             </span>
                                         @else
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="confirmDeleteClient({{ $client->id }})"
-                                                icon="trash">
-                                                Delete
-                                            </x-ui.button>
+                                                icon="trash"
+                                                title="Delete" />
                                         @endif
                                     </div>
                                 </td>

@@ -150,14 +150,13 @@
                                             :viewRoute="route('suppliers.show', $supplier->id)"
                                             :editRoute="route('suppliers.edit', $supplier->id)" />
                                         @admin
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
                                             wire:click="deleteSupplier({{ $supplier->id }})"
                                             wire:confirm="{{ $supplier->is_subcontractor ? __('This company is also a subcontractor. Only the supplier classification will be removed — the record is kept. Continue?') : __('Are you sure you want to delete this supplier?') }}"
-                                            icon="trash">
-                                            Delete
-                                        </x-ui.button>
+                                            icon="trash"
+                                            title="Delete" />
                                         @endadmin
                                     </div>
                                 </td>

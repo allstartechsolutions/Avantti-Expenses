@@ -168,14 +168,13 @@
                                             :viewRoute="route('estimates.show', $estimate->id)"
                                             :editRoute="$estimate->canBeEdited() ? route('estimates.edit', $estimate->id) : null" />
                                         @if($estimate->canBeEdited())
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteEstimate({{ $estimate->id }})"
                                                 wire:confirm="Are you sure you want to delete this estimate?"
-                                                icon="trash">
-                                                Delete
-                                            </x-ui.button>
+                                                icon="trash"
+                                                title="Delete" />
                                         @endif
                                     </div>
                                 </td>

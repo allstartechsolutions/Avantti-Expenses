@@ -2,38 +2,34 @@
 
 <div class="flex items-center justify-end space-x-2">
     @if($viewRoute)
-        <x-ui.button
+        <x-ui.icon-button
             variant="secondary"
             size="sm"
             href="{{ $viewRoute }}"
-            icon="eye">
-            View
-        </x-ui.button>
+            icon="eye"
+            title="View" />
     @elseif($viewAction)
-        <x-ui.button
+        <x-ui.icon-button
             variant="secondary"
             size="sm"
             wire:click="{{ $viewAction }}"
-            icon="eye">
-            View
-        </x-ui.button>
+            icon="eye"
+            title="View" />
     @endif
 
     @if($editRoute)
-        <x-ui.button
+        <x-ui.icon-button
             variant="secondary"
             size="sm"
             href="{{ $editRoute }}"
-            icon="edit">
-            Edit
-        </x-ui.button>
+            icon="edit"
+            title="Edit" />
     @elseif($editAction)
-        <x-ui.button
+        <x-ui.icon-button
             variant="secondary"
             size="sm"
             wire:click="{{ $editAction }}"
-            icon="edit">
-            Edit
-        </x-ui.button>
+            icon="edit"
+            title="Edit" />
     @endif
 </div>

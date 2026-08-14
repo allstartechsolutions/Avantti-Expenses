@@ -203,27 +203,24 @@
                                 <!-- Actions -->
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('projects.overview', $project->id) }}"
-                                            icon="eye">
-                                            {{ __('View') }}
-                                        </x-ui.button>
-                                        <x-ui.button
+                                            icon="eye"
+                                            title="{{ __('View') }}" />
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('projects.edit', $project->id) }}"
-                                            icon="edit">
-                                            {{ __('Edit') }}
-                                        </x-ui.button>
-                                        <x-ui.button
+                                            icon="edit"
+                                            title="{{ __('Edit') }}" />
+                                        <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
                                             wire:click="confirmDeleteProject({{ $project->id }})"
-                                            icon="trash">
-                                            {{ __('Delete') }}
-                                        </x-ui.button>
+                                            icon="trash"
+                                            title="{{ __('Delete') }}" />
                                     </div>
                                 </td>
                             </tr>

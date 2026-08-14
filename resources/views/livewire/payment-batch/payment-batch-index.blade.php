@@ -206,14 +206,13 @@
                                             :viewRoute="route('payment-batches.show', $batch->id)"
                                             :editRoute="$batch->canBeEdited() ? route('payment-batches.edit', $batch->id) : null" />
                                         @if($batch->isDraft())
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteBatch({{ $batch->id }})"
                                                 wire:confirm="Are you sure you want to delete this batch?"
-                                                icon="trash">
-                                                Delete
-                                            </x-ui.button>
+                                                icon="trash"
+                                                title="Delete" />
                                         @endif
                                     </div>
                                 </td>

@@ -106,45 +106,40 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end gap-2">
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="ghost"
                                             size="sm"
                                             href="{{ route('cost-codes.templates.show', $template->id) }}"
-                                            icon="eye">
-                                            View
-                                        </x-ui.button>
-                                        <x-ui.button
+                                            icon="eye"
+                                            title="View" />
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('cost-codes.templates.edit', $template->id) }}"
-                                            icon="edit">
-                                            Edit
-                                        </x-ui.button>
-                                        <x-ui.button
+                                            icon="edit"
+                                            title="Edit" />
+                                        <x-ui.icon-button
                                             variant="outline"
                                             size="sm"
                                             wire:click="duplicateTemplate({{ $template->id }})"
                                             wire:confirm="Are you sure you want to duplicate this template?"
-                                            icon="copy">
-                                            Copy
-                                        </x-ui.button>
+                                            icon="copy"
+                                            title="Copy" />
                                         @if(!$template->is_default)
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="ghost"
                                                 size="sm"
                                                 wire:click="setAsDefault({{ $template->id }})"
-                                                icon="star">
-                                                Set Default
-                                            </x-ui.button>
+                                                icon="star"
+                                                title="Set Default" />
                                         @endif
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
                                             wire:click="deleteTemplate({{ $template->id }})"
                                             wire:confirm="Are you sure you want to delete this template? All associated cost codes will also be deleted."
-                                            icon="trash">
-                                            Delete
-                                        </x-ui.button>
+                                            icon="trash"
+                                            title="Delete" />
                                     </div>
                                 </td>
                             </tr>

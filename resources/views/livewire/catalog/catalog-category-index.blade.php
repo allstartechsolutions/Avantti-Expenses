@@ -155,22 +155,20 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end gap-2">
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('catalog.categories.edit', $category->id) }}"
-                                            icon="edit">
-                                            Edit
-                                        </x-ui.button>
+                                            icon="edit"
+                                            title="Edit" />
                                         @if($category->items_count === 0)
-                                            <x-ui.button
+                                            <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteCategory({{ $category->id }})"
                                                 wire:confirm="Are you sure you want to delete this category?"
-                                                icon="trash">
-                                                Delete
-                                            </x-ui.button>
+                                                icon="trash"
+                                                title="Delete" />
                                         @endif
                                     </div>
                                 </td>
