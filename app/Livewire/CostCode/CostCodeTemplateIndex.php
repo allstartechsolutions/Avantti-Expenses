@@ -26,20 +26,20 @@ class CostCodeTemplateIndex extends Component
     {
         $template = CostCodeTemplate::findOrFail($id);
         $template->delete();
-        session()->flash('message', 'Template deleted successfully.');
+        session()->flash('message', __('Template deleted successfully.'));
     }
 
     public function duplicateTemplate($id)
     {
         $template = CostCodeTemplate::findOrFail($id);
         $newTemplate = $template->duplicate(Auth::id());
-        session()->flash('message', 'Template duplicated successfully as "' . $newTemplate->name . '".');
+        session()->flash('message', __('Template duplicated successfully as ":name".', ['name' => $newTemplate->name]));
     }
 
     public function setAsDefault($id)
     {
         CostCodeTemplate::setDefault($id);
-        session()->flash('message', 'Default template updated successfully.');
+        session()->flash('message', __('Default template updated successfully.'));
     }
 
     public function render()

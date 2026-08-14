@@ -45,7 +45,7 @@ class CostCodeTemplateEdit extends Component
             'is_default' => $this->is_default,
         ]);
 
-        session()->flash('message', 'Template updated successfully!');
+        session()->flash('message', __('Template updated successfully!'));
         return redirect()->route('cost-codes.templates.show', $this->template->id);
     }
 

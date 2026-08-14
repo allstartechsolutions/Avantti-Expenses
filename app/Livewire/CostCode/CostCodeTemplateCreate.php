@@ -34,7 +34,7 @@ class CostCodeTemplateCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Template created successfully!');
+        session()->flash('message', __('Template created successfully!'));
         return redirect()->route('cost-codes.templates.show', $template->id);
     }
 

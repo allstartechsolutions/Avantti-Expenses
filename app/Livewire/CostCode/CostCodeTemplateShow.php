@@ -97,10 +97,10 @@ class CostCodeTemplateShow extends Component
         if ($this->editingCostCodeId) {
             $costCode = CostCode::findOrFail($this->editingCostCodeId);
             $costCode->update($data);
-            session()->flash('message', 'Cost code updated successfully.');
+            session()->flash('message', __('Cost code updated successfully.'));
         } else {
             CostCode::create($data);
-            session()->flash('message', 'Cost code added successfully.');
+            session()->flash('message', __('Cost code added successfully.'));
         }
 
         $this->closeForm();
@@ -113,12 +113,12 @@ class CostCodeTemplateShow extends Component
 
         // Check if it has children
         if ($costCode->children()->count() > 0) {
-            session()->flash('error', 'Cannot delete a cost code that has child codes. Delete the children first.');
+            session()->flash('error', __('Cannot delete a cost code that has child codes. Delete the children first.'));
             return;
         }
 
         $costCode->delete();
-        session()->flash('message', 'Cost code deleted successfully.');
+        session()->flash('message', __('Cost code deleted successfully.'));
         $this->refreshTemplate();
     }
 
@@ -349,7 +349,7 @@ class CostCodeTemplateShow extends Component
         $count = count($this->importPreview);
         $this->closeImportModal();
         $this->refreshTemplate();
-        session()->flash('message', "{$count} cost codes imported successfully.");
+        session()->flash('message', __(':count cost codes imported successfully.', ['count' => $count]));
     }
 
     public function downloadSampleCsv()
