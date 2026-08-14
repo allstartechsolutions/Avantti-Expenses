@@ -34,14 +34,14 @@ class PaymentBatchIndex extends Component
         $batch = PaymentBatch::findOrFail($batchId);
 
         if (!$batch->isDraft()) {
-            session()->flash('error', 'Only draft batches can be deleted.');
+            session()->flash('error', __('Only draft batches can be deleted.'));
             return;
         }
 
         $batch->items()->delete();
         $batch->delete();
 
-        session()->flash('message', 'Payment batch deleted successfully!');
+        session()->flash('message', __('Payment batch deleted successfully!'));
     }
 
     public function render()

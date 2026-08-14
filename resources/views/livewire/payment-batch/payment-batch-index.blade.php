@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Payment Batches</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Plan and approve contract payments in batches</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Payment Batches') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Plan and approve contract payments in batches') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('payment-batches.create') }}"
                     icon="plus">
-                    New Batch
+                    {{ __('New Batch') }}
                 </x-ui.button>
             </div>
         </div>
@@ -35,23 +35,23 @@
             <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                 <button wire:click="setStatusFilter('')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === '' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    All <span class="ml-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{{ $statusCounts['all'] }}</span>
+                    {{ __('All') }} <span class="ml-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{{ $statusCounts['all'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('draft')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'draft' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Draft <span class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{{ $statusCounts['draft'] }}</span>
+                    {{ __('Draft') }} <span class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{{ $statusCounts['draft'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('partially_approved')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'partially_approved' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Partially Approved <span class="ml-1 text-xs bg-amber-100 dark:bg-amber-700 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded-full">{{ $statusCounts['partially_approved'] }}</span>
+                    {{ __('Partially Approved') }} <span class="ml-1 text-xs bg-amber-100 dark:bg-amber-700 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded-full">{{ $statusCounts['partially_approved'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('approved')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'approved' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Approved <span class="ml-1 text-xs bg-green-100 dark:bg-green-700 text-green-600 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $statusCounts['approved'] }}</span>
+                    {{ __('Approved') }} <span class="ml-1 text-xs bg-green-100 dark:bg-green-700 text-green-600 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $statusCounts['approved'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('cancelled')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'cancelled' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Cancelled <span class="ml-1 text-xs bg-red-100 dark:bg-red-700 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">{{ $statusCounts['cancelled'] }}</span>
+                    {{ __('Cancelled') }} <span class="ml-1 text-xs bg-red-100 dark:bg-red-700 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">{{ $statusCounts['cancelled'] }}</span>
                 </button>
             </nav>
         </div>
@@ -62,7 +62,7 @@
         <div class="p-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex-1 max-w-md">
-                    <label for="search" class="sr-only">Search batches</label>
+                    <label for="search" class="sr-only">{{ __('Search batches') }}</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,7 +74,7 @@
                             id="search"
                             wire:model.live.debounce.300ms="search"
                             class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]"
-                            placeholder="Search by batch name..."
+                            placeholder="{{ __('Search by batch name...') }}"
                         >
                     </div>
                 </div>
@@ -84,7 +84,7 @@
                         variant="secondary"
                         wire:click="$set('search', '')"
                         icon="x">
-                        Clear Search
+                        {{ __('Clear Search') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -99,28 +99,28 @@
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Name
+                                {{ __('Name') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Payment Date
+                                {{ __('Payment Date') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Items
+                                {{ __('Items') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Total Amount
+                                {{ __('Total Amount') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Status
+                                {{ __('Status') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Created By
+                                {{ __('Created By') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Created At
+                                {{ __('Created At') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Actions
+                                {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -155,7 +155,7 @@
                                             @endif
                                             @if($batch->contract_status_filter)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                                                    {{ ucfirst(str_replace('_', ' ', $batch->contract_status_filter)) }}
+                                                    {{ __(ucwords(str_replace('_', ' ', $batch->contract_status_filter))) }}
                                                 </span>
                                             @endif
                                         </div>
@@ -187,7 +187,7 @@
                                         };
                                     @endphp
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $colorClasses }}">
-                                        {{ $batch->getStatusLabel() }}
+                                        {{ __($batch->getStatusLabel()) }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -210,7 +210,7 @@
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteBatch({{ $batch->id }})"
-                                                wire:confirm="Are you sure you want to delete this batch?"
+                                                wire:confirm="{{ __('Are you sure you want to delete this batch?') }}"
                                                 icon="trash"
                                                 title="Delete" />
                                         @endif
@@ -234,16 +234,16 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
                     @if($search || $statusFilter)
-                        No payment batches found
+                        {{ __('No payment batches found') }}
                     @else
-                        No payment batches yet
+                        {{ __('No payment batches yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @if($search || $statusFilter)
-                        Try adjusting your search or filter.
+                        {{ __('Try adjusting your search or filter.') }}
                     @else
-                        Get started by creating a new payment batch.
+                        {{ __('Get started by creating a new payment batch.') }}
                     @endif
                 </p>
                 @if(!$search && !$statusFilter)
@@ -252,7 +252,7 @@
                             variant="primary"
                             href="{{ route('payment-batches.create') }}"
                             icon="plus">
-                            New Batch
+                            {{ __('New Batch') }}
                         </x-ui.button>
                     </div>
                 @endif

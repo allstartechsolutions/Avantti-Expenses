@@ -94,7 +94,7 @@ class PaymentBatchCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Payment batch created successfully!');
+        session()->flash('message', __('Payment batch created successfully!'));
 
         $this->redirect(route('payment-batches.edit', $batch->id), navigate: true);
     }

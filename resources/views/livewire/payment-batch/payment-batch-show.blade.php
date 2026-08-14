@@ -14,18 +14,18 @@
                     };
                 @endphp
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $headerColor }}">
-                    {{ $paymentBatch->getStatusLabel() }}
+                    {{ __($paymentBatch->getStatusLabel()) }}
                 </span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Payment batch details</p>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Payment batch details') }}</p>
         </div>
         <div class="flex items-center gap-3 mt-4 md:mt-0">
             <x-ui.button variant="secondary" href="{{ route('payment-batches.index') }}" icon="arrow-left">
-                Back
+                {{ __('Back') }}
             </x-ui.button>
             @if($paymentBatch->canBeEdited())
                 <x-ui.button variant="primary" href="{{ route('payment-batches.edit', $paymentBatch->id) }}" icon="edit">
-                    Edit Batch
+                    {{ __('Edit Batch') }}
                 </x-ui.button>
             @endif
         </div>
@@ -33,33 +33,33 @@
 
     <!-- Batch Details Card -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Batch Details</h3>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Batch Details') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Payment Date</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Payment Date') }}</p>
                 <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->payment_date->format('m/d/Y') }}</p>
             </div>
             <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Created By</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</p>
                 <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->createdBy?->name ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Created At</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created At') }}</p>
                 <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->created_at->format('m/d/Y g:i A') }}</p>
             </div>
             @if($paymentBatch->approved_by)
                 <div>
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved By</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved By') }}</p>
                     <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->approvedBy?->name ?? '—' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved At</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved At') }}</p>
                     <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->approved_at?->format('m/d/Y g:i A') ?? '—' }}</p>
                 </div>
             @endif
             @if($paymentBatch->notes)
                 <div class="md:col-span-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Notes</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Notes') }}</p>
                     <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->notes }}</p>
                 </div>
             @endif
@@ -67,21 +67,21 @@
 
         @if($paymentBatch->client_id || $paymentBatch->project_id || $paymentBatch->subcontractor_id || $paymentBatch->project_manager_id || $paymentBatch->contract_status_filter)
             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Contract Filters</h4>
+                <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{ __('Contract Filters') }}</h4>
                 <div class="flex flex-wrap gap-2">
                     @if($paymentBatch->client)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            Client: {{ $paymentBatch->client->company_name }}
+                            {{ __('Client') }}: {{ $paymentBatch->client->company_name }}
                         </span>
                     @endif
                     @if($paymentBatch->project)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            Project: {{ $paymentBatch->project->project_name }}
+                            {{ __('Project') }}: {{ $paymentBatch->project->project_name }}
                         </span>
                     @endif
                     @if($paymentBatch->subcontractor)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            Subcontractor: {{ $paymentBatch->subcontractor->company_name }}
+                            {{ __('Subcontractor') }}: {{ $paymentBatch->subcontractor->company_name }}
                         </span>
                     @endif
                     @if($paymentBatch->projectManager)
@@ -91,12 +91,12 @@
                     @endif
                     @if($paymentBatch->contract_status_filter)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            Status: {{ ucfirst(str_replace('_', ' ', $paymentBatch->contract_status_filter)) }}
+                            {{ __('Status') }}: {{ __(ucwords(str_replace('_', ' ', $paymentBatch->contract_status_filter))) }}
                         </span>
                     @endif
                     @if($paymentBatch->show_zero_balance)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            Including Paid/Cancelled
+                            {{ __('Including Paid/Cancelled') }}
                         </span>
                     @endif
                 </div>
@@ -115,7 +115,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Amount</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Total Amount') }}</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($this->summary['total_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -132,7 +132,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved') }}</p>
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                         {{ Number::currency($this->summary['approved_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -149,7 +149,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Pending') }}</p>
                     <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                         {{ Number::currency($this->summary['pending_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -166,7 +166,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Rejected</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Rejected') }}</p>
                     <p class="text-2xl font-bold text-red-600 dark:text-red-400">
                         {{ Number::currency($this->summary['rejected_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -178,7 +178,7 @@
     <!-- Items Table -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Batch Items ({{ $items->count() }})</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Batch Items') }} ({{ $items->count() }})</h3>
         </div>
 
         @if($items->count() > 0)
@@ -187,31 +187,31 @@
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Subcontractor
+                                {{ __('Subcontractor') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Project
+                                {{ __('Project') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Job Site
+                                {{ __('Job Site') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Contract #
+                                {{ __('Contract #') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Amount
+                                {{ __('Amount') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Method
+                                {{ __('Method') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Phase
+                                {{ __('Phase') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Notes
+                                {{ __('Notes') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Status
+                                {{ __('Status') }}
                             </th>
                         </tr>
                     </thead>
@@ -243,7 +243,7 @@
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->contract->jobSite?->job_site_name ?? 'Project General' }}
+                                        {{ $item->contract->jobSite?->job_site_name ?? __('Project General') }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
@@ -259,7 +259,7 @@
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->getPaymentMethodLabel() }}
+                                        {{ __($item->getPaymentMethodLabel()) }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
@@ -274,7 +274,7 @@
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-center">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $itemColor }}">
-                                        {{ $item->getStatusLabel() }}
+                                        {{ __($item->getStatusLabel()) }}
                                     </span>
                                 </td>
                             </tr>
@@ -287,14 +287,14 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No items in this batch</h3>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No items in this batch') }}</h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    This batch doesn't have any items yet.
+                    {{ __("This batch doesn't have any items yet.") }}
                 </p>
                 @if($paymentBatch->canBeEdited())
                     <div class="mt-6">
                         <x-ui.button variant="primary" href="{{ route('payment-batches.edit', $paymentBatch->id) }}" icon="edit">
-                            Edit Batch
+                            {{ __('Edit Batch') }}
                         </x-ui.button>
                     </div>
                 @endif

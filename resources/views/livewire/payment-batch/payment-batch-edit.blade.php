@@ -14,14 +14,14 @@
                     };
                 @endphp
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $headerColor }}">
-                    {{ $paymentBatch->getStatusLabel() }}
+                    {{ __($paymentBatch->getStatusLabel()) }}
                 </span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Edit batch items and approve payments</p>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Edit batch items and approve payments') }}</p>
         </div>
         <div class="flex items-center gap-3 mt-4 md:mt-0">
             <x-ui.button variant="secondary" href="{{ route('payment-batches.index') }}" icon="arrow-left">
-                Back
+                {{ __('Back') }}
             </x-ui.button>
         </div>
     </div>
@@ -54,20 +54,20 @@
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Batch Name</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Batch Name') }}</label>
                     <input type="text" wire:model="name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
                     @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Payment Date') }}</label>
                     <input type="date" wire:model="payment_date"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
                     @error('payment_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
-                    <input type="text" wire:model="notes" placeholder="Optional notes..."
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Notes') }}</label>
+                    <input type="text" wire:model="notes" placeholder="{{ __('Optional notes...') }}"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
                 </div>
             </div>
@@ -85,7 +85,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Items</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Total Items') }}</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ $this->batchSummary['total_items'] }}</p>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Amount</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Total Amount') }}</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($this->batchSummary['total_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -117,7 +117,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending ({{ $this->batchSummary['pending_count'] }})</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Pending') }} ({{ $this->batchSummary['pending_count'] }})</p>
                     <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                         {{ Number::currency($this->batchSummary['pending_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -134,7 +134,7 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Approved ({{ $this->batchSummary['approved_count'] }})</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved') }} ({{ $this->batchSummary['approved_count'] }})</p>
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                         {{ Number::currency($this->batchSummary['approved_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
@@ -150,7 +150,7 @@
             <div class="w-full md:w-48">
                 <select wire:model.live="clientFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Clients</option>
+                    <option value="">{{ __('All Clients') }}</option>
                     @foreach($this->clients as $client)
                         <option value="{{ $client->id }}">{{ $client->company_name }}</option>
                     @endforeach
@@ -161,7 +161,7 @@
             <div class="w-full md:w-48">
                 <select wire:model.live="projectFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Projects</option>
+                    <option value="">{{ __('All Projects') }}</option>
                     @foreach($this->projects as $project)
                         <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                     @endforeach
@@ -172,7 +172,7 @@
             <div class="w-full md:w-48">
                 <select wire:model.live="subcontractorFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Subcontractors</option>
+                    <option value="">{{ __('All Subcontractors') }}</option>
                     @foreach($this->subcontractors as $sub)
                         <option value="{{ $sub->id }}">{{ $sub->company_name }}</option>
                     @endforeach
@@ -183,7 +183,7 @@
             <div class="w-full md:w-48">
                 <select wire:model.live="projectManagerFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Project Managers</option>
+                    <option value="">{{ __('All Project Managers') }}</option>
                     @foreach($this->projectManagers as $pm)
                         <option value="{{ $pm->id }}">{{ $pm->name }}</option>
                     @endforeach
@@ -194,12 +194,12 @@
             <div class="w-full md:w-44">
                 <select wire:model.live="statusFilter"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="partially_paid">Partially Paid</option>
-                    <option value="paid">Paid</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="">{{ __('All Statuses') }}</option>
+                    <option value="active">{{ __('Active') }}</option>
+                    <option value="completed">{{ __('Completed') }}</option>
+                    <option value="partially_paid">{{ __('Partially Paid') }}</option>
+                    <option value="paid">{{ __('Paid') }}</option>
+                    <option value="cancelled">{{ __('Cancelled') }}</option>
                 </select>
             </div>
 
@@ -209,7 +209,7 @@
             <label class="flex items-center cursor-pointer">
                 <input type="checkbox" wire:model.live="showZeroBalance" class="sr-only peer">
                 <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#3F5189] dark:peer-focus:ring-[#4A5A96] rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-500 peer-checked:bg-[#3F5189]"></div>
-                <span class="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300">Show Paid/Cancelled</span>
+                <span class="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Show Paid/Cancelled') }}</span>
             </label>
         </div>
     </div>
@@ -220,14 +220,14 @@
             <div class="flex flex-col md:flex-row md:items-center gap-4">
                 <div class="flex items-center gap-3">
                     <x-ui.button variant="primary" wire:click="saveDraft" icon="save">
-                        Save Draft
+                        {{ __('Save Draft') }}
                     </x-ui.button>
 
                     @if($this->batchSummary['pending_count'] > 0)
                         <x-ui.button variant="success" wire:click="approveAll"
-                            wire:confirm="Approve all {{ $this->batchSummary['pending_count'] }} pending items and process payments? This cannot be undone."
+                            wire:confirm="{{ __('Approve all :count pending items and process payments? This cannot be undone.', ['count' => $this->batchSummary['pending_count']]) }}"
                             icon="check">
-                            Approve All Pending ({{ $this->batchSummary['pending_count'] }})
+                            {{ __('Approve All Pending') }} ({{ $this->batchSummary['pending_count'] }})
                         </x-ui.button>
                     @endif
                 </div>
@@ -236,9 +236,9 @@
 
                 @if($this->batchSummary['approved_count'] === 0)
                     <x-ui.button variant="danger" wire:click="cancelBatch"
-                        wire:confirm="Are you sure you want to cancel this batch? This cannot be undone."
+                        wire:confirm="{{ __('Are you sure you want to cancel this batch? This cannot be undone.') }}"
                         icon="x">
-                        Cancel Batch
+                        {{ __('Cancel Batch') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -252,43 +252,43 @@
                 <thead class="bg-slate-50 dark:bg-slate-900">
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Subcontractor
+                            {{ __('Subcontractor') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Project
+                            {{ __('Project') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Job Site / Lot
+                            {{ __('Job Site / Lot') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Contract #
+                            {{ __('Contract #') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Amount
+                            {{ __('Amount') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Paid
+                            {{ __('Paid') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Balance
+                            {{ __('Balance') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Batch Amount
+                            {{ __('Batch Amount') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Method
+                            {{ __('Method') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Phase
+                            {{ __('Phase') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Notes
+                            {{ __('Notes') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Item Status
+                            {{ __('Item Status') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Actions
+                            {{ __('Actions') }}
                         </th>
                     </tr>
                 </thead>
@@ -327,7 +327,7 @@
                                         {{ $contract->jobSite->job_site_name }}
                                     </span>
                                 @else
-                                    <span class="text-sm text-slate-500 dark:text-slate-400">Project General</span>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Project General') }}</span>
                                 @endif
                             </td>
                             <!-- Contract # -->
@@ -380,22 +380,22 @@
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($isApproved || $isRejected)
                                     <div class="text-sm text-slate-600 dark:text-slate-400 text-center {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $batchItem->getPaymentMethodLabel() }}
+                                        {{ __($batchItem->getPaymentMethodLabel()) }}
                                     </div>
                                 @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
                                     <select
                                         wire:model="payMethods.{{ $contract->id }}"
                                         class="w-32 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        <option value="">Select...</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="check">Check</option>
-                                        <option value="credit_card">Credit Card</option>
-                                        <option value="debit_card">Debit Card</option>
-                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="">{{ __('Select...') }}</option>
+                                        <option value="cash">{{ __('Cash') }}</option>
+                                        <option value="check">{{ __('Check') }}</option>
+                                        <option value="credit_card">{{ __('Credit Card') }}</option>
+                                        <option value="debit_card">{{ __('Debit Card') }}</option>
+                                        <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
                                         @if(config('app.country') === 'BR')
                                             <option value="pix">PIX</option>
                                         @endif
-                                        <option value="other">Other</option>
+                                        <option value="other">{{ __('Other') }}</option>
                                     </select>
                                 @endif
                             </td>
@@ -409,7 +409,7 @@
                                     <input
                                         type="text"
                                         wire:model="payPhases.{{ $contract->id }}"
-                                        placeholder="Phase..."
+                                        placeholder="{{ __('Phase...') }}"
                                         class="w-28 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
                             </td>
@@ -423,7 +423,7 @@
                                     <input
                                         type="text"
                                         wire:model="payNotes.{{ $contract->id }}"
-                                        placeholder="Notes..."
+                                        placeholder="{{ __('Notes...') }}"
                                         class="w-36 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
                             </td>
@@ -439,7 +439,7 @@
                                         };
                                     @endphp
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $itemColor }}">
-                                        {{ $batchItem->getStatusLabel() }}
+                                        {{ __($batchItem->getStatusLabel()) }}
                                     </span>
                                 @else
                                     <span class="text-xs text-slate-400 dark:text-slate-500">—</span>
@@ -451,18 +451,18 @@
                                     <div class="flex items-center justify-center gap-1">
                                         <button
                                             wire:click="approveItem({{ $batchItem->id }})"
-                                            wire:confirm="Approve this payment and process it immediately?"
+                                            wire:confirm="{{ __('Approve this payment and process it immediately?') }}"
                                             class="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                                            title="Approve">
+                                            title="{{ __('Approve') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </button>
                                         <button
                                             wire:click="rejectItem({{ $batchItem->id }})"
-                                            wire:confirm="Reject this item?"
+                                            wire:confirm="{{ __('Reject this item?') }}"
                                             class="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                            title="Reject">
+                                            title="{{ __('Reject') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                             </svg>
@@ -485,9 +485,9 @@
                                 <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No contracts found</h3>
+                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No contracts found') }}</h3>
                                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                    No contracts match the current filters. Try adjusting your filters or toggle "Show Paid/Cancelled".
+                                    {{ __('No contracts match the current filters. Try adjusting your filters or toggle "Show Paid/Cancelled".') }}
                                 </p>
                             </td>
                         </tr>

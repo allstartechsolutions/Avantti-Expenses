@@ -242,7 +242,7 @@ class PaymentBatchEdit extends Component
 
         unset($this->batchSummary);
         $this->loadExistingItems();
-        session()->flash('message', 'Draft saved successfully!');
+        session()->flash('message', __('Draft saved successfully!'));
     }
 
     public function approveItem(int $itemId): void
@@ -253,7 +253,7 @@ class PaymentBatchEdit extends Component
             ->firstOrFail();
 
         if (!$item->getRawOriginal('amount') || $item->amount <= 0) {
-            session()->flash('error', 'Cannot approve an item without a payment amount.');
+            session()->flash('error', __('Cannot approve an item without a payment amount.'));
             return;
         }
 
@@ -266,7 +266,11 @@ class PaymentBatchEdit extends Component
         $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
 
         if ($item->amount > $balance + 0.01) {
-            session()->flash('error', "Payment of \${$item->amount} for {$contract->contract_number} exceeds balance of \$" . number_format($balance, 2) . ".");
+            session()->flash('error', __('Payment of $:amount for :number exceeds balance of $:balance.', [
+                'amount' => $item->amount,
+                'number' => $contract->contract_number,
+                'balance' => number_format($balance, 2),
+            ]));
             return;
         }
 
@@ -299,7 +303,7 @@ class PaymentBatchEdit extends Component
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
 
-        session()->flash('message', "Payment for {$contract->contract_number} approved and processed.");
+        session()->flash('message', __('Payment for :number approved and processed.', ['number' => $contract->contract_number]));
     }
 
     public function approveAll(): void
@@ -307,7 +311,7 @@ class PaymentBatchEdit extends Component
         $pendingItems = $this->paymentBatch->items()->where('status', 'pending')->get();
 
         if ($pendingItems->isEmpty()) {
-            session()->flash('error', 'No pending items to approve.');
+            session()->flash('error', __('No pending items to approve.'));
             return;
         }
 
@@ -315,7 +319,7 @@ class PaymentBatchEdit extends Component
         $approvableItems = $pendingItems->filter(fn ($item) => $item->getRawOriginal('amount') && $item->amount > 0);
 
         if ($approvableItems->isEmpty()) {
-            session()->flash('error', 'No pending items with amounts to approve.');
+            session()->flash('error', __('No pending items with amounts to approve.'));
             return;
         }
 
@@ -330,12 +334,16 @@ class PaymentBatchEdit extends Component
             $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
 
             if ($item->amount > $balance + 0.01) {
-                $errors[] = "{$contract->contract_number}: payment \${$item->amount} exceeds balance \$" . number_format($balance, 2);
+                $errors[] = __(':number: payment $:amount exceeds balance $:balance', [
+                    'number' => $contract->contract_number,
+                    'amount' => $item->amount,
+                    'balance' => number_format($balance, 2),
+                ]);
             }
         }
 
         if (!empty($errors)) {
-            session()->flash('error', 'Cannot approve all: ' . implode('; ', $errors));
+            session()->flash('error', __('Cannot approve all:') . ' ' . implode('; ', $errors));
             return;
         }
 
@@ -366,7 +374,7 @@ class PaymentBatchEdit extends Component
         unset($this->batchSummary);
         $this->loadExistingItems();
 
-        session()->flash('message', $approvableItems->count() . ' payment(s) approved and processed.');
+        session()->flash('message', __(':count payment(s) approved and processed.', ['count' => $approvableItems->count()]));
     }
 
     public function rejectItem(int $itemId): void
@@ -386,7 +394,7 @@ class PaymentBatchEdit extends Component
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
 
-        session()->flash('message', 'Item rejected.');
+        session()->flash('message', __('Item rejected.'));
     }
 
     public function cancelBatch(): void
@@ -394,14 +402,14 @@ class PaymentBatchEdit extends Component
         $approvedCount = $this->paymentBatch->items()->where('status', 'approved')->count();
 
         if ($approvedCount > 0) {
-            session()->flash('error', 'Cannot cancel a batch that has approved items.');
+            session()->flash('error', __('Cannot cancel a batch that has approved items.'));
             return;
         }
 
         $this->paymentBatch->update(['status' => 'cancelled']);
         unset($this->batchSummary);
 
-        session()->flash('message', 'Batch cancelled.');
+        session()->flash('message', __('Batch cancelled.'));
         $this->redirect(route('payment-batches.index'), navigate: true);
     }
 
