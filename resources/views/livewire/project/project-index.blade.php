@@ -150,8 +150,8 @@
                                             </div>
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                {{ $project->client->company_name }}
+                                            <div class="text-sm font-medium text-slate-900 dark:text-white" title="{{ $project->client->company_name }}">
+                                                {{ Str::limit($project->client->company_name, 30) }}
                                             </div>
                                         </div>
                                     </div>
