@@ -306,26 +306,30 @@
                         <tr class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
                             <!-- Subcontractor -->
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                    {{ $contract->subcontractor?->company_name ?? '-' }}
+                                <div class="text-sm font-medium text-slate-900 dark:text-white"
+                                     title="{{ $contract->subcontractor?->company_name }}">
+                                    {{ Str::limit($contract->subcontractor?->company_name ?? '-', 35) }}
                                 </div>
                             </td>
                             <!-- Project -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <a href="{{ route('projects.overview', $contract->project_id) }}"
-                                   class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                    {{ $contract->project->project_name }}
+                                   class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                   title="{{ $contract->project->project_name }}">
+                                    {{ Str::limit($contract->project->project_name, 35) }}
                                 </a>
-                                <div class="text-xs text-slate-500 dark:text-slate-400">
-                                    {{ $contract->project->client?->company_name }}
+                                <div class="text-xs text-slate-500 dark:text-slate-400"
+                                     title="{{ $contract->project->client?->company_name }}">
+                                    {{ Str::limit($contract->project->client?->company_name, 35) }}
                                 </div>
                             </td>
                             <!-- Job Site / Lot -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($contract->jobSite)
                                     <a href="{{ route('jobsites.overview', $contract->job_site_id) }}"
-                                       class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                        {{ $contract->jobSite->job_site_name }}
+                                       class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                       title="{{ $contract->jobSite->job_site_name }}">
+                                        {{ Str::limit($contract->jobSite->job_site_name, 35) }}
                                     </a>
                                 @else
                                     <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Project General') }}</span>
