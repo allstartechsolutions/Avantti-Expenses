@@ -123,6 +123,47 @@ No middleware or dynamic switching is needed.
 
 ## Translation Progress
 
+### Status: FULL COVERAGE (as of 2026-08-14)
+
+A full-codebase sweep completed on 2026-08-14 brought every user-facing view, Livewire component, controller, and enum to full translation coverage:
+
+- **Every `__()` key used anywhere in the codebase resolves in `pt_BR.json`** (2,010 keys). A validation scan confirms zero missing keys.
+- All previously-untranslated modules were wrapped and translated: auth, settings (incl. 2FA), dashboard, estimates, invoices (incl. public payment page), catalog, clients, contracts, budgets, daily reports, cost code templates, payment batches, payments dashboard, contract payments, suppliers/subcontractors gaps, system settings, all reports + their PDF templates, invoice/estimate/daily-report PDFs, and the estimate email template.
+- All flash messages in Livewire components are wrapped; messages with interpolated values use `:placeholder` syntax (e.g. `__('Invoice :number created from estimate!', ['number' => ...])`).
+- Intentionally NOT translated: `resources/views/welcome.blade.php` (internal style-guide/reference page) and `resources/views/flux/` (vendor-published components).
+
+New keys added by the sweep live at the end of both JSON files under `_`-prefixed section markers (`_auth`, `_dashboard`, `_reports`, `_payment_batches`, `_cost_code_templates`, `_bulk_sweep_2026_08`, etc.).
+
+### Validation Commands
+
+Check that every used key resolves (run after adding any `__()` call):
+
+```bash
+php -r '
+$files = [];
+foreach (["resources/views","app"] as $dir) {
+  $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
+  foreach ($it as $f) if ($f->isFile() && str_ends_with($f->getFilename(), ".php")) $files[] = (string)$f;
+}
+$pt = json_decode(file_get_contents("lang/pt_BR.json"), true);
+$miss = 0;
+foreach ($files as $f) {
+  preg_match_all("/__\(\s*\x27((?:[^\x27\\\\]|\\\\.)*)\x27\s*[\),]/", file_get_contents($f), $m);
+  foreach ($m[1] as $k) { $k = stripcslashes($k);
+    if (preg_match("/^(validation|auth|passwords|pagination)\./", $k)) continue;
+    if (!array_key_exists($k, $pt)) { echo "MISSING: [$k] ($f)\n"; $miss++; } }
+}
+echo $miss ? "$miss missing\n" : "OK\n";'
+```
+
+Also run `php artisan view:cache && php artisan view:clear` after wrapping to catch Blade syntax errors.
+
+### To Review: en.json Client Overrides for New Keys
+
+The 2026-08-14 sweep added new keys to `en.json` as identity mappings (key → key). Keys containing "Project" or "Job Site" (e.g. `"Job Site Budget"`, `"Project Budget"`, `"Job Site:"`, `"Project / Job Site"`) may need client-terminology overrides per the mapping below (Project → Job Site, Job Site → Lot). Identity mappings behave exactly like missing entries, so nothing broke — but the client renaming has not been applied to these new keys.
+
+### Historical Progress (superseded by the full sweep above)
+
 ### Completed (views + blade + PHP components + JSON entries)
 
 | Module           | Views Translated                                          |
@@ -142,7 +183,7 @@ No middleware or dynamic switching is needed.
 | Job Site (overview) | `job-site-overview.blade.php` (+ JobSiteOverview.php) |
 | Job Site Nav     | `jobsite-layout.blade.php`, `jobsite-nav.blade.php`  |
 
-### Remaining Modules
+### Remaining Modules (ALL COMPLETED in the 2026-08-14 sweep — kept for history)
 
 | Module           | Views (count) | Files to Translate                                     |
 |------------------|---------------|--------------------------------------------------------|
@@ -165,7 +206,7 @@ No middleware or dynamic switching is needed.
 | System Settings  | 4             | tax rates, messages, etc.                               |
 | Shared           | 1             | shared components                                       |
 
-**Total remaining: ~55 blade files across 16 modules**
+**Total remaining: 0 — all modules completed on 2026-08-14**
 
 ### Notes on Partially Translated Files
 
