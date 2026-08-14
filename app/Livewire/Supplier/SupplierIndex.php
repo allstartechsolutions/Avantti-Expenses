@@ -52,7 +52,7 @@ class SupplierIndex extends Component
             session()->flash('message', __('Supplier classification removed. The company still exists as a subcontractor.'));
         } else {
             $supplier->delete();
-            session()->flash('message', 'Supplier deleted successfully!');
+            session()->flash('message', __('Supplier deleted successfully!'));
         }
 
         $this->resetPage();

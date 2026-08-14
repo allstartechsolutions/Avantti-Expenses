@@ -72,7 +72,7 @@ class InvoiceSendEmail extends Component
 
         if (empty($this->emailTo)) {
             $this->dispatch('close-modal', 'send-email-modal');
-            session()->flash('error', 'Client does not have an email address.');
+            session()->flash('error', __('Client does not have an email address.'));
             return;
         }
 
@@ -121,7 +121,7 @@ class InvoiceSendEmail extends Component
 
         $this->sending = false;
         $this->dispatch('close-modal', 'send-email-modal');
-        session()->flash('message', 'Invoice emailed successfully!');
+        session()->flash('message', __('Invoice emailed successfully!'));
 
         $this->redirect(route('invoices.show', $this->invoice->id));
     }

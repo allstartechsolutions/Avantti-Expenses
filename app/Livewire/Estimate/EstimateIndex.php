@@ -40,14 +40,14 @@ class EstimateIndex extends Component
         $estimate = Estimate::findOrFail($estimateId);
 
         if (!$estimate->canBeEdited()) {
-            session()->flash('error', 'Only draft or sent estimates can be deleted.');
+            session()->flash('error', __('Only draft or sent estimates can be deleted.'));
             return;
         }
 
         $estimate->items()->delete();
         $estimate->delete();
 
-        session()->flash('message', 'Estimate deleted successfully!');
+        session()->flash('message', __('Estimate deleted successfully!'));
     }
 
     public function render()

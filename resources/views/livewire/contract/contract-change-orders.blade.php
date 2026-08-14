@@ -2,9 +2,9 @@
     <!-- Change Orders Card -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Change Orders</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Change Orders') }}</h3>
             <x-ui.button variant="primary" size="sm" wire:click="openCreateModal" icon="plus">
-                Add Change Order
+                {{ __('Add Change Order') }}
             </x-ui.button>
         </div>
 
@@ -14,12 +14,12 @@
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Title</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Created By</th>
-                                <th class="px-3 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">File</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Title') }}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Date') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Amount') }}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Created By') }}</th>
+                                <th class="px-3 py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('File') }}</th>
+                                <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -45,7 +45,7 @@
                                     </td>
                                     <td class="px-3 py-3 text-sm text-center">
                                         @if($co->file_path)
-                                            <a href="{{ route('files.show', ['path' => $co->file_path]) }}" target="_blank" class="text-[#3F5189] hover:text-[#2F3F6F]" title="View File">
+                                            <a href="{{ route('files.show', ['path' => $co->file_path]) }}" target="_blank" class="text-[#3F5189] hover:text-[#2F3F6F]" title="{{ __('View File') }}">
                                                 <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                                                 </svg>
@@ -66,7 +66,7 @@
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="delete({{ $co->id }})"
-                                                wire:confirm="Are you sure you want to delete this change order?"
+                                                wire:confirm="{{ __('Are you sure you want to delete this change order?') }}"
                                                 icon="trash">
                                             </x-ui.button>
                                         </div>
@@ -77,7 +77,7 @@
                         <tfoot>
                             <tr class="border-t-2 border-slate-300 dark:border-slate-600">
                                 <td colspan="2" class="px-3 py-3 text-sm font-semibold text-slate-900 dark:text-white">
-                                    Total Change Orders
+                                    {{ __('Total Change Orders') }}
                                 </td>
                                 @php $total = $changeOrders->sum(fn($co) => $co->getRawOriginal('amount')) / 100; @endphp
                                 <td class="px-3 py-3 text-sm font-bold text-right whitespace-nowrap {{ $total >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
@@ -89,7 +89,7 @@
                     </table>
                 </div>
             @else
-                <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No change orders recorded.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{{ __('No change orders recorded.') }}</p>
             @endif
         </div>
     </div>
@@ -112,17 +112,17 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Title *') }}</label>
                             <input
                                 type="text"
                                 wire:model="title"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Change order title">
+                                placeholder="{{ __('Change order title') }}">
                             @error('title') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Date *') }}</label>
                             <input
                                 type="date"
                                 wire:model="date"
@@ -131,7 +131,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Amount * <span class="text-xs font-normal text-slate-400">(use negative for deductions)</span></label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Amount *') }} <span class="text-xs font-normal text-slate-400">(use negative for deductions)</span></label>
                             <div class="relative">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 sm:text-sm">$</span>
@@ -162,17 +162,17 @@
                         @endif
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Description') }}</label>
                             <textarea
                                 wire:model="description"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Optional description..."></textarea>
+                                placeholder="{{ __('Optional description...') }}"></textarea>
                             @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">File</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('File') }}</label>
                             <input
                                 type="file"
                                 wire:model="file"
@@ -183,14 +183,14 @@
                                     file:text-sm file:font-semibold
                                     file:bg-[#3F5189] file:text-white
                                     hover:file:bg-[#2F3F6F]">
-                            <p class="mt-1 text-xs text-slate-400">PDF, JPG, PNG up to 10MB</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ __('PDF, JPG, PNG up to 10MB') }}</p>
                             @error('file') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="primary" wire:click="save">
                             {{ $editingId ? 'Update' : 'Save' }}

@@ -51,7 +51,7 @@ class InvoiceShow extends Component
     public function markAsSent()
     {
         if (!$this->invoice->isDraft()) {
-            session()->flash('error', 'Only draft invoices can be marked as sent.');
+            session()->flash('error', __('Only draft invoices can be marked as sent.'));
             return;
         }
 
@@ -63,13 +63,13 @@ class InvoiceShow extends Component
         $this->invoice->recordStatusChange(Auth::user(), $oldStatus, 'sent');
 
         $this->refreshInvoice();
-        session()->flash('message', 'Invoice marked as sent!');
+        session()->flash('message', __('Invoice marked as sent!'));
     }
 
     public function markAsPending()
     {
         if (!$this->invoice->isSent()) {
-            session()->flash('error', 'Only sent invoices can be marked as pending.');
+            session()->flash('error', __('Only sent invoices can be marked as pending.'));
             return;
         }
 
@@ -80,7 +80,7 @@ class InvoiceShow extends Component
         $this->invoice->recordStatusChange(Auth::user(), $oldStatus, 'pending');
 
         $this->refreshInvoice();
-        session()->flash('message', 'Invoice marked as pending!');
+        session()->flash('message', __('Invoice marked as pending!'));
     }
 
     // Payment methods
@@ -145,7 +145,7 @@ class InvoiceShow extends Component
 
         $this->showPaymentModal = false;
         $this->refreshInvoice();
-        session()->flash('message', 'Payment recorded successfully!');
+        session()->flash('message', __('Payment recorded successfully!'));
     }
 
     // Credit card payment
@@ -317,7 +317,7 @@ class InvoiceShow extends Component
 
         $this->showPaymentModal = false;
         $this->refreshInvoice();
-        session()->flash('message', 'Card payment of $' . number_format((float) $this->paymentAmount, 2) . ' processed successfully!');
+        session()->flash('message', __('Card payment of $:amount processed successfully!', ['amount' => number_format((float) $this->paymentAmount, 2)]));
     }
 
     public function openRefundModal(int $paymentId)
@@ -325,7 +325,7 @@ class InvoiceShow extends Component
         $payment = $this->invoice->payments()->where('id', $paymentId)->first();
 
         if (!$payment || !$payment->isRefundable()) {
-            session()->flash('error', 'This payment cannot be voided or refunded.');
+            session()->flash('error', __('This payment cannot be voided or refunded.'));
             return;
         }
 
@@ -351,7 +351,7 @@ class InvoiceShow extends Component
         $payment = $this->invoice->payments()->where('id', $this->refundPaymentId)->first();
 
         if (!$payment || !$payment->isRefundable()) {
-            session()->flash('error', 'This payment cannot be voided or refunded.');
+            session()->flash('error', __('This payment cannot be voided or refunded.'));
             $this->closeRefundModal();
             return;
         }
@@ -385,7 +385,7 @@ class InvoiceShow extends Component
                     if ($voidResult['success']) {
                         $this->logRefund($payment, $amountCents, 'void', $voidResult['retref'], $voidResult['respstat'], $voidResult['resptext']);
                         $payment->markAsVoided();
-                        $this->finishRefund('Payment voided successfully.');
+                        $this->finishRefund(__('Payment voided successfully.'));
                         return;
                     }
                 }
@@ -394,15 +394,15 @@ class InvoiceShow extends Component
                 $refundResult = $service->refund($payment->gateway_transaction_id, $amountCents);
 
                 if (!$refundResult['success']) {
-                    session()->flash('error', 'Refund failed: ' . ($refundResult['resptext'] ?: 'declined by gateway.'));
+                    session()->flash('error', __('Refund failed:') . ' ' . ($refundResult['resptext'] ?: __('declined by gateway.')));
                     return;
                 }
 
                 $this->logRefund($payment, $amountCents, 'refund', $refundResult['retref'], $refundResult['respstat'], $refundResult['resptext']);
                 $this->applyRefundToPayment($payment, $amountCents, $refundResult['retref']);
                 $this->finishRefund($isFullReversal
-                    ? 'Payment refunded successfully (batch already settled).'
-                    : 'Partial refund of $' . number_format($amountCents / 100, 2) . ' processed successfully.');
+                    ? __('Payment refunded successfully (batch already settled).')
+                    : __('Partial refund of $:amount processed successfully.', ['amount' => number_format($amountCents / 100, 2)]));
                 return;
             } catch (CardPointeException $e) {
                 session()->flash('error', $e->getMessage());
@@ -415,12 +415,12 @@ class InvoiceShow extends Component
 
         if ($isFullReversal) {
             $payment->markAsVoided();
-            $this->finishRefund('Payment voided successfully.');
+            $this->finishRefund(__('Payment voided successfully.'));
             return;
         }
 
         $this->applyRefundToPayment($payment, $amountCents, null);
-        $this->finishRefund('Partial refund of $' . number_format($amountCents / 100, 2) . ' recorded.');
+        $this->finishRefund(__('Partial refund of $:amount recorded.', ['amount' => number_format($amountCents / 100, 2)]));
     }
 
     /**
@@ -466,7 +466,7 @@ class InvoiceShow extends Component
     public function deleteInvoice()
     {
         if (!$this->invoice->canBeEdited()) {
-            session()->flash('error', 'Only draft or sent invoices can be deleted.');
+            session()->flash('error', __('Only draft or sent invoices can be deleted.'));
             return;
         }
 
@@ -477,7 +477,7 @@ class InvoiceShow extends Component
         $this->invoice->items()->delete();
         $this->invoice->delete();
 
-        session()->flash('message', 'Invoice deleted successfully!');
+        session()->flash('message', __('Invoice deleted successfully!'));
 
         return redirect()->route('invoices.index');
     }

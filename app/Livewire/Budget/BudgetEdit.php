@@ -61,7 +61,7 @@ class BudgetEdit extends Component
             'notes' => $this->notes ?: null,
         ]);
 
-        session()->flash('message', 'Budget updated successfully.');
+        session()->flash('message', __('Budget updated successfully.'));
         return redirect()->route('budgets.show', $this->budget->id);
     }
 
@@ -90,7 +90,7 @@ class BudgetEdit extends Component
         $template = CostCodeTemplate::with(['parentCostCodes.children'])->find($this->importTemplateId);
 
         if (!$template) {
-            session()->flash('error', 'Template not found.');
+            session()->flash('error', __('Template not found.'));
             return;
         }
 
@@ -146,7 +146,7 @@ class BudgetEdit extends Component
         $this->closeImportModal();
         $this->budget = $this->budget->fresh(['project', 'jobSite', 'sourceTemplate']);
 
-        session()->flash('message', 'Cost codes imported from template successfully.');
+        session()->flash('message', __('Cost codes imported from template successfully.'));
     }
 
     // Delete budget
@@ -167,7 +167,7 @@ class BudgetEdit extends Component
 
         $this->budget->delete();
 
-        session()->flash('message', 'Budget deleted successfully.');
+        session()->flash('message', __('Budget deleted successfully.'));
 
         if ($jobSiteId) {
             return redirect()->route('jobsites.overview', $jobSiteId);

@@ -891,7 +891,7 @@ class JobSiteShow extends Component
             $this->jobSite->delete();
         });
 
-        session()->flash('message', 'Job site deleted successfully!');
+        session()->flash('message', __('Job site deleted successfully!'));
         return $this->redirect(route('projects.jobsites', $projectId), navigate: true);
     }
 

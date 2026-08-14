@@ -3,21 +3,21 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Supplier Details</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">View supplier information</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Supplier Details') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('View supplier information') }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('suppliers.index') }}"
                     icon="arrow-left">
-                    Back to Suppliers
+                    {{ __('Back to Suppliers') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('suppliers.edit', $supplier->id) }}"
                     icon="edit">
-                    Edit Supplier
+                    {{ __('Edit Supplier') }}
                 </x-ui.button>
             </div>
         </div>
@@ -36,7 +36,7 @@
             <!-- Supplier Profile Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Supplier Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Supplier Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="flex items-center space-x-6 mb-6">
@@ -65,7 +65,7 @@
                         <!-- Email -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Email Address
+                                {{ __('Email Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->email ?? 'Not provided' }}</p>
                         </div>
@@ -73,7 +73,7 @@
                         <!-- Phone -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Phone Number
+                                {{ __('Phone Number') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->formatted_phone ?? 'Not provided' }}</p>
                         </div>
@@ -82,7 +82,7 @@
                     @if($supplier->description)
                         <div class="mt-6">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Description
+                                {{ __('Description') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->description }}</p>
                         </div>
@@ -93,13 +93,13 @@
             <!-- Address Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Address Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Address Information') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($supplier->full_address)
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Full Address
+                                {{ __('Full Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->full_address }}</p>
                         </div>
@@ -109,7 +109,7 @@
                         <!-- Street -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Street Address
+                                {{ __('Street Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->street ?? 'Not provided' }}</p>
                         </div>
@@ -126,7 +126,7 @@
                         <!-- Neighborhood (Brazil only) -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Neighborhood (Bairro)
+                                {{ __('Neighborhood (Bairro)') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->neighborhood ?? 'Not provided' }}</p>
                         </div>
@@ -135,7 +135,7 @@
                         <!-- City -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                City
+                                {{ __('City') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $supplier->city ?? 'Not provided' }}</p>
                         </div>
@@ -165,7 +165,7 @@
             <!-- Quick Actions -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     <x-ui.button
@@ -173,7 +173,7 @@
                         class="w-full justify-center"
                         href="{{ route('suppliers.edit', $supplier->id) }}"
                         icon="edit">
-                        Edit Supplier
+                        {{ __('Edit Supplier') }}
                     </x-ui.button>
 
                     @if($supplier->email)
@@ -181,7 +181,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
-                            Send Email
+                            {{ __('Send Email') }}
                         </a>
                     @endif
 
@@ -190,7 +190,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            Call Supplier
+                            {{ __('Call Supplier') }}
                         </a>
                     @endif
                 </div>
@@ -199,26 +199,26 @@
             <!-- Supplier Info -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Supplier Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Supplier Information') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Supplier ID</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Supplier ID') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $supplier->id }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Added</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Added') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->created_at->diffForHumans() }}</span>
                     </div>
                     @if($supplier->created_at != $supplier->updated_at)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Last Updated</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Last Updated') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->updated_at->diffForHumans() }}</span>
                         </div>
                     @endif
                     @if($supplier->createdBy)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Added By</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Added By') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->createdBy->name }}</span>
                         </div>
                     @endif

@@ -126,7 +126,7 @@ class CatalogItemEdit extends Component
             'tax_rate_id' => $this->is_taxable && $this->tax_rate_id ? $this->tax_rate_id : null,
         ]);
 
-        session()->flash('message', 'Catalog item updated successfully!');
+        session()->flash('message', __('Catalog item updated successfully!'));
         return redirect()->route('catalog.index');
     }
 

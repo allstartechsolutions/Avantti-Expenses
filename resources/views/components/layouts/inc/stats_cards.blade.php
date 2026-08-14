@@ -3,14 +3,14 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Total Sales</p>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ __('Total Sales') }}</p>
                 <p class="text-2xl font-bold text-slate-900 dark:text-white">$74,382</p>
                 <div class="flex items-center mt-2">
                     <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17l5-5 5 5M7 7l5-5 5 5"></path>
                     </svg>
                     <span class="text-sm text-green-600 font-medium">+12.5%</span>
-                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">vs last month</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">{{ __('vs last month') }}</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-[#3F5189]/10 rounded-lg flex items-center justify-center">
@@ -25,14 +25,14 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">New Users</p>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ __('New Users') }}</p>
                 <p class="text-2xl font-bold text-slate-900 dark:text-white">1,249</p>
                 <div class="flex items-center mt-2">
                     <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17l5-5 5 5M7 7l5-5 5 5"></path>
                     </svg>
                     <span class="text-sm text-green-600 font-medium">+8.2%</span>
-                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">vs last month</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">{{ __('vs last month') }}</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -47,14 +47,14 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Orders</p>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ __('Orders') }}</p>
                 <p class="text-2xl font-bold text-slate-900 dark:text-white">532</p>
                 <div class="flex items-center mt-2">
                     <svg class="w-4 h-4 text-red-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5-5-5m10-6l-5 5-5-5"></path>
                     </svg>
                     <span class="text-sm text-red-600 font-medium">-2.1%</span>
-                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">vs last month</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">{{ __('vs last month') }}</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
@@ -69,14 +69,14 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Revenue</p>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ __('Revenue') }}</p>
                 <p class="text-2xl font-bold text-slate-900 dark:text-white">$98,543</p>
                 <div class="flex items-center mt-2">
                     <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17l5-5 5 5M7 7l5-5 5 5"></path>
                     </svg>
                     <span class="text-sm text-green-600 font-medium">+15.3%</span>
-                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">vs last month</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">{{ __('vs last month') }}</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">

@@ -41,18 +41,18 @@ class CatalogCategoryIndex extends Component
 
         // Check if category has items
         if ($category->items()->count() > 0) {
-            session()->flash('error', 'Cannot delete category with associated catalog items.');
+            session()->flash('error', __('Cannot delete category with associated catalog items.'));
             return;
         }
 
         // Check if category has children
         if ($category->children()->count() > 0) {
-            session()->flash('error', 'Cannot delete category with subcategories.');
+            session()->flash('error', __('Cannot delete category with subcategories.'));
             return;
         }
 
         $category->delete();
-        session()->flash('message', 'Category deleted successfully.');
+        session()->flash('message', __('Category deleted successfully.'));
     }
 
     public function render()

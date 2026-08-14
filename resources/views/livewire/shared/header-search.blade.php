@@ -2,7 +2,7 @@
     <input type="text"
            wire:model.live.debounce.300ms="search"
            @focus="open = ($wire.search.length >= 2)"
-           placeholder="Search projects..."
+           placeholder="{{ __('Search projects...') }}"
            class="w-64 pl-10 pr-8 py-2 text-sm bg-slate-100 dark:bg-slate-700 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] dark:text-white dark:placeholder-slate-400">
     <div class="absolute inset-y-0 left-0 flex items-center pl-3">
         <svg class="w-4 h-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@
             </ul>
         @else
             <div class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
-                No projects found
+                {{ __('No projects found') }}
             </div>
         @endif
     </div>

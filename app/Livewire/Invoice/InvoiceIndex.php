@@ -40,14 +40,14 @@ class InvoiceIndex extends Component
         $invoice = Invoice::findOrFail($invoiceId);
 
         if (!$invoice->canBeEdited()) {
-            session()->flash('error', 'Only draft or sent invoices can be deleted.');
+            session()->flash('error', __('Only draft or sent invoices can be deleted.'));
             return;
         }
 
         $invoice->items()->delete();
         $invoice->delete();
 
-        session()->flash('message', 'Invoice deleted successfully!');
+        session()->flash('message', __('Invoice deleted successfully!'));
     }
 
     public function render()

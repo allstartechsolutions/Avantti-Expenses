@@ -10,7 +10,7 @@
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Add New Client</h2>
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Add New Client') }}</h2>
                         <button type="button" wire:click="closeModal" class="text-slate-400 hover:text-slate-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -20,12 +20,12 @@
                         <!-- Company Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Company Name <span class="text-red-500">*</span>
+                                {{ __('Company Name') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 wire:model.live="company_name"
-                                placeholder="Enter company name"
+                                placeholder="{{ __('Enter company name') }}"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                             @error('company_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
@@ -34,21 +34,21 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Contact Name <span class="text-red-500">*</span>
+                                    {{ __('Contact Name') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     wire:model.live="contact_name"
-                                    placeholder="Enter contact name"
+                                    placeholder="{{ __('Enter contact name') }}"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @error('contact_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title/Position</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Title/Position') }}</label>
                                 <input
                                     type="text"
                                     wire:model.live="title"
-                                    placeholder="e.g., Project Manager"
+                                    placeholder="{{ __('e.g., Project Manager') }}"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @error('title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
@@ -58,7 +58,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Email <span class="text-red-500">*</span>
+                                    {{ __('Email') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
@@ -68,7 +68,7 @@
                                 @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Phone') }}</label>
                                 <input
                                     type="tel"
                                     wire:model.live="phone" x-data x-phone-mask
@@ -80,7 +80,7 @@
 
                         <!-- Website -->
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Website</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Website') }}</label>
                             <input
                                 type="url"
                                 wire:model.live="website"
@@ -93,12 +93,12 @@
                         <div x-data="clientAddressAutocomplete({ country: '{{ config('app.country') }}' })" x-init="init()">
                             <!-- Street Address with Autocomplete -->
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Street Address</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Street Address') }}</label>
                                 <input
                                     type="text"
                                     x-ref="streetInput"
                                     wire:model.live="street"
-                                    placeholder="Start typing an address..."
+                                    placeholder="{{ __('Start typing an address...') }}"
                                     autocomplete="off"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -107,20 +107,20 @@
                             <!-- City, State, Postal Code -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">City</label>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('City') }}</label>
                                     <input
                                         type="text"
                                         wire:model.live="city"
-                                        placeholder="City"
+                                        placeholder="{{ __('City') }}"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                     @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">State</label>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('State') }}</label>
                                     <input
                                         type="text"
                                         wire:model.live="state"
-                                        placeholder="State"
+                                        placeholder="{{ __('State') }}"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                     @error('state') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
@@ -142,12 +142,12 @@
                     <!-- Actions -->
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="primary" icon="save" wire:click="saveClient"
                             wire:loading.attr="disabled" wire:loading.class="opacity-50">
-                            <span wire:loading.remove wire:target="saveClient">Save Client</span>
-                            <span wire:loading wire:target="saveClient">Saving...</span>
+                            <span wire:loading.remove wire:target="saveClient">{{ __('Save Client') }}</span>
+                            <span wire:loading wire:target="saveClient">{{ __('Saving...') }}</span>
                         </x-ui.button>
                     </div>
                 </div>

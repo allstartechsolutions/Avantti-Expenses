@@ -517,7 +517,7 @@ class InvoiceEdit extends Component
             }
         });
 
-        session()->flash('message', 'Invoice updated successfully!');
+        session()->flash('message', __('Invoice updated successfully!'));
 
         return redirect()->route('invoices.show', $this->invoice->id);
     }

@@ -2,11 +2,11 @@
 <header class="hidden lg:block bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 h-16 px-6">
     <div class="flex items-center justify-between h-full">
         <div class="flex items-center space-x-4">
-         <!--  left side menu or title  <h1 class="text-xl font-semibold text-slate-800 dark:text-white">Dashboard</h1>
+         <!--  left side menu or title  <h1 class="text-xl font-semibold text-slate-800 dark:text-white">{{ __('Dashboard') }}</h1>
             <nav class="flex space-x-1">
-                <span class="text-sm text-slate-500 dark:text-slate-400">Pages</span>
+                <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Pages') }}</span>
                 <span class="text-sm text-slate-400 dark:text-slate-500">/</span>
-                <span class="text-sm text-slate-600 dark:text-slate-300">Starter</span>
+                <span class="text-sm text-slate-600 dark:text-slate-300">{{ __('Starter') }}</span>
             </nav> -->
         </div>
 

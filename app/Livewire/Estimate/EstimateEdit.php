@@ -518,7 +518,7 @@ class EstimateEdit extends Component
             }
         });
 
-        session()->flash('message', 'Estimate updated successfully!');
+        session()->flash('message', __('Estimate updated successfully!'));
 
         return redirect()->route('estimates.show', $this->estimate->id);
     }

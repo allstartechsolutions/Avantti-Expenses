@@ -3,21 +3,21 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Client Details</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">View client information</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Client Details') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('View client information') }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('clients.index') }}"
                     icon="arrow-left">
-                    Back to Clients
+                    {{ __('Back to Clients') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('clients.edit', $client->id) }}"
                     icon="edit">
-                    Edit Client
+                    {{ __('Edit Client') }}
                 </x-ui.button>
                 @if($projectsCount > 0)
                     <span title="Cannot delete: linked to {{ $projectsCount }} project(s)">
@@ -25,7 +25,7 @@
                             variant="danger"
                             icon="trash"
                             disabled>
-                            Delete
+                            {{ __('Delete') }}
                         </x-ui.button>
                     </span>
                 @else
@@ -33,7 +33,7 @@
                         variant="danger"
                         wire:click="confirmDeleteClient"
                         icon="trash">
-                        Delete
+                        {{ __('Delete') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -60,7 +60,7 @@
             <!-- Company Profile Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Company Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Company Information') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="flex items-center space-x-6 mb-6">
@@ -84,7 +84,7 @@
                         <!-- Company Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Company Name
+                                {{ __('Company Name') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->company_name }}</p>
                         </div>
@@ -92,7 +92,7 @@
                         <!-- Email -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Email Address
+                                {{ __('Email Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->email }}</p>
                         </div>
@@ -100,21 +100,21 @@
                         <!-- Website -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Website
+                                {{ __('Website') }}
                             </label>
                             @if($client->website)
                                 <a href="{{ $client->website }}" target="_blank" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                                     {{ $client->website }}
                                 </a>
                             @else
-                                <p class="text-slate-900 dark:text-white">Not provided</p>
+                                <p class="text-slate-900 dark:text-white">{{ __('Not provided') }}</p>
                             @endif
                         </div>
 
                         <!-- Created At -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Added On
+                                {{ __('Added On') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->created_at->format('F d, Y') }}</p>
                         </div>
@@ -125,14 +125,14 @@
             <!-- Contact Person Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Person</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contact Person') }}</h3>
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Contact Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Full Name
+                                {{ __('Full Name') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->contact_name }}</p>
                         </div>
@@ -140,7 +140,7 @@
                         <!-- Title -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Title/Position
+                                {{ __('Title/Position') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->title ?? 'Not provided' }}</p>
                         </div>
@@ -148,7 +148,7 @@
                         <!-- Phone -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Phone Number
+                                {{ __('Phone Number') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->formatted_phone ?? 'Not provided' }}</p>
                         </div>
@@ -159,13 +159,13 @@
             <!-- Address Information Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Address Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Address Information') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($client->full_address)
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Full Address
+                                {{ __('Full Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->full_address }}</p>
                         </div>
@@ -175,7 +175,7 @@
                         <!-- Street -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Street Address
+                                {{ __('Street Address') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->street ?? 'Not provided' }}</p>
                         </div>
@@ -183,7 +183,7 @@
                         <!-- City -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                City
+                                {{ __('City') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->city ?? 'Not provided' }}</p>
                         </div>
@@ -191,7 +191,7 @@
                         <!-- State -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                State
+                                {{ __('State') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->state ?? 'Not provided' }}</p>
                         </div>
@@ -199,7 +199,7 @@
                         <!-- Postal Code -->
                         <div>
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Postal Code
+                                {{ __('Postal Code') }}
                             </label>
                             <p class="text-slate-900 dark:text-white">{{ $client->postal_code ?? 'Not provided' }}</p>
                         </div>
@@ -211,9 +211,9 @@
             @if($cardPointeConfigured)
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Payment Methods</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Payment Methods') }}</h3>
                         <x-ui.button variant="primary" size="sm" wire:click="openAddCardModal" icon="plus">
-                            Add Card
+                            {{ __('Add Card') }}
                         </x-ui.button>
                     </div>
                     <div class="p-6">
@@ -235,7 +235,7 @@
                                                     </span>
                                                     @if($pm['is_default'])
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                            Default
+                                                            {{ __('Default') }}
                                                         </span>
                                                     @endif
                                                 </div>
@@ -250,8 +250,8 @@
                                                     variant="ghost"
                                                     size="sm"
                                                     wire:click="setDefaultCard({{ $pm['id'] }})"
-                                                    title="Set as default">
-                                                    Set Default
+                                                    title="{{ __('Set as default') }}">
+                                                    {{ __('Set Default') }}
                                                 </x-ui.button>
                                             @endif
                                             <x-ui.button
@@ -259,22 +259,22 @@
                                                 size="sm"
                                                 wire:click="openEditCardModal({{ $pm['id'] }})"
                                                 icon="edit"
-                                                title="Edit expiry">
+                                                title="{{ __('Edit expiry') }}">
                                             </x-ui.button>
                                             <x-ui.button
                                                 variant="ghost"
                                                 size="sm"
                                                 wire:click="deleteCard({{ $pm['id'] }})"
-                                                wire:confirm="Are you sure you want to remove this payment method?"
+                                                wire:confirm="{{ __('Are you sure you want to remove this payment method?') }}"
                                                 icon="trash"
-                                                title="Remove card">
+                                                title="{{ __('Remove card') }}">
                                             </x-ui.button>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No payment methods saved.</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{{ __('No payment methods saved.') }}</p>
                         @endif
                     </div>
                 </div>
@@ -286,7 +286,7 @@
             <!-- Quick Actions -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     <x-ui.button
@@ -294,7 +294,7 @@
                         class="w-full justify-center"
                         href="{{ route('clients.edit', $client->id) }}"
                         icon="edit">
-                        Edit Client
+                        {{ __('Edit Client') }}
                     </x-ui.button>
 
                     @if($client->email)
@@ -302,7 +302,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
-                            Send Email
+                            {{ __('Send Email') }}
                         </a>
                     @endif
 
@@ -311,7 +311,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            Call Client
+                            {{ __('Call Client') }}
                         </a>
                     @endif
                 </div>
@@ -320,26 +320,26 @@
             <!-- Client Stats -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Client Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Client Information') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Client ID</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Client ID') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $client->id }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Added</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Added') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $client->created_at->diffForHumans() }}</span>
                     </div>
                     @if($client->created_at != $client->updated_at)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Last Updated</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Last Updated') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $client->updated_at->diffForHumans() }}</span>
                         </div>
                     @endif
                     @if($client->createdBy)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Added By</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Added By') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $client->createdBy->name }}</span>
                         </div>
                     @endif
@@ -368,12 +368,12 @@
                 }"
             >
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Add Payment Method</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Add Payment Method') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     {{-- Card Number (iFrame tokenizer) --}}
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Card Number *</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Card Number *') }}</label>
                         <div class="rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden bg-white">
                             <iframe
                                 src="{{ $iframeUrl }}"
@@ -386,36 +386,36 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Card tokenized
+                            {{ __('Card tokenized') }}
                         </div>
                     </div>
 
                     {{-- Name on Card --}}
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name on Card *</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Name on Card *') }}</label>
                         <input
                             type="text"
                             wire:model="cardName"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="John Doe">
+                            placeholder="{{ __('John Doe') }}">
                         @error('cardName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Expiry + CVV --}}
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Expiration *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Expiration *') }}</label>
                             <input
                                 type="text"
                                 wire:model="cardExpiry"
                                 maxlength="4"
                                 inputmode="numeric"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="MMYY">
+                                placeholder="{{ __('MMYY') }}">
                             @error('cardExpiry') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CVV *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('CVV *') }}</label>
                             <input
                                 type="text"
                                 wire:model="cardCvv"
@@ -429,7 +429,7 @@
 
                     {{-- Billing Zip --}}
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Billing Zip Code *</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Billing Zip Code *') }}</label>
                         <input
                             type="text"
                             wire:model="cardZip"
@@ -453,11 +453,11 @@
                 </div>
                 <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                     <x-ui.button variant="secondary" wire:click="$set('showAddCardModal', false)" icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button variant="primary" wire:click="addCard" icon="plus" wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="addCard">Add Card</span>
-                        <span wire:loading wire:target="addCard">Processing...</span>
+                        <span wire:loading.remove wire:target="addCard">{{ __('Add Card') }}</span>
+                        <span wire:loading wire:target="addCard">{{ __('Processing...') }}</span>
                     </x-ui.button>
                 </div>
             </div>
@@ -468,36 +468,36 @@
     @if($showEditCardModal)
         <x-ui.modal name="edit-card-modal" :show="true" maxWidth="md">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Edit Payment Method</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Edit Payment Method') }}</h3>
             </div>
             <div class="p-6 space-y-4">
                 {{-- Card display (read-only) --}}
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Card</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Card') }}</label>
                     <p class="text-sm text-slate-900 dark:text-white">{{ $editCardDisplayName }}</p>
                 </div>
 
                 {{-- Name on Card --}}
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name on Card *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Name on Card *') }}</label>
                     <input
                         type="text"
                         wire:model="editCardName"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="John Doe">
+                        placeholder="{{ __('John Doe') }}">
                     @error('editCardName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Expiry --}}
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Expiration *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Expiration *') }}</label>
                     <input
                         type="text"
                         wire:model="editExpiry"
                         maxlength="4"
                         inputmode="numeric"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="MMYY">
+                        placeholder="{{ __('MMYY') }}">
                     @error('editExpiry') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
@@ -515,11 +515,11 @@
             </div>
             <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                 <x-ui.button variant="secondary" wire:click="$set('showEditCardModal', false)" icon="x">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button variant="primary" wire:click="updateCard" icon="save" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="updateCard">Update</span>
-                    <span wire:loading wire:target="updateCard">Updating...</span>
+                    <span wire:loading.remove wire:target="updateCard">{{ __('Update') }}</span>
+                    <span wire:loading wire:target="updateCard">{{ __('Updating...') }}</span>
                 </x-ui.button>
             </div>
         </x-ui.modal>
@@ -536,12 +536,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Client
+                    {{ __('Delete Client') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
                     Are you sure you want to delete <strong>{{ $deleteClientData['name'] ?? $client->company_name }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    This action <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 <div class="flex justify-end space-x-3">
@@ -549,13 +549,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteClient"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteClient"
                         icon="trash">
-                        Delete Client
+                        {{ __('Delete Client') }}
                     </x-ui.button>
                 </div>
             </div>

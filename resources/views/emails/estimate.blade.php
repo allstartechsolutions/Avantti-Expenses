@@ -34,18 +34,18 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
                                 <tr>
                                     <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 12px; color: #3F5189; font-size: 16px;">Estimate Summary</h3>
+                                        <h3 style="margin: 0 0 12px; color: #3F5189; font-size: 16px;">{{ __('Estimate Summary') }}</h3>
                                         <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Estimate Number:</td>
+                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Estimate Number:') }}</td>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right; font-weight: bold;">{{ $estimate->estimate_number }}</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Date:</td>
+                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Date:') }}</td>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->estimate_date->format('M d, Y') }}</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">Due Date:</td>
+                                                <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Due Date:') }}</td>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->due_date->format('M d, Y') }}</td>
                                             </tr>
                                             <tr>
@@ -54,7 +54,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 8px 0 4px; font-size: 15px; color: #3F5189; font-weight: bold;">Total:</td>
+                                                <td style="padding: 8px 0 4px; font-size: 15px; color: #3F5189; font-weight: bold;">{{ __('Total:') }}</td>
                                                 <td style="padding: 8px 0 4px; font-size: 15px; color: #3F5189; text-align: right; font-weight: bold;">${{ number_format($estimate->total_amount, 2) }}</td>
                                             </tr>
                                         </table>
@@ -62,7 +62,7 @@
                                 </tr>
                             </table>
                             <p style="font-size: 12px; color: #999; margin-top: 15px; text-align: center;">
-                                The full estimate is attached as a PDF.
+                                {{ __('The full estimate is attached as a PDF.') }}
                             </p>
                         </td>
                     </tr>

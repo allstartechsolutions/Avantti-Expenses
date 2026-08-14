@@ -119,7 +119,7 @@ class DocumentMessageSettings extends Component
                     'is_active' => $this->is_active,
                 ]);
 
-                session()->flash('message', 'Message updated successfully!');
+                session()->flash('message', __('Message updated successfully!'));
             } else {
                 // Unset other defaults of the same type if this one is being set as default
                 if ($this->is_default) {
@@ -139,7 +139,7 @@ class DocumentMessageSettings extends Component
 
                 DocumentMessage::logHistory($message->id, 'created');
 
-                session()->flash('message', 'Message created successfully!');
+                session()->flash('message', __('Message created successfully!'));
             }
         });
 
@@ -172,7 +172,7 @@ class DocumentMessageSettings extends Component
         $this->deletingMessageId = null;
         $this->deleteMessageData = [];
 
-        session()->flash('message', 'Message deleted successfully!');
+        session()->flash('message', __('Message deleted successfully!'));
     }
 
     public function cancelDelete(): void

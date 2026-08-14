@@ -132,7 +132,7 @@ class ContractEdit extends Component
             $this->syncAllocations($this->contract);
         });
 
-        session()->flash('message', 'Contract updated successfully!');
+        session()->flash('message', __('Contract updated successfully!'));
 
         return redirect()->route('contracts.show', $this->contract->id);
     }

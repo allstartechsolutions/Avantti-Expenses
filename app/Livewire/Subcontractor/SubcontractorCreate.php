@@ -114,7 +114,7 @@ class SubcontractorCreate extends Component
         $subcontractor->is_supplier = (bool) $this->also_supplier;
         $subcontractor->save();
 
-        session()->flash('message', 'Subcontractor created successfully!');
+        session()->flash('message', __('Subcontractor created successfully!'));
 
         return redirect()->route('subcontractors.index');
     }

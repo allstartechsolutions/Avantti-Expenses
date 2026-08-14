@@ -32,7 +32,7 @@
     <!-- Status Filter Tabs -->
     <div class="mb-6">
         <div class="border-b border-slate-200 dark:border-slate-700">
-            <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+            <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="{{ __('Tabs') }}">
                 <button wire:click="setStatusFilter('')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === '' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     {{ __('All') }} <span class="ml-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{{ $statusCounts['all'] }}</span>
@@ -212,7 +212,7 @@
                                                 wire:click="deleteBatch({{ $batch->id }})"
                                                 wire:confirm="{{ __('Are you sure you want to delete this batch?') }}"
                                                 icon="trash"
-                                                title="Delete" />
+                                                title="{{ __('Delete') }}" />
                                         @endif
                                     </div>
                                 </td>

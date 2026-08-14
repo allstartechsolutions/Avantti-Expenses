@@ -3,7 +3,7 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Budget</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Edit Budget') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {{ $budget->location_name }} &bull;
                     <span class="font-medium text-slate-700 dark:text-slate-300">{{ $budget->project->project_name }}</span>
@@ -13,7 +13,7 @@
                 variant="secondary"
                 href="{{ route('budgets.show', $budget->id) }}"
                 icon="arrow-left">
-                Back to Budget
+                {{ __('Back to Budget') }}
             </x-ui.button>
         </div>
     </div>
@@ -37,20 +37,20 @@
         <div class="lg:col-span-2">
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Budget Details</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Budget Details') }}</h3>
                 </div>
                 <form wire:submit="save" class="p-6 space-y-6">
                     <!-- Name -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Budget Name <span class="text-red-500">*</span>
+                            {{ __('Budget Name') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="name"
                             wire:model="name"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="e.g., Main Budget, Phase 1 Budget">
+                            placeholder="{{ __('e.g., Main Budget, Phase 1 Budget') }}">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -59,14 +59,14 @@
                     <!-- Notes -->
                     <div>
                         <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Notes
+                            {{ __('Notes') }}
                         </label>
                         <textarea
                             id="notes"
                             wire:model="notes"
                             rows="4"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Optional notes about this budget"></textarea>
+                            placeholder="{{ __('Optional notes about this budget') }}"></textarea>
                         @error('notes')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -78,13 +78,13 @@
                             type="button"
                             variant="secondary"
                             href="{{ route('budgets.show', $budget->id) }}">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button
                             type="submit"
                             variant="primary"
                             icon="check">
-                            Save Changes
+                            {{ __('Save Changes') }}
                         </x-ui.button>
                     </div>
                 </form>
@@ -93,17 +93,17 @@
             <!-- Import from Template -->
             <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Import Cost Codes</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Import Cost Codes') }}</h3>
                 </div>
                 <div class="p-6">
                     <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        Import cost codes from a template. You can merge with existing codes or replace them entirely.
+                        {{ __('Import cost codes from a template. You can merge with existing codes or replace them entirely.') }}
                     </p>
                     <x-ui.button
                         variant="secondary"
                         wire:click="openImportModal"
                         icon="upload">
-                        Import from Template
+                        {{ __('Import from Template') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -111,17 +111,17 @@
             <!-- Danger Zone -->
             <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-800">
                 <div class="px-6 py-4 border-b border-red-200 dark:border-red-800">
-                    <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
+                    <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">{{ __('Danger Zone') }}</h3>
                 </div>
                 <div class="p-6">
                     <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        Deleting this budget will remove all associated cost codes. This action cannot be undone.
+                        {{ __('Deleting this budget will remove all associated cost codes. This action cannot be undone.') }}
                     </p>
                     <x-ui.button
                         variant="danger"
                         wire:click="confirmDelete"
                         icon="trash">
-                        Delete Budget
+                        {{ __('Delete Budget') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -132,31 +132,31 @@
             <!-- Budget Summary -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Budget Summary</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Budget Summary') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Total Amount</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Total Amount') }}</span>
                         <span class="text-lg font-bold text-slate-900 dark:text-white">
                             {{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}
                         </span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Cost Codes</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Cost Codes') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->items_count }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Location</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Location') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->location_name }}</span>
                     </div>
                     @if($budget->sourceTemplate)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Template</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Template') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->sourceTemplate->name }}</span>
                         </div>
                     @endif
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Created</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->created_at->format('M d, Y') }}</span>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                 <!-- Modal panel -->
                 <div class="relative inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Import from Template</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Import from Template') }}</h3>
                         <button wire:click="closeImportModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -189,12 +189,12 @@
                         <!-- Template Selection -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Select Template <span class="text-red-500">*</span>
+                                {{ __('Select Template') }} <span class="text-red-500">*</span>
                             </label>
                             <select
                                 wire:model="importTemplateId"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">Select a template...</option>
+                                <option value="">{{ __('Select a template...') }}</option>
                                 @foreach($templates as $template)
                                     <option value="{{ $template->id }}">
                                         {{ $template->name }}
@@ -211,26 +211,26 @@
                         <!-- Import Mode -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Import Mode
+                                {{ __('Import Mode') }}
                             </label>
                             <select
                                 wire:model="importMode"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="merge">Merge (update existing, add new)</option>
-                                <option value="replace">Replace (delete all existing first)</option>
+                                <option value="merge">{{ __('Merge (update existing, add new)') }}</option>
+                                <option value="replace">{{ __('Replace (delete all existing first)') }}</option>
                             </select>
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 @if($importMode === 'merge')
                                     Existing codes will be updated (keeping amounts), new codes will be added with $0.00.
                                 @else
-                                    All existing cost codes and amounts will be deleted before import.
+                                    {{ __('All existing cost codes and amounts will be deleted before import.') }}
                                 @endif
                             </p>
                         </div>
 
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                             <p class="text-sm text-amber-800 dark:text-amber-300">
-                                <strong>Note:</strong> Imported cost codes will have $0.00 budgeted amounts. You'll need to set the amounts after import.
+                                <strong>{{ __('Note:') }}</strong> Imported cost codes will have $0.00 budgeted amounts. You'll need to set the amounts after import.
                             </p>
                         </div>
                     </div>
@@ -241,14 +241,14 @@
                             type="button"
                             variant="secondary"
                             wire:click="closeImportModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button
                             type="button"
                             variant="primary"
                             wire:click="importTemplate"
                             icon="check">
-                            Import Cost Codes
+                            {{ __('Import Cost Codes') }}
                         </x-ui.button>
                     </div>
                 </div>
@@ -274,7 +274,7 @@
                                 <x-ui.icon name="alert-triangle" class="w-6 h-6 text-red-600 dark:text-red-400" />
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Delete Budget</h3>
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Delete Budget') }}</h3>
                                 <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
                                     Are you sure you want to delete <strong>"{{ $budget->name }}"</strong>? This will permanently remove the budget and all {{ $budget->items_count }} cost codes. This action cannot be undone.
                                 </p>
@@ -287,14 +287,14 @@
                             type="button"
                             variant="secondary"
                             wire:click="cancelDelete">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button
                             type="button"
                             variant="danger"
                             wire:click="deleteBudget"
                             icon="trash">
-                            Delete Budget
+                            {{ __('Delete Budget') }}
                         </x-ui.button>
                     </div>
                 </div>

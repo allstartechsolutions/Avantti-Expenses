@@ -62,7 +62,7 @@ class ClientIndex extends Component
         $this->deletingClientId = null;
         $this->deleteClientData = [];
 
-        session()->flash('message', 'Client deleted successfully!');
+        session()->flash('message', __('Client deleted successfully!'));
     }
 
     public function cancelDeleteClient()

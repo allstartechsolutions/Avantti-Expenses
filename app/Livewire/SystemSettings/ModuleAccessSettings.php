@@ -28,7 +28,9 @@ class ModuleAccessSettings extends Component
         ModuleAccess::logHistory($module->id, 'updated', 'is_enabled', $oldValue, $newValue);
         ModuleAccess::clearCache($module->module_key);
 
-        session()->flash('message', "{$module->module_name} module " . ($module->is_enabled ? 'enabled' : 'disabled') . " successfully!");
+        session()->flash('message', $module->is_enabled
+            ? __(':name module enabled successfully!', ['name' => $module->module_name])
+            : __(':name module disabled successfully!', ['name' => $module->module_name]));
     }
 
     public function viewHistory(int $id): void

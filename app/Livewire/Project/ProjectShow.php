@@ -239,7 +239,7 @@ class ProjectShow extends Component
                 'status' => $this->status,
             ]);
 
-            session()->flash('message', 'Job site updated successfully!');
+            session()->flash('message', __('Job site updated successfully!'));
         } else {
             // Create new job site
             JobSite::create([
@@ -262,7 +262,7 @@ class ProjectShow extends Component
                 'created_by' => Auth::id(),
             ]);
 
-            session()->flash('message', 'Job site created successfully!');
+            session()->flash('message', __('Job site created successfully!'));
         }
 
         $this->showJobSiteForm = false;
@@ -481,7 +481,7 @@ class ProjectShow extends Component
 
         // Check if expense is editable (admins can edit paid expenses)
         if (!$expense->isEditableBy(auth()->user())) {
-            session()->flash('error', 'This expense cannot be edited because it has payments.');
+            session()->flash('error', __('This expense cannot be edited because it has payments.'));
             return;
         }
 
@@ -775,7 +775,7 @@ class ProjectShow extends Component
                     }
                 }
 
-                session()->flash('message', 'Expense updated successfully!');
+                session()->flash('message', __('Expense updated successfully!'));
             } else {
                 $data['created_by'] = Auth::id();
                 $expense = Expense::create($data);
@@ -814,7 +814,7 @@ class ProjectShow extends Component
                     $expense->generatePaymentSchedule($customAmounts);
                 }
 
-                session()->flash('message', 'Expense added successfully!');
+                session()->flash('message', __('Expense added successfully!'));
             }
         });
 
@@ -828,7 +828,7 @@ class ProjectShow extends Component
         $expense = Expense::findOrFail($expenseId);
         $expense->delete();
 
-        session()->flash('message', 'Expense deleted successfully!');
+        session()->flash('message', __('Expense deleted successfully!'));
         $this->project->refresh();
     }
 
@@ -989,14 +989,14 @@ class ProjectShow extends Component
             $payment = \App\Models\ExpensePayment::findOrFail($this->markPaidId);
             $payment->markAsPaid($this->expense_payment_method, $paidDate);
             $expenseId = $payment->expense_id;
-            session()->flash('message', 'Payment marked as paid!');
+            session()->flash('message', __('Payment marked as paid!'));
         } else {
             $expense = Expense::findOrFail($this->markPaidId);
             if ($expense->isOneTime()) {
                 $expense->markAsPaid(null, $paidDate);
             }
             $expenseId = $expense->id;
-            session()->flash('message', 'Expense marked as paid!');
+            session()->flash('message', __('Expense marked as paid!'));
         }
 
         $this->cancelMarkPaid();
@@ -1014,7 +1014,7 @@ class ProjectShow extends Component
         $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
         $payment->markAsOverdue();
 
-        session()->flash('message', 'Payment marked as overdue!');
+        session()->flash('message', __('Payment marked as overdue!'));
         $this->project->refresh();
 
         if ($this->showExpenseModal && $this->expenseModalMode === 'view') {
@@ -1043,7 +1043,7 @@ class ProjectShow extends Component
 
         if (!$payment->isPaid()) {
             $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
-            session()->flash('message', 'Due date updated.');
+            session()->flash('message', __('Due date updated.'));
         }
 
         $expenseId = $payment->expense_id;
@@ -1063,7 +1063,7 @@ class ProjectShow extends Component
         $expense = Expense::findOrFail($expenseId);
         $expense->unmarkAsPaid();
 
-        session()->flash('message', 'Expense payment reverted to unpaid.');
+        session()->flash('message', __('Expense payment reverted to unpaid.'));
         $this->project->refresh();
     }
 
@@ -1076,7 +1076,7 @@ class ProjectShow extends Component
 
         if ($payment->isPaid()) {
             $payment->markAsPending();
-            session()->flash('message', 'Payment reverted to pending.');
+            session()->flash('message', __('Payment reverted to pending.'));
         }
 
         $this->project->refresh();
@@ -1164,11 +1164,11 @@ class ProjectShow extends Component
         if ($this->changeOrderModalMode === 'edit' && $this->editingChangeOrder) {
             $changeOrder = ChangeOrder::findOrFail($this->editingChangeOrder);
             $changeOrder->update($data);
-            session()->flash('message', 'Change order updated successfully!');
+            session()->flash('message', __('Change order updated successfully!'));
         } else {
             $data['created_by'] = Auth::id();
             ChangeOrder::create($data);
-            session()->flash('message', 'Change order created successfully!');
+            session()->flash('message', __('Change order created successfully!'));
         }
 
         $this->closeChangeOrderModal();
@@ -1186,7 +1186,7 @@ class ProjectShow extends Component
 
         $changeOrder->delete();
 
-        session()->flash('message', 'Change order deleted successfully!');
+        session()->flash('message', __('Change order deleted successfully!'));
         $this->project->refresh();
     }
 
@@ -1235,7 +1235,7 @@ class ProjectShow extends Component
             $this->project->delete();
         });
 
-        session()->flash('message', 'Project deleted successfully!');
+        session()->flash('message', __('Project deleted successfully!'));
         return $this->redirect(route('projects.index'), navigate: true);
     }
 
@@ -1343,7 +1343,7 @@ class ProjectShow extends Component
         $this->deletingJobSiteId = null;
         $this->deleteJobSiteData = [];
 
-        session()->flash('message', 'Job site deleted successfully!');
+        session()->flash('message', __('Job site deleted successfully!'));
         $this->project->refresh();
     }
 

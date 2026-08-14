@@ -3,21 +3,21 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Catalog Categories</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage categories for products, services, and rentals</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Catalog Categories') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage categories for products, services, and rentals') }}</p>
             </div>
             <div class="flex gap-3">
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('catalog.index') }}"
                     icon="arrow-left">
-                    Back to Catalog
+                    {{ __('Back to Catalog') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('catalog.categories.create') }}"
                     icon="plus">
-                    Add Category
+                    {{ __('Add Category') }}
                 </x-ui.button>
             </div>
         </div>
@@ -45,7 +45,7 @@
                 <input
                     type="text"
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Search by name..."
+                    placeholder="{{ __('Search by name...') }}"
                     class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                 >
                 <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,10 +59,10 @@
             <select
                 wire:model.live="filterType"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                <option value="">All Types</option>
-                <option value="product">Products</option>
-                <option value="service">Services</option>
-                <option value="rental">Rentals</option>
+                <option value="">{{ __('All Types') }}</option>
+                <option value="product">{{ __('Products') }}</option>
+                <option value="service">{{ __('Services') }}</option>
+                <option value="rental">{{ __('Rentals') }}</option>
             </select>
         </div>
 
@@ -71,9 +71,9 @@
             <select
                 wire:model.live="filterStatus"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="">{{ __('All Status') }}</option>
+                <option value="active">{{ __('Active') }}</option>
+                <option value="inactive">{{ __('Inactive') }}</option>
             </select>
         </div>
     </div>
@@ -86,22 +86,22 @@
                     <thead class="bg-slate-50 dark:bg-slate-900/50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Category
+                                {{ __('Category') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Applicable Types
+                                {{ __('Applicable Types') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Parent
+                                {{ __('Parent') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Items
+                                {{ __('Items') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Status
+                                {{ __('Status') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Actions
+                                {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -145,11 +145,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($category->is_active)
                                         <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                            Active
+                                            {{ __('Active') }}
                                         </span>
                                     @else
                                         <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300">
-                                            Inactive
+                                            {{ __('Inactive') }}
                                         </span>
                                     @endif
                                 </td>
@@ -160,15 +160,15 @@
                                             size="sm"
                                             href="{{ route('catalog.categories.edit', $category->id) }}"
                                             icon="edit"
-                                            title="Edit" />
+                                            title="{{ __('Edit') }}" />
                                         @if($category->items_count === 0)
                                             <x-ui.icon-button
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteCategory({{ $category->id }})"
-                                                wire:confirm="Are you sure you want to delete this category?"
+                                                wire:confirm="{{ __('Are you sure you want to delete this category?') }}"
                                                 icon="trash"
-                                                title="Delete" />
+                                                title="{{ __('Delete') }}" />
                                         @endif
                                     </div>
                                 </td>
@@ -189,14 +189,14 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No categories found</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a new category.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No categories found') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a new category.') }}</p>
                 <div class="mt-6">
                     <x-ui.button
                         variant="primary"
                         href="{{ route('catalog.categories.create') }}"
                         icon="plus">
-                        Add Category
+                        {{ __('Add Category') }}
                     </x-ui.button>
                 </div>
             </div>

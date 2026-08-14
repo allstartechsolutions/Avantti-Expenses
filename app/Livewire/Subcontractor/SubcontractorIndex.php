@@ -83,7 +83,7 @@ class SubcontractorIndex extends Component
 
         session()->flash('message', $subcontractor->is_supplier
             ? __('Subcontractor classification removed. The company still exists as a supplier.')
-            : 'Subcontractor deleted successfully!');
+            : __('Subcontractor deleted successfully!'));
     }
 
     public function cancelDeleteSubcontractor()

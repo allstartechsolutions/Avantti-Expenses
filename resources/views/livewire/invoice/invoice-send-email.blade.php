@@ -1,14 +1,14 @@
 <div>
     <x-ui.modal name="send-email-modal" maxWidth="2xl">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Email Invoice to Client</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Email Invoice to Client') }}</h3>
         </div>
 
         <form wire:submit="sendEmail">
             <div class="p-6 space-y-4">
                 <!-- To -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">To</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('To') }}</label>
                     <div class="px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300">
                         {{ $emailTo ?: 'No email address on file' }}
                     </div>
@@ -16,7 +16,7 @@
 
                 <!-- CC -->
                 <div>
-                    <label for="cc" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CC <span class="text-slate-400 font-normal">(optional, comma-separated)</span></label>
+                    <label for="cc" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('CC') }} <span class="text-slate-400 font-normal">(optional, comma-separated)</span></label>
                     <input
                         type="text"
                         id="cc"
@@ -29,7 +29,7 @@
 
                 <!-- Subject -->
                 <div>
-                    <label for="subject" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</label>
+                    <label for="subject" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Subject') }}</label>
                     <input
                         type="text"
                         id="subject"
@@ -41,7 +41,7 @@
 
                 <!-- Body -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Message</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Message') }}</label>
                     <x-ui.tinymce-editor wireModel="body" id="invoice-email-body-editor" :height="250" modalName="send-email-modal" />
                     @error('body') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -49,7 +49,7 @@
                 @if($invoice->isDraft())
                     <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p class="text-xs text-blue-700 dark:text-blue-300">
-                            This invoice is currently a <strong>draft</strong>. Sending it will automatically change the status to <strong>Sent</strong>.
+                            This invoice is currently a <strong>draft</strong>. Sending it will automatically change the status to <strong>{{ __('Sent') }}</strong>.
                         </p>
                     </div>
                 @endif
@@ -60,7 +60,7 @@
                     variant="secondary"
                     type="button"
                     x-on:click="$dispatch('close-modal', 'send-email-modal')">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
@@ -68,8 +68,8 @@
                     icon="paper-airplane"
                     wire:loading.attr="disabled"
                     wire:target="sendEmail">
-                    <span wire:loading.remove wire:target="sendEmail">Send Email</span>
-                    <span wire:loading wire:target="sendEmail">Sending...</span>
+                    <span wire:loading.remove wire:target="sendEmail">{{ __('Send Email') }}</span>
+                    <span wire:loading wire:target="sendEmail">{{ __('Sending...') }}</span>
                 </x-ui.button>
             </div>
         </form>

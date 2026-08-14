@@ -51,7 +51,7 @@ class EstimateSendEmail extends Component
 
         if (empty($this->emailTo)) {
             $this->dispatch('close-modal', 'send-email-modal');
-            session()->flash('error', 'Client does not have an email address.');
+            session()->flash('error', __('Client does not have an email address.'));
             return;
         }
 
@@ -100,7 +100,7 @@ class EstimateSendEmail extends Component
 
         $this->sending = false;
         $this->dispatch('close-modal', 'send-email-modal');
-        session()->flash('message', 'Estimate emailed successfully!');
+        session()->flash('message', __('Estimate emailed successfully!'));
 
         $this->redirect(route('estimates.show', $this->estimate->id));
     }

@@ -61,7 +61,7 @@ class CatalogCategoryEdit extends Component
             'display_order' => $this->display_order,
         ]);
 
-        session()->flash('message', 'Category updated successfully!');
+        session()->flash('message', __('Category updated successfully!'));
         return redirect()->route('catalog.categories.index');
     }
 

@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Clients</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your clients</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Clients') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your clients') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('clients.create') }}"
                     icon="plus">
-                    Add Client
+                    {{ __('Add Client') }}
                 </x-ui.button>
             </div>
         </div>
@@ -30,7 +30,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <!-- Search -->
                 <div class="flex-1 max-w-md">
-                    <label for="search" class="sr-only">Search clients</label>
+                    <label for="search" class="sr-only">{{ __('Search clients') }}</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
                             id="search"
                             wire:model.live.debounce.300ms="search"
                             class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]"
-                            placeholder="Search by company, contact, email, or phone..."
+                            placeholder="{{ __('Search by company, contact, email, or phone...') }}"
                         >
                     </div>
                 </div>
@@ -53,7 +53,7 @@
                         variant="secondary"
                         wire:click="$set('search', '')"
                         icon="x">
-                        Clear Search
+                        {{ __('Clear Search') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -68,22 +68,22 @@
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Company
+                                {{ __('Company') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Contact
+                                {{ __('Contact') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Email
+                                {{ __('Email') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Phone
+                                {{ __('Phone') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Location
+                                {{ __('Location') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Actions
+                                {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -139,13 +139,13 @@
                                             size="sm"
                                             href="{{ route('clients.show', $client->id) }}"
                                             icon="eye"
-                                            title="View" />
+                                            title="{{ __('View') }}" />
                                         <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('clients.edit', $client->id) }}"
                                             icon="edit"
-                                            title="Edit" />
+                                            title="{{ __('Edit') }}" />
                                         @if($client->projects_count > 0)
                                             <span title="Cannot delete: linked to {{ $client->projects_count }} project(s)">
                                                 <x-ui.icon-button
@@ -160,7 +160,7 @@
                                                 size="sm"
                                                 wire:click="confirmDeleteClient({{ $client->id }})"
                                                 icon="trash"
-                                                title="Delete" />
+                                                title="{{ __('Delete') }}" />
                                         @endif
                                     </div>
                                 </td>
@@ -182,16 +182,16 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
                     @if($search)
-                        No clients found
+                        {{ __('No clients found') }}
                     @else
-                        No clients yet
+                        {{ __('No clients yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @if($search)
-                        Try adjusting your search terms.
+                        {{ __('Try adjusting your search terms.') }}
                     @else
-                        Get started by creating a new client.
+                        {{ __('Get started by creating a new client.') }}
                     @endif
                 </p>
                 @if(!$search)
@@ -200,7 +200,7 @@
                             variant="primary"
                             href="{{ route('clients.create') }}"
                             icon="plus">
-                            Add Client
+                            {{ __('Add Client') }}
                         </x-ui.button>
                     </div>
                 @endif
@@ -219,12 +219,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Client
+                    {{ __('Delete Client') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
                     Are you sure you want to delete <strong>{{ $deleteClientData['name'] ?? '' }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    This action <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 <div class="flex justify-end space-x-3">
@@ -232,13 +232,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteClient"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteClient"
                         icon="trash">
-                        Delete Client
+                        {{ __('Delete Client') }}
                     </x-ui.button>
                 </div>
             </div>

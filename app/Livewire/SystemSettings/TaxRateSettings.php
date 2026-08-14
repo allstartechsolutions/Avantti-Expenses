@@ -93,7 +93,7 @@ class TaxRateSettings extends Component
                     'is_default' => $this->is_default,
                 ]);
 
-                session()->flash('message', 'Tax rate updated successfully!');
+                session()->flash('message', __('Tax rate updated successfully!'));
             } else {
                 // Unset other defaults if this one is being set as default
                 if ($this->is_default) {
@@ -109,7 +109,7 @@ class TaxRateSettings extends Component
 
                 TaxRate::logHistory($taxRate->id, 'created');
 
-                session()->flash('message', 'Tax rate created successfully!');
+                session()->flash('message', __('Tax rate created successfully!'));
             }
         });
 
@@ -142,7 +142,7 @@ class TaxRateSettings extends Component
         $this->deletingTaxRateId = null;
         $this->deleteTaxRateData = [];
 
-        session()->flash('message', 'Tax rate deleted successfully!');
+        session()->flash('message', __('Tax rate deleted successfully!'));
     }
 
     public function cancelDelete(): void

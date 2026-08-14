@@ -82,7 +82,7 @@ class ClientEdit extends Component
             'website' => $this->website,
         ]);
 
-        session()->flash('message', 'Client updated successfully!');
+        session()->flash('message', __('Client updated successfully!'));
 
         return redirect()->route('clients.index');
     }

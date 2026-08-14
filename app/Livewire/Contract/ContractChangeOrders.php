@@ -107,7 +107,7 @@ class ContractChangeOrders extends Component
         $this->contract->refresh();
         $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
-        session()->flash('message', 'Change order saved successfully.');
+        session()->flash('message', __('Change order saved successfully.'));
     }
 
     public function delete($id)
@@ -123,7 +123,7 @@ class ContractChangeOrders extends Component
         $this->contract->refresh();
         $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
-        session()->flash('message', 'Change order deleted successfully.');
+        session()->flash('message', __('Change order deleted successfully.'));
     }
 
     private function resetForm()

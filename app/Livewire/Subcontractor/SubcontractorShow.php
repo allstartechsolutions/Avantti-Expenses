@@ -131,7 +131,7 @@ class SubcontractorShow extends Component
         $this->resetUploadForm();
         $this->showUploadForm = false;
 
-        session()->flash('message', 'Document uploaded successfully!');
+        session()->flash('message', __('Document uploaded successfully!'));
     }
 
     public function toggleEmployeeForm()
@@ -180,7 +180,7 @@ class SubcontractorShow extends Component
         $this->resetEmployeeForm();
         $this->showEmployeeForm = false;
 
-        session()->flash('message', 'Employee added successfully!');
+        session()->flash('message', __('Employee added successfully!'));
     }
 
     public function deleteEmployee(int $employeeId)
@@ -193,7 +193,7 @@ class SubcontractorShow extends Component
 
         $employee->delete();
 
-        session()->flash('message', 'Employee deleted successfully!');
+        session()->flash('message', __('Employee deleted successfully!'));
     }
 
     public function deleteDocument(int $documentId)
@@ -204,7 +204,7 @@ class SubcontractorShow extends Component
 
         $document->delete();
 
-        session()->flash('message', 'Document deleted successfully!');
+        session()->flash('message', __('Document deleted successfully!'));
     }
 
     public function confirmDeleteSubcontractor()
@@ -245,7 +245,7 @@ class SubcontractorShow extends Component
             $this->subcontractor->delete();
         });
 
-        session()->flash('message', 'Subcontractor deleted successfully!');
+        session()->flash('message', __('Subcontractor deleted successfully!'));
 
         return redirect()->route('subcontractors.index');
     }

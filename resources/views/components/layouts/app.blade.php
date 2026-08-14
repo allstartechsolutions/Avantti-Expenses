@@ -40,7 +40,7 @@
                 <div class="w-8 h-8 bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg flex items-center justify-center">
                     <span class="text-white font-bold text-sm leading-none">A</span>
                 </div>
-                <span class="text-xl font-bold text-slate-800 dark:text-white">Avantti</span>
+                <span class="text-xl font-bold text-slate-800 dark:text-white">{{ __('Avantti') }}</span>
             </div>
 
             <!-- Mobile Profile -->

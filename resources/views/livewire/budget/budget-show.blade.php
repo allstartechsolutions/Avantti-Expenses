@@ -26,7 +26,7 @@
                     variant="primary"
                     href="{{ route('budgets.edit', $budget->id) }}"
                     icon="edit">
-                    Edit Budget
+                    {{ __('Edit Budget') }}
                 </x-ui.button>
             </div>
         </div>
@@ -50,13 +50,13 @@
     <div class="mb-6 bg-gradient-to-r from-[#3F5189] to-[#5A6FA8] rounded-lg p-6 text-white">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-white/80">Total Budget</p>
+                <p class="text-sm text-white/80">{{ __('Total Budget') }}</p>
                 <p class="text-3xl font-bold mt-1">{{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}</p>
                 <p class="text-sm text-white/70 mt-1">{{ $budget->items_count }} cost codes</p>
             </div>
             @if($budget->sourceTemplate)
                 <div class="text-right">
-                    <p class="text-sm text-white/80">Template</p>
+                    <p class="text-sm text-white/80">{{ __('Template') }}</p>
                     <p class="font-medium">{{ $budget->sourceTemplate->name }}</p>
                 </div>
             @endif
@@ -68,13 +68,13 @@
         <div class="lg:col-span-2">
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Cost Codes</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Cost Codes') }}</h3>
                     <x-ui.button
                         variant="primary"
                         size="sm"
                         wire:click="openAddForm()"
                         icon="plus">
-                        Add Cost Code
+                        {{ __('Add Cost Code') }}
                     </x-ui.button>
                 </div>
 
@@ -117,23 +117,23 @@
                                                     size="sm"
                                                     wire:click="openAddForm({{ $parentItem->id }})"
                                                     icon="plus"
-                                                    title="Add child code">
+                                                    title="{{ __('Add child code') }}">
                                                 </x-ui.button>
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
                                                     wire:click="openEditForm({{ $parentItem->id }})"
                                                     icon="edit"
-                                                    title="Edit">
+                                                    title="{{ __('Edit') }}">
                                                 </x-ui.button>
                                                 @if($parentItem->children->count() === 0)
                                                     <x-ui.button
                                                         variant="ghost"
                                                         size="sm"
                                                         wire:click="deleteItem({{ $parentItem->id }})"
-                                                        wire:confirm="Are you sure you want to delete this budget item?"
+                                                        wire:confirm="{{ __('Are you sure you want to delete this budget item?') }}"
                                                         icon="trash"
-                                                        title="Delete"
+                                                        title="{{ __('Delete') }}"
                                                         class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                     </x-ui.button>
                                                 @endif
@@ -178,15 +178,15 @@
                                                                 size="sm"
                                                                 wire:click="openEditForm({{ $childItem->id }})"
                                                                 icon="edit"
-                                                                title="Edit">
+                                                                title="{{ __('Edit') }}">
                                                             </x-ui.button>
                                                             <x-ui.button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 wire:click="deleteItem({{ $childItem->id }})"
-                                                                wire:confirm="Are you sure you want to delete this budget item?"
+                                                                wire:confirm="{{ __('Are you sure you want to delete this budget item?') }}"
                                                                 icon="trash"
-                                                                title="Delete"
+                                                                title="{{ __('Delete') }}"
                                                                 class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                             </x-ui.button>
                                                         </div>
@@ -202,7 +202,7 @@
                         <!-- Total Row -->
                         <div class="mt-6 pt-4 border-t-2 border-slate-300 dark:border-slate-600">
                             <div class="flex items-center justify-between px-4">
-                                <span class="font-semibold text-slate-900 dark:text-white">Total</span>
+                                <span class="font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</span>
                                 <span class="text-xl font-bold text-slate-900 dark:text-white">
                                     {{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}
                                 </span>
@@ -213,14 +213,14 @@
                             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No cost codes yet</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by adding cost codes to this budget.</p>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No cost codes yet') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding cost codes to this budget.') }}</p>
                             <div class="mt-6">
                                 <x-ui.button
                                     variant="primary"
                                     wire:click="openAddForm()"
                                     icon="plus">
-                                    Add Cost Code
+                                    {{ __('Add Cost Code') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -250,7 +250,7 @@
                                 $parentItem = $budget->items->find($parentId);
                             @endphp
                             <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Parent Code</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">{{ __('Parent Code') }}</p>
                                 <p class="text-sm font-medium text-slate-900 dark:text-white">
                                     {{ $parentItem?->code }} - {{ $parentItem?->name }}
                                 </p>
@@ -260,7 +260,7 @@
                         <!-- Code -->
                         <div>
                             <label for="code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Code <span class="text-red-500">*</span>
+                                {{ __('Code') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -276,14 +276,14 @@
                         <!-- Name -->
                         <div>
                             <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Name <span class="text-red-500">*</span>
+                                {{ __('Name') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 id="name"
                                 wire:model="name"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="e.g., General Requirements">
+                                placeholder="{{ __('e.g., General Requirements') }}">
                             @error('name')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
@@ -292,7 +292,7 @@
                         <!-- Budgeted Amount -->
                         <div>
                             <label for="budgeted_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Budgeted Amount <span class="text-red-500">*</span>
+                                {{ __('Budgeted Amount') }} <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400">$</span>
@@ -313,14 +313,14 @@
                         <!-- Description -->
                         <div>
                             <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Description
+                                {{ __('Description') }}
                             </label>
                             <textarea
                                 id="description"
                                 wire:model="description"
                                 rows="2"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Optional description"></textarea>
+                                placeholder="{{ __('Optional description') }}"></textarea>
                             @error('description')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
@@ -329,7 +329,7 @@
                         <!-- Sort Order -->
                         <div>
                             <label for="sort_order" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Sort Order
+                                {{ __('Sort Order') }}
                             </label>
                             <input
                                 type="number"
@@ -348,7 +348,7 @@
                                 type="button"
                                 variant="secondary"
                                 wire:click="closeForm">
-                                Cancel
+                                {{ __('Cancel') }}
                             </x-ui.button>
                             <x-ui.button
                                 type="submit"
@@ -364,46 +364,46 @@
             <!-- Budget Info -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Budget Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Budget Information') }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Location</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Location') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->location_name }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Project</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Project') }}</span>
                         <a href="{{ route('projects.overview', $budget->project_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
                             {{ $budget->project->project_name }}
                         </a>
                     </div>
                     @if($budget->jobSite)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Job Site</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Job Site') }}</span>
                             <a href="{{ route('jobsites.overview', $budget->job_site_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
                                 {{ $budget->jobSite->job_site_name }}
                             </a>
                         </div>
                     @endif
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Total Cost Codes</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Total Cost Codes') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->items_count }}</span>
                     </div>
                     @if($budget->sourceTemplate)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Template</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Template') }}</span>
                             <a href="{{ route('cost-codes.templates.show', $budget->source_template_id) }}" class="text-sm font-medium text-[#3F5189] hover:underline">
                                 {{ $budget->sourceTemplate->name }}
                             </a>
                         </div>
                     @endif
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Created</span>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->created_at->diffForHumans() }}</span>
                     </div>
                     @if($budget->creator)
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-slate-500 dark:text-slate-400">Created By</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created By') }}</span>
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->creator->name }}</span>
                         </div>
                     @endif
@@ -412,7 +412,7 @@
                 @if($budget->notes)
                     <div class="px-6 pb-6">
                         <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Notes</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">{{ __('Notes') }}</p>
                             <p class="text-sm text-slate-700 dark:text-slate-300">{{ $budget->notes }}</p>
                         </div>
                     </div>

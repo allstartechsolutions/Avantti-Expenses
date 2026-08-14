@@ -106,7 +106,7 @@ class CatalogItemCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Catalog item created successfully!');
+        session()->flash('message', __('Catalog item created successfully!'));
         return redirect()->route('catalog.index');
     }
 

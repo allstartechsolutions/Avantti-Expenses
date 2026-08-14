@@ -119,7 +119,7 @@ class SubcontractorEdit extends Component
             'longitude' => $this->longitude,
         ]);
 
-        session()->flash('message', 'Subcontractor updated successfully!');
+        session()->flash('message', __('Subcontractor updated successfully!'));
 
         return redirect()->route('subcontractors.index');
     }

@@ -43,7 +43,7 @@ class BudgetCreate extends Component
 
         // Check if budget already exists for this location
         if ($this->budgetExists()) {
-            session()->flash('error', 'A budget already exists for this location.');
+            session()->flash('error', __('A budget already exists for this location.'));
             return redirect($this->getBackUrl());
         }
 
@@ -114,7 +114,7 @@ class BudgetCreate extends Component
             }
         }
 
-        session()->flash('message', 'Budget created successfully!');
+        session()->flash('message', __('Budget created successfully!'));
         return redirect()->route('budgets.show', $budget->id);
     }
 

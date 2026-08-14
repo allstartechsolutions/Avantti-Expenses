@@ -122,10 +122,10 @@ class BudgetShow extends Component
         if ($this->editingItemId) {
             $item = BudgetItem::findOrFail($this->editingItemId);
             $item->update($data);
-            session()->flash('message', 'Budget item updated successfully.');
+            session()->flash('message', __('Budget item updated successfully.'));
         } else {
             BudgetItem::create($data);
-            session()->flash('message', 'Budget item added successfully.');
+            session()->flash('message', __('Budget item added successfully.'));
         }
 
         $this->closeForm();
@@ -143,13 +143,13 @@ class BudgetShow extends Component
 
         if ($item->is_default) {
             $item->update(['is_default' => false]);
-            session()->flash('message', 'Default cost code cleared.');
+            session()->flash('message', __('Default cost code cleared.'));
         } else {
             BudgetItem::where('budget_id', $this->budget->id)
                 ->where('is_default', true)
                 ->update(['is_default' => false]);
             $item->update(['is_default' => true]);
-            session()->flash('message', $item->code . ' - ' . $item->name . ' is now the default cost code.');
+            session()->flash('message', __(':code is now the default cost code.', ['code' => $item->code . ' - ' . $item->name]));
         }
 
         $this->refreshBudget();
@@ -161,12 +161,12 @@ class BudgetShow extends Component
 
         // Check if it has children
         if ($item->children()->count() > 0) {
-            session()->flash('error', 'Cannot delete an item that has child items. Delete the children first.');
+            session()->flash('error', __('Cannot delete an item that has child items. Delete the children first.'));
             return;
         }
 
         $item->delete();
-        session()->flash('message', 'Budget item deleted successfully.');
+        session()->flash('message', __('Budget item deleted successfully.'));
         $this->refreshBudget();
     }
 

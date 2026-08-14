@@ -23,7 +23,7 @@ class EstimateShow extends Component
     public function markAsSent()
     {
         if (!$this->estimate->isDraft()) {
-            session()->flash('error', 'Only draft estimates can be marked as sent.');
+            session()->flash('error', __('Only draft estimates can be marked as sent.'));
             return;
         }
 
@@ -35,13 +35,13 @@ class EstimateShow extends Component
         $this->estimate->recordStatusChange(Auth::user(), $oldStatus, 'sent');
 
         $this->refreshEstimate();
-        session()->flash('message', 'Estimate marked as sent!');
+        session()->flash('message', __('Estimate marked as sent!'));
     }
 
     public function markAsAccepted()
     {
         if (!$this->estimate->isSent()) {
-            session()->flash('error', 'Only sent estimates can be accepted.');
+            session()->flash('error', __('Only sent estimates can be accepted.'));
             return;
         }
 
@@ -53,13 +53,13 @@ class EstimateShow extends Component
         $this->estimate->recordStatusChange(Auth::user(), $oldStatus, 'accepted');
 
         $this->refreshEstimate();
-        session()->flash('message', 'Estimate marked as accepted!');
+        session()->flash('message', __('Estimate marked as accepted!'));
     }
 
     public function markAsDeclined()
     {
         if (!$this->estimate->isSent()) {
-            session()->flash('error', 'Only sent estimates can be declined.');
+            session()->flash('error', __('Only sent estimates can be declined.'));
             return;
         }
 
@@ -71,20 +71,20 @@ class EstimateShow extends Component
         $this->estimate->recordStatusChange(Auth::user(), $oldStatus, 'declined');
 
         $this->refreshEstimate();
-        session()->flash('message', 'Estimate marked as declined.');
+        session()->flash('message', __('Estimate marked as declined.'));
     }
 
     public function deleteEstimate()
     {
         if (!$this->estimate->canBeEdited()) {
-            session()->flash('error', 'Only draft or sent estimates can be deleted.');
+            session()->flash('error', __('Only draft or sent estimates can be deleted.'));
             return;
         }
 
         $this->estimate->items()->delete();
         $this->estimate->delete();
 
-        session()->flash('message', 'Estimate deleted successfully!');
+        session()->flash('message', __('Estimate deleted successfully!'));
 
         return redirect()->route('estimates.index');
     }
@@ -92,12 +92,12 @@ class EstimateShow extends Component
     public function convertToInvoice()
     {
         if (!$this->estimate->isAccepted()) {
-            session()->flash('error', 'Only accepted estimates can be converted to invoices.');
+            session()->flash('error', __('Only accepted estimates can be converted to invoices.'));
             return;
         }
 
         if ($this->estimate->converted_to_invoice_id) {
-            session()->flash('error', 'This estimate has already been converted to an invoice.');
+            session()->flash('error', __('This estimate has already been converted to an invoice.'));
             return;
         }
 
@@ -155,7 +155,7 @@ class EstimateShow extends Component
             return $invoice;
         });
 
-        session()->flash('message', "Invoice {$invoice->invoice_number} created from estimate!");
+        session()->flash('message', __('Invoice :number created from estimate!', ['number' => $invoice->invoice_number]));
 
         return redirect()->route('invoices.show', $invoice->id);
     }

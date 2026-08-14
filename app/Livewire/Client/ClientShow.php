@@ -200,7 +200,7 @@ class ClientShow extends Component
         $this->showAddCardModal = false;
         $this->resetAddCardFields();
         $this->loadPaymentMethods();
-        session()->flash('message', 'Card added successfully!');
+        session()->flash('message', __('Card added successfully!'));
     }
 
     public function openEditCardModal(int $id): void
@@ -266,7 +266,7 @@ class ClientShow extends Component
         $this->showEditCardModal = false;
         $this->editingCardId = null;
         $this->loadPaymentMethods();
-        session()->flash('message', 'Card expiry updated successfully!');
+        session()->flash('message', __('Card expiry updated successfully!'));
     }
 
     public function setDefaultCard(int $id): void
@@ -278,7 +278,7 @@ class ClientShow extends Component
         $this->client->paymentMethods()->where('id', $id)->update(['is_default' => true]);
 
         $this->loadPaymentMethods();
-        session()->flash('message', 'Default payment method updated.');
+        session()->flash('message', __('Default payment method updated.'));
     }
 
     public function deleteCard(int $id): void
@@ -300,7 +300,7 @@ class ClientShow extends Component
         }
 
         $this->loadPaymentMethods();
-        session()->flash('message', 'Payment method removed.');
+        session()->flash('message', __('Payment method removed.'));
     }
 
     // Delete client
@@ -329,7 +329,7 @@ class ClientShow extends Component
 
         $this->client->delete();
 
-        session()->flash('message', 'Client deleted successfully!');
+        session()->flash('message', __('Client deleted successfully!'));
         return $this->redirect(route('clients.index'), navigate: true);
     }
 

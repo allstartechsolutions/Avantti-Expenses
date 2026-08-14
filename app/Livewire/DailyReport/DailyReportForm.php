@@ -566,13 +566,13 @@ class DailyReportForm extends Component
         ]);
 
         if (empty($this->tasks)) {
-            session()->flash('error', 'Please add at least one task to the daily report.');
+            session()->flash('error', __('Please add at least one task to the daily report.'));
             return;
         }
 
         if ($this->mode === 'edit' && $this->dailyReport) {
             if (!$this->dailyReport->isEditable() && !Auth::user()->is_admin) {
-                session()->flash('error', 'This report is no longer editable.');
+                session()->flash('error', __('This report is no longer editable.'));
                 return $this->redirectBack();
             }
 
@@ -716,7 +716,7 @@ class DailyReportForm extends Component
             }
         }
 
-        session()->flash('message', 'Daily report ' . ($this->mode === 'edit' ? 'updated' : 'created') . ' successfully!');
+        session()->flash('message', $this->mode === 'edit' ? __('Daily report updated successfully!') : __('Daily report created successfully!'));
         return $this->redirectBack();
     }
 

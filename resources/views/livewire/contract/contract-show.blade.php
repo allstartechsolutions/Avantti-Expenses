@@ -60,13 +60,13 @@
                     variant="secondary"
                     href="{{ $contract->job_site_id ? route('jobsites.contracts', $contract->job_site_id) : route('projects.contracts', $contract->project_id) }}"
                     icon="arrow-left">
-                    Back to List
+                    {{ __('Back to List') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('contracts.edit', $contract->id) }}"
                     icon="edit">
-                    Edit
+                    {{ __('Edit') }}
                 </x-ui.button>
             </div>
         </div>
@@ -91,30 +91,30 @@
             <!-- Contract Details Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contract Details</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contract Details') }}</h3>
                 </div>
                 <div class="p-6">
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Contract #</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Contract #') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->contract_number }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Subcontractor</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Subcontractor') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? 'Not specified' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Contact</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Contact') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 {{ $contract->subcontractorEmployee?->name ?? 'Not specified' }}@if($contract->subcontractorEmployee?->title) ({{ $contract->subcontractorEmployee->title }})@endif
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Location</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Location') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 @if($contract->isProjectLevel())
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                                        Project (General)
+                                        {{ __('Project (General)') }}
                                     </span>
                                 @else
                                     {{ $contract->jobSite->job_site_name }}
@@ -122,15 +122,15 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Created By</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->createdBy?->name ?? 'Unknown' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Start Date</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Start Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->start_date->format('M d, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">End Date</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('End Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->end_date?->format('M d, Y') ?? 'Not set' }}</dd>
                         </div>
                     </dl>
@@ -140,7 +140,7 @@
             <!-- Financial Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Financial</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Financial') }}</h3>
                 </div>
                 <div class="p-6">
                     @php
@@ -152,14 +152,14 @@
                     @endphp
                     <dl class="space-y-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Original Amount</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Original Amount') }}</dt>
                             <dd class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
                                 {{ Number::currency($contract->amount, config('app.currency'), config('app.locale')) }}
                             </dd>
                         </div>
                         @if($changeOrdersPositive != 0)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Change Orders</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Change Orders') }}</dt>
                                 <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
                                     +{{ Number::currency($changeOrdersPositive, config('app.currency'), config('app.locale')) }}
                                 </dd>
@@ -167,7 +167,7 @@
                         @endif
                         @if($changeOrdersNegative != 0)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Deductions</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Deductions') }}</dt>
                                 <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
                                     {{ Number::currency($changeOrdersNegative, config('app.currency'), config('app.locale')) }}
                                 </dd>
@@ -175,7 +175,7 @@
                         @endif
                         @if($hasChangeOrders)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Adjusted Amount</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Adjusted Amount') }}</dt>
                                 <dd class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
                                     {{ Number::currency($adjustedAmount, config('app.currency'), config('app.locale')) }}
                                 </dd>
@@ -183,13 +183,13 @@
                         @endif
                         @if($contract->payments->count() > 0)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Amount Paid</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Amount Paid') }}</dt>
                                 <dd class="mt-1 text-xl font-semibold text-green-600 dark:text-green-400">
                                     {{ Number::currency($contract->getAmountPaid(), config('app.currency'), config('app.locale')) }}
                                 </dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Balance Due</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Balance Due') }}</dt>
                                 <dd class="mt-1 text-xl font-semibold {{ $balanceDue > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }}">
                                     {{ Number::currency($balanceDue, config('app.currency'), config('app.locale')) }}
                                 </dd>
@@ -274,7 +274,7 @@
             @if($contract->notes)
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Notes</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Notes') }}</h3>
                     </div>
                     <div class="p-6">
                         <p class="text-sm text-slate-900 dark:text-white whitespace-pre-wrap">{{ $contract->notes }}</p>
@@ -286,7 +286,7 @@
             @if($contract->contract_file_path)
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contract File</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contract File') }}</h3>
                     </div>
                     <div class="p-6">
                         <a href="{{ route('files.show', ['path' => $contract->contract_file_path]) }}" target="_blank" class="inline-flex items-center text-sm text-[#3F5189] hover:text-[#2F3F6F]">
@@ -294,14 +294,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
-                            View Document
+                            {{ __('View Document') }}
                         </a>
                         <span class="mx-2 text-slate-300">|</span>
                         <a href="{{ route('files.download', ['path' => $contract->contract_file_path]) }}" class="inline-flex items-center text-sm text-[#3F5189] hover:text-[#2F3F6F]">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            Download
+                            {{ __('Download') }}
                         </a>
                     </div>
                 </div>
@@ -313,7 +313,7 @@
             <!-- Actions Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     @if(count($this->availableStatuses) > 0)
@@ -322,7 +322,7 @@
                             class="w-full justify-center"
                             wire:click="openStatusModal"
                             icon="refresh">
-                            Change Status
+                            {{ __('Change Status') }}
                         </x-ui.button>
                     @endif
 
@@ -332,7 +332,7 @@
                             class="w-full justify-center"
                             wire:click="openPaymentModal"
                             icon="plus">
-                            Record Payment
+                            {{ __('Record Payment') }}
                         </x-ui.button>
                     @endif
 
@@ -341,16 +341,16 @@
                         href="{{ route('contracts.edit', $contract->id) }}"
                         class="w-full justify-center"
                         icon="edit">
-                        Edit Contract
+                        {{ __('Edit Contract') }}
                     </x-ui.button>
 
                     <x-ui.button
                         variant="danger"
                         class="w-full justify-center"
                         wire:click="delete"
-                        wire:confirm="Are you sure you want to delete this contract? This action cannot be undone."
+                        wire:confirm="{{ __('Are you sure you want to delete this contract? This action cannot be undone.') }}"
                         icon="trash">
-                        Delete Contract
+                        {{ __('Delete Contract') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -358,7 +358,7 @@
             <!-- Status History Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Status History</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Status History') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($contract->statusHistories->count() > 0)
@@ -432,7 +432,7 @@
                             </ul>
                         </div>
                     @else
-                        <p class="text-sm text-slate-500 dark:text-slate-400">No status changes recorded.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No status changes recorded.') }}</p>
                     @endif
                 </div>
             </div>
@@ -441,7 +441,7 @@
             @if($contract->payments->count() > 0)
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Payment History</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Payment History') }}</h3>
                     </div>
                     <div class="divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($contract->payments as $payment)
@@ -472,7 +472,7 @@
                                         variant="danger"
                                         size="sm"
                                         wire:click="deletePayment({{ $payment->id }})"
-                                        wire:confirm="Are you sure you want to delete this payment?"
+                                        wire:confirm="{{ __('Are you sure you want to delete this payment?') }}"
                                         icon="trash">
                                     </x-ui.button>
                                 </div>
@@ -492,7 +492,7 @@
             <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Change Contract Status</h2>
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Change Contract Status') }}</h2>
                         <button type="button" wire:click="closeStatusModal" class="text-slate-400 hover:text-slate-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -500,7 +500,7 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">New Status</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('New Status') }}</label>
                             <select
                                 wire:model="newStatus"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
@@ -511,21 +511,21 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Reason (Optional)</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Reason (Optional)') }}</label>
                             <textarea
                                 wire:model="statusReason"
                                 rows="3"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Reason for status change..."></textarea>
+                                placeholder="{{ __('Reason for status change...') }}"></textarea>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeStatusModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="primary" wire:click="changeStatus">
-                            Update Status
+                            {{ __('Update Status') }}
                         </x-ui.button>
                     </div>
                 </div>
@@ -542,7 +542,7 @@
             <div class="relative w-full {{ count($paymentItems) > 0 ? 'max-w-3xl' : 'max-w-md' }} bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Record Payment</h2>
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Record Payment') }}</h2>
                         <button type="button" wire:click="closePaymentModal" class="text-slate-400 hover:text-slate-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -619,7 +619,7 @@
                         @endif
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Amount *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Amount *') }}</label>
                             <div class="relative">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 sm:text-sm">$</span>
@@ -636,23 +636,23 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment Method *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Method *') }}</label>
                             <select
                                 wire:model="paymentMethod"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="check">Check</option>
-                                <option value="cash">Cash</option>
-                                <option value="credit_card">Credit Card</option>
-                                <option value="debit_card">Debit Card</option>
-                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="check">{{ __('Check') }}</option>
+                                <option value="cash">{{ __('Cash') }}</option>
+                                <option value="credit_card">{{ __('Credit Card') }}</option>
+                                <option value="debit_card">{{ __('Debit Card') }}</option>
+                                <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
                                 <option value="pix">PIX</option>
-                                <option value="other">Other</option>
+                                <option value="other">{{ __('Other') }}</option>
                             </select>
                             @error('paymentMethod') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment Date *</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Date *') }}</label>
                             <input
                                 type="date"
                                 wire:model="paymentDate"
@@ -661,32 +661,32 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Reference Number</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Reference Number') }}</label>
                             <input
                                 type="text"
                                 wire:model="paymentReference"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Check #, transaction ID, etc.">
+                                placeholder="{{ __('Check #, transaction ID, etc.') }}">
                             @error('paymentReference') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Notes') }}</label>
                             <textarea
                                 wire:model="paymentNotes"
                                 rows="2"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Optional notes..."></textarea>
+                                placeholder="{{ __('Optional notes...') }}"></textarea>
                             @error('paymentNotes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closePaymentModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="primary" wire:click="recordPayment">
-                            Record Payment
+                            {{ __('Record Payment') }}
                         </x-ui.button>
                     </div>
                 </div>

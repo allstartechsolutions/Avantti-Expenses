@@ -3,9 +3,9 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Budget</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Create Budget') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Create a new budget for
+                    {{ __('Create a new budget for') }}
                     @if($jobSite)
                         <span class="font-medium text-slate-700 dark:text-slate-300">{{ $jobSite->job_site_name }}</span>
                     @else
@@ -18,7 +18,7 @@
                 variant="secondary"
                 href="{{ $jobSite ? route('jobsites.show', $jobSite->id) : route('projects.budget', $project->id) }}"
                 icon="arrow-left">
-                Back
+                {{ __('Back') }}
             </x-ui.button>
         </div>
     </div>
@@ -30,7 +30,7 @@
                 <x-ui.icon name="map-pin" class="w-5 h-5 text-[#3F5189]" />
             </div>
             <div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Location</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Location') }}</p>
                 <p class="font-medium text-slate-900 dark:text-white">{{ $this->locationName }}</p>
             </div>
         </div>
@@ -43,14 +43,14 @@
                 <!-- Name -->
                 <div>
                     <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Budget Name <span class="text-red-500">*</span>
+                        {{ __('Budget Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="name"
                         wire:model="name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="e.g., Main Budget, Phase 1 Budget">
+                        placeholder="{{ __('e.g., Main Budget, Phase 1 Budget') }}">
                     @error('name')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
@@ -59,14 +59,14 @@
                 <!-- Notes -->
                 <div>
                     <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Notes
+                        {{ __('Notes') }}
                     </label>
                     <textarea
                         id="notes"
                         wire:model="notes"
                         rows="3"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Optional notes about this budget"></textarea>
+                        placeholder="{{ __('Optional notes about this budget') }}"></textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
@@ -75,7 +75,7 @@
                 <!-- Template Selection -->
                 <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
-                        Cost Code Template
+                        {{ __('Cost Code Template') }}
                     </label>
 
                     <div class="space-y-4">
@@ -87,8 +87,8 @@
                                 value=""
                                 class="mt-1 text-[#3F5189] focus:ring-[#3F5189]">
                             <div>
-                                <p class="font-medium text-slate-900 dark:text-white">Start with blank budget</p>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Add cost codes manually after creation</p>
+                                <p class="font-medium text-slate-900 dark:text-white">{{ __('Start with blank budget') }}</p>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Add cost codes manually after creation') }}</p>
                             </div>
                         </label>
 
@@ -100,14 +100,14 @@
                                 value="1"
                                 class="mt-1 text-[#3F5189] focus:ring-[#3F5189]">
                             <div class="flex-1">
-                                <p class="font-medium text-slate-900 dark:text-white">Use cost code template</p>
+                                <p class="font-medium text-slate-900 dark:text-white">{{ __('Use cost code template') }}</p>
                                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Cost codes will be copied with $0.00 amounts</p>
 
                                 @if($use_template)
                                     <select
                                         wire:model="source_template_id"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        <option value="">Select a template...</option>
+                                        <option value="">{{ __('Select a template...') }}</option>
                                         @foreach($templates as $template)
                                             <option value="{{ $template->id }}">
                                                 {{ $template->name }}
@@ -127,8 +127,8 @@
                     @if($templates->isEmpty())
                         <p class="mt-4 text-sm text-amber-600 dark:text-amber-400">
                             <x-ui.icon name="alert-triangle" class="w-4 h-4 inline mr-1" />
-                            No cost code templates found.
-                            <a href="{{ route('cost-codes.templates.create') }}" class="underline hover:no-underline">Create one</a> to use as a starting point.
+                            {{ __('No cost code templates found.') }}
+                            <a href="{{ route('cost-codes.templates.create') }}" class="underline hover:no-underline">{{ __('Create one') }}</a> to use as a starting point.
                         </p>
                     @endif
                 </div>
@@ -140,13 +140,13 @@
                     type="button"
                     variant="secondary"
                     href="{{ $jobSite ? route('jobsites.show', $jobSite->id) : route('projects.budget', $project->id) }}">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     type="submit"
                     variant="primary"
                     icon="check">
-                    Create Budget
+                    {{ __('Create Budget') }}
                 </x-ui.button>
             </div>
         </form>

@@ -3,7 +3,7 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Contract</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Edit Contract') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {{ $contract->contract_number }} &mdash;
                     {{ $contract->project->project_name }}
@@ -17,7 +17,7 @@
                     variant="secondary"
                     href="{{ route('contracts.show', $contract->id) }}"
                     icon="arrow-left">
-                    Back
+                    {{ __('Back') }}
                 </x-ui.button>
             </div>
         </div>
@@ -35,21 +35,21 @@
         <!-- Contract Details Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contract Details</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic information about this contract</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contract Details') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Basic information about this contract') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Subcontractor Search -->
                     <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Subcontractor</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Subcontractor') }}</label>
                         <div class="relative">
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="subcontractorSearch"
                                 @focus="open = true"
                                 @input="open = true"
-                                placeholder="Search subcontractor..."
+                                placeholder="{{ __('Search subcontractor...') }}"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                             @if($subcontractor_id)
                                 <button type="button" wire:click="clearSubcontractor" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600">
@@ -74,11 +74,11 @@
                     <!-- Contact (Employee) -->
                     @if($subcontractor_id)
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Contact (Employee)</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Contact (Employee)') }}</label>
                             <select
                                 wire:model="subcontractor_employee_id"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">No specific contact</option>
+                                <option value="">{{ __('No specific contact') }}</option>
                                 @foreach($employees as $employee)
                                     <option value="{{ $employee->id }}">{{ $employee->name }}@if($employee->title) — {{ $employee->title }}@endif</option>
                                 @endforeach
@@ -89,11 +89,11 @@
 
                     <!-- Location -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Location</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Location') }}</label>
                         <select
                             wire:model="job_site_id"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">Project (General)</option>
+                            <option value="">{{ __('Project (General)') }}</option>
                             @foreach($jobSites as $js)
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
@@ -105,7 +105,7 @@
                     <!-- Start Date -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Start Date <span class="text-red-500">*</span>
+                            {{ __('Start Date') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -116,7 +116,7 @@
 
                     <!-- End Date -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">End Date</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('End Date') }}</label>
                         <input
                             type="date"
                             wire:model="end_date"
@@ -130,13 +130,13 @@
         <!-- Financial Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Financial</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Contract value</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Financial') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Contract value') }}</p>
             </div>
             <div class="p-6">
                 <div class="max-w-md">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Amount <span class="text-red-500">*</span>
+                        {{ __('Amount') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-slate-500">$</span>
@@ -157,40 +157,40 @@
         <!-- Additional Info Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Additional Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Notes and attachments</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Additional Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Notes and attachments') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Notes -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Notes') }}</label>
                     <textarea
                         wire:model="notes"
                         rows="3"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Optional notes about this contract..."></textarea>
+                        placeholder="{{ __('Optional notes about this contract...') }}"></textarea>
                 </div>
 
                 <!-- Existing File -->
                 @if($existingFilePath)
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current File</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Current File') }}</label>
                         <div class="flex items-center space-x-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
                             <a href="{{ route('files.show', ['path' => $existingFilePath]) }}" target="_blank" class="inline-flex items-center text-sm text-[#3F5189] hover:text-[#2F3F6F]">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
-                                View Current File
+                                {{ __('View Current File') }}
                             </a>
                             <x-ui.button
                                 type="button"
                                 variant="danger"
                                 size="sm"
                                 wire:click="removeExistingFile"
-                                wire:confirm="Remove the current file?"
+                                wire:confirm="{{ __('Remove the current file?') }}"
                                 icon="trash">
-                                Remove
+                                {{ __('Remove') }}
                             </x-ui.button>
                         </div>
                     </div>
@@ -217,10 +217,10 @@
                 type="button"
                 variant="secondary"
                 href="{{ route('contracts.show', $contract->id) }}">
-                Cancel
+                {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button type="submit" variant="primary" icon="save">
-                Update Contract
+                {{ __('Update Contract') }}
             </x-ui.button>
         </div>
     </form>

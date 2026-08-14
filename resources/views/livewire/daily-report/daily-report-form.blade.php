@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <div class="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
-                    <a href="{{ route('projects.index') }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">Projects</a>
+                    <a href="{{ route('projects.index') }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ __('Projects') }}</a>
                     <span>/</span>
                     <a href="{{ route('projects.overview', $project->id) }}" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">{{ $project->project_name }}</a>
                     @if($jobSite)
@@ -21,13 +21,13 @@
                     variant="secondary"
                     wire:click="cancel"
                     icon="arrow-left">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 @if($mode === 'edit' && $dailyReport)
                     <x-ui.button
                         variant="secondary"
                         href="{{ route('dailyreports.pdf.download', $dailyReport) }}"
-                        title="Download PDF">
+                        title="{{ __('Download PDF') }}">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -38,7 +38,7 @@
                     variant="primary"
                     wire:click="save"
                     icon="save">
-                    Save Report
+                    {{ __('Save Report') }}
                 </x-ui.button>
             </div>
         </div>
@@ -83,29 +83,29 @@
 
     <!-- Report Information Card -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Report Information</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Report Information') }}</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Project</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Project') }}</label>
                 <p class="text-slate-900 dark:text-white">{{ $project->project_name }}</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Location') }}</label>
                 @if($jobSite)
                     <p class="text-slate-900 dark:text-white">{{ $jobSite->job_site_name }}</p>
                 @else
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                        Project (General)
+                        {{ __('Project (General)') }}
                     </span>
                 @endif
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Address') }}</label>
                 <p class="text-sm text-slate-600 dark:text-slate-400">{{ $jobSite?->full_address ?? $project->full_address }}</p>
             </div>
             <div>
-                <label for="report_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Report Date *</label>
+                <label for="report_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Report Date *') }}</label>
                 <input
                     type="date"
                     id="report_date"
@@ -115,7 +115,7 @@
                 @error('report_date') <span class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</span> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Prepared By</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Prepared By') }}</label>
                 <p class="text-slate-900 dark:text-white">{{ Auth::user()->name }}</p>
             </div>
         </div>
@@ -124,14 +124,14 @@
     <!-- Weather Report Section -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Weather Report</h2>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Weather Report') }}</h2>
             <div class="flex items-center space-x-2">
                 @if($weather)
                     <x-ui.button
                         variant="secondary"
                         size="sm"
                         wire:click="clearWeather">
-                        Clear
+                        {{ __('Clear') }}
                     </x-ui.button>
                 @endif
                 <x-ui.button
@@ -148,7 +148,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Fetching...
+                        {{ __('Fetching...') }}
                     </span>
                 </x-ui.button>
             </div>
@@ -175,19 +175,19 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">Temperature</h3>
+                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Temperature') }}</h3>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Low</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Low') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatTemperature($weather['temp_low']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">High</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('High') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatTemperature($weather['temp_high']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Avg</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Avg') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatTemperature($weather['temp_avg']) }}</p>
                         </div>
                     </div>
@@ -201,11 +201,11 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">Precipitation Since</h3>
+                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Precipitation Since') }}</h3>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Midnight</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Midnight') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatPrecipitation($weather['precip_midnight']) }}</p>
                         </div>
                         <div>
@@ -227,23 +227,23 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">Humidity</h3>
+                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Humidity') }}</h3>
                     </div>
                     <div class="grid grid-cols-4 gap-1 text-center">
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Low</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Low') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $weather['humidity_low'] ?? '-' }}%</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Avg</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Avg') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $weather['humidity_avg'] ?? '-' }}%</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">High</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('High') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $weather['humidity_high'] ?? '-' }}%</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Dew</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Dew') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatTemperature($weather['dew_point']) }}</p>
                         </div>
                     </div>
@@ -257,19 +257,19 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                             </svg>
                         </div>
-                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">Wind Speed</h3>
+                        <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Wind Speed') }}</h3>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Avg</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Avg') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatWindSpeed($weather['wind_avg']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Max</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Max') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatWindSpeed($weather['wind_max']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Gust</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Gust') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatWindSpeed($weather['wind_gust']) }}</p>
                         </div>
                     </div>
@@ -279,7 +279,7 @@
             <!-- Daily Snapshot -->
             @if(!empty($weather['snapshots']))
                 <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
-                    <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Daily Snapshot</h3>
+                    <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">{{ __('Daily Snapshot') }}</h3>
                     <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
                         @foreach($weather['snapshots'] as $snapshot)
                             <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
@@ -323,7 +323,7 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No weather data</h3>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No weather data') }}</h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @php
                         $hasCoordinates = ($jobSite?->latitude && $jobSite?->longitude) || ($project?->latitude && $project?->longitude);
@@ -341,13 +341,13 @@
     <!-- Observed Weather Conditions Section -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Observed Weather Conditions</h2>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Observed Weather Conditions') }}</h2>
             <x-ui.button
                 variant="primary"
                 size="sm"
                 icon="plus"
                 wire:click="openAddObservationModal">
-                Add Observation
+                {{ __('Add Observation') }}
             </x-ui.button>
         </div>
 
@@ -356,14 +356,14 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200 dark:border-slate-700">
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Time</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Delay</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Sky</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Temp</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Wind</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Precip</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Notes</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Time') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Delay') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Sky') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Temp') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Wind') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Precip') }}</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Notes') }}</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -374,9 +374,9 @@
                                 </td>
                                 <td class="px-3 py-2">
                                     @if($obs['weather_delay'])
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Yes</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">{{ __('Yes') }}</span>
                                     @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">No</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">{{ __('No') }}</span>
                                     @endif
                                 </td>
                                 <td class="px-3 py-2 text-slate-600 dark:text-slate-400">
@@ -425,8 +425,8 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No observations recorded</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add manual weather observations throughout the day.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No observations recorded') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Add manual weather observations throughout the day.') }}</p>
             </div>
         @endif
     </div>
@@ -434,13 +434,13 @@
     <!-- Manpower Log Section -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Manpower Log</h2>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Manpower Log') }}</h2>
             <x-ui.button
                 variant="primary"
                 size="sm"
                 icon="plus"
                 wire:click="openAddManpowerModal">
-                Add Entry
+                {{ __('Add Entry') }}
             </x-ui.button>
         </div>
 
@@ -464,7 +464,7 @@
                                     size="sm"
                                     icon="edit"
                                     wire:click="openEditManpowerModal({{ $index }})">
-                                    Edit
+                                    {{ __('Edit') }}
                                 </x-ui.button>
                                 <x-ui.button
                                     variant="danger"
@@ -472,19 +472,19 @@
                                     icon="trash"
                                     wire:click="removeManpower({{ $index }})"
                                     onclick="return confirm('Are you sure you want to remove this entry?')">
-                                    Remove
+                                    {{ __('Remove') }}
                                 </x-ui.button>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                             <div>
-                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Works</p>
+                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">{{ __('Works') }}</p>
                                 <p class="text-sm text-slate-700 dark:text-slate-300">{{ $log['works'] }}</p>
                             </div>
                             @if(!empty($log['comments']))
                                 <div>
-                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Comments</p>
+                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">{{ __('Comments') }}</p>
                                     <p class="text-sm text-slate-700 dark:text-slate-300">{{ $log['comments'] }}</p>
                                 </div>
                             @endif
@@ -530,14 +530,14 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No manpower entries yet</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Track workers and contractors on this job site.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No manpower entries yet') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Track workers and contractors on this job site.') }}</p>
                 <div class="mt-6">
                     <x-ui.button
                         variant="primary"
                         icon="plus"
                         wire:click="openAddManpowerModal">
-                        Add Entry
+                        {{ __('Add Entry') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -547,13 +547,13 @@
     <!-- Tasks Section -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Tasks</h2>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Tasks') }}</h2>
             <x-ui.button
                 variant="primary"
                 size="sm"
                 icon="plus"
                 wire:click="openAddTaskModal">
-                Add Task
+                {{ __('Add Task') }}
             </x-ui.button>
         </div>
 
@@ -574,7 +574,7 @@
                                     size="sm"
                                     icon="edit"
                                     wire:click="openEditTaskModal({{ $index }})">
-                                    Edit
+                                    {{ __('Edit') }}
                                 </x-ui.button>
                                 <x-ui.button
                                     variant="danger"
@@ -582,7 +582,7 @@
                                     icon="trash"
                                     wire:click="removeTask({{ $index }})"
                                     onclick="return confirm('Are you sure you want to remove this task?')">
-                                    Remove
+                                    {{ __('Remove') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -629,14 +629,14 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No tasks added yet</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by adding your first task to this daily report.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No tasks added yet') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding your first task to this daily report.') }}</p>
                 <div class="mt-6">
                     <x-ui.button
                         variant="primary"
                         icon="plus"
                         wire:click="openAddTaskModal">
-                        Add Task
+                        {{ __('Add Task') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -655,7 +655,7 @@
             <form wire:submit="saveTask">
                 <!-- Task Description -->
                 <div class="mb-4">
-                    <label for="taskDescription" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Task Description *</label>
+                    <label for="taskDescription" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Task Description *') }}</label>
                     <x-ui.tinymce-editor
                         wireModel="taskDescription"
                         id="taskDescription"
@@ -666,7 +666,7 @@
 
                 <!-- Image Upload -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Images</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Images') }}</label>
 
                     <!-- Existing Images -->
                     @if(count($existingTaskImages) > 0)
@@ -702,7 +702,7 @@
                                 <div class="relative group" wire:key="new-image-{{ $index }}">
                                     <div class="aspect-square rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 border-2 border-green-500">
                                         @if($image)
-                                            <img src="{{ $image->temporaryUrl() }}" alt="Preview" class="w-full h-full object-cover">
+                                            <img src="{{ $image->temporaryUrl() }}" alt="{{ __('Preview') }}" class="w-full h-full object-cover">
                                         @endif
                                     </div>
                                     <button
@@ -714,7 +714,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
-                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">New Upload</p>
+                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{{ __('New Upload') }}</p>
                                 </div>
                             @endforeach
                         </div>
@@ -736,10 +736,10 @@
                             <div class="mt-4">
                                 <label for="taskImages" class="cursor-pointer">
                                     <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        Click to upload or drag and drop
+                                        {{ __('Click to upload or drag and drop') }}
                                     </span>
                                     <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        PNG, JPG, GIF up to 10MB each
+                                        {{ __('PNG, JPG, GIF up to 10MB each') }}
                                     </span>
                                 </label>
                                 <input
@@ -759,7 +759,7 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Uploading...
+                                    {{ __('Uploading...') }}
                                 </div>
                             </div>
                         </div>
@@ -773,7 +773,7 @@
                         type="button"
                         variant="secondary"
                         wire:click="closeTaskModal">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         type="submit"
@@ -798,7 +798,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Time -->
                     <div>
-                        <label for="observation_time" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Time *</label>
+                        <label for="observation_time" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Time *') }}</label>
                         <input
                             type="time"
                             id="observation_time"
@@ -815,19 +815,19 @@
                                 type="checkbox"
                                 wire:model="observation_weather_delay"
                                 class="w-4 h-4 text-[#3F5189] border-slate-300 rounded focus:ring-[#3F5189] dark:border-slate-600 dark:bg-slate-700">
-                            <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">Weather Delay?</span>
+                            <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Weather Delay?') }}</span>
                         </label>
                     </div>
 
                     <!-- Sky Condition -->
                     <div>
-                        <label for="observation_sky" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sky Condition *</label>
+                        <label for="observation_sky" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Sky Condition *') }}</label>
                         <select
                             id="observation_sky"
                             wire:model="observation_sky"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
                             required>
-                            <option value="">Select...</option>
+                            <option value="">{{ __('Select...') }}</option>
                             @foreach($this->getSkyConditions() as $key => $label)
                                 <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
@@ -852,13 +852,13 @@
 
                     <!-- Wind Condition -->
                     <div>
-                        <label for="observation_wind" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Wind Condition *</label>
+                        <label for="observation_wind" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Wind Condition *') }}</label>
                         <select
                             id="observation_wind"
                             wire:model="observation_wind"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
                             required>
-                            <option value="">Select...</option>
+                            <option value="">{{ __('Select...') }}</option>
                             @foreach($this->getWindConditions() as $key => $label)
                                 <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
@@ -868,13 +868,13 @@
 
                     <!-- Precipitation -->
                     <div>
-                        <label for="observation_precip" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Precipitation *</label>
+                        <label for="observation_precip" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Precipitation *') }}</label>
                         <select
                             id="observation_precip"
                             wire:model="observation_precip"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
                             required>
-                            <option value="">Select...</option>
+                            <option value="">{{ __('Select...') }}</option>
                             @foreach($this->getPrecipitationTypes() as $key => $label)
                                 <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
@@ -885,12 +885,12 @@
 
                 <!-- Notes -->
                 <div class="mt-4">
-                    <label for="observation_notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+                    <label for="observation_notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Notes') }}</label>
                     <textarea
                         id="observation_notes"
                         wire:model="observation_notes"
                         rows="2"
-                        placeholder="Any additional notes about the weather conditions..."
+                        placeholder="{{ __('Any additional notes about the weather conditions...') }}"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"></textarea>
                 </div>
 
@@ -900,7 +900,7 @@
                         type="button"
                         variant="secondary"
                         wire:click="closeObservationModal">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         type="submit"
@@ -925,12 +925,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <!-- Contact/Company -->
                     <div class="md:col-span-1">
-                        <label for="manpower_contact_company" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact / Company *</label>
+                        <label for="manpower_contact_company" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Contact / Company *') }}</label>
                         <input
                             type="text"
                             id="manpower_contact_company"
                             wire:model="manpower_contact_company"
-                            placeholder="e.g., ABC Electrical, John Smith"
+                            placeholder="{{ __('e.g., ABC Electrical, John Smith') }}"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
                             required>
                         @error('manpower_contact_company') <span class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</span> @enderror
@@ -952,7 +952,7 @@
 
                     <!-- Hours -->
                     <div>
-                        <label for="manpower_hours" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hours *</label>
+                        <label for="manpower_hours" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Hours *') }}</label>
                         <input
                             type="number"
                             step="0.5"
@@ -969,12 +969,12 @@
 
                 <!-- Works -->
                 <div class="mb-4">
-                    <label for="manpower_works" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Works Performed *</label>
+                    <label for="manpower_works" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Works Performed *') }}</label>
                     <textarea
                         id="manpower_works"
                         wire:model="manpower_works"
                         rows="3"
-                        placeholder="Describe the work performed..."
+                        placeholder="{{ __('Describe the work performed...') }}"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
                         required></textarea>
                     @error('manpower_works') <span class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</span> @enderror
@@ -982,19 +982,19 @@
 
                 <!-- Comments -->
                 <div class="mb-4">
-                    <label for="manpower_comments" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Comments</label>
+                    <label for="manpower_comments" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Comments') }}</label>
                     <textarea
                         id="manpower_comments"
                         wire:model="manpower_comments"
                         rows="2"
-                        placeholder="Any additional comments..."
+                        placeholder="{{ __('Any additional comments...') }}"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"></textarea>
                     @error('manpower_comments') <span class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Image Upload -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Images</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Images') }}</label>
 
                     <!-- Existing Images -->
                     @if(count($existingManpowerImages) > 0)
@@ -1030,7 +1030,7 @@
                                 <div class="relative group" wire:key="new-manpower-image-{{ $index }}">
                                     <div class="aspect-square rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 border-2 border-green-500">
                                         @if($image)
-                                            <img src="{{ $image->temporaryUrl() }}" alt="Preview" class="w-full h-full object-cover">
+                                            <img src="{{ $image->temporaryUrl() }}" alt="{{ __('Preview') }}" class="w-full h-full object-cover">
                                         @endif
                                     </div>
                                     <button
@@ -1042,7 +1042,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
-                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">New Upload</p>
+                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{{ __('New Upload') }}</p>
                                 </div>
                             @endforeach
                         </div>
@@ -1064,10 +1064,10 @@
                             <div class="mt-4">
                                 <label for="manpowerImages" class="cursor-pointer">
                                     <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        Click to upload or drag and drop
+                                        {{ __('Click to upload or drag and drop') }}
                                     </span>
                                     <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        PNG, JPG, GIF up to 10MB each
+                                        {{ __('PNG, JPG, GIF up to 10MB each') }}
                                     </span>
                                 </label>
                                 <input
@@ -1087,7 +1087,7 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Uploading...
+                                    {{ __('Uploading...') }}
                                 </div>
                             </div>
                         </div>
@@ -1101,7 +1101,7 @@
                         type="button"
                         variant="secondary"
                         wire:click="closeManpowerModal">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         type="submit"

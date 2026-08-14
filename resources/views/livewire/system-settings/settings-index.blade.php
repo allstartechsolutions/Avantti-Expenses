@@ -3,8 +3,8 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">System Settings</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage system-wide configuration</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('System Settings') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage system-wide configuration') }}</p>
             </div>
         </div>
     </div>
@@ -16,17 +16,17 @@
                 <button
                     wire:click="switchTab('tax-rates')"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'tax-rates' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Tax Rates
+                    {{ __('Tax Rates') }}
                 </button>
                 <button
                     wire:click="switchTab('messages')"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'messages' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Messages
+                    {{ __('Messages') }}
                 </button>
                 <button
                     wire:click="switchTab('modules')"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'modules' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Modules
+                    {{ __('Modules') }}
                 </button>
             </nav>
         </div>

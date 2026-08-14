@@ -3,7 +3,7 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Project Details</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Project Details') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ $project->project_name }}</p>
             </div>
             <div class="flex items-center space-x-3">
@@ -11,20 +11,20 @@
                     variant="secondary"
                     href="{{ route('projects.index') }}"
                     icon="arrow-left">
-                    Back to Projects
+                    {{ __('Back to Projects') }}
                 </x-ui.button>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('projects.edit', $project->id) }}"
                     icon="edit">
-                    Edit Project
+                    {{ __('Edit Project') }}
                 </x-ui.button>
                 @admin
                 <x-ui.button
                     variant="danger"
                     wire:click="confirmDeleteProject"
                     icon="trash">
-                    Delete
+                    {{ __('Delete') }}
                 </x-ui.button>
                 @endadmin
             </div>
@@ -48,7 +48,7 @@
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Overview
+                    {{ __('Overview') }}
                 </button>
                 <button
                     wire:click="setActiveTab('jobsites')"
@@ -57,7 +57,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    Job Sites
+                    {{ __('Job Sites') }}
                 </button>
                 <button
                     wire:click="setActiveTab('expenses')"
@@ -65,7 +65,7 @@
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Expenses
+                    {{ __('Expenses') }}
                 </button>
                 <button
                     wire:click="setActiveTab('change-orders')"
@@ -73,7 +73,7 @@
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Change Orders
+                    {{ __('Change Orders') }}
                 </button>
                 <button
                     wire:click="setActiveTab('daily-reports')"
@@ -81,7 +81,7 @@
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
-                    Daily Reports
+                    {{ __('Daily Reports') }}
                 </button>
                 <button
                     wire:click="setActiveTab('budget')"
@@ -89,7 +89,7 @@
                     <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
-                    Budget
+                    {{ __('Budget') }}
                 </button>
             </nav>
         </div>
@@ -105,14 +105,14 @@
                     <!-- Project Information Card -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Information</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Information') }}</h3>
                         </div>
                         <div class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Project Name -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Project Name
+                                        {{ __('Project Name') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white font-medium">{{ $project->project_name }}</p>
                                 </div>
@@ -120,7 +120,7 @@
                                 <!-- Client -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Client
+                                        {{ __('Client') }}
                                     </label>
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-8 w-8 bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-full flex items-center justify-center mr-2">
@@ -143,7 +143,7 @@
                                 <!-- Status -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Status
+                                        {{ __('Status') }}
                                     </label>
                                     @php
                                         $statusColors = [
@@ -162,7 +162,7 @@
                                 <!-- Created At -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Created On
+                                        {{ __('Created On') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->created_at->format('F d, Y') }}</p>
                                 </div>
@@ -171,7 +171,7 @@
                                 @if($project->createdBy)
                                     <div>
                                         <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                            Created By
+                                            {{ __('Created By') }}
                                         </label>
                                         <p class="text-slate-900 dark:text-white">{{ $project->createdBy->name }}</p>
                                     </div>
@@ -182,7 +182,7 @@
                             @if($project->description)
                                 <div class="mt-6">
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Description
+                                        {{ __('Description') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $project->description }}</p>
                                 </div>
@@ -193,14 +193,14 @@
                     <!-- Contact Information Card -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Information</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contact Information') }}</h3>
                         </div>
                         <div class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Contact Person -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Contact Person
+                                        {{ __('Contact Person') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->contact_person }}</p>
                                 </div>
@@ -208,7 +208,7 @@
                                 <!-- Phone -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Phone Number
+                                        {{ __('Phone Number') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->formatted_phone ?? 'Not provided' }}</p>
                                 </div>
@@ -216,7 +216,7 @@
                                 <!-- Email -->
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Email Address
+                                        {{ __('Email Address') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->email }}</p>
                                 </div>
@@ -227,13 +227,13 @@
                     <!-- Address Information Card -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Address</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Address') }}</h3>
                         </div>
                         <div class="p-6">
                             @if($project->full_address)
                                 <div class="mb-6">
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Full Address
+                                        {{ __('Full Address') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->full_address }}</p>
                                 </div>
@@ -243,7 +243,7 @@
                                 <!-- Street -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Street Address
+                                        {{ __('Street Address') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->street ?? 'Not provided' }}</p>
                                 </div>
@@ -251,7 +251,7 @@
                                 <!-- Address Line 2 -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Address Line 2
+                                        {{ __('Address Line 2') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->address_2 ?? 'Not provided' }}</p>
                                 </div>
@@ -260,7 +260,7 @@
                                 <!-- Neighborhood (Brazil only) -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        Neighborhood (Bairro)
+                                        {{ __('Neighborhood (Bairro)') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->neighborhood ?? 'Not provided' }}</p>
                                 </div>
@@ -269,7 +269,7 @@
                                 <!-- City -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        City
+                                        {{ __('City') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->city ?? 'Not provided' }}</p>
                                 </div>
@@ -277,7 +277,7 @@
                                 <!-- State -->
                                 <div>
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                        State
+                                        {{ __('State') }}
                                     </label>
                                     <p class="text-slate-900 dark:text-white">{{ $project->state ?? 'Not provided' }}</p>
                                 </div>
@@ -299,7 +299,7 @@
                     <!-- Quick Actions -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                         </div>
                         <div class="p-6 space-y-3">
                             <x-ui.button
@@ -307,7 +307,7 @@
                                 class="w-full justify-center"
                                 href="{{ route('projects.edit', $project->id) }}"
                                 icon="edit">
-                                Edit Project
+                                {{ __('Edit Project') }}
                             </x-ui.button>
 
                             @if($project->email)
@@ -315,7 +315,7 @@
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                     </svg>
-                                    Send Email
+                                    {{ __('Send Email') }}
                                 </a>
                             @endif
 
@@ -324,7 +324,7 @@
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                                     </svg>
-                                    Call Contact
+                                    {{ __('Call Contact') }}
                                 </a>
                             @endif
                         </div>
@@ -333,20 +333,20 @@
                     <!-- Project Stats -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Information</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Information') }}</h3>
                         </div>
                         <div class="p-6 space-y-4">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-slate-500 dark:text-slate-400">Project ID</span>
+                                <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Project ID') }}</span>
                                 <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $project->id }}</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-slate-500 dark:text-slate-400">Created</span>
+                                <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created') }}</span>
                                 <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $project->created_at->diffForHumans() }}</span>
                             </div>
                             @if($project->created_at != $project->updated_at)
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-slate-500 dark:text-slate-400">Last Updated</span>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Last Updated') }}</span>
                                     <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $project->updated_at->diffForHumans() }}</span>
                                 </div>
                             @endif
@@ -369,7 +369,7 @@
                                 <input
                                     type="text"
                                     wire:model.live.debounce.300ms="jobSiteSearch"
-                                    placeholder="Search job sites..."
+                                    placeholder="{{ __('Search job sites...') }}"
                                     class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                                 >
                                 <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +381,7 @@
                             variant="primary"
                             wire:click="openJobSiteForm"
                             icon="plus">
-                            Add Job Site
+                            {{ __('Add Job Site') }}
                         </x-ui.button>
                     </div>
                 @endif
@@ -405,21 +405,21 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label for="job_site_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Job Site Name <span class="text-red-500">*</span>
+                                            {{ __('Job Site Name') }} <span class="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             id="job_site_name"
                                             wire:model.live="job_site_name"
                                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            placeholder="Enter job site name"
+                                            placeholder="{{ __('Enter job site name') }}"
                                         >
                                         @error('job_site_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
 
                                     <div>
                                         <label for="job_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Job Amount <span class="text-red-500">*</span>
+                                            {{ __('Job Amount') }} <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
                                             <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
@@ -440,21 +440,21 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label for="contact_person" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Contact Person <span class="text-red-500">*</span>
+                                            {{ __('Contact Person') }} <span class="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             id="contact_person"
                                             wire:model.live="contact_person"
                                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            placeholder="Contact name"
+                                            placeholder="{{ __('Contact name') }}"
                                         >
                                         @error('contact_person') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
 
                                     <div>
                                         <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Phone
+                                            {{ __('Phone') }}
                                         </label>
                                         <input
                                             type="tel"
@@ -468,7 +468,7 @@
 
                                     <div>
                                         <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Email <span class="text-red-500">*</span>
+                                            {{ __('Email') }} <span class="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="email"
@@ -484,7 +484,7 @@
                                 <!-- Address with Autocomplete -->
                                 <div>
                                     <label for="jobsite-street" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Street Address
+                                        {{ __('Street Address') }}
                                     </label>
                                     <input
                                         type="text"
@@ -492,7 +492,7 @@
                                         x-ref="streetInput"
                                         wire:model.live="street"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        placeholder="Start typing an address..."
+                                        placeholder="{{ __('Start typing an address...') }}"
                                         autocomplete="off"
                                     >
                                     @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -501,14 +501,14 @@
                                 <!-- Address Line 2 -->
                                 <div>
                                     <label for="address_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Address Line 2
+                                        {{ __('Address Line 2') }}
                                     </label>
                                     <input
                                         type="text"
                                         id="address_2"
                                         wire:model.live="address_2"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        placeholder="Suite, Apt, Unit, etc."
+                                        placeholder="{{ __('Suite, Apt, Unit, etc.') }}"
                                     >
                                     @error('address_2') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
@@ -517,14 +517,14 @@
                                 <!-- Neighborhood (Brazil only) -->
                                 <div>
                                     <label for="neighborhood" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Neighborhood (Bairro)
+                                        {{ __('Neighborhood (Bairro)') }}
                                     </label>
                                     <input
                                         type="text"
                                         id="neighborhood"
                                         wire:model.live="neighborhood"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        placeholder="Bairro"
+                                        placeholder="{{ __('Bairro') }}"
                                     >
                                     @error('neighborhood') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
@@ -533,28 +533,28 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            City
+                                            {{ __('City') }}
                                         </label>
                                         <input
                                             type="text"
                                             id="city"
                                             wire:model.live="city"
                                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            placeholder="City"
+                                            placeholder="{{ __('City') }}"
                                         >
                                         @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
 
                                     <div>
                                         <label for="state" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            State
+                                            {{ __('State') }}
                                         </label>
                                         <input
                                             type="text"
                                             id="state"
                                             wire:model.live="state"
                                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            placeholder="State"
+                                            placeholder="{{ __('State') }}"
                                         >
                                         @error('state') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
@@ -581,7 +581,7 @@
                                 <!-- Status -->
                                 <div>
                                     <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Status <span class="text-red-500">*</span>
+                                        {{ __('Status') }} <span class="text-red-500">*</span>
                                     </label>
                                     <select
                                         id="status"
@@ -600,7 +600,7 @@
                                         type="button"
                                         variant="secondary"
                                         wire:click="cancelJobSiteForm">
-                                        Cancel
+                                        {{ __('Cancel') }}
                                     </x-ui.button>
                                     <x-ui.button
                                         type="submit"
@@ -608,7 +608,7 @@
                                         icon="save"
                                         wire:loading.attr="disabled">
                                         <span wire:loading.remove>{{ $editingJobSite ? 'Update' : 'Create' }} Job Site</span>
-                                        <span wire:loading>Saving...</span>
+                                        <span wire:loading>{{ __('Saving...') }}</span>
                                     </x-ui.button>
                                 </div>
                             </form>
@@ -625,25 +625,25 @@
                                     <thead class="bg-slate-50 dark:bg-slate-900/50">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Job Site Name
+                                                {{ __('Job Site Name') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Contact Person
+                                                {{ __('Contact Person') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Location
+                                                {{ __('Location') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Amount
+                                                {{ __('Amount') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Status
+                                                {{ __('Status') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Created
+                                                {{ __('Created') }}
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                Actions
+                                                {{ __('Actions') }}
                                             </th>
                                         </tr>
                                     </thead>
@@ -669,7 +669,7 @@
                                                         @if($jobSite->city || $jobSite->state)
                                                             {{ $jobSite->city }}{{ $jobSite->city && $jobSite->state ? ', ' : '' }}{{ $jobSite->state }}
                                                         @else
-                                                            <span class="text-slate-400">Not specified</span>
+                                                            <span class="text-slate-400">{{ __('Not specified') }}</span>
                                                         @endif
                                                     </div>
                                                     @if($jobSite->street)
@@ -712,14 +712,14 @@
                                                             size="sm"
                                                             href="{{ route('jobsites.overview', $jobSite->id) }}"
                                                             icon="eye">
-                                                            View
+                                                            {{ __('View') }}
                                                         </x-ui.button>
                                                         <x-ui.button
                                                             variant="secondary"
                                                             size="sm"
                                                             wire:click="editJobSite({{ $jobSite->id }})"
                                                             icon="edit">
-                                                            Edit
+                                                            {{ __('Edit') }}
                                                         </x-ui.button>
                                                         @admin
                                                         <x-ui.button
@@ -727,7 +727,7 @@
                                                             size="sm"
                                                             wire:click="confirmDeleteJobSite({{ $jobSite->id }})"
                                                             icon="trash">
-                                                            Delete
+                                                            {{ __('Delete') }}
                                                         </x-ui.button>
                                                         @endadmin
                                                     </div>
@@ -745,14 +745,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
-                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No Job Sites</h3>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a job site for this project.</p>
+                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
                                 <div class="mt-6">
                                     <x-ui.button
                                         variant="primary"
                                         wire:click="openJobSiteForm"
                                         icon="plus">
-                                        Add Job Site
+                                        {{ __('Add Job Site') }}
                                     </x-ui.button>
                                 </div>
                             </div>
@@ -773,7 +773,7 @@
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="expenseSearch"
-                                placeholder="Search expenses..."
+                                placeholder="{{ __('Search expenses...') }}"
                                 class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                             <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -783,8 +783,8 @@
                         <select
                             wire:model.live="expenseLocationFilter"
                             class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="all">All Locations</option>
-                            <option value="project">Project (General)</option>
+                            <option value="all">{{ __('All Locations') }}</option>
+                            <option value="project">{{ __('Project (General)') }}</option>
                             @foreach($jobSites as $js)
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
@@ -793,19 +793,19 @@
                         <select
                             wire:model.live="expenseStatusFilter"
                             class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="all">All Status</option>
-                            <option value="paid">Paid</option>
-                            <option value="unpaid">Unpaid</option>
-                            <option value="partial">Partial</option>
-                            <option value="overdue">Overdue</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="all">{{ __('All Status') }}</option>
+                            <option value="paid">{{ __('Paid') }}</option>
+                            <option value="unpaid">{{ __('Unpaid') }}</option>
+                            <option value="partial">{{ __('Partial') }}</option>
+                            <option value="overdue">{{ __('Overdue') }}</option>
+                            <option value="cancelled">{{ __('Cancelled') }}</option>
                         </select>
                     </div>
                     <x-ui.button
                         variant="primary"
                         icon="plus"
                         href="{{ route('expenses.project.create', $project) }}">
-                        Add Expense
+                        {{ __('Add Expense') }}
                     </x-ui.button>
                 </div>
 
@@ -815,7 +815,7 @@
                     <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-white/80">Total Expenses</p>
+                                <p class="text-sm font-medium text-white/80">{{ __('Total Expenses') }}</p>
                                 <p class="text-2xl font-bold mt-1">{{ Number::currency($totalExpensesAmount, config('app.currency'), config('app.locale')) }}</p>
                             </div>
                             <div class="bg-white/10 rounded-full p-3">
@@ -830,7 +830,7 @@
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Paid</p>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Paid') }}</p>
                                 <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($totalPaidAmount, config('app.currency'), config('app.locale')) }}</p>
                             </div>
                             <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
@@ -844,7 +844,7 @@
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending</p>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Pending') }}</p>
                                 <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ Number::currency($totalPendingAmount, config('app.currency'), config('app.locale')) }}</p>
                             </div>
                             <div class="bg-amber-100 dark:bg-amber-900/20 rounded-full p-3">
@@ -863,13 +863,13 @@
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                                 <thead class="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Supplier / Items</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Payments</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Supplier / Items') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Payments') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -899,7 +899,7 @@
                                                     <span class="text-sm text-slate-900 dark:text-white">{{ $expense->jobSite->job_site_name }}</span>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                        Project (General)
+                                                        {{ __('Project (General)') }}
                                                     </span>
                                                 @endif
                                             </td>
@@ -933,7 +933,7 @@
                                                     <button
                                                         wire:click="openExpenseViewModal({{ $expense->id }})"
                                                         class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                        title="View">
+                                                        title="{{ __('View') }}">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -943,13 +943,13 @@
                                                         <button
                                                             wire:click="openExpenseEditModal({{ $expense->id }})"
                                                             class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                            title="Edit">
+                                                            title="{{ __('Edit') }}">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                             </svg>
                                                         </button>
                                                     @else
-                                                        <span class="text-slate-300 dark:text-slate-600 cursor-not-allowed" title="Cannot edit - has payments">
+                                                        <span class="text-slate-300 dark:text-slate-600 cursor-not-allowed" title="{{ __('Cannot edit - has payments') }}">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                             </svg>
@@ -978,7 +978,7 @@
                                                             <button
                                                                 wire:click="startMarkPaid('expense', {{ $expense->id }})"
                                                                 class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
-                                                                title="Mark as Paid">
+                                                                title="{{ __('Mark as Paid') }}">
                                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
@@ -1000,9 +1000,9 @@
                                                     @admin
                                                     <button
                                                         wire:click="deleteExpense({{ $expense->id }})"
-                                                        wire:confirm="Are you sure you want to delete this expense?"
+                                                        wire:confirm="{{ __('Are you sure you want to delete this expense?') }}"
                                                         class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                                                        title="Delete">
+                                                        title="{{ __('Delete') }}">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
@@ -1022,14 +1022,14 @@
                             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No expenses</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by adding an expense.</p>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No expenses') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding an expense.') }}</p>
                             <div class="mt-6">
                                 <x-ui.button
                                     variant="primary"
                                     icon="plus"
                                     href="{{ route('expenses.project.create', $project) }}">
-                                    Add Expense
+                                    {{ __('Add Expense') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -1049,7 +1049,7 @@
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="changeOrderSearch"
-                                placeholder="Search change orders..."
+                                placeholder="{{ __('Search change orders...') }}"
                                 class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                             <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -1059,8 +1059,8 @@
                         <select
                             wire:model.live="changeOrderLocationFilter"
                             class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="all">All Locations</option>
-                            <option value="project">Project (General)</option>
+                            <option value="all">{{ __('All Locations') }}</option>
+                            <option value="project">{{ __('Project (General)') }}</option>
                             @foreach($jobSites as $js)
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
@@ -1070,7 +1070,7 @@
                         variant="primary"
                         icon="plus"
                         wire:click="openChangeOrderCreateModal">
-                        Add Change Order
+                        {{ __('Add Change Order') }}
                     </x-ui.button>
                 </div>
 
@@ -1078,7 +1078,7 @@
                 <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-white/80">Total Change Orders</p>
+                            <p class="text-sm font-medium text-white/80">{{ __('Total Change Orders') }}</p>
                             <p class="text-3xl font-bold mt-1">{{ Number::currency($totalChangeOrdersAmount, config('app.currency'), config('app.locale')) }}</p>
                         </div>
                         <div class="bg-white/10 rounded-full p-4">
@@ -1097,12 +1097,12 @@
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                                 <thead class="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Title</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Amount</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">File</th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Title') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Amount') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('File') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -1126,11 +1126,11 @@
                                                     <span class="text-sm text-slate-900 dark:text-white">{{ $changeOrder->jobSite->job_site_name }}</span>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                        Project (General)
+                                                        {{ __('Project (General)') }}
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $changeOrder->amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $changeOrder->{{ __('amount') }} < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
                                                 {{ $changeOrder->amount >= 0 ? '+' : '' }}{{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -1158,7 +1158,7 @@
                                                         </svg>
                                                     </button>
                                                     @admin
-                                                    <button wire:click="deleteChangeOrder({{ $changeOrder->id }})" wire:confirm="Are you sure you want to delete this change order?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                    <button wire:click="deleteChangeOrder({{ $changeOrder->id }})" wire:confirm="{{ __('Are you sure you want to delete this change order?') }}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
@@ -1178,14 +1178,14 @@
                             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No change orders</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by adding a change order.</p>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No change orders') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding a change order.') }}</p>
                             <div class="mt-6">
                                 <x-ui.button
                                     variant="primary"
                                     icon="plus"
                                     wire:click="openChangeOrderCreateModal">
-                                    Add Change Order
+                                    {{ __('Add Change Order') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -1205,7 +1205,7 @@
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="dailyReportSearch"
-                                placeholder="Search daily reports..."
+                                placeholder="{{ __('Search daily reports...') }}"
                                 class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                             <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -1215,8 +1215,8 @@
                         <select
                             wire:model.live="dailyReportLocationFilter"
                             class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="all">All Locations</option>
-                            <option value="project">Project (General)</option>
+                            <option value="all">{{ __('All Locations') }}</option>
+                            <option value="project">{{ __('Project (General)') }}</option>
                             @foreach($jobSites as $js)
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
@@ -1226,7 +1226,7 @@
                         variant="primary"
                         icon="plus"
                         href="{{ route('dailyreports.project.create', $project) }}">
-                        Add Daily Report
+                        {{ __('Add Daily Report') }}
                     </x-ui.button>
                 </div>
 
@@ -1234,7 +1234,7 @@
                 <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-white/80">Total Daily Reports</p>
+                            <p class="text-sm font-medium text-white/80">{{ __('Total Daily Reports') }}</p>
                             <p class="text-3xl font-bold mt-1">{{ $dailyReports->count() }}</p>
                         </div>
                         <div class="bg-white/10 rounded-full p-4">
@@ -1253,12 +1253,12 @@
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                                 <thead class="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prepared By</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tasks</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Prepared By') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Tasks') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -1272,7 +1272,7 @@
                                                     <span class="text-sm text-slate-900 dark:text-white">{{ $report->jobSite->job_site_name }}</span>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                        Project (General)
+                                                        {{ __('Project (General)') }}
                                                     </span>
                                                 @endif
                                             </td>
@@ -1288,29 +1288,29 @@
                                                         <svg class="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                                                         </svg>
-                                                        Locked
+                                                        {{ __('Locked') }}
                                                     </span>
                                                 @elseif($report->isEditable())
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                                        Editable
+                                                        {{ __('Editable') }}
                                                     </span>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-                                                        Read Only
+                                                        {{ __('Read Only') }}
                                                     </span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div class="flex items-center justify-end space-x-2">
                                                     <!-- View PDF -->
-                                                    <a href="{{ route('dailyreports.pdf.view', $report) }}" target="_blank" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" title="View PDF">
+                                                    <a href="{{ route('dailyreports.pdf.view', $report) }}" target="_blank" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" title="{{ __('View PDF') }}">
                                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </a>
                                                     <!-- Download PDF -->
-                                                    <a href="{{ route('dailyreports.pdf.download', $report) }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" title="Download PDF">
+                                                    <a href="{{ route('dailyreports.pdf.download', $report) }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" title="{{ __('Download PDF') }}">
                                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                         </svg>
@@ -1318,13 +1318,13 @@
                                                     <!-- Edit -->
                                                     @if($report->isEditable() || auth()->user()->is_admin)
                                                         @if($report->jobSite)
-                                                            <a href="{{ route('dailyreports.edit', ['jobSite' => $report->jobSite, 'dailyReport' => $report]) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="Edit">
+                                                            <a href="{{ route('dailyreports.edit', ['jobSite' => $report->jobSite, 'dailyReport' => $report]) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="{{ __('Edit') }}">
                                                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                                 </svg>
                                                             </a>
                                                         @else
-                                                            <a href="{{ route('dailyreports.project.edit', ['project' => $project, 'dailyReport' => $report]) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="Edit">
+                                                            <a href="{{ route('dailyreports.project.edit', ['project' => $project, 'dailyReport' => $report]) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="{{ __('Edit') }}">
                                                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                                 </svg>
@@ -1345,14 +1345,14 @@
                             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No daily reports</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a daily report.</p>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No daily reports') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a daily report.') }}</p>
                             <div class="mt-6">
                                 <x-ui.button
                                     variant="primary"
                                     icon="plus"
                                     href="{{ route('dailyreports.project.create', $project) }}">
-                                    Add Daily Report
+                                    {{ __('Add Daily Report') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -1367,14 +1367,14 @@
                 <!-- Project Budget Section -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Budget</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Budget') }}</h3>
                         @if(!$projectBudget)
                             <x-ui.button
                                 variant="primary"
                                 size="sm"
                                 href="{{ route('projects.budgets.create', $project->id) }}"
                                 icon="plus">
-                                Create Budget
+                                {{ __('Create Budget') }}
                             </x-ui.button>
                         @endif
                     </div>
@@ -1401,14 +1401,14 @@
                                             size="sm"
                                             href="{{ route('budgets.show', $projectBudget->id) }}"
                                             icon="eye">
-                                            View
+                                            {{ __('View') }}
                                         </x-ui.button>
                                         <x-ui.button
                                             variant="ghost"
                                             size="sm"
                                             href="{{ route('budgets.edit', $projectBudget->id) }}"
                                             icon="edit">
-                                            Edit
+                                            {{ __('Edit') }}
                                         </x-ui.button>
                                     </div>
                                 </div>
@@ -1418,8 +1418,8 @@
                                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
-                                <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No project budget</h4>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Create a budget to track cost allocation for this project.</p>
+                                <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No project budget') }}</h4>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Create a budget to track cost allocation for this project.') }}</p>
                             </div>
                         @endif
                     </div>
@@ -1429,7 +1429,7 @@
                 @if($jobSites->count() > 0)
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Job Site Budgets</h3>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Job Site Budgets') }}</h3>
                         </div>
 
                         <div class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -1454,7 +1454,7 @@
                                                     {{ $jobSiteBudget->name }} &bull; {{ $jobSiteBudget->items_count }} cost codes
                                                 </p>
                                             @else
-                                                <p class="text-sm text-slate-400 dark:text-slate-500">No budget</p>
+                                                <p class="text-sm text-slate-400 dark:text-slate-500">{{ __('No budget') }}</p>
                                             @endif
                                         </div>
                                     </div>
@@ -1475,7 +1475,7 @@
                                                 size="sm"
                                                 href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
                                                 icon="plus">
-                                                Create
+                                                {{ __('Create') }}
                                             </x-ui.button>
                                         @endif
                                     </div>
@@ -1496,11 +1496,11 @@
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
                 @if($changeOrderModalMode === 'view')
-                    View Change Order
+                    {{ __('View Change Order') }}
                 @elseif($changeOrderModalMode === 'edit')
-                    Edit Change Order
+                    {{ __('Edit Change Order') }}
                 @else
-                    Add New Change Order
+                    {{ __('Add New Change Order') }}
                 @endif
             </h3>
         </div>
@@ -1511,25 +1511,25 @@
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Title') }}</label>
                             <p class="text-slate-900 dark:text-white">{{ $co_title }}</p>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Requested Date</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Requested Date') }}</label>
                             <p class="text-slate-900 dark:text-white">{{ $co_requested_date ? \Carbon\Carbon::parse($co_requested_date)->format('M d, Y') : '-' }}</p>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Location') }}</label>
                         <p class="text-slate-900 dark:text-white">
                             @if($co_job_site_id)
                                 @php $selectedJobSite = $jobSites->find($co_job_site_id); @endphp
                                 {{ $selectedJobSite?->job_site_name ?? 'Unknown Job Site' }}
                             @else
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                    Project (General)
+                                    {{ __('Project (General)') }}
                                 </span>
                             @endif
                         </p>
@@ -1537,24 +1537,24 @@
 
                     @if($co_description)
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Description') }}</label>
                             <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $co_description }}</p>
                         </div>
                     @endif
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Amount') }}</label>
                         <p class="font-medium {{ ($co_amount ?: 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">{{ ($co_amount ?: 0) >= 0 ? '+' : '' }}{{ Number::currency($co_amount ?: 0, config('app.currency'), config('app.locale')) }}</p>
                     </div>
 
                     @if($existingFilePath)
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Attached File</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Attached File') }}</label>
                             <a href="{{ route('files.download', ['path' => $existingFilePath]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                                 <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                Download File
+                                {{ __('Download File') }}
                             </a>
                         </div>
                     @endif
@@ -1567,11 +1567,11 @@
                             <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Created By</label>
+                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Created By') }}</label>
                                         <p class="text-slate-900 dark:text-white">{{ $changeOrderRecord->createdBy->name }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Created On</label>
+                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Created On') }}</label>
                                         <p class="text-slate-900 dark:text-white">{{ $changeOrderRecord->created_at->format('M d, Y g:i A') }}</p>
                                     </div>
                                 </div>
@@ -1585,7 +1585,7 @@
                         type="button"
                         variant="secondary"
                         wire:click="closeChangeOrderModal">
-                        Close
+                        {{ __('Close') }}
                     </x-ui.button>
                 </div>
             @else
@@ -1594,18 +1594,18 @@
                     <!-- Location -->
                     <div>
                         <label for="co_job_site_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Location
+                            {{ __('Location') }}
                         </label>
                         <select
                             id="co_job_site_id"
                             wire:model="co_job_site_id"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">Project (General)</option>
+                            <option value="">{{ __('Project (General)') }}</option>
                             @foreach($jobSites as $js)
                                 <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
                             @endforeach
                         </select>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Leave as "Project (General)" for project-level change orders</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('Leave as "Project (General)" for project-level change orders') }}</p>
                         @error('co_job_site_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
@@ -1613,21 +1613,21 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="co_title" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Title <span class="text-red-500">*</span>
+                                {{ __('Title') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 id="co_title"
                                 wire:model="co_title"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="Enter change order title"
+                                placeholder="{{ __('Enter change order title') }}"
                             >
                             @error('co_title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="co_requested_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Requested Date <span class="text-red-500">*</span>
+                                {{ __('Requested Date') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="date"
@@ -1642,14 +1642,14 @@
                     <!-- Description -->
                     <div>
                         <label for="co_description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Description
+                            {{ __('Description') }}
                         </label>
                         <textarea
                             id="co_description"
                             wire:model="co_description"
                             rows="4"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Enter description (optional)"
+                            placeholder="{{ __('Enter description (optional)') }}"
                         ></textarea>
                         @error('co_description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -1657,7 +1657,7 @@
                     <!-- Amount -->
                     <div>
                         <label for="co_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Amount <span class="text-red-500">*</span>
+                            {{ __('Amount') }} <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
@@ -1676,13 +1676,13 @@
                     <!-- File Upload -->
                     <div>
                         <label for="co_file" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Attach File
+                            {{ __('Attach File') }}
                         </label>
                         @if($existingFilePath && !$co_file)
                             <div class="mb-2 text-sm text-slate-600 dark:text-slate-400">
-                                Current file:
+                                {{ __('Current file:') }}
                                 <a href="{{ route('files.download', ['path' => $existingFilePath]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                    Download
+                                    {{ __('Download') }}
                                 </a>
                             </div>
                         @endif
@@ -1692,7 +1692,7 @@
                             wire:model="co_file"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         >
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Maximum file size: 10MB</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('Maximum file size: 10MB') }}</p>
                         @error('co_file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
                         @if($co_file)
@@ -1708,7 +1708,7 @@
                             type="button"
                             variant="secondary"
                             wire:click="closeChangeOrderModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button
                             type="submit"
@@ -1732,12 +1732,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Project
+                    {{ __('Delete Project') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
                     Are you sure you want to delete <strong>{{ $deleteProjectData['name'] ?? $project->project_name }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    This action <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 @if(!empty($deleteProjectData))
@@ -1752,7 +1752,7 @@
 
                     @if($hasRelated)
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">{{ __('The following data will be permanently deleted:') }}</p>
                             <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
                                 @if(($deleteProjectData['job_sites'] ?? 0) > 0)
                                     <li class="flex items-center">
@@ -1800,13 +1800,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteProject"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteProject"
                         icon="trash">
-                        Delete Project
+                        {{ __('Delete Project') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -1824,12 +1824,12 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white text-center mb-2">
-                    Delete Job Site
+                    {{ __('Delete Job Site') }}
                 </h3>
 
                 <p class="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
                     Are you sure you want to delete <strong>{{ $deleteJobSiteData['name'] ?? '' }}</strong>?
-                    This action <strong>cannot be undone</strong>.
+                    This action <strong>{{ __('cannot be undone') }}</strong>.
                 </p>
 
                 @if(!empty($deleteJobSiteData))
@@ -1842,7 +1842,7 @@
 
                     @if($hasRelatedJobSite)
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">The following data will be permanently deleted:</p>
+                            <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">{{ __('The following data will be permanently deleted:') }}</p>
                             <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
                                 @if(($deleteJobSiteData['expenses'] ?? 0) > 0)
                                     <li class="flex items-center">
@@ -1878,13 +1878,13 @@
                         variant="secondary"
                         wire:click="cancelDeleteJobSite"
                         icon="x">
-                        Cancel
+                        {{ __('Cancel') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="danger"
                         wire:click="deleteJobSite"
                         icon="trash">
-                        Delete Job Site
+                        {{ __('Delete Job Site') }}
                     </x-ui.button>
                 </div>
             </div>

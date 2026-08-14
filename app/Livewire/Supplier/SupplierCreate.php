@@ -97,7 +97,7 @@ class SupplierCreate extends Component
         $supplier->is_subcontractor = (bool) $this->also_subcontractor;
         $supplier->save();
 
-        session()->flash('message', 'Supplier created successfully!');
+        session()->flash('message', __('Supplier created successfully!'));
 
         return redirect()->route('suppliers.index');
     }

@@ -83,7 +83,7 @@ class ContractShow extends Component
         $allowed = array_keys($this->availableStatuses);
 
         if (!in_array($this->newStatus, $allowed)) {
-            session()->flash('error', 'Invalid status transition.');
+            session()->flash('error', __('Invalid status transition.'));
             $this->closeStatusModal();
             return;
         }
@@ -94,7 +94,7 @@ class ContractShow extends Component
 
         $this->refreshContract();
         $this->closeStatusModal();
-        session()->flash('message', 'Contract status updated successfully.');
+        session()->flash('message', __('Contract status updated successfully.'));
     }
 
     public function openPaymentModal()
@@ -219,7 +219,7 @@ class ContractShow extends Component
         $this->contract->updateStatusFromPayments();
         $this->refreshContract();
         $this->closePaymentModal();
-        session()->flash('message', 'Payment recorded successfully.');
+        session()->flash('message', __('Payment recorded successfully.'));
     }
 
     public function deletePayment($id)
@@ -229,7 +229,7 @@ class ContractShow extends Component
 
         $this->contract->updateStatusFromPayments();
         $this->refreshContract();
-        session()->flash('message', 'Payment deleted successfully.');
+        session()->flash('message', __('Payment deleted successfully.'));
     }
 
     #[\Livewire\Attributes\On('change-orders-updated')]
@@ -266,7 +266,7 @@ class ContractShow extends Component
 
         $this->contract->delete();
 
-        session()->flash('message', 'Contract deleted successfully.');
+        session()->flash('message', __('Contract deleted successfully.'));
 
         if ($jobSiteId) {
             return redirect()->route('jobsites.contracts', $jobSiteId);

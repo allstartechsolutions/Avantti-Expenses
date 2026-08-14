@@ -23,11 +23,11 @@
             </div>
             <div class="flex items-center space-x-3">
                 <x-ui.button variant="secondary" href="{{ route('estimates.index') }}" icon="arrow-left">
-                    Back to List
+                    {{ __('Back to List') }}
                 </x-ui.button>
                 @if($estimate->canBeEdited())
                     <x-ui.button variant="secondary" href="{{ route('estimates.edit', $estimate->id) }}" icon="edit">
-                        Edit
+                        {{ __('Edit') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -52,67 +52,67 @@
             <!-- Estimate Details Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Estimate Details</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Estimate Details') }}</h3>
                 </div>
                 <div class="p-6">
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Client</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Client') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->client->company_name }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Estimate Number</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Estimate Number') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->estimate_number }}</dd>
                         </div>
                         @if($estimate->project)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Project</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Project') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->project->project_name }}</dd>
                             </div>
                         @endif
                         @if($estimate->jobSite)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Job Site</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Job Site') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->jobSite->job_site_name }}</dd>
                             </div>
                         @endif
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Estimate Date</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Estimate Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->estimate_date->format('M d, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Terms</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Terms') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->terms_label }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Due Date</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->due_date->format('M d, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Created By</dt>
+                            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->createdBy?->name ?? 'Unknown' }}</dd>
                         </div>
                         @if($estimate->sent_at)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Sent At</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Sent At') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->sent_at->format('M d, Y H:i') }}</dd>
                             </div>
                         @endif
                         @if($estimate->accepted_at)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Accepted At</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Accepted At') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->accepted_at->format('M d, Y H:i') }}</dd>
                             </div>
                         @endif
                         @if($estimate->declined_at)
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Declined At</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Declined At') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->declined_at->format('M d, Y H:i') }}</dd>
                             </div>
                         @endif
                         @if($estimate->notes)
                             <div class="md:col-span-2">
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Internal Notes</dt>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Internal Notes') }}</dt>
                                 <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->notes }}</dd>
                             </div>
                         @endif
@@ -123,18 +123,18 @@
             <!-- Items Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Items</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Items') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-900/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Item</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Qty</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Unit Price</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Discount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Tax</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Item') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Qty') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Unit Price') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Discount') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Tax') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Total') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -178,13 +178,13 @@
                 <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
                     <div class="max-w-xs ml-auto space-y-2">
                         <div class="flex justify-between text-sm">
-                            <span class="text-slate-600 dark:text-slate-400">Subtotal</span>
+                            <span class="text-slate-600 dark:text-slate-400">{{ __('Subtotal') }}</span>
                             <span class="text-slate-900 dark:text-white">${{ number_format($estimate->subtotal, 2) }}</span>
                         </div>
                         @if($estimate->discount_amount > 0)
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-600 dark:text-slate-400">
-                                    Discount
+                                    {{ __('Discount') }}
                                     @if($estimate->discount_type === 'percentage')
                                         ({{ number_format($estimate->discount_value, 2) }}%)
                                     @endif
@@ -194,12 +194,12 @@
                         @endif
                         @if($estimate->tax_total > 0)
                             <div class="flex justify-between text-sm">
-                                <span class="text-slate-600 dark:text-slate-400">Tax</span>
+                                <span class="text-slate-600 dark:text-slate-400">{{ __('Tax') }}</span>
                                 <span class="text-slate-900 dark:text-white">${{ number_format($estimate->tax_total, 2) }}</span>
                             </div>
                         @endif
                         <div class="flex justify-between text-base font-semibold pt-2 border-t border-slate-200 dark:border-slate-700">
-                            <span class="text-slate-900 dark:text-white">Total</span>
+                            <span class="text-slate-900 dark:text-white">{{ __('Total') }}</span>
                             <span class="text-slate-900 dark:text-white">${{ number_format($estimate->total_amount, 2) }}</span>
                         </div>
                     </div>
@@ -226,18 +226,18 @@
             @if($estimate->emailsSent->count() > 0)
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Email History</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Email History') }}</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                             <thead class="bg-slate-50 dark:bg-slate-900/50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Sent By</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">To</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">CC</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Subject</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Opened</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Date') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Sent By') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('To') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('CC') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Subject') }}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Opened') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -265,7 +265,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                                    Not opened yet
+                                                    {{ __('Not opened yet') }}
                                                 </span>
                                             @endif
                                         </td>
@@ -283,7 +283,7 @@
             <!-- Actions Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Actions</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Actions') }}</h3>
                 </div>
                 <div class="p-6 space-y-3">
                     <!-- PDF & Email Actions (all statuses) -->
@@ -292,7 +292,7 @@
                         href="{{ route('estimates.pdf.download', $estimate->id) }}"
                         class="w-full justify-center"
                         icon="arrow-down-tray">
-                        Download PDF
+                        {{ __('Download PDF') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="secondary"
@@ -300,14 +300,14 @@
                         target="_blank"
                         class="w-full justify-center"
                         icon="printer">
-                        Print / Preview
+                        {{ __('Print / Preview') }}
                     </x-ui.button>
                     <x-ui.button
                         variant="primary"
                         class="w-full justify-center"
                         wire:click="$dispatch('open-modal', 'send-email-modal')"
                         icon="envelope">
-                        Email to Client
+                        {{ __('Email to Client') }}
                     </x-ui.button>
 
                     <div class="border-t border-slate-200 dark:border-slate-700 my-3"></div>
@@ -317,24 +317,24 @@
                             variant="primary"
                             class="w-full justify-center"
                             wire:click="markAsSent"
-                            wire:confirm="Mark this estimate as sent?"
+                            wire:confirm="{{ __('Mark this estimate as sent?') }}"
                             icon="paper-airplane">
-                            Mark as Sent
+                            {{ __('Mark as Sent') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="secondary"
                             href="{{ route('estimates.edit', $estimate->id) }}"
                             class="w-full justify-center"
                             icon="edit">
-                            Edit Estimate
+                            {{ __('Edit Estimate') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="danger"
                             class="w-full justify-center"
                             wire:click="deleteEstimate"
-                            wire:confirm="Are you sure you want to delete this estimate? This cannot be undone."
+                            wire:confirm="{{ __('Are you sure you want to delete this estimate? This cannot be undone.') }}"
                             icon="trash">
-                            Delete
+                            {{ __('Delete') }}
                         </x-ui.button>
 
                     @elseif($estimate->isSent())
@@ -342,32 +342,32 @@
                             variant="success"
                             class="w-full justify-center"
                             wire:click="markAsAccepted"
-                            wire:confirm="Mark this estimate as accepted?"
+                            wire:confirm="{{ __('Mark this estimate as accepted?') }}"
                             icon="check">
-                            Mark Accepted
+                            {{ __('Mark Accepted') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="danger"
                             class="w-full justify-center"
                             wire:click="markAsDeclined"
-                            wire:confirm="Mark this estimate as declined?"
+                            wire:confirm="{{ __('Mark this estimate as declined?') }}"
                             icon="x">
-                            Mark Declined
+                            {{ __('Mark Declined') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="secondary"
                             href="{{ route('estimates.edit', $estimate->id) }}"
                             class="w-full justify-center"
                             icon="edit">
-                            Edit Estimate
+                            {{ __('Edit Estimate') }}
                         </x-ui.button>
                         <x-ui.button
                             variant="danger"
                             class="w-full justify-center"
                             wire:click="deleteEstimate"
-                            wire:confirm="Are you sure you want to delete this estimate? This cannot be undone."
+                            wire:confirm="{{ __('Are you sure you want to delete this estimate? This cannot be undone.') }}"
                             icon="trash">
-                            Delete
+                            {{ __('Delete') }}
                         </x-ui.button>
 
                     @elseif($estimate->isAccepted())
@@ -375,7 +375,7 @@
                             <svg class="w-8 h-8 mx-auto mb-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">This estimate has been accepted.</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('This estimate has been accepted.') }}</p>
                         </div>
                         @if($estimate->converted_to_invoice_id)
                             <x-ui.button
@@ -390,9 +390,9 @@
                                 variant="success"
                                 class="w-full justify-center"
                                 wire:click="convertToInvoice"
-                                wire:confirm="Convert this estimate to a draft invoice?"
+                                wire:confirm="{{ __('Convert this estimate to a draft invoice?') }}"
                                 icon="document-duplicate">
-                                Convert to Invoice
+                                {{ __('Convert to Invoice') }}
                             </x-ui.button>
                         @endif
 
@@ -401,7 +401,7 @@
                             <svg class="w-8 h-8 mx-auto mb-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">This estimate has been declined.</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('This estimate has been declined.') }}</p>
                         </div>
                     @endif
                 </div>
@@ -410,32 +410,32 @@
             <!-- Summary Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Summary</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Summary') }}</h3>
                 </div>
                 <div class="p-6">
                     <dl class="space-y-3">
                         <div class="flex justify-between">
-                            <dt class="text-sm text-slate-500 dark:text-slate-400">Items</dt>
+                            <dt class="text-sm text-slate-500 dark:text-slate-400">{{ __('Items') }}</dt>
                             <dd class="text-sm font-medium text-slate-900 dark:text-white">{{ $estimate->items->count() }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-sm text-slate-500 dark:text-slate-400">Subtotal</dt>
+                            <dt class="text-sm text-slate-500 dark:text-slate-400">{{ __('Subtotal') }}</dt>
                             <dd class="text-sm font-medium text-slate-900 dark:text-white">${{ number_format($estimate->subtotal, 2) }}</dd>
                         </div>
                         @if($estimate->discount_amount > 0)
                             <div class="flex justify-between">
-                                <dt class="text-sm text-slate-500 dark:text-slate-400">Discount</dt>
+                                <dt class="text-sm text-slate-500 dark:text-slate-400">{{ __('Discount') }}</dt>
                                 <dd class="text-sm font-medium text-red-600 dark:text-red-400">-${{ number_format($estimate->discount_amount, 2) }}</dd>
                             </div>
                         @endif
                         @if($estimate->tax_total > 0)
                             <div class="flex justify-between">
-                                <dt class="text-sm text-slate-500 dark:text-slate-400">Tax</dt>
+                                <dt class="text-sm text-slate-500 dark:text-slate-400">{{ __('Tax') }}</dt>
                                 <dd class="text-sm font-medium text-slate-900 dark:text-white">${{ number_format($estimate->tax_total, 2) }}</dd>
                             </div>
                         @endif
                         <div class="flex justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
-                            <dt class="text-base font-semibold text-slate-900 dark:text-white">Total</dt>
+                            <dt class="text-base font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</dt>
                             <dd class="text-base font-bold text-slate-900 dark:text-white">${{ number_format($estimate->total_amount, 2) }}</dd>
                         </div>
                     </dl>
@@ -445,7 +445,7 @@
             <!-- Status History Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Status History</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Status History') }}</h3>
                 </div>
                 <div class="p-6">
                     @if($estimate->statusHistories->count() > 0)
@@ -501,7 +501,7 @@
                             </ul>
                         </div>
                     @else
-                        <p class="text-sm text-slate-500 dark:text-slate-400">No status changes recorded.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No status changes recorded.') }}</p>
                     @endif
                 </div>
             </div>

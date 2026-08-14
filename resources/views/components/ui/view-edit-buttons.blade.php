@@ -7,14 +7,14 @@
             size="sm"
             href="{{ $viewRoute }}"
             icon="eye"
-            title="View" />
+            title="{{ __('View') }}" />
     @elseif($viewAction)
         <x-ui.icon-button
             variant="secondary"
             size="sm"
             wire:click="{{ $viewAction }}"
             icon="eye"
-            title="View" />
+            title="{{ __('View') }}" />
     @endif
 
     @if($editRoute)
@@ -23,13 +23,13 @@
             size="sm"
             href="{{ $editRoute }}"
             icon="edit"
-            title="Edit" />
+            title="{{ __('Edit') }}" />
     @elseif($editAction)
         <x-ui.icon-button
             variant="secondary"
             size="sm"
             wire:click="{{ $editAction }}"
             icon="edit"
-            title="Edit" />
+            title="{{ __('Edit') }}" />
     @endif
 </div>

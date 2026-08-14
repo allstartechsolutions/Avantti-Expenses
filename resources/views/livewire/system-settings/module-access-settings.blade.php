@@ -9,8 +9,8 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Module Access</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Enable or disable modules to customize what's available in the system.</p>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Module Access') }}</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Enable or disable modules to customize what\'s available in the system.') }}</p>
         </div>
     </div>
 
@@ -51,7 +51,7 @@
                         variant="secondary"
                         size="sm"
                         wire:click="viewHistory({{ $module->id }})">
-                        History
+                        {{ __('History') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -64,8 +64,8 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No configurable modules</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">All modules are core and cannot be toggled.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No configurable modules') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('All modules are core and cannot be toggled.') }}</p>
             </div>
         </div>
     @endif
@@ -75,7 +75,7 @@
         <x-ui.modal name="module-access-history-modal" :show="true" maxWidth="2xl">
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                    Change History
+                    {{ __('Change History') }}
                 </h3>
 
                 @if(count($historyEntries) > 0)
@@ -83,12 +83,12 @@
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                             <thead class="bg-slate-50 dark:bg-slate-900">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Action</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Field</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Old Value</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">New Value</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Changed By</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Action') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Field') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Old Value') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('New Value') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Changed By') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Date') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -96,9 +96,9 @@
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                         <td class="px-4 py-2 whitespace-nowrap">
                                             @if($entry['action'] === 'created')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">Created</span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">{{ __('Created') }}</span>
                                             @elseif($entry['action'] === 'updated')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">Updated</span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">{{ __('Updated') }}</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-900 dark:text-white">
@@ -122,7 +122,7 @@
                         </table>
                     </div>
                 @else
-                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No history entries found.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{{ __('No history entries found.') }}</p>
                 @endif
 
                 <div class="flex justify-end mt-4">
@@ -130,7 +130,7 @@
                         variant="secondary"
                         wire:click="closeHistory"
                         icon="x">
-                        Close
+                        {{ __('Close') }}
                     </x-ui.button>
                 </div>
             </div>

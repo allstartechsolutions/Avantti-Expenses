@@ -512,7 +512,7 @@ class InvoiceCreate extends Component
             return $invoice;
         });
 
-        session()->flash('message', 'Invoice saved as draft!');
+        session()->flash('message', __('Invoice saved as draft!'));
 
         return redirect()->route('invoices.show', $invoice->id);
     }

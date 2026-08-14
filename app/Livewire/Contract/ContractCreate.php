@@ -114,7 +114,7 @@ class ContractCreate extends Component
             return $contract;
         });
 
-        session()->flash('message', 'Contract created successfully!');
+        session()->flash('message', __('Contract created successfully!'));
 
         if ($this->jobSite) {
             return redirect()->route('jobsites.contracts', $this->jobSite);

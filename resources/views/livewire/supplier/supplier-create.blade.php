@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Supplier</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add a new supplier to the system</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Create Supplier') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Add a new supplier to the system') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('suppliers.index') }}"
                     icon="arrow-left">
-                    Back to Suppliers
+                    {{ __('Back to Suppliers') }}
                 </x-ui.button>
             </div>
         </div>
@@ -22,21 +22,21 @@
         <!-- Supplier Information Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Supplier Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic supplier details</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Supplier Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Basic supplier details') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Supplier Name -->
                 <div>
                     <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Supplier Name <span class="text-red-500">*</span>
+                        {{ __('Supplier Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="name"
                         wire:model.live="name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Enter supplier name"
+                        placeholder="{{ __('Enter supplier name') }}"
                     >
                     @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
@@ -65,7 +65,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Email Address
+                            {{ __('Email Address') }}
                         </label>
                         <input
                             type="email"
@@ -78,7 +78,7 @@
                     </div>
                     <div>
                         <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Phone Number
+                            {{ __('Phone Number') }}
                         </label>
                         <input
                             type="tel"
@@ -94,14 +94,14 @@
                 <!-- Description -->
                 <div>
                     <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Description
+                        {{ __('Description') }}
                     </label>
                     <textarea
                         id="description"
                         wire:model.live="description"
                         rows="3"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Notes about this supplier..."
+                        placeholder="{{ __('Notes about this supplier...') }}"
                     ></textarea>
                     @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -111,15 +111,15 @@
         <!-- Address Information Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Address Information</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Supplier location details</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Address Information') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Supplier location details') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Street Address -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="md:col-span-2">
                         <label for="street" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Street Address
+                            {{ __('Street Address') }}
                         </label>
                         <input
                             type="text"
@@ -139,7 +139,7 @@
                             id="address_2"
                             wire:model.live="address_2"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Suite, Apt, Unit, etc."
+                            placeholder="{{ __('Suite, Apt, Unit, etc.') }}"
                         >
                         @error('address_2') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -150,27 +150,27 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="neighborhood" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Neighborhood (Bairro)
+                            {{ __('Neighborhood (Bairro)') }}
                         </label>
                         <input
                             type="text"
                             id="neighborhood"
                             wire:model.live="neighborhood"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Bairro"
+                            placeholder="{{ __('Bairro') }}"
                         >
                         @error('neighborhood') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            City
+                            {{ __('City') }}
                         </label>
                         <input
                             type="text"
                             id="city"
                             wire:model.live="city"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="City"
+                            placeholder="{{ __('City') }}"
                         >
                         @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -179,14 +179,14 @@
                 <!-- City (US) -->
                 <div>
                     <label for="city" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        City
+                        {{ __('City') }}
                     </label>
                     <input
                         type="text"
                         id="city"
                         wire:model.live="city"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="City"
+                        placeholder="{{ __('City') }}"
                     >
                     @error('city') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
@@ -230,7 +230,7 @@
             <x-ui.button
                 variant="secondary"
                 href="{{ route('suppliers.index') }}">
-                Cancel
+                {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button
                 type="submit"
@@ -238,8 +238,8 @@
                 icon="save"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50">
-                <span wire:loading.remove>Create Supplier</span>
-                <span wire:loading>Creating...</span>
+                <span wire:loading.remove>{{ __('Create Supplier') }}</span>
+                <span wire:loading>{{ __('Creating...') }}</span>
             </x-ui.button>
         </div>
     </form>

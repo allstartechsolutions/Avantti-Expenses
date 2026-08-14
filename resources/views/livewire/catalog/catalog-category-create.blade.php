@@ -3,14 +3,14 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Add Category</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create a new catalog category</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Add Category') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Create a new catalog category') }}</p>
             </div>
             <x-ui.button
                 variant="secondary"
                 href="{{ route('catalog.categories.index') }}"
                 icon="arrow-left">
-                Back to Categories
+                {{ __('Back to Categories') }}
             </x-ui.button>
         </div>
     </div>
@@ -22,14 +22,14 @@
                 <!-- Name -->
                 <div class="md:col-span-2">
                     <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Category Name <span class="text-red-500">*</span>
+                        {{ __('Category Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="name"
                         wire:model="name"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="Enter category name">
+                        placeholder="{{ __('Enter category name') }}">
                     @error('name')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
@@ -38,7 +38,7 @@
                 <!-- Applicable Types -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Applicable Types <span class="text-red-500">*</span>
+                        {{ __('Applicable Types') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="flex flex-wrap gap-4">
                         <label class="inline-flex items-center">
@@ -47,7 +47,7 @@
                                 wire:model="applicable_types"
                                 value="product"
                                 class="w-4 h-4 text-[#3F5189] border-slate-300 rounded focus:ring-[#3F5189] dark:border-slate-600 dark:bg-slate-700">
-                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Products</span>
+                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">{{ __('Products') }}</span>
                         </label>
                         <label class="inline-flex items-center">
                             <input
@@ -55,7 +55,7 @@
                                 wire:model="applicable_types"
                                 value="service"
                                 class="w-4 h-4 text-[#3F5189] border-slate-300 rounded focus:ring-[#3F5189] dark:border-slate-600 dark:bg-slate-700">
-                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Services</span>
+                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">{{ __('Services') }}</span>
                         </label>
                         <label class="inline-flex items-center">
                             <input
@@ -63,7 +63,7 @@
                                 wire:model="applicable_types"
                                 value="rental"
                                 class="w-4 h-4 text-[#3F5189] border-slate-300 rounded focus:ring-[#3F5189] dark:border-slate-600 dark:bg-slate-700">
-                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Rentals</span>
+                            <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">{{ __('Rentals') }}</span>
                         </label>
                     </div>
                     @error('applicable_types')
@@ -74,13 +74,13 @@
                 <!-- Parent Category -->
                 <div>
                     <label for="parent_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Parent Category
+                        {{ __('Parent Category') }}
                     </label>
                     <select
                         id="parent_id"
                         wire:model="parent_id"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        <option value="">None (Root Category)</option>
+                        <option value="">{{ __('None (Root Category)') }}</option>
                         @foreach($parentCategories as $parent)
                             <option value="{{ $parent->id }}">{{ $parent->name }}</option>
                         @endforeach
@@ -93,7 +93,7 @@
                 <!-- Display Order -->
                 <div>
                     <label for="display_order" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Display Order
+                        {{ __('Display Order') }}
                     </label>
                     <input
                         type="number"
@@ -110,7 +110,7 @@
                 <!-- Status -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Status
+                        {{ __('Status') }}
                     </label>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" wire:model="is_active" class="sr-only peer">
@@ -128,13 +128,13 @@
                     type="button"
                     variant="secondary"
                     href="{{ route('catalog.categories.index') }}">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     type="submit"
                     variant="primary"
                     icon="check">
-                    Create Category
+                    {{ __('Create Category') }}
                 </x-ui.button>
             </div>
         </form>

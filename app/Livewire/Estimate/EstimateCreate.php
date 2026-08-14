@@ -514,7 +514,7 @@ class EstimateCreate extends Component
             return $estimate;
         });
 
-        session()->flash('message', 'Estimate saved as draft!');
+        session()->flash('message', __('Estimate saved as draft!'));
 
         return redirect()->route('estimates.show', $estimate->id);
     }

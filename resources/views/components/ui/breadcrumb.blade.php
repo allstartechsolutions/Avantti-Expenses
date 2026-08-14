@@ -2,7 +2,7 @@
     'items' => []
 ])
 
-<nav class="flex mb-4" aria-label="Breadcrumb">
+<nav class="flex mb-4" aria-label="{{ __('Breadcrumb') }}">
     <ol class="inline-flex items-center space-x-1 md:space-x-2">
         {{-- Home link --}}
         <li class="inline-flex items-center">

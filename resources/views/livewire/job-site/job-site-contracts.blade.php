@@ -1,4 +1,4 @@
-<x-jobsite-layout :jobSite="$jobSite" active="contracts" title="Contracts">
+<x-jobsite-layout :jobSite="$jobSite" active="contracts" title="{{ __('Contracts') }}">
     <div class="space-y-6">
         <!-- Header with Search, Filters -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -8,7 +8,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="search"
-                        placeholder="Search contracts..."
+                        placeholder="{{ __('Search contracts...') }}"
                         class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -18,17 +18,17 @@
                 <select
                     wire:model.live="statusFilter"
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="partially_paid">Partially Paid</option>
-                    <option value="paid">Paid</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="all">{{ __('All Status') }}</option>
+                    <option value="active">{{ __('Active') }}</option>
+                    <option value="completed">{{ __('Completed') }}</option>
+                    <option value="partially_paid">{{ __('Partially Paid') }}</option>
+                    <option value="paid">{{ __('Paid') }}</option>
+                    <option value="cancelled">{{ __('Cancelled') }}</option>
                 </select>
             </div>
             <div>
                 <x-ui.button variant="primary" href="{{ route('contracts.jobsite.create', $jobSite) }}" icon="plus">
-                    Add Contract
+                    {{ __('Add Contract') }}
                 </x-ui.button>
             </div>
         </div>
@@ -39,7 +39,7 @@
             <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-white/80">Total Value</p>
+                        <p class="text-sm font-medium text-white/80">{{ __('Total Value') }}</p>
                         <p class="text-2xl font-bold mt-1">{{ Number::currency($totalContractsAmount, config('app.currency'), config('app.locale')) }}</p>
                     </div>
                     <div class="bg-white/10 rounded-full p-3">
@@ -54,7 +54,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Active</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Active') }}</p>
                         <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ $activeCount }}</p>
                     </div>
                     <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
@@ -68,7 +68,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Completed</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Completed') }}</p>
                         <p class="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400">{{ $completedCount }}</p>
                     </div>
                     <div class="bg-blue-100 dark:bg-blue-900/20 rounded-full p-3">
@@ -82,7 +82,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Paid</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Paid') }}</p>
                         <p class="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">{{ $paidCount }}</p>
                     </div>
                     <div class="bg-emerald-100 dark:bg-emerald-900/20 rounded-full p-3">
@@ -101,13 +101,13 @@
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-900/50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contract #</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Subcontractor</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Start Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">End Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Amount</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract #') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Subcontractor') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Start Date') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('End Date') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Amount') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -165,8 +165,8 @@
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No contracts</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating a new contract.</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No contracts') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a new contract.') }}</p>
             </div>
         @endif
     </div>

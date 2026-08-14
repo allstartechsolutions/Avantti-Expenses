@@ -64,7 +64,7 @@ class ClientCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Client created successfully!');
+        session()->flash('message', __('Client created successfully!'));
 
         return redirect()->route('clients.index');
     }

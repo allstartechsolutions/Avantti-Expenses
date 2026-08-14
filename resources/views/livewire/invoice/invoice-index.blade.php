@@ -3,15 +3,15 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Invoices</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your invoices and payments</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Invoices') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your invoices and payments') }}</p>
             </div>
             <div>
                 <x-ui.button
                     variant="primary"
                     href="{{ route('invoices.create') }}"
                     icon="plus">
-                    New Invoice
+                    {{ __('New Invoice') }}
                 </x-ui.button>
             </div>
         </div>
@@ -32,34 +32,34 @@
     <!-- Status Filter Tabs -->
     <div class="mb-6">
         <div class="border-b border-slate-200 dark:border-slate-700">
-            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+            <nav class="-mb-px flex space-x-6" aria-label="{{ __('Tabs') }}">
                 <button wire:click="setStatusFilter('')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === '' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    All <span class="ml-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{{ $statusCounts['all'] }}</span>
+                    {{ __('All') }} <span class="ml-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{{ $statusCounts['all'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('draft')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'draft' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Draft <span class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{{ $statusCounts['draft'] }}</span>
+                    {{ __('Draft') }} <span class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{{ $statusCounts['draft'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('sent')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'sent' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Sent <span class="ml-1 text-xs bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">{{ $statusCounts['sent'] }}</span>
+                    {{ __('Sent') }} <span class="ml-1 text-xs bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">{{ $statusCounts['sent'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('pending')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'pending' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Pending <span class="ml-1 text-xs bg-yellow-100 dark:bg-yellow-700 text-yellow-600 dark:text-yellow-300 px-2 py-0.5 rounded-full">{{ $statusCounts['pending'] }}</span>
+                    {{ __('Pending') }} <span class="ml-1 text-xs bg-yellow-100 dark:bg-yellow-700 text-yellow-600 dark:text-yellow-300 px-2 py-0.5 rounded-full">{{ $statusCounts['pending'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('partial')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'partial' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Partial <span class="ml-1 text-xs bg-orange-100 dark:bg-orange-700 text-orange-600 dark:text-orange-300 px-2 py-0.5 rounded-full">{{ $statusCounts['partial'] }}</span>
+                    {{ __('Partial') }} <span class="ml-1 text-xs bg-orange-100 dark:bg-orange-700 text-orange-600 dark:text-orange-300 px-2 py-0.5 rounded-full">{{ $statusCounts['partial'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('paid')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'paid' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Paid <span class="ml-1 text-xs bg-green-100 dark:bg-green-700 text-green-600 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $statusCounts['paid'] }}</span>
+                    {{ __('Paid') }} <span class="ml-1 text-xs bg-green-100 dark:bg-green-700 text-green-600 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $statusCounts['paid'] }}</span>
                 </button>
                 <button wire:click="setStatusFilter('past_due')"
                     class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm {{ $statusFilter === 'past_due' ? 'border-[#3F5189] text-[#3F5189]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
-                    Past Due <span class="ml-1 text-xs bg-red-100 dark:bg-red-700 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">{{ $statusCounts['past_due'] }}</span>
+                    {{ __('Past Due') }} <span class="ml-1 text-xs bg-red-100 dark:bg-red-700 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">{{ $statusCounts['past_due'] }}</span>
                 </button>
             </nav>
         </div>
@@ -70,7 +70,7 @@
         <div class="p-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex-1 max-w-md">
-                    <label for="search" class="sr-only">Search invoices</label>
+                    <label for="search" class="sr-only">{{ __('Search invoices') }}</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +82,7 @@
                             id="search"
                             wire:model.live.debounce.300ms="search"
                             class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]"
-                            placeholder="Search by invoice number or client name..."
+                            placeholder="{{ __('Search by invoice number or client name...') }}"
                         >
                     </div>
                 </div>
@@ -92,7 +92,7 @@
                         variant="secondary"
                         wire:click="$set('search', '')"
                         icon="x">
-                        Clear Search
+                        {{ __('Clear Search') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -107,28 +107,28 @@
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Invoice #
+                                {{ __('Invoice #') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Client
+                                {{ __('Client') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Project
+                                {{ __('Project') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Date
+                                {{ __('Date') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Due Date
+                                {{ __('Due Date') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Status
+                                {{ __('Status') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Total
+                                {{ __('Total') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Actions
+                                {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -185,9 +185,9 @@
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteInvoice({{ $invoice->id }})"
-                                                wire:confirm="Are you sure you want to delete this invoice?"
+                                                wire:confirm="{{ __('Are you sure you want to delete this invoice?') }}"
                                                 icon="trash"
-                                                title="Delete" />
+                                                title="{{ __('Delete') }}" />
                                         @endif
                                     </div>
                                 </td>
@@ -209,16 +209,16 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
                     @if($search || $statusFilter)
-                        No invoices found
+                        {{ __('No invoices found') }}
                     @else
-                        No invoices yet
+                        {{ __('No invoices yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @if($search || $statusFilter)
-                        Try adjusting your search or filter.
+                        {{ __('Try adjusting your search or filter.') }}
                     @else
-                        Get started by creating a new invoice.
+                        {{ __('Get started by creating a new invoice.') }}
                     @endif
                 </p>
                 @if(!$search && !$statusFilter)
@@ -227,7 +227,7 @@
                             variant="primary"
                             href="{{ route('invoices.create') }}"
                             icon="plus">
-                            New Invoice
+                            {{ __('New Invoice') }}
                         </x-ui.button>
                     </div>
                 @endif

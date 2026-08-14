@@ -3,14 +3,14 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Add Catalog Item</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create a new product, service, or rental item</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Add Catalog Item') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Create a new product, service, or rental item') }}</p>
             </div>
             <x-ui.button
                 variant="secondary"
                 href="{{ route('catalog.index') }}"
                 icon="arrow-left">
-                Back to Catalog
+                {{ __('Back to Catalog') }}
             </x-ui.button>
         </div>
     </div>
@@ -21,28 +21,28 @@
             <!-- Item Type -->
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Item Type <span class="text-red-500">*</span>
+                    {{ __('Item Type') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="grid grid-cols-3 gap-4">
                     <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all {{ $type === 'product' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}">
                         <input type="radio" wire:model.live="type" value="product" class="sr-only">
                         <div class="text-center">
                             <div class="text-2xl mb-2">📦</div>
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">Product</div>
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ __('Product') }}</div>
                         </div>
                     </label>
                     <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all {{ $type === 'service' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}">
                         <input type="radio" wire:model.live="type" value="service" class="sr-only">
                         <div class="text-center">
                             <div class="text-2xl mb-2">🛠️</div>
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">Service</div>
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ __('Service') }}</div>
                         </div>
                     </label>
                     <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all {{ $type === 'rental' ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}">
                         <input type="radio" wire:model.live="type" value="rental" class="sr-only">
                         <div class="text-center">
                             <div class="text-2xl mb-2">🏗️</div>
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">Rental</div>
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ __('Rental') }}</div>
                         </div>
                     </label>
                 </div>
@@ -52,20 +52,20 @@
             </div>
 
             <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Basic Information</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Basic Information') }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Name -->
                     <div class="md:col-span-2">
                         <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Name <span class="text-red-500">*</span>
+                            {{ __('Name') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="name"
                             wire:model="name"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Enter item name">
+                            placeholder="{{ __('Enter item name') }}">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -74,14 +74,14 @@
                     <!-- SKU -->
                     <div>
                         <label for="sku" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            SKU
+                            {{ __('SKU') }}
                         </label>
                         <input
                             type="text"
                             id="sku"
                             wire:model="sku"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Optional SKU/Code">
+                            placeholder="{{ __('Optional SKU/Code') }}">
                         @error('sku')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -90,13 +90,13 @@
                     <!-- Category -->
                     <div>
                         <label for="category_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Category
+                            {{ __('Category') }}
                         </label>
                         <select
                             id="category_id"
                             wire:model="category_id"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">Select category (optional)</option>
+                            <option value="">{{ __('Select category (optional)') }}</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
@@ -141,7 +141,7 @@
                             class="relative"
                         >
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Preferred Supplier
+                                {{ __('Preferred Supplier') }}
                             </label>
 
                             <!-- Selected value display / Search input -->
@@ -163,7 +163,7 @@
                                         x-model="search"
                                         @focus="open = true"
                                         @keydown.escape="open = false"
-                                        placeholder="Search supplier..."
+                                        placeholder="{{ __('Search supplier...') }}"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 </template>
                             </div>
@@ -180,7 +180,7 @@
                                 class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 max-h-60 overflow-auto"
                             >
                                 <template x-if="filteredSuppliers.length === 0">
-                                    <div class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">No suppliers found</div>
+                                    <div class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">{{ __('No suppliers found') }}</div>
                                 </template>
 
                                 <template x-for="supplier in filteredSuppliers" :key="supplier.id">
@@ -202,14 +202,14 @@
                     <!-- Description -->
                     <div class="md:col-span-2">
                         <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Description
+                            {{ __('Description') }}
                         </label>
                         <textarea
                             id="description"
                             wire:model="description"
                             rows="3"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="Enter item description"></textarea>
+                            placeholder="{{ __('Enter item description') }}"></textarea>
                         @error('description')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -220,7 +220,7 @@
             <!-- Product-Specific Fields -->
             @if($type === 'product')
                 <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Product Units</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Product Units') }}</h3>
                     <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
                         <p class="text-sm text-blue-800 dark:text-blue-300">
                             Define how this product is purchased vs. how it's used. For example: buy by "Box" but use by "Each", with 100 each per box.
@@ -231,58 +231,58 @@
                         <!-- Purchase Unit -->
                         <div>
                             <label for="purchase_unit" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Purchase Unit <span class="text-red-500">*</span>
+                                {{ __('Purchase Unit') }} <span class="text-red-500">*</span>
                             </label>
                             <select
                                 id="purchase_unit"
                                 wire:model="purchase_unit"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">Select purchase unit</option>
+                                <option value="">{{ __('Select purchase unit') }}</option>
                                 <optgroup label="Count">
-                                    <option value="Each">Each</option>
-                                    <option value="Piece">Piece</option>
-                                    <option value="Unit">Unit</option>
-                                    <option value="Dozen">Dozen</option>
-                                    <option value="Hundred">Hundred</option>
-                                    <option value="Thousand">Thousand</option>
+                                    <option value="Each">{{ __('Each') }}</option>
+                                    <option value="Piece">{{ __('Piece') }}</option>
+                                    <option value="Unit">{{ __('Unit') }}</option>
+                                    <option value="Dozen">{{ __('Dozen') }}</option>
+                                    <option value="Hundred">{{ __('Hundred') }}</option>
+                                    <option value="Thousand">{{ __('Thousand') }}</option>
                                 </optgroup>
                                 <optgroup label="Packaging">
-                                    <option value="Box">Box</option>
-                                    <option value="Case">Case</option>
-                                    <option value="Pallet">Pallet</option>
-                                    <option value="Bag">Bag</option>
-                                    <option value="Bundle">Bundle</option>
-                                    <option value="Roll">Roll</option>
-                                    <option value="Sheet">Sheet</option>
-                                    <option value="Pack">Pack</option>
-                                    <option value="Carton">Carton</option>
+                                    <option value="Box">{{ __('Box') }}</option>
+                                    <option value="Case">{{ __('Case') }}</option>
+                                    <option value="Pallet">{{ __('Pallet') }}</option>
+                                    <option value="Bag">{{ __('Bag') }}</option>
+                                    <option value="Bundle">{{ __('Bundle') }}</option>
+                                    <option value="Roll">{{ __('Roll') }}</option>
+                                    <option value="Sheet">{{ __('Sheet') }}</option>
+                                    <option value="Pack">{{ __('Pack') }}</option>
+                                    <option value="Carton">{{ __('Carton') }}</option>
                                 </optgroup>
                                 <optgroup label="Weight">
-                                    <option value="Pound">Pound (lb)</option>
-                                    <option value="Ounce">Ounce (oz)</option>
-                                    <option value="Ton">Ton</option>
-                                    <option value="Kilogram">Kilogram (kg)</option>
-                                    <option value="Gram">Gram (g)</option>
+                                    <option value="Pound">{{ __('Pound (lb)') }}</option>
+                                    <option value="Ounce">{{ __('Ounce (oz)') }}</option>
+                                    <option value="Ton">{{ __('Ton') }}</option>
+                                    <option value="Kilogram">{{ __('Kilogram (kg)') }}</option>
+                                    <option value="Gram">{{ __('Gram (g)') }}</option>
                                 </optgroup>
                                 <optgroup label="Volume">
-                                    <option value="Gallon">Gallon</option>
-                                    <option value="Quart">Quart</option>
-                                    <option value="Liter">Liter</option>
-                                    <option value="Cubic Yard">Cubic Yard</option>
-                                    <option value="Cubic Foot">Cubic Foot</option>
+                                    <option value="Gallon">{{ __('Gallon') }}</option>
+                                    <option value="Quart">{{ __('Quart') }}</option>
+                                    <option value="Liter">{{ __('Liter') }}</option>
+                                    <option value="Cubic Yard">{{ __('Cubic Yard') }}</option>
+                                    <option value="Cubic Foot">{{ __('Cubic Foot') }}</option>
                                 </optgroup>
                                 <optgroup label="Length">
-                                    <option value="Foot">Foot (ft)</option>
-                                    <option value="Inch">Inch (in)</option>
-                                    <option value="Yard">Yard (yd)</option>
-                                    <option value="Meter">Meter (m)</option>
-                                    <option value="Mile">Mile</option>
+                                    <option value="Foot">{{ __('Foot (ft)') }}</option>
+                                    <option value="Inch">{{ __('Inch (in)') }}</option>
+                                    <option value="Yard">{{ __('Yard (yd)') }}</option>
+                                    <option value="Meter">{{ __('Meter (m)') }}</option>
+                                    <option value="Mile">{{ __('Mile') }}</option>
                                 </optgroup>
                                 <optgroup label="Area">
-                                    <option value="Square Foot">Square Foot (sq ft)</option>
-                                    <option value="Square Yard">Square Yard (sq yd)</option>
-                                    <option value="Square Meter">Square Meter (sq m)</option>
-                                    <option value="Acre">Acre</option>
+                                    <option value="Square Foot">{{ __('Square Foot (sq ft)') }}</option>
+                                    <option value="Square Yard">{{ __('Square Yard (sq yd)') }}</option>
+                                    <option value="Square Meter">{{ __('Square Meter (sq m)') }}</option>
+                                    <option value="Acre">{{ __('Acre') }}</option>
                                 </optgroup>
                             </select>
                             @error('purchase_unit')
@@ -293,7 +293,7 @@
                         <!-- Units Per Purchase -->
                         <div>
                             <label for="units_per_purchase" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Quantity Per Purchase <span class="text-red-500">*</span>
+                                {{ __('Quantity Per Purchase') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
@@ -311,58 +311,58 @@
                         <!-- Usage Unit -->
                         <div>
                             <label for="usage_unit" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Usage Unit <span class="text-red-500">*</span>
+                                {{ __('Usage Unit') }} <span class="text-red-500">*</span>
                             </label>
                             <select
                                 id="usage_unit"
                                 wire:model="usage_unit"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">Select usage unit</option>
+                                <option value="">{{ __('Select usage unit') }}</option>
                                 <optgroup label="Count">
-                                    <option value="Each">Each</option>
-                                    <option value="Piece">Piece</option>
-                                    <option value="Unit">Unit</option>
-                                    <option value="Dozen">Dozen</option>
-                                    <option value="Hundred">Hundred</option>
-                                    <option value="Thousand">Thousand</option>
+                                    <option value="Each">{{ __('Each') }}</option>
+                                    <option value="Piece">{{ __('Piece') }}</option>
+                                    <option value="Unit">{{ __('Unit') }}</option>
+                                    <option value="Dozen">{{ __('Dozen') }}</option>
+                                    <option value="Hundred">{{ __('Hundred') }}</option>
+                                    <option value="Thousand">{{ __('Thousand') }}</option>
                                 </optgroup>
                                 <optgroup label="Packaging">
-                                    <option value="Box">Box</option>
-                                    <option value="Case">Case</option>
-                                    <option value="Pallet">Pallet</option>
-                                    <option value="Bag">Bag</option>
-                                    <option value="Bundle">Bundle</option>
-                                    <option value="Roll">Roll</option>
-                                    <option value="Sheet">Sheet</option>
-                                    <option value="Pack">Pack</option>
-                                    <option value="Carton">Carton</option>
+                                    <option value="Box">{{ __('Box') }}</option>
+                                    <option value="Case">{{ __('Case') }}</option>
+                                    <option value="Pallet">{{ __('Pallet') }}</option>
+                                    <option value="Bag">{{ __('Bag') }}</option>
+                                    <option value="Bundle">{{ __('Bundle') }}</option>
+                                    <option value="Roll">{{ __('Roll') }}</option>
+                                    <option value="Sheet">{{ __('Sheet') }}</option>
+                                    <option value="Pack">{{ __('Pack') }}</option>
+                                    <option value="Carton">{{ __('Carton') }}</option>
                                 </optgroup>
                                 <optgroup label="Weight">
-                                    <option value="Pound">Pound (lb)</option>
-                                    <option value="Ounce">Ounce (oz)</option>
-                                    <option value="Ton">Ton</option>
-                                    <option value="Kilogram">Kilogram (kg)</option>
-                                    <option value="Gram">Gram (g)</option>
+                                    <option value="Pound">{{ __('Pound (lb)') }}</option>
+                                    <option value="Ounce">{{ __('Ounce (oz)') }}</option>
+                                    <option value="Ton">{{ __('Ton') }}</option>
+                                    <option value="Kilogram">{{ __('Kilogram (kg)') }}</option>
+                                    <option value="Gram">{{ __('Gram (g)') }}</option>
                                 </optgroup>
                                 <optgroup label="Volume">
-                                    <option value="Gallon">Gallon</option>
-                                    <option value="Quart">Quart</option>
-                                    <option value="Liter">Liter</option>
-                                    <option value="Cubic Yard">Cubic Yard</option>
-                                    <option value="Cubic Foot">Cubic Foot</option>
+                                    <option value="Gallon">{{ __('Gallon') }}</option>
+                                    <option value="Quart">{{ __('Quart') }}</option>
+                                    <option value="Liter">{{ __('Liter') }}</option>
+                                    <option value="Cubic Yard">{{ __('Cubic Yard') }}</option>
+                                    <option value="Cubic Foot">{{ __('Cubic Foot') }}</option>
                                 </optgroup>
                                 <optgroup label="Length">
-                                    <option value="Foot">Foot (ft)</option>
-                                    <option value="Inch">Inch (in)</option>
-                                    <option value="Yard">Yard (yd)</option>
-                                    <option value="Meter">Meter (m)</option>
-                                    <option value="Mile">Mile</option>
+                                    <option value="Foot">{{ __('Foot (ft)') }}</option>
+                                    <option value="Inch">{{ __('Inch (in)') }}</option>
+                                    <option value="Yard">{{ __('Yard (yd)') }}</option>
+                                    <option value="Meter">{{ __('Meter (m)') }}</option>
+                                    <option value="Mile">{{ __('Mile') }}</option>
                                 </optgroup>
                                 <optgroup label="Area">
-                                    <option value="Square Foot">Square Foot (sq ft)</option>
-                                    <option value="Square Yard">Square Yard (sq yd)</option>
-                                    <option value="Square Meter">Square Meter (sq m)</option>
-                                    <option value="Acre">Acre</option>
+                                    <option value="Square Foot">{{ __('Square Foot (sq ft)') }}</option>
+                                    <option value="Square Yard">{{ __('Square Yard (sq yd)') }}</option>
+                                    <option value="Square Meter">{{ __('Square Meter (sq m)') }}</option>
+                                    <option value="Acre">{{ __('Acre') }}</option>
                                 </optgroup>
                             </select>
                             @error('usage_unit')
@@ -376,22 +376,22 @@
             <!-- Service/Rental-Specific Fields -->
             @if(in_array($type, ['service', 'rental']))
                 <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Billing Information</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Billing Information') }}</h3>
 
                     <div>
                         <label for="billing_type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Billing Type <span class="text-red-500">*</span>
+                            {{ __('Billing Type') }} <span class="text-red-500">*</span>
                         </label>
                         <select
                             id="billing_type"
                             wire:model="billing_type"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">Select billing type</option>
-                            <option value="hourly">Hourly</option>
-                            <option value="fixed">Fixed Price</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
+                            <option value="">{{ __('Select billing type') }}</option>
+                            <option value="hourly">{{ __('Hourly') }}</option>
+                            <option value="fixed">{{ __('Fixed Price') }}</option>
+                            <option value="daily">{{ __('Daily') }}</option>
+                            <option value="weekly">{{ __('Weekly') }}</option>
+                            <option value="monthly">{{ __('Monthly') }}</option>
                         </select>
                         @error('billing_type')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -402,13 +402,13 @@
 
             <!-- Pricing -->
             <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Pricing</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Pricing') }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Current Cost -->
                     <div>
                         <label for="current_cost" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Cost <span class="text-red-500">*</span>
+                            {{ __('Cost') }} <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400">$</span>
@@ -434,7 +434,7 @@
                     <!-- Status -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Status
+                            {{ __('Status') }}
                         </label>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" wire:model="is_active" class="sr-only peer">
@@ -449,7 +449,7 @@
 
             <!-- Tax -->
             <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Tax</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Tax') }}</h3>
 
                 <div class="space-y-4">
                     <!-- Taxable Toggle -->
@@ -467,13 +467,13 @@
                     @if($is_taxable)
                         <div>
                             <label for="tax_rate_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Tax Rate <span class="text-red-500">*</span>
+                                {{ __('Tax Rate') }} <span class="text-red-500">*</span>
                             </label>
                             <select
                                 id="tax_rate_id"
                                 wire:model="tax_rate_id"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">Select tax rate</option>
+                                <option value="">{{ __('Select tax rate') }}</option>
                                 @foreach($taxRates as $taxRate)
                                     <option value="{{ $taxRate->id }}">
                                         {{ $taxRate->state }} - {{ $taxRate->formatted_rate }}{{ $taxRate->is_default ? ' (Default)' : '' }}
@@ -494,13 +494,13 @@
                     type="button"
                     variant="secondary"
                     href="{{ route('catalog.index') }}">
-                    Cancel
+                    {{ __('Cancel') }}
                 </x-ui.button>
                 <x-ui.button
                     type="submit"
                     variant="primary"
                     icon="check">
-                    Create Item
+                    {{ __('Create Item') }}
                 </x-ui.button>
             </div>
         </form>

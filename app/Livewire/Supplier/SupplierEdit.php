@@ -94,7 +94,7 @@ class SupplierEdit extends Component
             'description' => $this->description,
         ]);
 
-        session()->flash('message', 'Supplier updated successfully!');
+        session()->flash('message', __('Supplier updated successfully!'));
 
         return redirect()->route('suppliers.index');
     }

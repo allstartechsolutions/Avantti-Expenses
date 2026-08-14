@@ -4,11 +4,11 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Invoice {{ $invoice->invoice_number }}</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Edit invoice details</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Edit invoice details') }}</p>
             </div>
             <div>
                 <x-ui.button variant="secondary" href="{{ route('invoices.show', $invoice) }}" icon="arrow-left">
-                    Back
+                    {{ __('Back') }}
                 </x-ui.button>
             </div>
         </div>
@@ -18,8 +18,8 @@
         <!-- Invoice Details Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Invoice Details</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Basic information about this invoice</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Invoice Details') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Basic information about this invoice') }}</p>
             </div>
             <div class="p-6 space-y-6">
                 <!-- Row 1: Client, Invoice Number -->
@@ -27,13 +27,13 @@
                     <!-- Client Search -->
                     <div class="relative md:col-span-2">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Client <span class="text-red-500">*</span>
+                            {{ __('Client') }} <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="clientSearch"
-                                placeholder="Search client..."
+                                placeholder="{{ __('Search client...') }}"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                             @if($client_id)
                                 <button type="button" wire:click="clearClient" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600">
@@ -55,7 +55,7 @@
                                 <button type="button" wire:click="openQuickAddClient" class="w-full px-4 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 border-t border-slate-200 dark:border-slate-700">
                                     <div class="flex items-center gap-2 text-sm font-medium text-[#3F5189]">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Add New Client
+                                        {{ __('Add New Client') }}
                                     </div>
                                     @if($clientSearch)
                                         <div class="text-xs text-slate-500">Create "{{ $clientSearch }}"</div>
@@ -68,7 +68,7 @@
 
                     <!-- Invoice Number -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Invoice Number</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Invoice Number') }}</label>
                         <input
                             type="text"
                             wire:model="invoice_number"
@@ -81,7 +81,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Project Search -->
                     <div class="relative">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Project</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Project') }}</label>
                         <div class="relative">
                             <input
                                 type="text"
@@ -111,7 +111,7 @@
 
                     <!-- Job Site Search -->
                     <div class="relative">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Job Site</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Job Site') }}</label>
                         <div class="relative">
                             <input
                                 type="text"
@@ -145,7 +145,7 @@
                     <!-- Invoice Date -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Invoice Date <span class="text-red-500">*</span>
+                            {{ __('Invoice Date') }} <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -157,23 +157,23 @@
                     <!-- Terms -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Terms <span class="text-red-500">*</span>
+                            {{ __('Terms') }} <span class="text-red-500">*</span>
                         </label>
                         <select
                             wire:model.live="terms"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="due_upon_receipt">Due Upon Receipt</option>
-                            <option value="net_15">Net 15</option>
-                            <option value="net_30">Net 30</option>
-                            <option value="net_60">Net 60</option>
-                            <option value="net_90">Net 90</option>
+                            <option value="due_upon_receipt">{{ __('Due Upon Receipt') }}</option>
+                            <option value="net_15">{{ __('Net 15') }}</option>
+                            <option value="net_30">{{ __('Net 30') }}</option>
+                            <option value="net_60">{{ __('Net 60') }}</option>
+                            <option value="net_90">{{ __('Net 90') }}</option>
                         </select>
                         @error('terms') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Due Date -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Due Date</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Due Date') }}</label>
                         <input
                             type="date"
                             value="{{ $due_date }}"
@@ -189,11 +189,11 @@
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Items</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add line items to this invoice</p>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Items') }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Add line items to this invoice') }}</p>
                     </div>
                     <x-ui.button type="button" variant="primary" icon="plus" wire:click="openAddItemModal">
-                        Add Item
+                        {{ __('Add Item') }}
                     </x-ui.button>
                 </div>
             </div>
@@ -205,13 +205,13 @@
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                             <thead class="bg-slate-50 dark:bg-slate-900/50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Item</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Qty</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Unit Price</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Discount</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Tax</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Item') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Qty') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Unit Price') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Discount') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Tax') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Total') }}</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -249,7 +249,7 @@
                                             <button type="button" wire:click="openEditItemModal({{ $index }})" class="text-[#3F5189] hover:text-[#2F3F6F] mr-2">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                             </button>
-                                            <button type="button" wire:click="removeItem({{ $index }})" wire:confirm="Remove this item?" class="text-red-500 hover:text-red-700">
+                                            <button type="button" wire:click="removeItem({{ $index }})" wire:confirm="{{ __('Remove this item?') }}" class="text-red-500 hover:text-red-700">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </td>
@@ -263,11 +263,11 @@
                         <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No items</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add at least one item to this invoice.</p>
+                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No items') }}</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Add at least one item to this invoice.') }}</p>
                         <div class="mt-4">
                             <x-ui.button type="button" variant="primary" icon="plus" wire:click="openAddItemModal">
-                                Add Item
+                                {{ __('Add Item') }}
                             </x-ui.button>
                         </div>
                     </div>
@@ -279,23 +279,23 @@
         @if(count($items) > 0)
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Totals</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Totals') }}</h3>
             </div>
             <div class="p-6">
                 <div class="max-w-md ml-auto space-y-4">
                     <!-- Subtotal -->
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-600 dark:text-slate-400">Subtotal</span>
+                        <span class="text-sm text-slate-600 dark:text-slate-400">{{ __('Subtotal') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">${{ number_format($calc_subtotal, 2) }}</span>
                     </div>
 
                     <!-- Overall Discount -->
                     <div class="flex items-center justify-between gap-4">
                         <div class="flex items-center gap-2">
-                            <span class="text-sm text-slate-600 dark:text-slate-400">Discount</span>
+                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ __('Discount') }}</span>
                             <select wire:model.live="overall_discount_type"
                                 class="text-xs px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="">None</option>
+                                <option value="">{{ __('None') }}</option>
                                 <option value="percentage">%</option>
                                 <option value="fixed">$</option>
                             </select>
@@ -317,13 +317,13 @@
 
                     <!-- Tax Total -->
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-600 dark:text-slate-400">Tax</span>
+                        <span class="text-sm text-slate-600 dark:text-slate-400">{{ __('Tax') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">${{ number_format($calc_tax_total, 2) }}</span>
                     </div>
 
                     <!-- Grand Total -->
                     <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
-                        <span class="text-base font-semibold text-slate-900 dark:text-white">Total</span>
+                        <span class="text-base font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</span>
                         <span class="text-xl font-bold text-slate-900 dark:text-white">${{ number_format($calc_total, 2) }}</span>
                     </div>
                 </div>
@@ -334,13 +334,13 @@
         <!-- Message Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Message</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Message to include on the invoice</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Message') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Message to include on the invoice') }}</p>
             </div>
             <div class="p-6 space-y-4">
                 <!-- Message Template Selector -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message Template</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Message Template') }}</label>
                     <select
                         wire:model.live="selectedMessageId"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
@@ -356,7 +356,7 @@
                 <!-- Message Body (TinyMCE) -->
                 @if($selectedMessageId || $message_body)
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message Body</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Message Body') }}</label>
                         <x-ui.tinymce-editor wireModel="message_body" id="invoice-edit-message-body" :height="200" modalName="invoice-edit" />
                     </div>
                 @endif
@@ -366,25 +366,25 @@
         <!-- Notes Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Notes</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Internal notes (not shown on invoice)</p>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Notes') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Internal notes (not shown on invoice)') }}</p>
             </div>
             <div class="p-6">
                 <textarea
                     wire:model="notes"
                     rows="3"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    placeholder="Optional internal notes..."></textarea>
+                    placeholder="{{ __('Optional internal notes...') }}"></textarea>
             </div>
         </div>
 
         <!-- Form Actions -->
         <div class="flex items-center justify-end space-x-4">
             <x-ui.button type="button" variant="secondary" href="{{ route('invoices.show', $invoice) }}">
-                Cancel
+                {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button type="button" variant="primary" icon="save" wire:click="saveInvoice">
-                Save Invoice
+                {{ __('Save Invoice') }}
             </x-ui.button>
         </div>
     </div>
@@ -428,12 +428,12 @@
                         @if(!$item_is_custom)
                             <!-- Catalog Search -->
                             <div class="relative">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Search Catalog</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Search Catalog') }}</label>
                                 <div class="relative">
                                     <input
                                         type="text"
                                         wire:model.live.debounce.300ms="catalogItemSearch"
-                                        placeholder="Type to search catalog..."
+                                        placeholder="{{ __('Type to search catalog...') }}"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                     @if($item_catalog_item_id)
                                         <button type="button" wire:click="clearCatalogItem" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600">
@@ -460,12 +460,12 @@
                         <!-- Item Name -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Item Name <span class="text-red-500">*</span>
+                                {{ __('Item Name') }} <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 wire:model="item_name"
-                                placeholder="Enter item name"
+                                placeholder="{{ __('Enter item name') }}"
                                 {{ !$item_is_custom && $item_catalog_item_id ? 'readonly' : '' }}
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white {{ !$item_is_custom && $item_catalog_item_id ? 'bg-slate-100 dark:bg-slate-900' : '' }}">
                             @error('item_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -473,11 +473,11 @@
 
                         <!-- Description -->
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Description') }}</label>
                             <textarea
                                 wire:model="item_description"
                                 rows="2"
-                                placeholder="Optional description..."
+                                placeholder="{{ __('Optional description...') }}"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
                         </div>
 
@@ -485,7 +485,7 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Quantity <span class="text-red-500">*</span>
+                                    {{ __('Quantity') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -495,26 +495,26 @@
                                 @error('item_quantity') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Unit</label>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Unit') }}</label>
                                 <select
                                     wire:model="item_unit"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                    <option value="unit">Unit</option>
-                                    <option value="hour">Hour</option>
-                                    <option value="day">Day</option>
-                                    <option value="week">Week</option>
-                                    <option value="month">Month</option>
-                                    <option value="sqft">Sq Ft</option>
-                                    <option value="lnft">Ln Ft</option>
-                                    <option value="cuyd">Cu Yd</option>
-                                    <option value="ton">Ton</option>
-                                    <option value="load">Load</option>
-                                    <option value="lot">Lot</option>
+                                    <option value="unit">{{ __('Unit') }}</option>
+                                    <option value="hour">{{ __('Hour') }}</option>
+                                    <option value="day">{{ __('Day') }}</option>
+                                    <option value="week">{{ __('Week') }}</option>
+                                    <option value="month">{{ __('Month') }}</option>
+                                    <option value="sqft">{{ __('Sq Ft') }}</option>
+                                    <option value="lnft">{{ __('Ln Ft') }}</option>
+                                    <option value="cuyd">{{ __('Cu Yd') }}</option>
+                                    <option value="ton">{{ __('Ton') }}</option>
+                                    <option value="load">{{ __('Load') }}</option>
+                                    <option value="lot">{{ __('Lot') }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Unit Price <span class="text-red-500">*</span>
+                                    {{ __('Unit Price') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2.5 text-slate-500">$</span>
@@ -530,11 +530,11 @@
 
                         <!-- Discount -->
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Discount</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Discount') }}</label>
                             <div class="flex items-center gap-3">
                                 <select wire:model.live="item_discount_type"
                                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                                    <option value="">None</option>
+                                    <option value="">{{ __('None') }}</option>
                                     <option value="percentage">%</option>
                                     <option value="fixed">$ (Fixed)</option>
                                 </select>
@@ -561,7 +561,7 @@
                         <!-- Tax -->
                         <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Taxable</span>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Taxable') }}</span>
                                 <button
                                     type="button"
                                     wire:click="$toggle('item_is_taxable')"
@@ -571,10 +571,10 @@
                             </div>
                             @if($item_is_taxable)
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tax Rate</label>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Tax Rate') }}</label>
                                     <select wire:model.live="item_tax_rate"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
-                                        <option value="0">Select tax rate</option>
+                                        <option value="0">{{ __('Select tax rate') }}</option>
                                         @foreach($taxRates as $rate)
                                             <option value="{{ $rate->rate }}">
                                                 {{ $rate->state }} — {{ $rate->formatted_rate }}{{ $rate->is_default ? ' (Default)' : '' }}
@@ -588,23 +588,23 @@
                         <!-- Calculated Summary -->
                         <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-2">
                             <div class="flex justify-between text-sm">
-                                <span class="text-slate-600 dark:text-slate-400">Line Subtotal</span>
+                                <span class="text-slate-600 dark:text-slate-400">{{ __('Line Subtotal') }}</span>
                                 <span class="text-slate-900 dark:text-white">${{ number_format($item_calc_subtotal, 2) }}</span>
                             </div>
                             @if($item_calc_discount > 0)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-slate-600 dark:text-slate-400">Discount</span>
+                                    <span class="text-slate-600 dark:text-slate-400">{{ __('Discount') }}</span>
                                     <span class="text-red-600 dark:text-red-400">-${{ number_format($item_calc_discount, 2) }}</span>
                                 </div>
                             @endif
                             @if($item_calc_tax > 0)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-slate-600 dark:text-slate-400">Tax</span>
+                                    <span class="text-slate-600 dark:text-slate-400">{{ __('Tax') }}</span>
                                     <span class="text-slate-900 dark:text-white">${{ number_format($item_calc_tax, 2) }}</span>
                                 </div>
                             @endif
                             <div class="flex justify-between text-sm font-semibold pt-2 border-t border-slate-200 dark:border-slate-700">
-                                <span class="text-slate-900 dark:text-white">Line Total</span>
+                                <span class="text-slate-900 dark:text-white">{{ __('Line Total') }}</span>
                                 <span class="text-slate-900 dark:text-white">${{ number_format($item_calc_total, 2) }}</span>
                             </div>
                         </div>
@@ -612,7 +612,7 @@
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closeItemModal">
-                            Cancel
+                            {{ __('Cancel') }}
                         </x-ui.button>
                         <x-ui.button type="button" variant="primary" wire:click="saveItem">
                             {{ $editingItemIndex !== null ? 'Update Item' : 'Add Item' }}

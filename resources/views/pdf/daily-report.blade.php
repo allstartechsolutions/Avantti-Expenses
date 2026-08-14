@@ -24,10 +24,10 @@
                 <div style="font-size: 11pt; font-weight: bold; color: #3F5189;">Project: {{ $dailyReport->project->project_name }}</div>
                 <div style="font-size: 8pt; color: #666;">
                     @if($dailyReport->jobSite)
-                        <strong>Job Site:</strong> {{ $dailyReport->jobSite->job_site_name }}<br>
+                        <strong>{{ __('Job Site:') }}</strong> {{ $dailyReport->jobSite->job_site_name }}<br>
                         {{ $dailyReport->jobSite->full_address ?? '' }}
                     @else
-                        <strong>Location:</strong> Project (General)<br>
+                        <strong>{{ __('Location:') }}</strong> Project (General)<br>
                         {{ $dailyReport->project->full_address ?? '' }}
                     @endif
                 </div>
@@ -42,7 +42,7 @@
 
     <!-- Status Box -->
     <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 10px 15px; margin-bottom: 20px;">
-        <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">Daily Log Completed</div>
+        <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">{{ __('Daily Log Completed') }}</div>
         <div style="font-size: 8pt; color: #555;">
             Prepared by {{ $dailyReport->preparedBy->name }} on {{ $dailyReport->created_at->format('D, M d, Y \a\t h:i A T') }}
         </div>
@@ -51,29 +51,29 @@
     <!-- Weather Report -->
     @if($dailyReport->weather)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        WEATHER REPORT
+        {{ __('WEATHER REPORT') }}
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
-            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Temperature</th>
-            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Precipitation Since</th>
-            <th colspan="4" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Humidity</th>
-            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Windspeed</th>
+            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Temperature') }}</th>
+            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Precipitation Since') }}</th>
+            <th colspan="4" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Humidity') }}</th>
+            <th colspan="3" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Windspeed') }}</th>
         </tr>
         <tr>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Low</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">High</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Avg</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Midnight</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Low') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('High') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Avg') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Midnight') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">2 Days</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">3 Days</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Low</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Avg</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">High</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Dew</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Avg</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Max</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Gust</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Low') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Avg') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('High') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Dew') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Avg') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Max') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Gust') }}</th>
         </tr>
         <tr>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: center;">{{ $dailyReport->weather->formatted_temp_low }}</td>
@@ -95,7 +95,7 @@
     <!-- Daily Snapshot -->
     @if($dailyReport->weather->snapshots && count($dailyReport->weather->snapshots) > 0)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        DAILY SNAPSHOT
+        {{ __('DAILY SNAPSHOT') }}
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
@@ -114,18 +114,18 @@
     <!-- Observed Weather Conditions -->
     @if($dailyReport->weatherObservations && $dailyReport->weatherObservations->count() > 0)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        OBSERVED WEATHER CONDITIONS
+        {{ __('OBSERVED WEATHER CONDITIONS') }}
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 30px;">No.</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Time</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Delay</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Sky</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Temp</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Precip</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Wind</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">Notes</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 30px;">{{ __('No.') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Time') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Delay') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Sky') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Temp') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Precip') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Wind') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Notes') }}</th>
         </tr>
         @foreach($dailyReport->weatherObservations as $index => $obs)
         <tr>
@@ -133,9 +133,9 @@
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt;">{{ $obs->formatted_time }}</td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: center;">
                 @if($obs->weather_delay)
-                    <span style="background-color: #ffebee; color: #c62828; padding: 2px 6px; font-size: 7pt; font-weight: bold;">Yes</span>
+                    <span style="background-color: #ffebee; color: #c62828; padding: 2px 6px; font-size: 7pt; font-weight: bold;">{{ __('Yes') }}</span>
                 @else
-                    <span style="background-color: #e8f5e9; color: #2e7d32; padding: 2px 6px; font-size: 7pt; font-weight: bold;">No</span>
+                    <span style="background-color: #e8f5e9; color: #2e7d32; padding: 2px 6px; font-size: 7pt; font-weight: bold;">{{ __('No') }}</span>
                 @endif
             </td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt;">{{ $obs->sky_condition_label }}</td>
@@ -157,16 +157,16 @@
         });
     @endphp
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        MANPOWER LOG
+        {{ __('MANPOWER LOG') }}
         <span style="float: right; font-size: 10pt; color: #3F5189;">{{ $totalWorkers }} Workers | {{ number_format($totalManHours, 1) }} Man Hours</span>
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 30px;">No.</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">Contact/Company</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;">Workers</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 30px;">{{ __('No.') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Contact/Company') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;">{{ __('Workers') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;"># Hours</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 70px;">Man Hours</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 70px;">{{ __('Man Hours') }}</th>
         </tr>
         @foreach($dailyReport->manpowerLogs as $index => $log)
         <tr>
@@ -186,7 +186,7 @@
         </tr>
         @endforeach
         <tr>
-            <td colspan="2" style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: right; background-color: #f0f0f0; font-weight: bold;">Total:</td>
+            <td colspan="2" style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: right; background-color: #f0f0f0; font-weight: bold;">{{ __('Total:') }}</td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: center; background-color: #f0f0f0; font-weight: bold;">{{ $totalWorkers }}</td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; background-color: #f0f0f0;"></td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: center; background-color: #f0f0f0; font-weight: bold;">{{ number_format($totalManHours, 1) }}</td>
@@ -197,7 +197,7 @@
     <!-- Tasks -->
     @if($dailyReport->tasks && $dailyReport->tasks->count() > 0)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        TASKS
+        {{ __('TASKS') }}
     </div>
     @foreach($dailyReport->tasks as $index => $task)
     <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background-color: #fafafa;">
@@ -212,13 +212,13 @@
     <table style="width: 100%; border: none; margin-top: 40px;">
         <tr>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">By</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('By') }}</div>
             </td>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">Date</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('Date') }}</div>
             </td>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">Copies To</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('Copies To') }}</div>
             </td>
         </tr>
     </table>
@@ -239,7 +239,7 @@
     <!-- Manpower Attachments -->
     @if($hasManpowerImages)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        Manpower Log Attachments
+        {{ __('Manpower Log Attachments') }}
     </div>
     @foreach($dailyReport->manpowerLogs as $index => $log)
         @if($log->images && $log->images->count() > 0)
@@ -284,7 +284,7 @@
     <!-- Task Attachments -->
     @if($hasTaskImages)
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
-        Task Attachments
+        {{ __('Task Attachments') }}
     </div>
     @foreach($dailyReport->tasks as $index => $task)
         @if($task->images && $task->images->count() > 0)
@@ -330,13 +330,13 @@
     <table style="width: 100%; border: none; margin-top: 40px;">
         <tr>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">By</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('By') }}</div>
             </td>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">Date</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('Date') }}</div>
             </td>
             <td style="width: 33%; padding: 0 10px; border: none; vertical-align: top;">
-                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">Copies To</div>
+                <div style="border-top: 1px solid #333; padding-top: 5px; font-size: 8pt; margin-top: 30px;">{{ __('Copies To') }}</div>
             </td>
         </tr>
     </table>

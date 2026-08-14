@@ -42,7 +42,7 @@ class CatalogCategoryCreate extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Category created successfully!');
+        session()->flash('message', __('Category created successfully!'));
         return redirect()->route('catalog.categories.index');
     }
 

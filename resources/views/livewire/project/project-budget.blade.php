@@ -1,16 +1,16 @@
-<x-project-layout :project="$project" active="budget" title="Budget">
+<x-project-layout :project="$project" active="budget" title="{{ __('Budget') }}">
     <div class="space-y-6">
         <!-- Project Budget Section -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Project Budget</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Budget') }}</h3>
                 @if(!$projectBudget)
                     <x-ui.button
                         variant="primary"
                         size="sm"
                         href="{{ route('projects.budgets.create', $project->id) }}"
                         icon="plus">
-                        Create Budget
+                        {{ __('Create Budget') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -37,14 +37,14 @@
                                     size="sm"
                                     href="{{ route('budgets.show', $projectBudget->id) }}"
                                     icon="eye">
-                                    View
+                                    {{ __('View') }}
                                 </x-ui.button>
                                 <x-ui.button
                                     variant="ghost"
                                     size="sm"
                                     href="{{ route('budgets.edit', $projectBudget->id) }}"
                                     icon="edit">
-                                    Edit
+                                    {{ __('Edit') }}
                                 </x-ui.button>
                             </div>
                         </div>
@@ -54,8 +54,8 @@
                         <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                         </svg>
-                        <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No project budget</h4>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Create a budget to track cost allocation for this project.</p>
+                        <h4 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No project budget') }}</h4>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Create a budget to track cost allocation for this project.') }}</p>
                     </div>
                 @endif
             </div>
@@ -65,7 +65,7 @@
         @if($jobSites->count() > 0)
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Job Site Budgets</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Job Site Budgets') }}</h3>
                 </div>
 
                 <div class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -90,7 +90,7 @@
                                             {{ $jobSiteBudget->name }} &bull; {{ $jobSiteBudget->items_count }} cost codes
                                         </p>
                                     @else
-                                        <p class="text-sm text-slate-400 dark:text-slate-500">No budget</p>
+                                        <p class="text-sm text-slate-400 dark:text-slate-500">{{ __('No budget') }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -111,7 +111,7 @@
                                         size="sm"
                                         href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
                                         icon="plus">
-                                        Create
+                                        {{ __('Create') }}
                                     </x-ui.button>
                                 @endif
                             </div>

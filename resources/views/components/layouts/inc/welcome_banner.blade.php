@@ -17,8 +17,8 @@
 
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-3xl font-bold mb-2">Good Morning, John! 👋</h2>
-                    <p class="text-white/80 text-lg">Welcome to your Avantti dashboard. Here's what's happening today.</p>
+                    <h2 class="text-3xl font-bold mb-2">{{ __('Good Morning, John! 👋') }}</h2>
+                    <p class="text-white/80 text-lg">{{ __('Welcome to your Avantti dashboard. Here\'s what\'s happening today.') }}</p>
                 </div>
                 <div class="hidden lg:block">
                     <svg class="w-24 h-24 text-white/30" fill="currentColor" viewBox="0 0 24 24">

@@ -3,8 +3,8 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Suppliers</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your suppliers</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Suppliers') }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your suppliers') }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 @admin
@@ -20,7 +20,7 @@
                     variant="primary"
                     href="{{ route('suppliers.create') }}"
                     icon="plus">
-                    Add Supplier
+                    {{ __('Add Supplier') }}
                 </x-ui.button>
             </div>
         </div>
@@ -45,7 +45,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <!-- Search -->
                 <div class="flex-1 max-w-md">
-                    <label for="search" class="sr-only">Search suppliers</label>
+                    <label for="search" class="sr-only">{{ __('Search suppliers') }}</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +57,7 @@
                             id="search"
                             wire:model.live.debounce.300ms="search"
                             class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]"
-                            placeholder="Search by name, email, phone, or city..."
+                            placeholder="{{ __('Search by name, email, phone, or city...') }}"
                         >
                     </div>
                 </div>
@@ -68,7 +68,7 @@
                         variant="secondary"
                         wire:click="$set('search', '')"
                         icon="x">
-                        Clear Search
+                        {{ __('Clear Search') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -83,19 +83,19 @@
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Supplier
+                                {{ __('Supplier') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Email
+                                {{ __('Email') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Phone
+                                {{ __('Phone') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Location
+                                {{ __('Location') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Actions
+                                {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -156,7 +156,7 @@
                                             wire:click="deleteSupplier({{ $supplier->id }})"
                                             wire:confirm="{{ $supplier->is_subcontractor ? __('This company is also a subcontractor. Only the supplier classification will be removed — the record is kept. Continue?') : __('Are you sure you want to delete this supplier?') }}"
                                             icon="trash"
-                                            title="Delete" />
+                                            title="{{ __('Delete') }}" />
                                         @endadmin
                                     </div>
                                 </td>
@@ -178,16 +178,16 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
                     @if($search)
-                        No suppliers found
+                        {{ __('No suppliers found') }}
                     @else
-                        No suppliers yet
+                        {{ __('No suppliers yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @if($search)
-                        Try adjusting your search terms.
+                        {{ __('Try adjusting your search terms.') }}
                     @else
-                        Get started by creating a new supplier.
+                        {{ __('Get started by creating a new supplier.') }}
                     @endif
                 </p>
                 @if(!$search)
@@ -196,7 +196,7 @@
                             variant="primary"
                             href="{{ route('suppliers.create') }}"
                             icon="plus">
-                            Add Supplier
+                            {{ __('Add Supplier') }}
                         </x-ui.button>
                     </div>
                 @endif

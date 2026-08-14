@@ -40,7 +40,7 @@
                 @endif
             </td>
             <td style="width: 50%; vertical-align: top; text-align: right; border: none; padding: 0;">
-                <div style="font-size: 18pt; font-weight: bold; color: #3F5189;">ESTIMATE</div>
+                <div style="font-size: 18pt; font-weight: bold; color: #3F5189;">{{ __('ESTIMATE') }}</div>
                 <div style="font-size: 10pt; color: #555;">{{ $estimate->estimate_number }}</div>
             </td>
         </tr>
@@ -50,7 +50,7 @@
     <table style="width: 100%; border: none; margin-bottom: 20px;">
         <tr>
             <td style="width: 50%; vertical-align: top; border: none; padding: 0;">
-                <div style="font-size: 8pt; font-weight: bold; color: #3F5189; text-transform: uppercase; margin-bottom: 5px;">Bill To</div>
+                <div style="font-size: 8pt; font-weight: bold; color: #3F5189; text-transform: uppercase; margin-bottom: 5px;">{{ __('Bill To') }}</div>
                 <div style="font-size: 9pt;">
                     <strong>{{ $estimate->client->company_name }}</strong><br>
                     @if($estimate->client->contact_name)
@@ -70,26 +70,26 @@
             <td style="width: 50%; vertical-align: top; border: none; padding: 0;">
                 <table style="width: 100%; border: none;">
                     <tr>
-                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">Estimate Date:</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Estimate Date:') }}</td>
                         <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->estimate_date->format('M d, Y') }}</td>
                     </tr>
                     <tr>
-                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">Terms:</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Terms:') }}</td>
                         <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->terms_label }}</td>
                     </tr>
                     <tr>
-                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">Due Date:</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Due Date:') }}</td>
                         <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->due_date->format('M d, Y') }}</td>
                     </tr>
                     @if($estimate->project)
                     <tr>
-                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">Project:</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Project:') }}</td>
                         <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->project->project_name }}</td>
                     </tr>
                     @endif
                     @if($estimate->jobSite)
                     <tr>
-                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">Job Site:</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Job Site:') }}</td>
                         <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->jobSite->job_site_name }}</td>
                     </tr>
                     @endif
@@ -101,13 +101,13 @@
     <!-- Items Table -->
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: left; font-size: 8pt; font-weight: bold;">Item</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: center; font-size: 8pt; font-weight: bold; width: 50px;">Qty</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: center; font-size: 8pt; font-weight: bold; width: 50px;">Unit</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 70px;">Unit Price</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 65px;">Discount</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 55px;">Tax</th>
-            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 70px;">Total</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: left; font-size: 8pt; font-weight: bold;">{{ __('Item') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: center; font-size: 8pt; font-weight: bold; width: 50px;">{{ __('Qty') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: center; font-size: 8pt; font-weight: bold; width: 50px;">{{ __('Unit') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 70px;">{{ __('Unit Price') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 65px;">{{ __('Discount') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 55px;">{{ __('Tax') }}</th>
+            <th style="background-color: #3F5189; color: #fff; border: 1px solid #3F5189; padding: 6px 8px; text-align: right; font-size: 8pt; font-weight: bold; width: 70px;">{{ __('Total') }}</th>
         </tr>
         @foreach($estimate->items as $index => $item)
         <tr style="background-color: {{ $index % 2 === 0 ? '#ffffff' : '#f9fafb' }};">
@@ -146,13 +146,13 @@
             <td style="width: 40%; border: none; padding: 0;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #555;">Subtotal</td>
+                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #555;">{{ __('Subtotal') }}</td>
                         <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right;">${{ number_format($estimate->subtotal, 2) }}</td>
                     </tr>
                     @if($estimate->discount_amount > 0)
                     <tr>
                         <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #555;">
-                            Discount
+                            {{ __('Discount') }}
                             @if($estimate->discount_type === 'percentage')
                                 ({{ number_format($estimate->discount_value, 2) }}%)
                             @endif
@@ -162,12 +162,12 @@
                     @endif
                     @if($estimate->tax_total > 0)
                     <tr>
-                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #555;">Tax</td>
+                        <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right; color: #555;">{{ __('Tax') }}</td>
                         <td style="border: none; padding: 4px 8px; font-size: 9pt; text-align: right;">${{ number_format($estimate->tax_total, 2) }}</td>
                     </tr>
                     @endif
                     <tr>
-                        <td style="border-top: 2px solid #3F5189; padding: 8px 8px 4px; font-size: 11pt; font-weight: bold; text-align: right; color: #3F5189;">Total</td>
+                        <td style="border-top: 2px solid #3F5189; padding: 8px 8px 4px; font-size: 11pt; font-weight: bold; text-align: right; color: #3F5189;">{{ __('Total') }}</td>
                         <td style="border-top: 2px solid #3F5189; padding: 8px 8px 4px; font-size: 11pt; font-weight: bold; text-align: right; color: #3F5189;">${{ number_format($estimate->total_amount, 2) }}</td>
                     </tr>
                 </table>
@@ -190,7 +190,7 @@
     <!-- Footer -->
     <div style="margin-top: 40px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 8pt; color: #666; text-align: center;">
         <div>{{ $company->name ?? config('app.name') }}</div>
-        <div style="margin-top: 3px;">Thank you for your business</div>
+        <div style="margin-top: 3px;">{{ __('Thank you for your business') }}</div>
     </div>
 
 </body>
