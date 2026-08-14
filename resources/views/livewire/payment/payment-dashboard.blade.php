@@ -184,9 +184,9 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-slate-900 dark:text-white" title="{{ $payment['project'] }}">{{ Str::limit($payment['project'], 35) }}</div>
+                                <div class="text-sm text-slate-900 dark:text-white" title="{{ $payment['project'] }}">{{ Str::limit($payment['project'], 30) }}</div>
                                 @if($payment['job_site'])
-                                    <div class="text-xs text-slate-500 dark:text-slate-400" title="{{ $payment['job_site'] }}">{{ Str::limit($payment['job_site'], 35) }}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400" title="{{ $payment['job_site'] }}">{{ Str::limit($payment['job_site'], 30) }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
