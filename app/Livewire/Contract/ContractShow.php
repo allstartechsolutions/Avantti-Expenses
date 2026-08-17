@@ -3,6 +3,7 @@
 namespace App\Livewire\Contract;
 
 use App\Models\Contract;
+use App\Models\ContractMeasurement;
 use App\Models\ContractPayment;
 use App\Models\ContractPaymentItem;
 use App\Models\ContractScheduleItem;
@@ -41,6 +42,9 @@ class ContractShow extends Component
      * unlinked payment (the pre-cronograma behaviour, still valid).
      */
     public $paymentScheduleItemId = '';
+
+    /** Approved medição this payment settles (Regime B). */
+    public $paymentMeasurementId = '';
 
     /** Cost-code line pre-filled by the parcela choice, so it can be undone. */
     public $autoFilledItemIndex = null;
@@ -181,7 +185,15 @@ class ContractShow extends Component
         $items->each(fn (ContractScheduleItem $item) => $item->setRelation('contract', $this->contract));
 
         return $items
-            ->filter(fn (ContractScheduleItem $item) => $item->getBalance() > 0.009 && $item->isDue())
+            ->filter(fn (ContractScheduleItem $item) => $item->getBalance() > 0.009
+                && $item->isDue()
+                // A parcela measured by a medição is paid through that
+                // medição — offering both would let the same work be paid
+                // twice.
+                && ! $item->measurements->contains(
+                    fn (ContractMeasurement $measurement) => $measurement->isApproved()
+                        && $measurement->getRemainingNet() > 0.009
+                ))
             ->values();
     }
 
@@ -196,6 +208,11 @@ class ContractShow extends Component
         // input, so it must not survive into the new selection (it would
         // then clash with the "lines must add up" rule).
         $this->clearAutoFilledPaymentItem();
+
+        if ($value !== '' && $value !== null) {
+            $this->paymentMeasurementId = '';
+            $this->resetPaymentItemAmounts();
+        }
 
         if ($value === '' || $value === null) {
             $this->paymentAmount = $this->hasSchedule
@@ -232,6 +249,145 @@ class ContractShow extends Component
         }
     }
 
+    /**
+     * Approved medições still owing net cash. A fully retained medição
+     * (net zero) is settled at approval and never appears here.
+     */
+    public function getPayableMeasurementsProperty()
+    {
+        return $this->contract->measurements()
+            ->with(['items.budgetItem', 'payments'])
+            ->where('status', 'approved')
+            ->orderBy('measurement_number')
+            ->get()
+            ->filter(fn (ContractMeasurement $measurement) => $measurement->getRemainingNet() > 0.009)
+            ->values();
+    }
+
+    /**
+     * Paying a medição pays its net: the amount is pre-filled with what
+     * it still owes and the cost-code lines are filled from the boletim,
+     * so the money lands on the codes that were measured.
+     */
+    public function updatedPaymentMeasurementId($value)
+    {
+        $this->clearAutoFilledPaymentItem();
+        $this->resetPaymentItemAmounts();
+
+        if ($value === '' || $value === null) {
+            $this->paymentAmount = $this->hasSchedule
+                ? number_format($this->unscheduledRemaining, 2, '.', '')
+                : number_format($this->contract->getBalanceDue(), 2, '.', '');
+
+            return;
+        }
+
+        $measurement = $this->payableMeasurements->firstWhere('id', (int) $value);
+
+        if (! $measurement) {
+            return;
+        }
+
+        // A medição is settled through itself, never through a parcela as
+        // well — the cronograma reads it via the medição.
+        $this->paymentScheduleItemId = '';
+        $this->paymentAmount = number_format($measurement->getRemainingNet(), 2, '.', '');
+
+        $this->fillItemsFromMeasurement($measurement, $measurement->getRemainingNet());
+    }
+
+    /**
+     * Split a payment across the boletim's cost codes, proportionally to
+     * what each measured this period (floor + largest remainder so the
+     * lines add up to the payment to the cent). The % complete carried to
+     * each line is the medição's own — it reports executed work, which a
+     * partial payment does not change.
+     */
+    protected function fillItemsFromMeasurement(ContractMeasurement $measurement, float $amount): void
+    {
+        $amountCents = (int) round($amount * 100);
+        $weights = [];
+
+        foreach ($measurement->items as $item) {
+            $cents = (int) $item->getRawOriginal('period_amount');
+            if ($cents > 0 && $item->budget_item_id !== null) {
+                $weights[$item->budget_item_id] = $cents;
+            }
+        }
+
+        $total = array_sum($weights);
+
+        if ($amountCents <= 0 || $total <= 0) {
+            return;
+        }
+
+        $allocated = [];
+        $remainders = [];
+
+        foreach ($weights as $budgetItemId => $cents) {
+            $exact = $amountCents * $cents / $total;
+            $allocated[$budgetItemId] = (int) floor($exact);
+            $remainders[$budgetItemId] = $exact - floor($exact);
+        }
+
+        arsort($remainders);
+        $left = $amountCents - array_sum($allocated);
+
+        foreach (array_keys($remainders) as $budgetItemId) {
+            if ($left <= 0) {
+                break;
+            }
+            $allocated[$budgetItemId]++;
+            $left--;
+        }
+
+        $percents = $measurement->items
+            ->whereNotNull('budget_item_id')
+            ->mapWithKeys(fn ($item) => [(int) $item->budget_item_id => (float) $item->current_percent]);
+
+        foreach ($this->paymentItems as $index => $row) {
+            $budgetItemId = (int) $row['budget_item_id'];
+
+            if (! isset($allocated[$budgetItemId]) || $allocated[$budgetItemId] <= 0) {
+                continue;
+            }
+
+            $this->paymentItems[$index]['amount'] = number_format($allocated[$budgetItemId] / 100, 2, '.', '');
+
+            if (isset($percents[$budgetItemId])) {
+                $this->paymentItems[$index]['percent'] = number_format($percents[$budgetItemId], 2, '.', '');
+            }
+        }
+    }
+
+    /**
+     * Editing the amount of a medição payment re-splits its lines, so a
+     * partial payment still satisfies the "lines must add up" rule.
+     */
+    public function updatedPaymentAmount($value): void
+    {
+        if ($this->paymentMeasurementId === '' || $this->paymentMeasurementId === null) {
+            return;
+        }
+
+        $measurement = $this->payableMeasurements->firstWhere('id', (int) $this->paymentMeasurementId);
+
+        if (! $measurement) {
+            return;
+        }
+
+        $this->resetPaymentItemAmounts();
+        $this->fillItemsFromMeasurement($measurement, round((float) $value, 2));
+    }
+
+    protected function resetPaymentItemAmounts(): void
+    {
+        foreach ($this->paymentItems as $index => $row) {
+            $this->paymentItems[$index]['amount'] = '';
+            $this->paymentItems[$index]['percent'] = '';
+        }
+    }
+
     protected function clearAutoFilledPaymentItem(): void
     {
         if ($this->autoFilledItemIndex !== null && isset($this->paymentItems[$this->autoFilledItemIndex])) {
@@ -239,6 +395,17 @@ class ContractShow extends Component
         }
 
         $this->autoFilledItemIndex = null;
+    }
+
+    #[\Livewire\Attributes\On('pay-measurement')]
+    public function openPaymentModalForMeasurement($measurementId)
+    {
+        $this->openPaymentModal();
+
+        if ($this->payableMeasurements->firstWhere('id', (int) $measurementId)) {
+            $this->paymentMeasurementId = (string) $measurementId;
+            $this->updatedPaymentMeasurementId($this->paymentMeasurementId);
+        }
     }
 
     public function openPaymentModal()
@@ -254,6 +421,7 @@ class ContractShow extends Component
         $this->paymentReference = '';
         $this->paymentNotes = '';
         $this->paymentScheduleItemId = '';
+        $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
 
         $this->paymentItems = $this->hasCostCoding()
@@ -284,6 +452,7 @@ class ContractShow extends Component
         $this->paymentReference = '';
         $this->paymentNotes = '';
         $this->paymentScheduleItemId = '';
+        $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
         $this->paymentItems = [];
     }
@@ -337,7 +506,8 @@ class ContractShow extends Component
             'paymentMethod' => ['required', 'in:cash,check,credit_card,debit_card,bank_transfer,pix,other'],
             'paymentReference' => ['nullable', 'string', 'max:255'],
             'paymentNotes' => ['nullable', 'string'],
-            'paymentScheduleItemId' => [$this->hasSchedule && $this->unscheduledRemaining <= 0 ? 'required' : 'nullable'],
+            'paymentScheduleItemId' => [$this->hasSchedule && $this->unscheduledRemaining <= 0 && $this->paymentMeasurementId === '' ? 'required' : 'nullable'],
+            'paymentMeasurementId' => ['nullable'],
             'paymentItems.*.amount' => ['nullable', 'numeric', 'min:0'],
             'paymentItems.*.percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ], [
@@ -347,8 +517,33 @@ class ContractShow extends Component
         ]);
 
         $scheduleItem = null;
+        $measurement = null;
 
-        if ($this->paymentScheduleItemId !== '' && $this->paymentScheduleItemId !== null) {
+        if ($this->paymentMeasurementId !== '' && $this->paymentMeasurementId !== null) {
+            // Re-checked live: the medição may have been paid or cancelled
+            // while the modal was open.
+            $measurement = $this->payableMeasurements->firstWhere('id', (int) $this->paymentMeasurementId);
+
+            if (! $measurement) {
+                $this->addError('paymentMeasurementId', __('This measurement is no longer payable — reopen the payment form.'));
+
+                return;
+            }
+
+            $remainingNet = $measurement->getRemainingNet();
+
+            if ((float) $this->paymentAmount > $remainingNet + 0.009) {
+                $this->addError('paymentAmount', __('The amount cannot exceed the measurement net of :balance.', [
+                    'balance' => Number::currency($remainingNet, config('app.currency'), config('app.locale')),
+                ]));
+
+                return;
+            }
+
+            // The cronograma reads a medição payment through the medição
+            // itself, so the parcela link stays empty.
+            $this->paymentScheduleItemId = '';
+        } elseif ($this->paymentScheduleItemId !== '' && $this->paymentScheduleItemId !== null) {
             // Re-checked against the live list: the parcela may have been
             // paid, edited or deleted while the modal was open.
             $scheduleItem = $this->payableScheduleItems->firstWhere('id', (int) $this->paymentScheduleItemId);
@@ -367,8 +562,8 @@ class ContractShow extends Component
                 return;
             }
         } elseif ($this->hasSchedule) {
-            // No parcela: only the part of the contract the cronograma
-            // does not cover may be paid this way.
+            // No parcela and no medição: only the part of the contract the
+            // cronograma does not cover may be paid this way.
             $remaining = $this->unscheduledRemaining;
 
             if ((float) $this->paymentAmount > $remaining + 0.009) {
@@ -391,10 +586,11 @@ class ContractShow extends Component
             }
         }
 
-        DB::transaction(function () use ($activeItems, $scheduleItem) {
+        DB::transaction(function () use ($activeItems, $scheduleItem, $measurement) {
             $payment = ContractPayment::create([
                 'contract_id' => $this->contract->id,
                 'contract_schedule_item_id' => $scheduleItem?->id,
+                'contract_measurement_id' => $measurement?->id,
                 'amount' => $this->paymentAmount,
                 'payment_date' => $this->paymentDate,
                 'payment_method' => $this->paymentMethod,
@@ -594,6 +790,7 @@ class ContractShow extends Component
 
     #[\Livewire\Attributes\On('change-orders-updated')]
     #[\Livewire\Attributes\On('schedule-updated')]
+    #[\Livewire\Attributes\On('measurements-updated')]
     public function refreshContract()
     {
         $this->contract = $this->contract->fresh([

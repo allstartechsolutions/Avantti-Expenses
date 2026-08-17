@@ -147,6 +147,19 @@ class ContractMeasurement extends Model
             ->sum(fn ($payment) => $payment->getRawOriginal('amount')) / 100, 2);
     }
 
+    /**
+     * Net cash still owed on this medição. A fully retained medição
+     * (net zero) owes nothing — approval alone settles it.
+     */
+    public function getRemainingNet(): float
+    {
+        if (! $this->isApproved()) {
+            return 0.0;
+        }
+
+        return round(max(0, $this->net_amount - $this->getAmountPaid()), 2);
+    }
+
     public function isPaid(): bool
     {
         if (! $this->isApproved()) {

@@ -297,6 +297,9 @@
             <!-- Payment Schedule (Cronograma) -->
             <livewire:contract.contract-schedule :contract="$contract" />
 
+            <!-- Measurements (Medições) -->
+            <livewire:contract.contract-measurements :contract="$contract" />
+
             <!-- Change Orders -->
             <livewire:contract.contract-change-orders :contract="$contract" />
 
@@ -697,15 +700,36 @@
                         $unscheduledRemaining = $this->hasSchedule ? $this->unscheduledRemaining : 0;
                         $scheduleBlocked = $this->hasSchedule
                             && $this->payableScheduleItems->count() === 0
+                            && $this->payableMeasurements->count() === 0
                             && $unscheduledRemaining <= 0;
                     @endphp
 
                     <div class="space-y-4">
+                        @if(!$scheduleBlocked && $this->payableMeasurements->count() > 0)
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Measurement') }}</label>
+                                <select
+                                    wire:model.live="paymentMeasurementId"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <option value="">{{ __('Not a measurement payment') }}</option>
+                                    @foreach($this->payableMeasurements as $payableMeasurement)
+                                        <option value="{{ $payableMeasurement->id }}">
+                                            {{ __('Measurement') }} #{{ $payableMeasurement->measurement_number }}
+                                            &middot; {{ $payableMeasurement->period_start->format('d/m/Y') }}—{{ $payableMeasurement->period_end->format('d/m/Y') }}
+                                            &middot; {{ __('Net') }} {{ Number::currency($payableMeasurement->getRemainingNet(), config('app.currency'), config('app.locale')) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Paying a measurement pays its net (gross minus retention) and fills the cost codes from the boletim.') }}</p>
+                                @error('paymentMeasurementId') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
+
                         @if($scheduleBlocked)
                             <div class="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300">
                                 {{ __('This contract is paid through its payment schedule and no installment is approved for payment yet. Approve an installment in the payment schedule first.') }}
                             </div>
-                        @elseif($this->payableScheduleItems->count() > 0 || $unscheduledRemaining > 0)
+                        @elseif(($this->payableScheduleItems->count() > 0 || $unscheduledRemaining > 0) && $paymentMeasurementId === '')
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     {{ $this->hasSchedule && $unscheduledRemaining <= 0 ? __('Installment *') : __('Installment') }}

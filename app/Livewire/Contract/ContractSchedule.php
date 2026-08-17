@@ -38,6 +38,7 @@ class ContractSchedule extends Component
 
     #[\Livewire\Attributes\On('change-orders-updated')]
     #[\Livewire\Attributes\On('payments-updated')]
+    #[\Livewire\Attributes\On('measurements-updated')]
     public function refreshContract()
     {
         // Percent-based parcelas re-flow with the adjusted amount and
