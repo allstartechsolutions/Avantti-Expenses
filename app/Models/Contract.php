@@ -302,6 +302,31 @@ class Contract extends Model
     }
 
     /**
+     * Contract money the cronograma does not cover and that has not been
+     * paid off-schedule yet — a partial cronograma, or a change order
+     * raising the adjusted amount after the parcelas were agreed. This
+     * much may be paid without naming a parcela; otherwise it could never
+     * be paid at all. Shared by the contract page and the payment batch
+     * so both gates agree.
+     */
+    public function getUnscheduledRemaining(): float
+    {
+        $unscheduled = $this->getUnscheduledAmount();
+
+        if ($unscheduled <= 0) {
+            return 0.0;
+        }
+
+        $paidOffSchedule = round($this->payments()
+            ->whereNull('contract_schedule_item_id')
+            ->whereNull('contract_measurement_id')
+            ->where('is_retention_release', false)
+            ->sum('amount') / 100, 2);
+
+        return round(max(0, min($unscheduled - $paidOffSchedule, $this->getBalanceDue())), 2);
+    }
+
+    /**
      * What this contract still owes, placed on the calendar — the single
      * definition shared by the payment schedule and accounts payable
      * reports:
@@ -314,8 +339,10 @@ class Contract extends Model
      * and the date stays null when the contract has no end date (the
      * caller decides where undated money goes).
      *
-     * The items always add up to the contract's balance due, so nothing
-     * is double counted and nothing is lost.
+     * The items always add up to the contract's balance due — parcelas
+     * are scaled down when they exceed it (money paid without settling a
+     * parcela, or a cronograma scheduling more than the contract) — so
+     * the reports can neither over-state nor lose payables.
      *
      * @return array<int, array{date: ?\Carbon\CarbonInterface, amount: float, label: string, scheduled: bool}>
      */
@@ -358,6 +385,34 @@ class Contract extends Model
                 'label' => $items === [] ? __('Contract balance') : __('Unscheduled balance'),
                 'scheduled' => false,
             ];
+
+            return $items;
+        }
+
+        // The parcelas can add up to more than the contract still owes:
+        // money paid without settling one (a payment made before the
+        // cronograma existed, a payment batch, a cronograma scheduling
+        // more than the adjusted amount). Scale them down to the real
+        // balance so the reports can never over-state what is payable.
+        if ($balanceDue <= 0.009) {
+            return [];
+        }
+
+        if ($scheduledOpen > $balanceDue + 0.009) {
+            $factor = $balanceDue / $scheduledOpen;
+            $running = 0.0;
+
+            foreach ($items as $i => $item) {
+                $amount = round($item['amount'] * $factor, 2);
+                $items[$i]['amount'] = $amount;
+                $running = round($running + $amount, 2);
+            }
+
+            // Put any rounding crumb on the first item so the items still
+            // add up to the balance due exactly.
+            if ($items !== [] && abs($balanceDue - $running) >= 0.01) {
+                $items[0]['amount'] = round($items[0]['amount'] + ($balanceDue - $running), 2);
+            }
         }
 
         return $items;

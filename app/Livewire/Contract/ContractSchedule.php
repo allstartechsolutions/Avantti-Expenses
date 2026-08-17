@@ -265,7 +265,20 @@ class ContractSchedule extends Component
                         $lockedValueError = true;
                     }
 
-                    $item->update($data);
+                    try {
+                        $item->update($data);
+                    } catch (\LogicException) {
+                        // Money landed on the parcela between the check
+                        // above and this write. update() already filled the
+                        // rejected values onto the model, so it must be
+                        // reloaded before retrying without them — otherwise
+                        // the guard fires again and takes the whole save
+                        // down with it.
+                        $item->refresh();
+                        unset($data['amount'], $data['percent'], $data['trigger_type']);
+                        $item->update($data);
+                        $lockedValueError = true;
+                    }
                 } else {
                     ContractScheduleItem::create($data + ['contract_id' => $this->contract->id]);
                 }
@@ -304,7 +317,17 @@ class ContractSchedule extends Component
 
     public function openReleaseModal($id)
     {
-        $item = ContractScheduleItem::where('contract_id', $this->contract->id)->findOrFail($id);
+        $item = ContractScheduleItem::where('contract_id', $this->contract->id)->find($id);
+
+        // Deleted in another tab between render and click: the sibling
+        // actions degrade to a flash, so this must too.
+        if (! $item) {
+            $this->contract->refresh();
+            session()->flash('error', __('This installment no longer exists.'));
+            $this->dispatch('schedule-updated');
+
+            return;
+        }
 
         if ($item->isReleased()) {
             return;

@@ -49,6 +49,14 @@ class ContractShow extends Component
     /** Cost-code line pre-filled by the parcela choice, so it can be undone. */
     public $autoFilledItemIndex = null;
 
+    /**
+     * Indexes of the cost-code lines a medição filled in. Only these may
+     * be cleared or re-split automatically; anything the user typed is
+     * theirs. Tracking the indexes (not a bare flag) is what keeps that
+     * promise when only some lines came from the boletim.
+     */
+    public array $measurementFilledIndexes = [];
+
     // Retention release modal (liberação de retenção)
     public $showRetentionModal = false;
 
@@ -152,19 +160,7 @@ class ContractShow extends Component
      */
     public function getUnscheduledRemainingProperty(): float
     {
-        $unscheduled = $this->contract->getUnscheduledAmount();
-
-        if ($unscheduled <= 0) {
-            return 0.0;
-        }
-
-        $paidOffSchedule = round($this->contract->payments()
-            ->whereNull('contract_schedule_item_id')
-            ->whereNull('contract_measurement_id')
-            ->where('is_retention_release', false)
-            ->sum('amount') / 100, 2);
-
-        return round(max(0, min($unscheduled - $paidOffSchedule, $this->contract->getBalanceDue())), 2);
+        return $this->contract->getUnscheduledRemaining();
     }
 
     /**
@@ -211,7 +207,7 @@ class ContractShow extends Component
 
         if ($value !== '' && $value !== null) {
             $this->paymentMeasurementId = '';
-            $this->resetPaymentItemAmounts();
+            $this->clearMeasurementFilledItems();
         }
 
         if ($value === '' || $value === null) {
@@ -258,7 +254,9 @@ class ContractShow extends Component
         return $this->contract->measurements()
             ->with(['items.budgetItem', 'payments'])
             ->where('status', 'approved')
-            ->orderBy('measurement_number')
+            // reorder(): the relation itself sorts newest-first, and a
+            // second ORDER BY term would never be reached.
+            ->reorder('measurement_number', 'asc')
             ->get()
             ->filter(fn (ContractMeasurement $measurement) => $measurement->getRemainingNet() > 0.009)
             ->values();
@@ -272,7 +270,19 @@ class ContractShow extends Component
     public function updatedPaymentMeasurementId($value)
     {
         $this->clearAutoFilledPaymentItem();
-        $this->resetPaymentItemAmounts();
+        $this->clearMeasurementFilledItems();
+
+        // The boletim defines every line of a medição payment, so a line
+        // typed by hand cannot survive alongside it — drop it with a note
+        // rather than leaving totals that silently fail validation.
+        if ($value !== '' && $value !== null && ($typed = $this->userTypedItemIndexes()) !== []) {
+            foreach ($typed as $index) {
+                $this->paymentItems[$index]['amount'] = '';
+                $this->paymentItems[$index]['percent'] = '';
+            }
+
+            session()->flash('error', __('The cost code lines were replaced by the measurement boletim.'));
+        }
 
         if ($value === '' || $value === null) {
             $this->paymentAmount = $this->hasSchedule
@@ -353,11 +363,13 @@ class ContractShow extends Component
             }
 
             $this->paymentItems[$index]['amount'] = number_format($allocated[$budgetItemId] / 100, 2, '.', '');
+            $this->measurementFilledIndexes[] = $index;
 
             if (isset($percents[$budgetItemId])) {
                 $this->paymentItems[$index]['percent'] = number_format($percents[$budgetItemId], 2, '.', '');
             }
         }
+
     }
 
     /**
@@ -372,20 +384,50 @@ class ContractShow extends Component
 
         $measurement = $this->payableMeasurements->firstWhere('id', (int) $this->paymentMeasurementId);
 
-        if (! $measurement) {
+        // Hands off once the user has edited a line themselves.
+        if (! $measurement || $this->measurementFilledIndexes === []) {
             return;
         }
 
-        $this->resetPaymentItemAmounts();
+        $this->clearMeasurementFilledItems();
         $this->fillItemsFromMeasurement($measurement, round((float) $value, 2));
     }
 
-    protected function resetPaymentItemAmounts(): void
+    /**
+     * Clear only lines a medição filled in; hand-typed lines are left
+     * alone (clearing them silently would break the "lines must add up"
+     * rule with nothing on screen to explain it).
+     */
+    protected function clearMeasurementFilledItems(): void
     {
-        foreach ($this->paymentItems as $index => $row) {
-            $this->paymentItems[$index]['amount'] = '';
-            $this->paymentItems[$index]['percent'] = '';
+        foreach ($this->measurementFilledIndexes as $index) {
+            if (isset($this->paymentItems[$index])) {
+                $this->paymentItems[$index]['amount'] = '';
+                $this->paymentItems[$index]['percent'] = '';
+            }
         }
+
+        $this->measurementFilledIndexes = [];
+    }
+
+    /**
+     * Lines the user typed that a medição did not fill. Choosing a
+     * medição replaces the whole grid with its boletim, so these have to
+     * go — but never silently.
+     */
+    protected function userTypedItemIndexes(): array
+    {
+        $indexes = [];
+
+        foreach ($this->paymentItems as $index => $row) {
+            $touched = (float) ($row['amount'] ?: 0) > 0 || ($row['percent'] ?? '') !== '';
+
+            if ($touched && ! in_array($index, $this->measurementFilledIndexes, true)) {
+                $indexes[] = $index;
+            }
+        }
+
+        return $indexes;
     }
 
     protected function clearAutoFilledPaymentItem(): void
@@ -423,6 +465,7 @@ class ContractShow extends Component
         $this->paymentScheduleItemId = '';
         $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
+        $this->measurementFilledIndexes = [];
 
         $this->paymentItems = $this->hasCostCoding()
             ? $this->contract->costCodeSchedule()
@@ -454,6 +497,7 @@ class ContractShow extends Component
         $this->paymentScheduleItemId = '';
         $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
+        $this->measurementFilledIndexes = [];
         $this->paymentItems = [];
     }
 
@@ -461,11 +505,16 @@ class ContractShow extends Component
     {
         [$index, $field] = explode('.', $key, 2);
 
-        // Once the user touches the pre-filled line it is their input,
-        // not ours to clear on the next parcela choice.
+        // Once the user touches a line it is their input, not ours to
+        // clear or re-split.
         if ((int) $index === $this->autoFilledItemIndex) {
             $this->autoFilledItemIndex = null;
         }
+
+        // A line the user edits stops being ours to clear or re-split.
+        $this->measurementFilledIndexes = array_values(
+            array_diff($this->measurementFilledIndexes, [(int) $index])
+        );
 
         if ($field === 'percent' && is_numeric($value) && isset($this->paymentItems[$index])) {
             $row = $this->paymentItems[$index];

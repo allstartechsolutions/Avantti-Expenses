@@ -276,6 +276,9 @@
                             {{ __('Batch Amount') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            {{ __('Pays') }}
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Method') }}
                         </th>
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -365,7 +368,7 @@
                                     <div class="text-sm font-medium text-red-400 dark:text-red-500 text-center line-through">
                                         {{ $batchItem->getRawOriginal('amount') ? Number::currency($batchItem->amount, config('app.currency'), config('app.locale')) : '—' }}
                                     </div>
-                                @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
+                                @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited() && ! $this->batchBlockReason($contract))
                                     <input
                                         type="number"
                                         step="0.01"
@@ -376,6 +379,39 @@
                                         class="w-28 px-2 py-1.5 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
                             </td>
+                            <!-- Pays (installment / measurement) -->
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @php
+                                    $editableRow = $paymentBatch->canBeEdited() && !$isApproved && !$isRejected;
+                                    $targets = $editableRow ? $this->payableTargetsFor($contract) : [];
+                                    $blockReason = $editableRow ? $this->batchBlockReason($contract) : null;
+                                    $runsOnSchedule = $contract->scheduleItems->isNotEmpty() || $contract->measurements->isNotEmpty();
+                                @endphp
+                                @if($isApproved || $isRejected)
+                                    <div class="text-xs text-slate-600 dark:text-slate-400 text-center {{ $isRejected ? 'line-through' : '' }}">
+                                        {{ $batchItem?->scheduleItem?->description
+                                            ?? ($batchItem?->measurement ? __('Measurement').' #'.$batchItem->measurement->measurement_number : '—') }}
+                                    </div>
+                                @elseif(!$isPaidOrCancelled && $balance > 0 && $paymentBatch->canBeEdited())
+                                    @if($blockReason)
+                                        <div class="text-xs text-amber-600 dark:text-amber-400 text-center">{{ $blockReason }}</div>
+                                    @elseif($runsOnSchedule)
+                                        <select
+                                            wire:model.live="payTargets.{{ $contract->id }}"
+                                            class="w-52 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                            <option value="">{{ $contract->getUnscheduledRemaining() > 0.009 ? __('Unscheduled balance') : __('Select...') }}</option>
+                                            @foreach($targets as $targetKey => $target)
+                                                <option value="{{ $targetKey }}">
+                                                    {{ $target['label'] }}@unless($target['stale'] ?? false) · {{ Number::currency($target['amount'], config('app.currency'), config('app.locale')) }}@endunless
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="text-xs text-slate-400 dark:text-slate-500 text-center">—</div>
+                                    @endif
+                                @endif
+                            </td>
+
                             <!-- Method -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($isApproved || $isRejected)
@@ -481,7 +517,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="13" class="px-6 py-12 text-center">
+                            <td colspan="14" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>

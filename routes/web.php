@@ -90,6 +90,8 @@ use App\Livewire\Invoice\PublicInvoicePay;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\AccountsPayableReport;
+use App\Http\Controllers\CompanyFinancialReportPdfController;
+use App\Livewire\Report\CompanyFinancialReport;
 use App\Livewire\Report\PaymentDetailReport;
 use App\Livewire\Report\PaymentScheduleReport;
 use App\Livewire\Report\ExpenseReport;
@@ -254,6 +256,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Report routes (admin only)
     Route::middleware('admin')->group(function () {
+        Route::get('reports/company-financials', CompanyFinancialReport::class)->name('reports.company-financials');
+        Route::get('reports/company-financials/pdf', [CompanyFinancialReportPdfController::class, 'download'])->name('reports.company-financials.pdf.download');
+        Route::get('reports/company-financials/pdf/view', [CompanyFinancialReportPdfController::class, 'stream'])->name('reports.company-financials.pdf.view');
         Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
         Route::get('reports/expenses', ExpenseReport::class)->name('reports.expenses');
         Route::get('reports/expenses/pdf', [ExpenseReportPdfController::class, 'download'])->name('reports.expenses.pdf.download');

@@ -1,14 +1,16 @@
 # Contract Payment Schedule (Cronograma Físico-Financeiro)
 
-**Status as of 2026-08-17:** Phases 1, 2 and 2.5 are complete, code-reviewed, fixed and
-functionally tested (committed on the branch). **Phase 4 (approval-gated payment linking,
-undo of an approval, and retenção) is done and tested, uncommitted in the working tree**
-plus one new migration to run. All work lives on branch
-**`feature/contract-payment-schedule`**; `main` is untouched, so the client on the current
-system is unaffected.
+**Status as of 2026-08-17:** Phases 1, 2, 2.5 and 4 are **merged to `main`** (squash PRs
+#1 and #2, main at `bed4f82`) — schema, cronograma card, approval-gated payment linking,
+undo of an approval, and retenção. Their migrations are in that merge; a deploy needs
+`php artisan migrate` and `view:clear`.
 
-**Next: Phase 3 — medição por produção (Regime B)**, which is what actually starts
-withholding retention — see "Next phases" below.
+**Phase 3 (medição por produção) is done and tested but uncommitted in the working tree**,
+together with the medição↔parcela link. No migration of its own — it uses the tables
+shipped in phase 1.
+
+**Next: `/code-review` on phase 3, then Phase 5 (payment batch integration)** — see
+"Next phases" below.
 
 ---
 
@@ -194,6 +196,40 @@ becomes required again.
   contract with no medições the block reads zeros and the action never appears —
   the feature degrades to invisible until phase 3 ships.
 
+## 5.2 Medição por produção — Regime B (Phase 3, DONE 2026-08-17)
+
+**`Contract/ContractMeasurements`** renders a **Medições** card on every contract, below
+the cronograma.
+
+- **New Measurement** creates the draft via `createNumbered()` (race-safe numbering),
+  one row per cost code of `costCodeSchedule()`, with the period running from the day
+  after the last approved medição to today — and never start > end when that period
+  already reaches today. Only one draft per contract; a second click reopens it.
+- **% anterior** comes from the last approved medição, falling back to the payment
+  history so part-paid contracts continue from where they are.
+- **The boletim can be filled from either side**: type % and the value follows, or type
+  the value and `% = anterior + valor ÷ previsto`. The cumulative % is the stored truth,
+  so a typed value snaps to the nearest 0,01% and the field is rewritten with the snapped
+  figure — never a silent mismatch. Values clamp at 100%; going below the previously
+  measured % is refused (`period_amount` is unsigned).
+- **Parcela link** (optional, draft-only): the editor's Parcela select carries previsto /
+  saldo / vencimento / status, and a context strip shows the selected parcela's
+  previsto, realizado, saldo and this boletim's gross, warning when the medição exceeds
+  what the parcela still owes. Approving a linked medição makes the parcela **A Pagar**;
+  its payments settle the parcela grossed up by retention.
+- **Approve** banks the on-screen values first, then snapshots gross/retenção/líquido and
+  locks the medição (reopening is read-only). Empty boletins are refused.
+- **Paying**: the medição row's Pagar action (or the payment modal's Medição select)
+  pre-fills the remaining net and fills the cost-code lines from the boletim —
+  proportional to each code's period amount, floor + largest remainder, carrying the
+  medição's `percent_complete`. Editing the amount re-splits the lines. A parcela
+  measured by an approved medição with net still owing is **removed** from the parcela
+  select, so the same work can never be paid twice.
+- **Cancel** is refused while payments point at the medição; drafts get delete.
+
+Known edge, not yet handled: cancelling an approved medição after a later draft was
+created leaves that draft's `previous_percent` at the cancelled baseline.
+
 ## 6. Next phases (in recommended order)
 
 ### Phase 4 — DONE (see §5 and §5.1)
@@ -203,22 +239,25 @@ Still true for any new caller: mutate payments then read retention/settled gette
 the same request and you must `refresh()` first (the getters sum loaded relations —
 documented on `getRetentionHeld()`).
 
-### Phase 3 — Medição por produção (Regime B)
-- `Contract/ContractMeasurements.php`: draft → measure % per cost code → approve
-  (boletim: scheduled / % anterior / % atual / valor período / retenção / líquido).
-- **MUST use `ContractMeasurement::createNumbered()`** and enforce one draft per
-  contract before creating. Items pre-fill previous % from the last approved medição,
-  falling back to `costCodeSchedule()` for legacy contracts. Items lock on approval.
-- Paying an approved medição: payment linked via `contract_measurement_id`, amount
-  pre-filled with net; auto-create `contract_payment_items` at **net per cost code**
-  with `percent_complete` = medição current % (keeps the existing SOV grid and the
-  "items must sum to payment" validation working).
-- Cancelling: blocked if the medição has payments (delete the payment first).
+### Phase 3 — DONE (see §5.2)
 
-### Phase 5 — Payment batch integration
-- Suggested items when building a batch: released/due parcelas and approved-unpaid
-  medições (net amount) for the filtered vendor. Selecting one stores the link fields
-  on the batch item; `processApprovedItem()` already carries them to the payment.
+### Phase 5 — DONE 2026-08-17
+The batch table has a **Paga** column per contract row: a select listing that contract's
+payable parcelas and approved medições with net still owing (`payableTargetsFor()` — the
+same rules the contract page uses). Choosing one fills the row's amount with what the
+item still owes and `saveDraft()` stores `contract_schedule_item_id` /
+`contract_measurement_id` on the batch item, which `processApprovedItem()` already
+carried to the payment.
+
+`targetError()` gates **both** approval paths (`approveItem` and `approveAll`): a
+contract with a cronograma or medições must name what the money pays, the target must
+still be payable, and the amount may not exceed what it owes. So batch money can no
+longer bypass the cronograma and leave a parcela payable a second time.
+
+**Schema limit worth knowing:** `payment_batch_items` is unique per
+(batch, contract), so a batch can settle at most **one** parcela or medição per contract.
+Paying two parcelas of the same contract needs two batches (or a payment on the contract
+page). Lifting it would mean dropping that unique index.
 
 ### Phase 6 — PDFs (dompdf, existing pattern: `buildPdfData()`, DejaVu Sans, #3F5189)
 - Cronograma físico-financeiro (parcelas, previsto/realizado/saldo, delays, releases).
@@ -230,7 +269,8 @@ documented on `getRetentionHeld()`).
 
 ## 7. Process rules for this feature (user-set)
 
-- **Never commit** — leave everything in the working tree; the user commits.
+- **Never commit and never merge** — leave everything in the working tree; the user
+  commits, merges and deploys (restated 2026-08-17: "never merge I'm the one merging").
 - **After each phase: run /code-review, fix the findings, then STOP and wait for the
   user's OK before the next phase.**
 - One page at a time, tested before moving on (CLAUDE.md).
@@ -258,12 +298,27 @@ documented on `getRetentionHeld()`).
 9. Orange ↺ on an approved parcela → confirm → back to Pendente, out of the payment
    dropdown, "Aprovação Revertida" in the Histórico. Approve again, record a payment,
    and the ↺ is gone (delete the payment to get it back).
-10. Retenção: set a % on Editar Contrato → the Retenção block appears on the contract
+10. Medições: "Nova Medição" → the boletim opens with % anterior pre-filled; type a %
+    or a valor (either fills the other) → Bruto/Retenção/Líquido update live; pick a
+    Parcela to see its previsto/realizado/saldo and the over-measure warning; Aprovar
+    locks it; the Pagar action pre-fills the líquido and the cost-code lines.
+11. Retenção: set a % on Editar Contrato → the Retenção block appears on the contract
     (zeros until a medição exists, so it is fully visible only after phase 3). With
     retention held, "Liberar Retenção" appears; releasing more than the outstanding
     silently caps at it, and the payment shows the orange "Liberação de Retenção" chip.
 
-## 9. Review history (4 review rounds, 33 findings fixed total)
+## 9. Review history (5 review rounds, 39 findings fixed total)
+
+- **Round 5 (phase 3, 7 findings — 6 fixed, 1 became phase 5):**
+  - *Fixed:* `openPayableItems()` could report more open money than the contract owed
+    when payments did not settle a parcela (now scaled to the balance due — both reports
+    were over-stating); selecting a parcela wiped hand-typed cost-code lines (line
+    ownership is now tracked, and a manual edit keeps it); the medição dropdown was
+    ordered newest-first because the relation's own `orderByDesc` won (`reorder()`);
+    `openReleaseModal()` 404'd on a parcela deleted in another tab; a `LogicException`
+    from the model guard escaped `saveGrid()`'s transaction and 500'd the whole save;
+    a deferred amount change overwrote a manually edited medição line.
+  - *Became phase 5:* batch payments bypassing the cronograma.
 
 - **Round 4 (phase 4, 8 findings — 4 fixed, 4 accepted/deferred):**
   - *Fixed:* unscheduled contract money became unpayable once every parcela was paid

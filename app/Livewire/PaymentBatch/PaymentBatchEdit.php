@@ -48,6 +48,15 @@ class PaymentBatchEdit extends Component
 
     public array $payNotes = [];
 
+    /**
+     * What each contract's payment settles, keyed by contract id:
+     * "parcela:{id}" or "medicao:{id}" ("" = neither). Contracts paid
+     * through a cronograma must carry one, exactly as on the contract
+     * page — otherwise batch money would bypass the cronograma and leave
+     * the parcela payable a second time.
+     */
+    public array $payTargets = [];
+
     public function mount(): void
     {
         if (! $this->paymentBatch->canBeEdited()) {
@@ -80,12 +89,19 @@ class PaymentBatchEdit extends Component
         $this->payPhases = [];
         $this->payNotes = [];
 
+        $this->payTargets = [];
+
         foreach ($items as $item) {
             $key = (string) $item->contract_id;
             $this->payAmounts[$key] = $item->getRawOriginal('amount') ? $item->amount : '';
             $this->payMethods[$key] = $item->payment_method ?? '';
             $this->payPhases[$key] = $item->phase ?? '';
             $this->payNotes[$key] = $item->notes ?? '';
+            $this->payTargets[$key] = match (true) {
+                $item->contract_schedule_item_id !== null => 'parcela:'.$item->contract_schedule_item_id,
+                $item->contract_measurement_id !== null => 'medicao:'.$item->contract_measurement_id,
+                default => '',
+            };
         }
     }
 
@@ -204,6 +220,7 @@ class PaymentBatchEdit extends Component
             ->merge(collect($this->payPhases)->keys())
             ->merge(collect($this->payNotes)->keys())
             ->merge(collect($this->payMethods)->keys())
+            ->merge(collect($this->payTargets)->keys())
             ->unique();
 
         $rowsToSave = $allContractIds->filter(function ($contractId) {
@@ -216,8 +233,9 @@ class PaymentBatchEdit extends Component
             $hasPhase = ! empty($phase);
             $hasNotes = ! empty($notes);
             $hasMethod = ! empty($method);
+            $hasTarget = ! empty($this->payTargets[$contractId] ?? '');
 
-            return $hasAmount || $hasPhase || $hasNotes || $hasMethod;
+            return $hasAmount || $hasPhase || $hasNotes || $hasMethod || $hasTarget;
         });
 
         $rowsToRemove = $allContractIds->diff($rowsToSave);
@@ -237,6 +255,8 @@ class PaymentBatchEdit extends Component
                         'payment_method' => ($this->payMethods[$contractId] ?? null) ?: null,
                         'phase' => ($this->payPhases[$contractId] ?? null) ?: null,
                         'notes' => ($this->payNotes[$contractId] ?? null) ?: null,
+                        'contract_schedule_item_id' => $this->targetScheduleItemId($contractId),
+                        'contract_measurement_id' => $this->targetMeasurementId($contractId),
                         'status' => 'pending',
                     ]
                 );
@@ -254,6 +274,191 @@ class PaymentBatchEdit extends Component
         unset($this->batchSummary);
         $this->loadExistingItems();
         session()->flash('message', __('Draft saved successfully!'));
+    }
+
+    // ---------------------------------------------------------------
+    // Cronograma / medição targets
+    // ---------------------------------------------------------------
+
+    protected function targetScheduleItemId($contractId): ?int
+    {
+        $target = $this->payTargets[$contractId] ?? '';
+
+        return str_starts_with($target, 'parcela:') ? (int) substr($target, 8) : null;
+    }
+
+    protected function targetMeasurementId($contractId): ?int
+    {
+        $target = $this->payTargets[$contractId] ?? '';
+
+        return str_starts_with($target, 'medicao:') ? (int) substr($target, 8) : null;
+    }
+
+    /**
+     * What a contract can pay in this batch: its payable parcelas and its
+     * approved medições that still owe net — the same lists the contract
+     * page offers, so both routes obey the same rules. Keyed by contract
+     * id for the rows on screen.
+     */
+    public function payableTargetsFor(Contract $contract): array
+    {
+        $options = [];
+
+        $contract->loadMissing([
+            'changeOrders',
+            'payments',
+            'scheduleItems.payments',
+            'scheduleItems.measurements.payments',
+            'measurements.payments',
+        ]);
+
+        $contract->scheduleItems->each(fn ($item) => $item->setRelation('contract', $contract));
+
+        foreach ($contract->scheduleItems as $item) {
+            $measured = $item->measurements->contains(
+                fn ($measurement) => $measurement->isApproved() && $measurement->getRemainingNet() > 0.009
+            );
+
+            if ($item->getBalance() > 0.009 && $item->isDue() && ! $measured) {
+                $options['parcela:'.$item->id] = [
+                    'label' => $item->description,
+                    'amount' => $item->getBalance(),
+                ];
+            }
+        }
+
+        foreach ($contract->measurements as $measurement) {
+            if ($measurement->isApproved() && $measurement->getRemainingNet() > 0.009) {
+                $options['medicao:'.$measurement->id] = [
+                    'label' => __('Measurement').' #'.$measurement->measurement_number,
+                    'amount' => $measurement->getRemainingNet(),
+                ];
+            }
+        }
+
+        // A saved target that stopped being payable (paid elsewhere,
+        // cancelled) must stay on the list, flagged — otherwise the row
+        // keeps a link the user can see no trace of and cannot change.
+        $saved = $this->payTargets[$contract->id] ?? '';
+
+        if ($saved !== '' && ! isset($options[$saved])) {
+            $options[$saved] = [
+                'label' => $this->targetLabel($contract, $saved).' — '.__('no longer payable'),
+                'amount' => 0.0,
+                'stale' => true,
+            ];
+        }
+
+        return $options;
+    }
+
+    protected function targetLabel(Contract $contract, string $target): string
+    {
+        if (str_starts_with($target, 'parcela:')) {
+            $item = $contract->scheduleItems->firstWhere('id', (int) substr($target, 8));
+
+            return $item?->description ?? __('Installment');
+        }
+
+        $measurement = $contract->measurements->firstWhere('id', (int) substr($target, 8));
+
+        return __('Measurement').' #'.($measurement?->measurement_number ?? '?');
+    }
+
+    /**
+     * Can this contract take a batch payment at all? A contract paid
+     * through a cronograma with nothing approved yet cannot — the row
+     * would never pass approval, so the page must say so instead of
+     * offering an amount box that leads nowhere.
+     */
+    public function batchBlockReason(Contract $contract): ?string
+    {
+        if ($contract->scheduleItems->isEmpty() && $contract->measurements->isEmpty()) {
+            return null;
+        }
+
+        if ($this->payableTargetsFor($contract) !== [] || $contract->getUnscheduledRemaining() > 0.009) {
+            return null;
+        }
+
+        return __('No approved installment or measurement');
+    }
+
+    /**
+     * Choosing a target fills in what it still owes, so the batch row
+     * matches the cronograma without retyping.
+     */
+    public function updatedPayTargets($value, $key): void
+    {
+        $contract = Contract::find($key);
+
+        if (! $contract || ! $value) {
+            return;
+        }
+
+        $options = $this->payableTargetsFor($contract);
+
+        $current = (float) ($this->payAmounts[$key] ?? 0);
+
+        // Only fill an empty amount: a deliberate partial payment must
+        // survive picking the parcela it settles.
+        if (isset($options[$value]) && $current <= 0) {
+            $this->payAmounts[$key] = number_format($options[$value]['amount'], 2, '.', '');
+        }
+    }
+
+    /**
+     * A batch row must respect the same gate as the contract page: with a
+     * cronograma, the money settles a parcela or a medição, and never
+     * more than that item still owes.
+     */
+    protected function targetError(PaymentBatchItem $item, Contract $contract): ?string
+    {
+        $options = $this->payableTargetsFor($contract);
+        $target = match (true) {
+            $item->contract_schedule_item_id !== null => 'parcela:'.$item->contract_schedule_item_id,
+            $item->contract_measurement_id !== null => 'medicao:'.$item->contract_measurement_id,
+            default => '',
+        };
+
+        if ($target === '') {
+            if ($contract->scheduleItems->isEmpty() && $contract->measurements->isEmpty()) {
+                return null;
+            }
+
+            // A cronograma that does not cover the whole contract leaves a
+            // remainder that no parcela can settle — payable unlinked, up
+            // to that much, exactly as on the contract page.
+            $remaining = $contract->getUnscheduledRemaining();
+
+            if ($remaining <= 0.009) {
+                return __('Contract :number is paid through its schedule — choose the installment or measurement this pays.', [
+                    'number' => $contract->contract_number,
+                ]);
+            }
+
+            return $item->amount > $remaining + 0.009
+                ? __('Contract :number: without an installment the payment cannot exceed the unscheduled balance of :balance.', [
+                    'number' => $contract->contract_number,
+                    'balance' => number_format($remaining, 2),
+                ])
+                : null;
+        }
+
+        if (! isset($options[$target]) || ($options[$target]['stale'] ?? false)) {
+            return __('The installment or measurement selected for contract :number is no longer payable.', [
+                'number' => $contract->contract_number,
+            ]);
+        }
+
+        if ($item->amount > $options[$target]['amount'] + 0.009) {
+            return __('Contract :number: the amount exceeds the :balance still owed on the selected item.', [
+                'number' => $contract->contract_number,
+                'balance' => number_format($options[$target]['amount'], 2),
+            ]);
+        }
+
+        return null;
     }
 
     public function approveItem(int $itemId): void
@@ -287,6 +492,12 @@ class PaymentBatchEdit extends Component
             return;
         }
 
+        if ($error = $this->targetError($item, $contract)) {
+            session()->flash('error', $error);
+
+            return;
+        }
+
         DB::transaction(function () use ($item) {
             $this->processApprovedItem($item);
         });
@@ -299,6 +510,7 @@ class PaymentBatchEdit extends Component
         unset($this->payMethods[$item->contract_id]);
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
+        unset($this->payTargets[$item->contract_id]);
 
         session()->flash('message', __('Payment for :number approved and processed.', ['number' => $contract->contract_number]));
     }
@@ -365,6 +577,12 @@ class PaymentBatchEdit extends Component
                     'amount' => $item->amount,
                     'balance' => number_format($balance, 2),
                 ]);
+
+                continue;
+            }
+
+            if ($error = $this->targetError($item, $contract)) {
+                $errors[] = $error;
             }
         }
 
@@ -403,6 +621,7 @@ class PaymentBatchEdit extends Component
         unset($this->payMethods[$item->contract_id]);
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
+        unset($this->payTargets[$item->contract_id]);
 
         session()->flash('message', __('Item rejected.'));
     }
@@ -451,7 +670,14 @@ class PaymentBatchEdit extends Component
 
     public function render()
     {
-        $contracts = Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
+        $contracts = Contract::with([
+            'project.client', 'jobSite', 'subcontractor', 'latestPayment',
+            // payableTargetsFor() runs per row: eager-load what it needs so
+            // 50 contracts don't become hundreds of queries.
+            'changeOrders', 'payments',
+            'scheduleItems.payments', 'scheduleItems.measurements.payments',
+            'measurements.payments',
+        ])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
@@ -466,6 +692,7 @@ class PaymentBatchEdit extends Component
 
         // Get batch items indexed by contract_id for quick lookup
         $batchItems = $this->paymentBatch->items()
+            ->with(['scheduleItem', 'measurement'])
             ->whereIn('contract_id', $contracts->pluck('id'))
             ->get()
             ->keyBy('contract_id');
