@@ -118,7 +118,7 @@ class PaymentScheduleReport extends Component
 
             fputcsv($out, ['Summary', 'Committed', 'Paid', 'Outstanding']);
             fputcsv($out, ['Expenses', $money($schedule['combined']['expenses']['total']), $money($schedule['combined']['expenses']['paid']), $money($schedule['combined']['expenses']['outstanding'])]);
-            fputcsv($out, ['Contracts (no schedule)', $money($schedule['combined']['contracts']['total']), $money($schedule['combined']['contracts']['paid']), $money($schedule['combined']['contracts']['outstanding'])]);
+            fputcsv($out, ['Contracts', $money($schedule['combined']['contracts']['total']), $money($schedule['combined']['contracts']['paid']), $money($schedule['combined']['contracts']['outstanding'])]);
             fputcsv($out, ['Total', $money($schedule['combined']['committed']), $money($schedule['combined']['paid']), $money($schedule['combined']['outstanding'])]);
 
             fputcsv($out, []);

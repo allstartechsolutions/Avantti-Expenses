@@ -11,6 +11,9 @@ class ContractPayment extends Model
 {
     protected $fillable = [
         'contract_id',
+        'contract_schedule_item_id',
+        'contract_measurement_id',
+        'is_retention_release',
         'amount',
         'payment_date',
         'payment_method',
@@ -22,6 +25,7 @@ class ContractPayment extends Model
 
     protected $casts = [
         'payment_date' => 'date',
+        'is_retention_release' => 'boolean',
     ];
 
     protected function amount(): Attribute
@@ -40,6 +44,16 @@ class ContractPayment extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ContractPaymentItem::class);
+    }
+
+    public function scheduleItem(): BelongsTo
+    {
+        return $this->belongsTo(ContractScheduleItem::class, 'contract_schedule_item_id');
+    }
+
+    public function measurement(): BelongsTo
+    {
+        return $this->belongsTo(ContractMeasurement::class, 'contract_measurement_id');
     }
 
     /**

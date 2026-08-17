@@ -195,6 +195,33 @@
                                 </dd>
                             </div>
                         @endif
+                        @if($contract->hasRetention())
+                            <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                    {{ __('Retention') }} ({{ rtrim(rtrim(number_format((float) $contract->retention_percent, 2, '.', ''), '0'), '.') }}%)
+                                </dt>
+                                <dd class="mt-2 grid grid-cols-3 gap-3 text-sm">
+                                    <div>
+                                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Held') }}</span>
+                                        <span class="font-semibold text-slate-900 dark:text-white">
+                                            {{ Number::currency($contract->getRetentionHeld(), config('app.currency'), config('app.locale')) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Released') }}</span>
+                                        <span class="font-semibold text-green-600 dark:text-green-400">
+                                            {{ Number::currency($contract->getRetentionReleased(), config('app.currency'), config('app.locale')) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('To Release') }}</span>
+                                        <span class="font-semibold text-orange-600 dark:text-orange-400">
+                                            {{ Number::currency($contract->getRetentionOutstanding(), config('app.currency'), config('app.locale')) }}
+                                        </span>
+                                    </div>
+                                </dd>
+                            </div>
+                        @endif
                     </dl>
                 </div>
             </div>
@@ -267,6 +294,9 @@
                 </div>
             @endif
 
+            <!-- Payment Schedule (Cronograma) -->
+            <livewire:contract.contract-schedule :contract="$contract" />
+
             <!-- Change Orders -->
             <livewire:contract.contract-change-orders :contract="$contract" />
 
@@ -333,6 +363,16 @@
                             wire:click="openPaymentModal"
                             icon="plus">
                             {{ __('Record Payment') }}
+                        </x-ui.button>
+                    @endif
+
+                    @if($contract->getRetentionOutstanding() > 0)
+                        <x-ui.button
+                            variant="warning"
+                            class="w-full justify-center"
+                            wire:click="openRetentionModal"
+                            icon="banknotes">
+                            {{ __('Release Retention') }}
                         </x-ui.button>
                     @endif
 
@@ -454,6 +494,15 @@
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                             {{ $payment->payment_date->format('M d, Y') }} &middot; {{ $payment->getPaymentMethodLabel() }}
                                         </p>
+                                        @if($payment->is_retention_release)
+                                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                                {{ __('Retention Release') }}
+                                            </span>
+                                        @elseif($payment->scheduleItem)
+                                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
+                                                {{ $payment->scheduleItem->description }}
+                                            </span>
+                                        @endif
                                         @if($payment->reference_number)
                                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                                 Ref: {{ $payment->reference_number }}
@@ -534,6 +583,102 @@
     </div>
     @endif
 
+    <!-- Retention Release Modal -->
+    @if($showRetentionModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80" wire:click="closeRetentionModal"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ __('Release Retention') }}</h2>
+                        <button type="button" wire:click="closeRetentionModal" class="text-slate-400 hover:text-slate-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                        {{ __('Retention outstanding: :amount. The amount is capped at this value.', ['amount' => Number::currency($contract->getRetentionOutstanding(), config('app.currency'), config('app.locale'))]) }}
+                    </p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Amount *') }}</label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-slate-500 sm:text-sm">$</span>
+                                </div>
+                                <input
+                                    type="number"
+                                    wire:model="retentionAmount"
+                                    step="0.01"
+                                    min="0.01"
+                                    max="{{ $contract->getRetentionOutstanding() }}"
+                                    class="w-full pl-7 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            </div>
+                            @error('retentionAmount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Method *') }}</label>
+                            <select
+                                wire:model="retentionMethod"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <option value="check">{{ __('Check') }}</option>
+                                <option value="cash">{{ __('Cash') }}</option>
+                                <option value="credit_card">{{ __('Credit Card') }}</option>
+                                <option value="debit_card">{{ __('Debit Card') }}</option>
+                                <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                                <option value="pix">PIX</option>
+                                <option value="other">{{ __('Other') }}</option>
+                            </select>
+                            @error('retentionMethod') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Date *') }}</label>
+                            <input
+                                type="date"
+                                wire:model="retentionDate"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            @error('retentionDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Reference Number') }}</label>
+                            <input
+                                type="text"
+                                wire:model="retentionReference"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                placeholder="{{ __('Check #, transaction ID, etc.') }}">
+                            @error('retentionReference') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Notes') }}</label>
+                            <textarea
+                                wire:model="retentionNotes"
+                                rows="2"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                placeholder="{{ __('Optional notes...') }}"></textarea>
+                            @error('retentionNotes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <x-ui.button type="button" variant="secondary" wire:click="closeRetentionModal">
+                            {{ __('Cancel') }}
+                        </x-ui.button>
+                        <x-ui.button type="button" variant="warning" wire:click="releaseRetention" icon="banknotes">
+                            {{ __('Release Retention') }}
+                        </x-ui.button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Payment Modal -->
     @if($showPaymentModal)
     <div class="fixed inset-0 z-50 overflow-y-auto">
@@ -548,7 +693,56 @@
                         </button>
                     </div>
 
+                    @php
+                        $unscheduledRemaining = $this->hasSchedule ? $this->unscheduledRemaining : 0;
+                        $scheduleBlocked = $this->hasSchedule
+                            && $this->payableScheduleItems->count() === 0
+                            && $unscheduledRemaining <= 0;
+                    @endphp
+
                     <div class="space-y-4">
+                        @if($scheduleBlocked)
+                            <div class="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300">
+                                {{ __('This contract is paid through its payment schedule and no installment is approved for payment yet. Approve an installment in the payment schedule first.') }}
+                            </div>
+                        @elseif($this->payableScheduleItems->count() > 0 || $unscheduledRemaining > 0)
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {{ $this->hasSchedule && $unscheduledRemaining <= 0 ? __('Installment *') : __('Installment') }}
+                                </label>
+                                <select
+                                    wire:model.live="paymentScheduleItemId"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    @if(!$this->hasSchedule)
+                                        <option value="">{{ __('No installment (general payment)') }}</option>
+                                    @elseif($unscheduledRemaining > 0)
+                                        <option value="">
+                                            {{ __('Unscheduled balance') }}
+                                            &middot; {{ Number::currency($unscheduledRemaining, config('app.currency'), config('app.locale')) }}
+                                        </option>
+                                    @else
+                                        <option value="">{{ __('Select an installment...') }}</option>
+                                    @endif
+                                    @foreach($this->payableScheduleItems as $scheduleItem)
+                                        <option value="{{ $scheduleItem->id }}">
+                                            {{ $scheduleItem->description }}
+                                            &middot; {{ __('Balance') }} {{ Number::currency($scheduleItem->getBalance(), config('app.currency'), config('app.locale')) }}
+                                            @if($scheduleItem->due_date)
+                                                &middot; {{ __('Due Date:') }} {{ $scheduleItem->due_date->format('d/m/Y') }}
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ $this->hasSchedule && $unscheduledRemaining > 0
+                                        ? __('Only approved installments are listed. The unscheduled balance is the part of the contract the schedule does not cover.')
+                                        : __('Only approved installments are listed.') }}
+                                </p>
+                                @error('paymentScheduleItemId') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
+
+                        @if(!$scheduleBlocked)
                         @if(count($paymentItems) > 0)
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Cost Codes') }}</label>
@@ -679,15 +873,18 @@
                                 placeholder="{{ __('Optional notes...') }}"></textarea>
                             @error('paymentNotes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
+                        @endif
                     </div>
 
                     <div class="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <x-ui.button type="button" variant="secondary" wire:click="closePaymentModal">
                             {{ __('Cancel') }}
                         </x-ui.button>
-                        <x-ui.button type="button" variant="primary" wire:click="recordPayment">
-                            {{ __('Record Payment') }}
-                        </x-ui.button>
+                        @if(!$scheduleBlocked)
+                            <x-ui.button type="button" variant="primary" wire:click="recordPayment">
+                                {{ __('Record Payment') }}
+                            </x-ui.button>
+                        @endif
                     </div>
                 </div>
             </div>

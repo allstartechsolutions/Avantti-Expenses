@@ -61,7 +61,7 @@
             <td style="width: 33%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Due in Period') }}</div>
                 <div style="font-size: 12pt; font-weight: bold; color: #333;">${{ number_format($kpis['total_due'], 2) }}</div>
-                <div style="font-size: 6.5pt; color: #888;">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }}</div>
+                <div style="font-size: 6.5pt; color: #888;">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }} ${{ number_format($kpis['due_expenses'], 2) }} · {{ __('contracts') }} ${{ number_format($kpis['due_contracts'], 2) }}</div>
             </td>
             <td style="width: 33%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Overdue (today)') }}</div>
@@ -104,7 +104,7 @@
             @empty
                 <tr>
                     <td colspan="7" style="border: 1px solid #ddd; padding: 6px; text-align: center; color: #999; font-style: italic;">
-                        {{ __('No expense payments due in the selected period.') }}
+                        {{ __('No payments due in the selected period.') }}
                     </td>
                 </tr>
             @endforelse

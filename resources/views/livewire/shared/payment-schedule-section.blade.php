@@ -4,7 +4,7 @@
     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Payment Schedule') }}</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {{ __('Expense payments by due date. Overdue is derived from due dates as of today. Cancelled expenses excluded.') }}
+            {{ __('Expense payments and contract installments by due date. Overdue is derived from due dates as of today. Cancelled expenses and contracts excluded.') }}
         </p>
     </div>
 
@@ -39,7 +39,10 @@
                 <div>
                     <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Contracts') }} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">({{ $schedule['contracts']['count'] }})</span></p>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {{ __('Contracts have no payment due dates (no schedule); balances are point-in-time and not included in the monthly projection.') }}
+                        {{ __('Installments are due on their schedule date; whatever the schedule does not cover — and contracts without one — is due on the contract end date.') }}
+                        @if($schedule['contracts']['undated'] > 0)
+                            {{ __('Contracts with no end date are listed under "No due date".') }}
+                        @endif
                     </p>
                 </div>
                 <div class="flex items-center gap-6 text-sm">
@@ -50,6 +53,14 @@
                     <div class="text-right">
                         <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Paid') }}</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">{{ Number::currency($schedule['contracts']['paid'], $currency, $locale) }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Upcoming') }}</p>
+                        <p class="font-semibold text-amber-600 dark:text-amber-400">{{ Number::currency($schedule['contracts']['upcoming'], $currency, $locale) }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Overdue') }}</p>
+                        <p class="font-semibold {{ $schedule['contracts']['overdue'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">{{ Number::currency($schedule['contracts']['overdue'], $currency, $locale) }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Balance Due') }}</p>
@@ -119,7 +130,13 @@
                         @foreach ($schedule['projection']['buckets'] as $bucket)
                             <tr class="{{ $bucket['type'] === 'overdue' ? 'bg-red-50 dark:bg-red-900/10' : '' }}">
                                 <td class="px-6 py-3 text-sm {{ $bucket['type'] === 'overdue' ? 'font-semibold text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
-                                    {{ $bucket['type'] === 'overdue' ? __('Overdue (past due)') : $bucket['label'] }}
+                                    @if($bucket['type'] === 'overdue')
+                                        {{ __('Overdue (past due)') }}
+                                    @elseif($bucket['type'] === 'undated')
+                                        {{ __('No due date') }}
+                                    @else
+                                        {{ $bucket['label'] }}
+                                    @endif
                                 </td>
                                 <td class="px-6 py-3 text-sm text-right {{ $bucket['type'] === 'overdue' ? 'text-red-700 dark:text-red-400' : 'text-slate-600 dark:text-slate-400' }}">
                                     {{ $bucket['count'] }}

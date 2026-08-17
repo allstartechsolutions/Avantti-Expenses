@@ -19,9 +19,12 @@ use Carbon\Carbon;
  *     one-time expenses via COALESCE(payment_due_date, expense_date).
  *   - Overdue is DERIVED (due date < today) — nothing marks payments overdue
  *     automatically, so the stored 'overdue' status is never consulted.
- *   - Contracts have NO payment schedule (payments are recorded after the
- *     fact), so they appear as point-in-time totals only and are excluded
- *     from the monthly projection.
+ *   - Contracts are scheduled by their cronograma: each open parcela is due on
+ *     its vencimento (date parcelas) or data prevista (eventos). Whatever the
+ *     cronograma does not cover — the unscheduled remainder, and the whole
+ *     balance of a contract without a cronograma — is due on the contract's
+ *     END DATE; contracts with no end date land in a "No due date" bucket so
+ *     the money is still visible instead of being dropped.
  *   - Cancelled expenses and contracts are excluded everywhere.
  *
  * The same build() payload feeds the Livewire pages and the PDF controllers
@@ -37,6 +40,8 @@ class PaymentScheduleService
     protected ?Carbon $to = null;
 
     protected ?array $expenseScheduleCache = null;
+
+    protected ?array $contractScheduleCache = null;
 
     public function __construct(
         protected ?int $projectId = null,
@@ -153,9 +158,33 @@ class PaymentScheduleService
     protected function contracts()
     {
         return Contract::query()
-            ->with(['changeOrders', 'payments'])
+            ->with([
+                'changeOrders',
+                'payments',
+                'scheduleItems.payments',
+                'scheduleItems.measurements.payments',
+            ])
             ->where('status', '!=', 'cancelled')
             ->tap(fn ($q) => $this->applyScope($q));
+    }
+
+    /**
+     * Is a dated item inside the active window? Undated contract money
+     * (no parcela date and no contract end date) cannot be matched by a
+     * range, so it only shows when no range is set — the same way a
+     * filter drops anything it cannot place.
+     */
+    protected function inRange(?Carbon $date): bool
+    {
+        if ($date === null) {
+            return $this->from === null && $this->to === null;
+        }
+
+        if ($this->from && $date->lt($this->from->copy()->startOfDay())) {
+            return false;
+        }
+
+        return ! ($this->to && $date->gt($this->to->copy()->endOfDay()));
     }
 
     // =========================================================================
@@ -216,20 +245,96 @@ class PaymentScheduleService
     }
 
     /**
-     * Contract totals, point-in-time — contracts carry no payment schedule.
+     * Contract money placed on the calendar, mirroring expenseSchedule():
+     * paid (by payment date) and open (by due date) with the overdue split,
+     * plus the dated open items the projection buckets.
+     *
+     * The split into dated items is Contract::openPayableItems() — the same
+     * definition the accounts payable report uses.
+     */
+    public function contractSchedule(): array
+    {
+        if ($this->contractScheduleCache !== null) {
+            return $this->contractScheduleCache;
+        }
+
+        $paid = 0.0;
+        $paidCount = 0;
+        $openItems = [];
+        $count = 0;
+
+        foreach ($this->contracts()->get() as $contract) {
+            $count++;
+
+            foreach ($contract->payments as $payment) {
+                if (! $this->inRange($payment->payment_date)) {
+                    continue;
+                }
+
+                $paid = round($paid + $payment->amount, 2);
+                $paidCount++;
+            }
+
+            foreach ($contract->openPayableItems() as $item) {
+                $openItems[] = ['date' => $item['date'], 'amount' => $item['amount']];
+            }
+        }
+
+        $inRange = array_values(array_filter($openItems, fn (array $item) => $this->inRange($item['date'])));
+
+        $open = 0.0;
+        $overdue = 0.0;
+        $overdueCount = 0;
+        $undated = 0.0;
+        $undatedCount = 0;
+
+        foreach ($inRange as $item) {
+            $open = round($open + $item['amount'], 2);
+
+            if ($item['date'] === null) {
+                $undated = round($undated + $item['amount'], 2);
+                $undatedCount++;
+            } elseif ($item['date']->lt($this->today)) {
+                $overdue = round($overdue + $item['amount'], 2);
+                $overdueCount++;
+            }
+        }
+
+        return $this->contractScheduleCache = [
+            'paid' => $paid,
+            'open' => $open,
+            'overdue' => $overdue,
+            'upcoming' => round($open - $overdue - $undated, 2),
+            'undated' => $undated,
+            'total' => round($paid + $open, 2),
+            'paid_count' => $paidCount,
+            'open_count' => count($inRange),
+            'overdue_count' => $overdueCount,
+            'undated_count' => $undatedCount,
+            'count' => $count,
+            'items' => $inRange,
+        ];
+    }
+
+    /**
+     * Contract totals for the strip. Committed is paid + open so it agrees
+     * with the active range; with no range that is exactly the adjusted
+     * amount, as before.
      */
     public function contractSummary(): array
     {
-        $contracts = $this->contracts()->get();
-
-        $adjusted = round($contracts->sum(fn (Contract $c) => $c->getAdjustedAmount()), 2);
-        $paid = round($contracts->sum(fn (Contract $c) => $c->getAmountPaid()), 2);
+        $contracts = $this->contractSchedule();
 
         return [
-            'adjusted' => $adjusted,
-            'paid' => $paid,
-            'balance' => round($adjusted - $paid, 2),
-            'count' => $contracts->count(),
+            'adjusted' => $contracts['total'],
+            'paid' => $contracts['paid'],
+            'balance' => $contracts['open'],
+            'count' => $contracts['count'],
+            'overdue' => $contracts['overdue'],
+            'upcoming' => $contracts['upcoming'],
+            'undated' => $contracts['undated'],
+            'open_count' => $contracts['open_count'],
+            'overdue_count' => $contracts['overdue_count'],
         ];
     }
 
@@ -259,9 +364,11 @@ class PaymentScheduleService
     }
 
     /**
-     * Monthly projection of open expense payments, by due date:
-     * an Overdue bucket, one row per month until the last scheduled open
-     * payment (capped), and a Later bucket when the cap cuts the tail off.
+     * Monthly projection of open payments by due date — expenses and the
+     * contract cronogramas together: an Overdue bucket, one row per month
+     * until the last scheduled open payment (capped), a Later bucket when the
+     * cap cuts the tail off, and a No-due-date bucket for contract money with
+     * no parcela date and no contract end date.
      *
      * The current month's row covers [today, end of month] so items already
      * past due this month land only in the Overdue bucket.
@@ -272,13 +379,17 @@ class PaymentScheduleService
         $buckets = [];
 
         $expenses = $this->expenseSchedule();
+        $contracts = $this->contractSchedule();
 
-        if ($expenses['overdue'] > 0 || $expenses['overdue_count'] > 0) {
+        $overdueAmount = round($expenses['overdue'] + $contracts['overdue'], 2);
+        $overdueCount = $expenses['overdue_count'] + $contracts['overdue_count'];
+
+        if ($overdueAmount > 0 || $overdueCount > 0) {
             $buckets[] = [
                 'label' => 'Overdue (past due)',
                 'type' => 'overdue',
-                'count' => $expenses['overdue_count'],
-                'amount' => $expenses['overdue'],
+                'count' => $overdueCount,
+                'amount' => $overdueAmount,
             ];
         }
 
@@ -304,6 +415,17 @@ class PaymentScheduleService
                 $centsByMonth[$row->ym] = ($centsByMonth[$row->ym] ?? 0) + $row->total;
                 $countsByMonth[$row->ym] = ($countsByMonth[$row->ym] ?? 0) + (int) $row->cnt;
             }
+        }
+
+        // Contract parcelas (and the unscheduled remainders) due from today on.
+        foreach ($contracts['items'] as $item) {
+            if ($item['date'] === null || $item['date']->lt($this->today)) {
+                continue;
+            }
+
+            $ym = $item['date']->format('Y-m');
+            $centsByMonth[$ym] = ($centsByMonth[$ym] ?? 0) + (int) round($item['amount'] * 100);
+            $countsByMonth[$ym] = ($countsByMonth[$ym] ?? 0) + 1;
         }
 
         $months = collect(array_keys($centsByMonth))->sort();
@@ -349,11 +471,22 @@ class PaymentScheduleService
             }
         }
 
+        // Contract money with no parcela date and no contract end date: it
+        // has to be shown somewhere, or the buckets would not add up.
+        if ($contracts['undated'] > 0 || $contracts['undated_count'] > 0) {
+            $buckets[] = [
+                'label' => 'No due date',
+                'type' => 'undated',
+                'count' => $contracts['undated_count'],
+                'amount' => $contracts['undated'],
+            ];
+        }
+
         return [
             'buckets' => $buckets,
             'capped' => $capped,
-            'total_open' => $expenses['open'],
-            'total_count' => $expenses['open_count'],
+            'total_open' => round($expenses['open'] + $contracts['open'], 2),
+            'total_count' => $expenses['open_count'] + $contracts['open_count'],
         ];
     }
 }

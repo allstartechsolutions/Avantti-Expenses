@@ -21,6 +21,7 @@ class Contract extends Model
         'start_date',
         'end_date',
         'amount',
+        'retention_percent',
         'notes',
         'contract_file_path',
         'created_by',
@@ -29,6 +30,7 @@ class Contract extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'retention_percent' => 'decimal:2',
     ];
 
     protected function amount(): Attribute
@@ -41,15 +43,12 @@ class Contract extends Model
 
     public static function generateContractNumber(): string
     {
-        $last = static::max('contract_number');
+        // Numeric max, not string max: 'CTR-9999' > 'CTR-10000' lexically.
+        $number = (int) static::query()
+            ->selectRaw('MAX(CAST(SUBSTRING(contract_number, 5) AS UNSIGNED)) AS max_number')
+            ->value('max_number');
 
-        if (!$last) {
-            return 'CTR-0001';
-        }
-
-        $number = (int) str_replace('CTR-', '', $last);
-
-        return 'CTR-' . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
+        return 'CTR-'.str_pad($number + 1, 4, '0', STR_PAD_LEFT);
     }
 
     public function recordStatusChange($user, ?string $oldStatus, string $newStatus, ?string $reason = null): void
@@ -137,6 +136,21 @@ class Contract extends Model
         return $this->hasMany(ContractBudgetAllocation::class);
     }
 
+    public function scheduleItems(): HasMany
+    {
+        return $this->hasMany(ContractScheduleItem::class)->orderBy('sort_order');
+    }
+
+    public function measurements(): HasMany
+    {
+        return $this->hasMany(ContractMeasurement::class)->orderByDesc('measurement_number');
+    }
+
+    public function scheduleChanges(): HasMany
+    {
+        return $this->hasMany(ContractScheduleChange::class)->latest('id');
+    }
+
     public function latestPayment(): HasOne
     {
         return $this->hasOne(ContractPayment::class)->latestOfMany('payment_date');
@@ -144,6 +158,10 @@ class Contract extends Model
 
     public function getChangeOrdersTotal(): float
     {
+        if ($this->relationLoaded('changeOrders')) {
+            return round($this->changeOrders->sum(fn ($co) => $co->getRawOriginal('amount')) / 100, 2);
+        }
+
         return round($this->changeOrders()->sum('amount') / 100, 2);
     }
 
@@ -170,6 +188,179 @@ class Contract extends Model
     public function getUnallocatedAmount(): float
     {
         return round($this->amount - $this->getAllocatedTotal(), 2);
+    }
+
+    public function hasRetention(): bool
+    {
+        return (float) $this->retention_percent > 0;
+    }
+
+    /**
+     * Retention actually withheld so far: proportional to the cash paid
+     * on each approved medição, so an approved-but-unpaid medição holds
+     * nothing yet. Payments are recorded net, so this money has not left
+     * the balance due — the contract stays partially_paid until the
+     * liberação de retenção.
+     *
+     * Sums over loaded relations: callers that mutate payments or
+     * medições in the same request must refresh()/unset the relations
+     * first (the codebase convention after any payment write).
+     */
+    public function getRetentionHeld(): float
+    {
+        $this->loadMissing('measurements.payments');
+
+        return round($this->measurements
+            ->filter(fn ($measurement) => $measurement->isApproved())
+            ->sum(fn ($measurement) => $measurement->getRetentionWithheldRaw()) / 100, 2);
+    }
+
+    public function getRetentionReleased(): float
+    {
+        return round($this->payments()->where('is_retention_release', true)->sum('amount') / 100, 2);
+    }
+
+    /**
+     * Floored at zero: an over-release (or a medição removed after its
+     * retention was released) is a data problem to surface in audits,
+     * not a negative balance to show on the contract card. Release
+     * actions must cap the amount at this value before saving.
+     */
+    public function getRetentionOutstanding(): float
+    {
+        return round(max(0, $this->getRetentionHeld() - $this->getRetentionReleased()), 2);
+    }
+
+    /**
+     * Retention still held per cost code, in cents: what each medição
+     * withheld (split across its items by their period amount) minus
+     * what previous liberações already gave back to that code. Feeds the
+     * proportional itemization of a retention release so the SOV grid
+     * keeps adding up per code. Items without a cost code are left out —
+     * the grid's fallback bucket absorbs unitemized cash.
+     *
+     * @return array<int, int> budget_item_id => cents
+     */
+    public function getRetentionOutstandingByCostCode(): array
+    {
+        $this->loadMissing(['measurements.items', 'measurements.payments', 'payments.items']);
+
+        $byCode = [];
+
+        foreach ($this->measurements as $measurement) {
+            $withheld = $measurement->getRetentionWithheldRaw();
+            $periodTotal = (int) $measurement->items->sum(fn ($item) => $item->getRawOriginal('period_amount'));
+
+            if ($withheld <= 0 || $periodTotal <= 0) {
+                continue;
+            }
+
+            foreach ($measurement->items as $item) {
+                if ($item->budget_item_id === null) {
+                    continue;
+                }
+
+                $share = (int) round($withheld * (int) $item->getRawOriginal('period_amount') / $periodTotal);
+                $byCode[$item->budget_item_id] = ($byCode[$item->budget_item_id] ?? 0) + $share;
+            }
+        }
+
+        foreach ($this->payments as $payment) {
+            if (! $payment->is_retention_release) {
+                continue;
+            }
+
+            foreach ($payment->items as $item) {
+                if ($item->budget_item_id === null) {
+                    continue;
+                }
+
+                $byCode[$item->budget_item_id] = ($byCode[$item->budget_item_id] ?? 0) - (int) $item->getRawOriginal('amount');
+            }
+        }
+
+        return array_filter($byCode, fn (int $cents) => $cents > 0);
+    }
+
+    /**
+     * Total of the cronograma parcelas. Percent-based parcelas compute
+     * against the adjusted amount, so this re-flows with change orders.
+     * Shares this instance (and its loaded change orders) with each item
+     * so percent rows don't lazy-load a fresh Contract per row.
+     */
+    public function getScheduledTotal(): float
+    {
+        $this->loadMissing(['scheduleItems', 'changeOrders']);
+        $this->scheduleItems->each(fn ($item) => $item->setRelation('contract', $this));
+
+        return round($this->scheduleItems->sum(fn ($item) => $item->getScheduledAmount()), 2);
+    }
+
+    public function getUnscheduledAmount(): float
+    {
+        return round($this->getAdjustedAmount() - $this->getScheduledTotal(), 2);
+    }
+
+    /**
+     * What this contract still owes, placed on the calendar — the single
+     * definition shared by the payment schedule and accounts payable
+     * reports:
+     *   - every parcela still owing, due on its own date (vencimento for
+     *     date parcelas, data prevista for eventos);
+     *   - whatever the cronograma does not cover — the unscheduled
+     *     remainder, or the whole balance of a contract with no
+     *     cronograma — due on the contract's END DATE.
+     * A parcela with no date of its own falls back to the end date too,
+     * and the date stays null when the contract has no end date (the
+     * caller decides where undated money goes).
+     *
+     * The items always add up to the contract's balance due, so nothing
+     * is double counted and nothing is lost.
+     *
+     * @return array<int, array{date: ?\Carbon\CarbonInterface, amount: float, label: string, scheduled: bool}>
+     */
+    public function openPayableItems(): array
+    {
+        $this->loadMissing(['changeOrders', 'payments', 'scheduleItems.payments', 'scheduleItems.measurements.payments']);
+
+        // Share this instance so percent-based parcelas don't lazy-load a
+        // Contract (and its change orders) per row.
+        $this->scheduleItems->each(fn (ContractScheduleItem $item) => $item->setRelation('contract', $this));
+
+        $paid = round($this->payments->sum(fn (ContractPayment $payment) => $payment->getRawOriginal('amount')) / 100, 2);
+        $balanceDue = round($this->getAdjustedAmount() - $paid, 2);
+
+        $items = [];
+        $scheduledOpen = 0.0;
+
+        foreach ($this->scheduleItems as $item) {
+            $balance = $item->getBalance();
+
+            if ($balance <= 0.009) {
+                continue;
+            }
+
+            $scheduledOpen = round($scheduledOpen + $balance, 2);
+            $items[] = [
+                'date' => $item->due_date ?? $this->end_date,
+                'amount' => $balance,
+                'label' => $item->description,
+                'scheduled' => true,
+            ];
+        }
+
+        $unscheduled = round($balanceDue - $scheduledOpen, 2);
+
+        if ($unscheduled > 0.009) {
+            $items[] = [
+                'date' => $this->end_date,
+                'amount' => $unscheduled,
+                'label' => $items === [] ? __('Contract balance') : __('Unscheduled balance'),
+                'scheduled' => false,
+            ];
+        }
+
+        return $items;
     }
 
     /**
@@ -208,7 +399,7 @@ class Contract extends Model
             if (! isset($rows[$key])) {
                 $rows[$key] = [
                     'budget_item_id' => $budgetItem?->id,
-                    'code_display' => $budgetItem ? ($budgetItem->code . ' - ' . $budgetItem->name) : __('Unassigned'),
+                    'code_display' => $budgetItem ? ($budgetItem->code.' - '.$budgetItem->name) : __('Unassigned'),
                     'sort_code' => $budgetItem?->code,
                     'scheduled' => 0.0,
                     'paid' => 0.0,

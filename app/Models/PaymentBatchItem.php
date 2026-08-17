@@ -11,6 +11,9 @@ class PaymentBatchItem extends Model
     protected $fillable = [
         'payment_batch_id',
         'contract_id',
+        'contract_schedule_item_id',
+        'contract_measurement_id',
+        'is_retention_release',
         'amount',
         'payment_method',
         'phase',
@@ -21,6 +24,7 @@ class PaymentBatchItem extends Model
 
     protected $casts = [
         'approved_at' => 'datetime',
+        'is_retention_release' => 'boolean',
     ];
 
     protected function amount(): Attribute
@@ -39,6 +43,16 @@ class PaymentBatchItem extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    public function scheduleItem(): BelongsTo
+    {
+        return $this->belongsTo(ContractScheduleItem::class, 'contract_schedule_item_id');
+    }
+
+    public function measurement(): BelongsTo
+    {
+        return $this->belongsTo(ContractMeasurement::class, 'contract_measurement_id');
     }
 
     public function getPaymentMethodLabel(): string

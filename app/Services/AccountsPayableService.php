@@ -15,11 +15,14 @@ use Illuminate\Support\Collection;
  * Consolidates every "money the company pays out" stream:
  *   - Expenses + installment ExpensePayments (scheduled, by due date)
  *   - Subcontractor Contract payments (a ledger of payments made, by payment date)
+ *   - Open subcontractor contract money, scheduled by the cronograma
  *
- * Expenses have scheduled due dates, so they drive the dated Due / Overdue /
- * Projection figures. Contracts have NO due dates (payments are recorded after
- * the fact), so contract payments only feed "Paid in Period" and their
- * outstanding balances are reported separately, point-in-time.
+ * Both expenses and contracts are dated, so both drive the Due / Overdue /
+ * Projection figures. Contract money is dated by Contract::openPayableItems():
+ * each open parcela on its own date, and whatever the cronograma does not
+ * cover on the contract's END DATE. Contract money with no date at all (no
+ * parcela date and no end date) cannot be matched by a period, so it shows
+ * only in the point-in-time "Contract Balances Outstanding" figures.
  *
  * Purchase Orders are NOT included: an approved PO becomes an Expense and is
  * counted there. Payment Batches are NOT included: they produce ContractPayment
@@ -32,6 +35,8 @@ class AccountsPayableService
     protected Carbon $today;
 
     protected ?Collection $outstandingCache = null;
+
+    protected ?Collection $openContractCache = null;
 
     public function __construct(
         string $fromDate,
@@ -126,6 +131,35 @@ class AccountsPayableService
             });
     }
 
+    /**
+     * Open contract money as dated rows, in the same shape as the expense
+     * rows. Built once per instance and reused by rows(), kpis() and
+     * projections(); undated items are kept here (callers that work on a
+     * period filter them out by due_date).
+     */
+    protected function openContractItems(): Collection
+    {
+        return $this->openContractCache ??= Contract::query()
+            ->with([
+                'project:id,project_name',
+                'jobSite:id,job_site_name',
+                'subcontractor:id,name',
+                'changeOrders',
+                'payments',
+                'scheduleItems.payments',
+                'scheduleItems.measurements.payments',
+            ])
+            ->where('status', '!=', 'cancelled')
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->applyClientScope($q))
+            ->get()
+            ->flatMap(fn (Contract $c) => array_map(
+                fn (array $item) => $this->mapContractOpenRow($c, $item),
+                $c->openPayableItems()
+            ))
+            ->values();
+    }
+
     // =========================================================================
     // ROW MAPPERS — normalize every source into one shape.
     // =========================================================================
@@ -172,6 +206,28 @@ class AccountsPayableService
             'job_site_id' => $e->job_site_id,
             'status' => $e->status === 'unpaid' ? 'pending' : $e->status,
             'amount' => (float) $e->total_amount,
+        ];
+    }
+
+    /**
+     * One open item of a contract's cronograma (or its unscheduled
+     * remainder). Overdue is derived from the item's own due date, the
+     * same rule the expense rows use.
+     */
+    protected function mapContractOpenRow(Contract $c, array $item): array
+    {
+        return [
+            'source' => 'contract',
+            'type' => 'contract_installment',
+            'due_date' => $item['date'],
+            'vendor' => $c->subcontractor?->company_name,
+            'item' => trim(__('Contract') . ' ' . $c->contract_number . ' — ' . $item['label']),
+            'project' => $c->project?->project_name,
+            'project_id' => $c->project_id,
+            'job_site' => $c->jobSite?->job_site_name,
+            'job_site_id' => $c->job_site_id,
+            'status' => $item['date'] && $item['date']->lt($this->today) ? 'overdue' : 'pending',
+            'amount' => $item['amount'],
         ];
     }
 
@@ -237,7 +293,12 @@ class AccountsPayableService
                 ->get()
                 ->map(fn (Expense $e) => $this->mapOneTimeRow($e));
 
-            $rows = $rows->concat($openInst)->concat($openOne);
+            // Open contract money, by the same due-date rule.
+            $openContract = $this->openContractItems()
+                ->filter(fn (array $row) => $row['due_date']
+                    && $row['due_date']->betweenIncluded($this->start, $this->end));
+
+            $rows = $rows->concat($openInst)->concat($openOne)->concat($openContract);
 
             // Narrow to a single derived status when requested.
             if ($filter === 'pending') {
@@ -290,8 +351,15 @@ class AccountsPayableService
         $dueOne = $this->openOneTime()
             ->whereRaw('COALESCE(payment_due_date, expense_date) BETWEEN ? AND ?', [$from, $to])
             ->get();
-        $totalDue = round(($dueInstSum / 100) + $dueOne->sum('total_amount'), 2);
-        $countDue = $dueInstCount + $dueOne->count();
+        // Due in period — contract parcelas and unscheduled remainders too.
+        $dueContract = $this->openContractItems()
+            ->filter(fn (array $row) => $row['due_date']
+                && $row['due_date']->betweenIncluded($this->start, $this->end));
+
+        $totalDue = round(($dueInstSum / 100) + $dueOne->sum('total_amount') + $dueContract->sum('amount'), 2);
+        $countDue = $dueInstCount + $dueOne->count() + $dueContract->count();
+        $dueExpenses = round(($dueInstSum / 100) + $dueOne->sum('total_amount'), 2);
+        $dueContracts = round($dueContract->sum('amount'), 2);
 
         // Paid in period — split by source, by paid/payment date.
         $paidInstSum = $this->paidInstallments()
@@ -313,14 +381,21 @@ class AccountsPayableService
         $overdueOne = $this->openOneTime()
             ->whereRaw('COALESCE(payment_due_date, expense_date) < ?', [$today])
             ->get();
-        $overdueTotal = round(($overdueInstSum / 100) + $overdueOne->sum('total_amount'), 2);
+        $overdueContract = $this->openContractItems()
+            ->filter(fn (array $row) => $row['status'] === 'overdue');
 
-        // Contract balances outstanding — point in time (date range does not apply).
+        $overdueTotal = round(($overdueInstSum / 100) + $overdueOne->sum('total_amount') + $overdueContract->sum('amount'), 2);
+
+        // Contract balances outstanding — point in time (date range does not
+        // apply), so this still includes contract money with no date at all.
         $outstanding = $this->outstandingContracts();
 
         return [
             'total_due' => $totalDue,
             'count_due' => $countDue,
+            'due_expenses' => $dueExpenses,
+            'due_contracts' => $dueContracts,
+            'overdue_contracts' => round($overdueContract->sum('amount'), 2),
             'paid_expenses' => $paidExpenses,
             'paid_subcontractors' => $paidSubcontractors,
             'total_paid' => $totalPaid,
@@ -397,8 +472,8 @@ class AccountsPayableService
     }
 
     /**
-     * Forward-looking 12-month projection, starting the month AFTER the period.
-     * Expenses only — contracts have no payment schedule to project from.
+     * Forward-looking 12-month projection, starting the month AFTER the period —
+     * open expense payments and open contract money, by their due dates.
      */
     public function projections(): array
     {
@@ -418,10 +493,14 @@ class AccountsPayableService
                 ->whereRaw('COALESCE(payment_due_date, expense_date) BETWEEN ? AND ?', [$from, $to])
                 ->get();
 
+            $contractRows = $this->openContractItems()
+                ->filter(fn (array $row) => $row['due_date']
+                    && $row['due_date']->betweenIncluded($monthStart, $monthEnd));
+
             $months[] = [
                 'month' => $monthStart->translatedFormat('M Y'),
-                'count' => $installmentCount + $oneTimeRows->count(),
-                'amount' => round(($installmentSum / 100) + $oneTimeRows->sum('total_amount'), 2),
+                'count' => $installmentCount + $oneTimeRows->count() + $contractRows->count(),
+                'amount' => round(($installmentSum / 100) + $oneTimeRows->sum('total_amount') + $contractRows->sum('amount'), 2),
             ];
         }
 

@@ -85,12 +85,12 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Due in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($kpis['total_due'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }} {{ Number::currency($kpis['due_expenses'], $currency, $locale) }} · {{ __('contracts') }} {{ Number::currency($kpis['due_contracts'], $currency, $locale) }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Overdue (today)') }}</p>
             <p class="mt-2 text-2xl font-bold text-red-600 dark:text-red-400">{{ Number::currency($kpis['overdue_total'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Past due expenses, regardless of filter') }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Past due expenses and contract installments, regardless of filter') }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Contract Balances Outstanding') }}</p>
@@ -124,7 +124,7 @@
         </div>
         @if ($rows->isEmpty())
             <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                {{ __('No expense payments due in the selected period.') }}
+                {{ __('No payments due in the selected period.') }}
             </div>
         @else
             <div class="overflow-x-auto">
@@ -201,7 +201,7 @@
             <div>
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Subcontractor Payment Summary') }}</h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {{ __('Total contract value, paid to date, and remaining balance per subcontractor — as of today, across all their contracts. Contracts have no scheduled due dates, so these are point-in-time totals.') }}
+                    {{ __('Total contract value, paid to date, and remaining balance per subcontractor — as of today, across all their contracts. These are point-in-time totals, so they also include contract money with no due date.') }}
                 </p>
             </div>
             <label class="flex items-center cursor-pointer flex-shrink-0">
@@ -260,7 +260,7 @@
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Monthly Projections') }}</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {{ __('Pending + overdue payments expected over the next 12 months, starting after the selected period.') }}
+                {{ __('Pending + overdue expense payments and contract installments expected over the next 12 months, starting after the selected period.') }}
             </p>
         </div>
         <div class="overflow-x-auto">

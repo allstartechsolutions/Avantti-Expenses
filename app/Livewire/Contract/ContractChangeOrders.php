@@ -2,37 +2,37 @@
 
 namespace App\Livewire\Contract;
 
-use App\Models\Budget;
-use App\Models\BudgetItem;
+use App\Livewire\Concerns\ResolvesContractBudget;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class ContractChangeOrders extends Component
 {
+    use ResolvesContractBudget;
     use WithFileUploads;
 
     public Contract $contract;
 
     public $showModal = false;
-    public $editingId = null;
-    public $title = '';
-    public $date = '';
-    public $amount = '';
-    public $budget_item_id = '';
-    public $description = '';
-    public $file;
 
-    protected function locationBudget(): ?Budget
-    {
-        return Budget::where('project_id', $this->contract->project_id)
-            ->where('job_site_id', $this->contract->job_site_id)
-            ->first();
-    }
+    public $editingId = null;
+
+    public $title = '';
+
+    public $date = '';
+
+    public $amount = '';
+
+    public $budget_item_id = '';
+
+    public $description = '';
+
+    public $file;
 
     public function openCreateModal()
     {
@@ -142,19 +142,9 @@ class ContractChangeOrders extends Component
     {
         $changeOrders = $this->contract->changeOrders()->with(['createdBy', 'budgetItem'])->get();
 
-        $budget = $this->locationBudget();
-        $budgetItems = $budget
-            ? BudgetItem::where('budget_id', $budget->id)
-                ->with('parent')
-                ->orderBy('sort_order')
-                ->get()
-                ->sortBy(fn ($item) => [$item->parent?->sort_order ?? $item->sort_order, $item->parent_id ? 1 : 0, $item->sort_order])
-                ->values()
-            : collect();
-
         return view('livewire.contract.contract-change-orders', [
             'changeOrders' => $changeOrders,
-            'budgetItems' => $budgetItems,
+            'budgetItems' => $this->showModal ? $this->budgetItemOptions() : collect(),
         ]);
     }
 }

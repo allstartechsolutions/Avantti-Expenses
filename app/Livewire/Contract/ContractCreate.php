@@ -30,6 +30,7 @@ class ContractCreate extends Component
     public $start_date;
     public $end_date = '';
     public $amount = '';
+    public $retention_percent = '';
     public $notes = '';
     public $contract_file = null;
 
@@ -79,7 +80,10 @@ class ContractCreate extends Component
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'amount' => 'required|numeric|min:0',
+            'retention_percent' => 'nullable|numeric|min:0|max:50',
             'contract_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ], [
+            'retention_percent.max' => __('Retention cannot exceed 50%.'),
         ]);
 
         if (! $this->allocationsValid()) {
@@ -102,6 +106,7 @@ class ContractCreate extends Component
                 'start_date' => $this->start_date,
                 'end_date' => $this->end_date ?: null,
                 'amount' => $this->amount,
+                'retention_percent' => $this->retention_percent === '' || $this->retention_percent === null ? null : $this->retention_percent,
                 'notes' => $this->notes ?: null,
                 'contract_file_path' => $filePath,
                 'created_by' => Auth::id(),

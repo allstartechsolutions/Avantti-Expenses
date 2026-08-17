@@ -23,25 +23,36 @@ class PaymentBatchEdit extends Component
     public PaymentBatch $paymentBatch;
 
     public string $name = '';
+
     public string $payment_date = '';
+
     public string $notes = '';
 
     public string $clientFilter = '';
+
     public string $projectFilter = '';
+
     public string $subcontractorFilter = '';
+
     public string $projectManagerFilter = '';
+
     public string $statusFilter = '';
+
     public bool $showZeroBalance = false;
 
     public array $payAmounts = [];
+
     public array $payMethods = [];
+
     public array $payPhases = [];
+
     public array $payNotes = [];
 
     public function mount(): void
     {
-        if (!$this->paymentBatch->canBeEdited()) {
+        if (! $this->paymentBatch->canBeEdited()) {
             $this->redirect(route('payment-batches.show', $this->paymentBatch->id), navigate: true);
+
             return;
         }
 
@@ -202,9 +213,9 @@ class PaymentBatchEdit extends Component
             $method = $this->payMethods[$contractId] ?? null;
 
             $hasAmount = $amount !== null && $amount !== '' && (float) $amount > 0;
-            $hasPhase = !empty($phase);
-            $hasNotes = !empty($notes);
-            $hasMethod = !empty($method);
+            $hasPhase = ! empty($phase);
+            $hasNotes = ! empty($notes);
+            $hasMethod = ! empty($method);
 
             return $hasAmount || $hasPhase || $hasNotes || $hasMethod;
         });
@@ -252,8 +263,9 @@ class PaymentBatchEdit extends Component
             ->where('status', 'pending')
             ->firstOrFail();
 
-        if (!$item->getRawOriginal('amount') || $item->amount <= 0) {
+        if (! $item->getRawOriginal('amount') || $item->amount <= 0) {
             session()->flash('error', __('Cannot approve an item without a payment amount.'));
+
             return;
         }
 
@@ -271,27 +283,12 @@ class PaymentBatchEdit extends Component
                 'number' => $contract->contract_number,
                 'balance' => number_format($balance, 2),
             ]));
+
             return;
         }
 
-        DB::transaction(function () use ($item, $contract) {
-            ContractPayment::create([
-                'contract_id' => $item->contract_id,
-                'amount' => $item->amount,
-                'payment_date' => $this->paymentBatch->payment_date,
-                'payment_method' => $item->payment_method,
-                'phase' => $item->phase,
-                'notes' => $item->notes,
-                'created_by' => Auth::id(),
-            ]);
-
-            $item->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-            ]);
-
-            $contract->refresh();
-            $contract->updateStatusFromPayments();
+        DB::transaction(function () use ($item) {
+            $this->processApprovedItem($item);
         });
 
         $this->updateBatchStatus();
@@ -306,12 +303,40 @@ class PaymentBatchEdit extends Component
         session()->flash('message', __('Payment for :number approved and processed.', ['number' => $contract->contract_number]));
     }
 
+    /**
+     * Single mapping from a batch item to its ContractPayment, shared by
+     * approveItem() and approveAll() so the two paths can never drift.
+     */
+    protected function processApprovedItem(PaymentBatchItem $item): void
+    {
+        ContractPayment::create([
+            'contract_id' => $item->contract_id,
+            'contract_schedule_item_id' => $item->contract_schedule_item_id,
+            'contract_measurement_id' => $item->contract_measurement_id,
+            'is_retention_release' => $item->is_retention_release,
+            'amount' => $item->amount,
+            'payment_date' => $this->paymentBatch->payment_date,
+            'payment_method' => $item->payment_method,
+            'phase' => $item->phase,
+            'notes' => $item->notes,
+            'created_by' => Auth::id(),
+        ]);
+
+        $item->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+        ]);
+
+        Contract::find($item->contract_id)?->updateStatusFromPayments();
+    }
+
     public function approveAll(): void
     {
         $pendingItems = $this->paymentBatch->items()->where('status', 'pending')->get();
 
         if ($pendingItems->isEmpty()) {
             session()->flash('error', __('No pending items to approve.'));
+
             return;
         }
 
@@ -320,6 +345,7 @@ class PaymentBatchEdit extends Component
 
         if ($approvableItems->isEmpty()) {
             session()->flash('error', __('No pending items with amounts to approve.'));
+
             return;
         }
 
@@ -342,31 +368,15 @@ class PaymentBatchEdit extends Component
             }
         }
 
-        if (!empty($errors)) {
-            session()->flash('error', __('Cannot approve all:') . ' ' . implode('; ', $errors));
+        if (! empty($errors)) {
+            session()->flash('error', __('Cannot approve all:').' '.implode('; ', $errors));
+
             return;
         }
 
         DB::transaction(function () use ($approvableItems) {
             foreach ($approvableItems as $item) {
-                ContractPayment::create([
-                    'contract_id' => $item->contract_id,
-                    'amount' => $item->amount,
-                    'payment_date' => $this->paymentBatch->payment_date,
-                    'payment_method' => $item->payment_method,
-                    'phase' => $item->phase,
-                    'notes' => $item->notes,
-                    'created_by' => Auth::id(),
-                ]);
-
-                $item->update([
-                    'status' => 'approved',
-                    'approved_at' => now(),
-                ]);
-
-                $contract = Contract::find($item->contract_id);
-                $contract->refresh();
-                $contract->updateStatusFromPayments();
+                $this->processApprovedItem($item);
             }
         });
 
@@ -403,6 +413,7 @@ class PaymentBatchEdit extends Component
 
         if ($approvedCount > 0) {
             session()->flash('error', __('Cannot cancel a batch that has approved items.'));
+
             return;
         }
 

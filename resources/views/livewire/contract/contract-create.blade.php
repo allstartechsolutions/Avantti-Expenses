@@ -135,20 +135,38 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Contract value') }}</p>
             </div>
             <div class="p-6">
-                <div class="max-w-md">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        {{ __('Amount') }} <span class="text-red-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-                        <input
-                            type="number"
-                            step="0.01"
-                            wire:model="amount"
-                            placeholder="0.00"
-                            class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            {{ __('Amount') }} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-500">$</span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                wire:model="amount"
+                                placeholder="0.00"
+                                class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        </div>
+                        @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
-                    @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Retention (%)') }}</label>
+                        <div class="relative">
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="50"
+                                wire:model="retention_percent"
+                                placeholder="0.00"
+                                class="w-full pl-3 pr-8 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <span class="absolute right-3 top-2.5 text-slate-500">%</span>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Withheld from each measurement and released at the end of the contract. Leave empty for none.') }}</p>
+                        @error('retention_percent') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
                 </div>
             </div>
         </div>

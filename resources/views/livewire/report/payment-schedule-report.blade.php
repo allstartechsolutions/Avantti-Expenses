@@ -88,7 +88,7 @@
         <div class="mb-6 px-6 py-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg">
             <p class="text-xs text-blue-800 dark:text-blue-300">
                 {{ __('Showing period') }}: <strong>{{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }}</strong> — <strong>{{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}</strong>.
-                {{ __('Contract balances are point-in-time and not affected by the date range.') }}
+                {{ __('Contract installments are matched by their due date and contract payments by their payment date, like expenses.') }}
             </p>
         </div>
     @endif

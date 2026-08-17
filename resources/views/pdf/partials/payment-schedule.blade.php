@@ -1,7 +1,7 @@
 {{-- Payment Schedule PDF partial — expects $paymentSchedule (PaymentScheduleService::build() payload) --}}
 <div style="font-size: 10pt; font-weight: bold; color: #3F5189; margin: 12px 0 4px 0;">{{ __('Payment Schedule') }}</div>
 <div style="font-size: 6.5pt; color: #888; margin-bottom: 4px;">
-    {{ __('Expense payments by due date. Overdue is derived from due dates as of today. Cancelled expenses excluded.') }}
+    {{ __('Expense payments and contract installments by due date. Overdue is derived from due dates as of today. Cancelled expenses and contracts excluded.') }}
 </div>
 
 {{-- Expense schedule tiles --}}
@@ -47,7 +47,7 @@
             <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($paymentSchedule['combined']['expenses']['outstanding'], 2) }}</td>
         </tr>
         <tr>
-            <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ __('Contracts') }} <span style="color: #888;">({{ __('no schedule') }})</span></td>
+            <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ __('Contracts') }}</td>
             <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($paymentSchedule['combined']['contracts']['total'], 2) }}</td>
             <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($paymentSchedule['combined']['contracts']['paid'], 2) }}</td>
             <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($paymentSchedule['combined']['contracts']['outstanding'], 2) }}</td>
@@ -63,7 +63,7 @@
     </tfoot>
 </table>
 <div style="font-size: 6.5pt; color: #888; margin-bottom: 8px;">
-    {{ __('Subcontractor contracts have no payment due dates; balances are point-in-time and not included in the monthly projection below.') }}
+    {{ __('Contract installments are due on their schedule date; whatever the schedule does not cover — and contracts without one — is due on the contract end date.') }}
 </div>
 
 {{-- Monthly projection --}}
@@ -81,9 +81,16 @@
         </thead>
         <tbody>
             @foreach ($paymentSchedule['projection']['buckets'] as $bucket)
-                @php $isOverdue = $bucket['type'] === 'overdue'; @endphp
+                @php
+                    $isOverdue = $bucket['type'] === 'overdue';
+                    $bucketLabel = match ($bucket['type']) {
+                        'overdue' => __('Overdue (past due)'),
+                        'undated' => __('No due date'),
+                        default => $bucket['label'],
+                    };
+                @endphp
                 <tr @if($isOverdue) style="background-color: #fdf2f2;" @endif>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; {{ $isOverdue ? 'color: #e74c3c; font-weight: bold;' : '' }}">{{ $bucket['label'] }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px; {{ $isOverdue ? 'color: #e74c3c; font-weight: bold;' : '' }}">{{ $bucketLabel }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right; {{ $isOverdue ? 'color: #e74c3c;' : '' }}">{{ $bucket['count'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right; {{ $isOverdue ? 'color: #e74c3c; font-weight: bold;' : '' }}">${{ number_format($bucket['amount'], 2) }}</td>
                 </tr>
