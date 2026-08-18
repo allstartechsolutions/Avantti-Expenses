@@ -66,10 +66,19 @@
 12. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions for all non-cancelled statuses (including active), balance calculated from adjusted amount (original + change orders)
 13. **[Contract Payments Dashboard](./contract-payments-dashboard.md)** - Batch payment processing with filters, change orders column with expandable details, CSV export with change order detail rows, PDF export (summary and detailed with payment history)
 14. **[Payment Batch Module](./payment-batch-module.md)** - Pre-payment staging system with draft/approve lifecycle, saved contract filters per batch, individual and bulk approval, automatic ContractPayment creation on approval
+15. **[Income Module](./income-module.md)** - Money coming in at project and job site level, received vs expected receivables, and distribution of one project-level income across several job sites
+
+### Planned
+
+- **[Quotation Module plan](./quotation-module-plan.md)** - Buy-side quotations (BR: *Cotação*): requisition → quote several vendors → comparative map with equalization → negotiation rounds → justified award → contract (service) or purchase order (material). Researched against Brazilian practice; decisions agreed, not yet built.
+
+### Session handoff
+
+- **[Open Items](./open-items.md)** - **Start here each session:** current repo state, the next feature, open engineering items, and the local verification patterns.
 
 ### User Management
 
-15. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
+16. **[User Profile](./user-profile.md)** - Profile page for updating name, email, phone, and password
     - Live password requirements checklist (Alpine.js)
     - Logout on password change
 

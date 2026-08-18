@@ -1,6 +1,15 @@
 # Quotation Module — research and plan
 
-**Status:** plan only, nothing built. Written 2026-08-18.
+**Status:** plan agreed, nothing built. Written 2026-08-18.
+
+**Decisions taken with the owner (2026-08-18):**
+
+| Question | Decision |
+|---|---|
+| Material path | **Quote → Purchase Order → Expense** — the PO module's existing approval creates the expense |
+| Split award | **Supported**, but awarding the whole quote to one vendor is the default |
+| Minimum proposals | **Warn under 3, block under 2** |
+| Requisition (solicitação de compra) | **Included** — the flow starts with a site requisition, not with the quote |
 
 This is the **buy side**: asking several vendors what they would charge, comparing the
 offers, negotiating, and awarding one. It is not the client-facing quote — that is the
@@ -24,7 +33,7 @@ necessidade → solicitação de compra → cotação (≥3 fornecedores)
 
 | Term | What it is | In this app |
 |---|---|---|
-| **Solicitação de compra** | Internal requisition: someone on site says what is needed | not built (see open question 7) |
+| **Solicitação de compra** | Internal requisition: someone on site says what is needed | **new — `purchase_requisitions`, phase 1** |
 | **Cotação** | The round of price requests sent to vendors | the new module |
 | **Proposta** | One vendor's answer to that round | `quotation_vendors` + their item prices |
 | **Mapa de cotação / mapa comparativo** | The side-by-side comparison sheet | the comparison screen |
@@ -50,8 +59,8 @@ Comparing raw prices is considered wrong practice; proposals are normalised firs
 7. **payment terms** — à vista vs 30/60/90 days is a real price difference;
 8. **warranty and vendor history**.
 
-The customary rule is **at least three proposals**; the client asked for at least two, which
-is looser than the norm (open question 2).
+The customary rule is **at least three proposals**; the client asked for at least two. The
+agreed rule keeps both: **block below two, warn below three.**
 
 The choice must be **justified and recorded** — the map exists precisely so a decision that
 is not the lowest price can be defended later. That is why the award needs a reason field,
@@ -71,7 +80,7 @@ expense when a PO is approved. So the honest mapping here is:
 |---|---|---|
 | **Service** | **Contract** (`contracts`) | already has payment schedule, medições, retention, change orders |
 | **Material** | **Purchase Order** → Expense on approval | reuses the approval workflow and the existing PO→expense conversion |
-| Material, small/no approval needed | **Expense** directly | shortcut worth offering (open question 4) |
+| Material | **never straight to an expense** | the PO carries the approval, and the expense is its output |
 
 ---
 
@@ -80,8 +89,30 @@ expense when a PO is approved. So the honest mapping here is:
 Follows the dual-FK rule from `docs/project-jobsite-parity-rule.md` (`project_id` required,
 `job_site_id` nullable) and stores money in cents (`docs/monetary-storage.md`).
 
+### `purchase_requisitions` — the ask from the site
+The chain starts here: whoever is on site says what is needed, a manager approves it, and
+only then does procurement quote it.
+
+`project_id`, `job_site_id` (nullable), `requisition_number` (REQ-0001), `type`
+(`material` | `service`), `title`, `justification`, `needed_by`, `priority`
+(`low` | `normal` | `urgent`), `status`, `requested_by`, `reviewed_by`, `reviewed_at`,
+`review_notes`, `cost_code_id` / `budget_item_id` (nullable), `created_by`, timestamps.
+
+Status: `draft → pending → approved → quoted → fulfilled`, plus `rejected` and `cancelled`.
+`quoted` and `fulfilled` are **derived from the quotations that reference it**, mirroring the
+Sienge idea that a requisition is pending / partially / totally attended.
+
+### `purchase_requisition_items` — what was asked for
+`purchase_requisition_id`, `catalog_item_id` (nullable), `budget_item_id` (nullable),
+`item_name`, `description`, `quantity`, `unit`, `sort_order`.
+
+These are the rows the quotation copies, so the scope the vendors price is literally the
+scope the site asked for. A requisition may be quoted in **more than one** quotation (split
+by vendor speciality), so `quotations.purchase_requisition_id` is nullable and many-to-one.
+
 ### `quotations` — the round
-`project_id`, `job_site_id` (nullable), `quotation_number` (COT-0001), `type`
+`project_id`, `job_site_id` (nullable), `purchase_requisition_id` (nullable — a quote can
+still be raised directly), `quotation_number` (COT-0001), `type`
 (`material` | `service`), `title`, `description`, `needed_by` (date the goods/service are
 needed), `responses_due_at` (deadline for vendors), `status`, `cost_code_id` /
 `budget_item_id` (nullable, to compare against budget), `awarded_vendor_id` (nullable),
@@ -135,8 +166,12 @@ Full-page (per the Design Standard in `CLAUDE.md`): **items as rows, vendors as 
 
 ## 4. Award and conversion
 
-1. **Award** — pick a vendor (or per item), write the **reason**, confirm. Status → awarded;
-   losing proposals marked `rejected`; everything frozen for audit.
+1. **Award** — pick a vendor, write the **reason**, confirm. Status → awarded; losing
+   proposals marked `rejected`; everything frozen for audit.
+   - **Whole-quote award is the default**; a "split across vendors" toggle reveals a per-item
+     winner picker, and then the conversion produces **one contract/PO per winning vendor**.
+   - **Fewer than 2 responded proposals blocks the award**; fewer than 3 shows a warning the
+     user can acknowledge, which is the customary BR minimum.
 2. **Convert** — one action, prefilled from the award:
    - **service →** contract create form: vendor as subcontractor, amount = awarded total,
      quotation items seeded as budget allocations / schedule lines;
@@ -153,13 +188,14 @@ Full-page (per the Design Standard in `CLAUDE.md`): **items as rows, vendors as 
 
 | Phase | Deliverable |
 |---|---|
-| 1 | Migrations + models + Quotation index/create (round, items, invited vendors) |
-| 2 | Proposal entry per vendor (prices, terms, attachments) |
-| 3 | Comparison map, full page, with equalization |
-| 4 | Negotiation rounds |
-| 5 | Award with justification |
-| 6 | Conversion to contract / PO / expense, with backlinks |
-| 7 | PDF, budget + catalog integration, pt_BR sweep, docs |
+| 1 | Requisition: migrations, models, index/create/detail, approve–reject with audit trail |
+| 2 | Quotation round: migrations, models, create from a requisition (or standalone), items, invited vendors |
+| 3 | Proposal entry per vendor (prices, terms, freight, validity, attachments) |
+| 4 | Comparison map, full page, with equalization |
+| 5 | Negotiation rounds |
+| 6 | Award with justification, whole or split, with the 2/3-proposal rule |
+| 7 | Conversion to contract / PO, with backlinks both ways |
+| 8 | PDF of the map, budget + catalog price-history integration, pt_BR sweep, docs |
 
 Each phase gets tested before the next starts.
 
@@ -167,16 +203,19 @@ Each phase gets tested before the next starts.
 
 ## 6. Open questions
 
-| # | Question | Proposed default |
+Settled — see the decisions table at the top: material path, split award, minimum proposals,
+and the requisition step.
+
+Still open, and none of them blocks phase 1:
+
+| # | Question | Assumption if you do not say otherwise |
 |---|---|---|
-| 1 | Buy side only? | Yes — Estimate stays the client-facing quote |
-| 2 | Minimum proposals before awarding | **Warn** under 3, **block** under 2 |
-| 3 | Split award across vendors per item | Support it, but default to awarding the whole quote |
-| 4 | Material path | Quote → PO → expense, with a direct-to-expense shortcut for small buys |
-| 5 | Equalization depth | Phase 3 does freight + tax + discount + lead time + terms shown side by side; unit conversion and payment-term present value only if asked |
-| 6 | Who can award | Admin, matching the delete/approve pattern; value thresholds only if asked |
-| 7 | Requisition step (solicitação de compra) before the quote | Not in v1 — the quote itself carries "needed by" |
-| 8 | Budget enforcement | Warn when the awarded total exceeds the linked budget item, never block |
+| 1 | Who may **approve a requisition** — any manager, or admin only? | Admin, matching the existing delete/approve pattern |
+| 2 | Who may **award** a quotation? Value thresholds? | Admin; no thresholds |
+| 3 | Equalization depth | Phase 4 shows freight + tax + discount + lead time + terms side by side; unit-of-measure conversion and payment-term present value only if asked |
+| 4 | Budget enforcement | Warn when the awarded total exceeds the linked budget item, never block |
+| 5 | Do vendors ever type their own prices (portal/e-mail link)? | No — procurement keys in what the vendors send |
+| 6 | Module access | New `quotations` module in `config/modules.php` covering `requisitions.*` and `quotations.*`, so an install can switch the whole chain off |
 
 ---
 
