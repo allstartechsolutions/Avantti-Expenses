@@ -62,6 +62,11 @@ class JobSiteIncome extends Component
             $this->closeViewModal();
         }
 
+        // Escape and backdrop clicks close the modal without telling the
+        // server, so a previous session can still be holding staged uploads
+        // and stale errors. Start clean every time.
+        $this->resetForm();
+
         $income = $this->jobSite->income()->findOrFail($incomeId);
 
         $this->editingIncomeId = $income->id;
@@ -243,6 +248,11 @@ class JobSiteIncome extends Component
 
         // This job site's share of project-level income. Shown, counted, but
         // not editable here.
+        //
+        // NOTE: `distributions` is loaded filtered to this job site, so the
+        // aggregate helpers (distributedTotal/undistributedAmount) must not be
+        // called on these instances — they would only see one share. The
+        // read-only detail modal reloads the full relation for that reason.
         $shareQuery = Income::query()
             ->where('project_id', $this->jobSite->project_id)
             ->whereNull('job_site_id')

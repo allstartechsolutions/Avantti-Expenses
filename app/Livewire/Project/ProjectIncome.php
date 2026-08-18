@@ -61,6 +61,11 @@ class ProjectIncome extends Component
             $this->closeViewModal();
         }
 
+        // Escape and backdrop clicks close the modal without telling the
+        // server, so a previous session can still be holding staged uploads
+        // and stale errors. Start clean every time.
+        $this->resetForm();
+
         $income = $this->project->income()->with('distributions')->findOrFail($incomeId);
 
         $this->editingIncomeId = $income->id;
@@ -87,8 +92,12 @@ class ProjectIncome extends Component
     {
         // The split is checked first: over-allocating is the mistake the user
         // actually made, and saying so beats a per-row error on a derived
-        // percent. Only then do the field rules run.
-        if ($this->income_location_mode === 'split' && $this->distributionRemainder < 0) {
+        // percent. Only then do the field rules run — but not when the amount
+        // itself is missing, because then "required" is the honest message.
+        if ($this->income_location_mode === 'split'
+            && is_numeric($this->income_amount)
+            && (float) $this->income_amount > 0
+            && $this->distributionRemainder < 0) {
             $this->addError('distributionRows', __('The distribution cannot exceed the income amount.'));
             return;
         }
@@ -149,25 +158,33 @@ class ProjectIncome extends Component
             'amount' => $validated['income_amount'],
         ];
 
-        $income = DB::transaction(function () use ($data, $shares) {
-            if ($this->editingIncomeId) {
-                $income = $this->project->income()->findOrFail($this->editingIncomeId);
+        try {
+            $income = DB::transaction(function () use ($data, $shares) {
+                if ($this->editingIncomeId) {
+                    $income = $this->project->income()->findOrFail($this->editingIncomeId);
 
-                // Clear first: the old split is about to be replaced anyway,
-                // and an empty one lets the amount move freely in either
-                // direction without tripping the model guard.
-                $income->syncDistributions([]);
-                $income->update($data);
-            } else {
-                $income = $this->project->income()->create($data + ['created_by' => auth()->id()]);
-            }
+                    // Clear first: the old split is about to be replaced anyway,
+                    // and an empty one lets the amount move freely in either
+                    // direction without tripping the model guard.
+                    $income->syncDistributions([]);
+                    $income->update($data);
+                } else {
+                    $income = $this->project->income()->create($data + ['created_by' => auth()->id()]);
+                }
 
-            if ($shares !== []) {
-                $income->syncDistributions($shares);
-            }
+                if ($shares !== []) {
+                    $income->syncDistributions($shares);
+                }
 
-            return $income;
-        });
+                return $income;
+            });
+        } catch (\DomainException $e) {
+            // The model rules are the last word — a tampered job site id or a
+            // total that moved under us lands here. Report it on the form
+            // instead of 500-ing, and let the transaction roll back.
+            $this->addError('distributionRows', $e->getMessage());
+            return;
+        }
 
         session()->flash('message', $this->editingIncomeId
             ? __('Income updated successfully.')
@@ -241,7 +258,11 @@ class ProjectIncome extends Component
     public function updatedIncomeAmount(): void
     {
         foreach ($this->distributionRows as $index => $row) {
-            $amount = round((float) ($row['amount'] ?: 0), 2);
+            if (! $this->isBuiltRow($index)) {
+                continue;
+            }
+
+            $amount = round((float) ($row['amount'] ?? 0), 2);
 
             $this->distributionRows[$index]['percent'] = $amount > 0
                 ? $this->percentOf($amount, $this->distributionBase())
@@ -257,6 +278,17 @@ class ProjectIncome extends Component
     public function updatedDistributionRows($value, string $key): void
     {
         [$index, $field] = array_pad(explode('.', $key), 2, null);
+
+        // The rows are a public property, so the client can bind to an index
+        // the server never built. Livewire has already written it by the time
+        // this runs, so drop it rather than letting a row with no job site
+        // reach the grid.
+        if ($index === null || ! $this->isBuiltRow($index)) {
+            unset($this->distributionRows[$index]);
+
+            return;
+        }
+
         $total = $this->distributionBase();
 
         if ($field === 'amount') {
@@ -283,7 +315,9 @@ class ProjectIncome extends Component
     public function splitEvenly(): void
     {
         $total = $this->distributionBase();
-        $selected = collect($this->distributionRows)->filter(fn ($row) => $row['selected'])->keys();
+        $selected = collect($this->distributionRows)
+            ->filter(fn ($row, $index) => $this->isBuiltRow($index) && ($row['selected'] ?? false))
+            ->keys();
 
         if ($total <= 0 || $selected->isEmpty()) {
             return;
@@ -304,6 +338,10 @@ class ProjectIncome extends Component
     /** Give this site everything not yet assigned to another one. */
     public function assignRemainder(int $index): void
     {
+        if (! $this->isBuiltRow($index)) {
+            return;
+        }
+
         $others = collect($this->distributionRows)
             ->except($index)
             ->sum(fn ($row) => round((float) ($row['amount'] ?: 0), 2));
@@ -322,6 +360,10 @@ class ProjectIncome extends Component
     public function clearAllShares(): void
     {
         foreach (array_keys($this->distributionRows) as $index) {
+            if (! $this->isBuiltRow($index)) {
+                continue;
+            }
+
             $this->distributionRows[$index]['selected'] = false;
             $this->distributionRows[$index]['amount'] = '';
             $this->distributionRows[$index]['percent'] = '';
@@ -330,9 +372,15 @@ class ProjectIncome extends Component
 
     public function toggleAllSites(): void
     {
-        $selectAll = collect($this->distributionRows)->contains(fn ($row) => ! $row['selected']);
+        $selectAll = collect($this->distributionRows)
+            ->filter(fn ($row, $index) => $this->isBuiltRow($index))
+            ->contains(fn ($row) => ! ($row['selected'] ?? false));
 
         foreach (array_keys($this->distributionRows) as $index) {
+            if (! $this->isBuiltRow($index)) {
+                continue;
+            }
+
             $this->distributionRows[$index]['selected'] = $selectAll;
 
             if (! $selectAll) {
@@ -348,9 +396,9 @@ class ProjectIncome extends Component
         $shares = [];
 
         foreach ($this->distributionRows as $row) {
-            $amount = round((float) ($row['amount'] ?: 0), 2);
+            $amount = round((float) ($row['amount'] ?? 0), 2);
 
-            if ($amount > 0) {
+            if ($amount > 0 && ! empty($row['job_site_id'])) {
                 $shares[$row['job_site_id']] = $amount;
             }
         }
@@ -362,7 +410,8 @@ class ProjectIncome extends Component
     public function distributionTotal(): float
     {
         return round(collect($this->distributionRows)
-            ->sum(fn ($row) => round((float) ($row['amount'] ?: 0), 2)), 2);
+            ->filter(fn ($row, $index) => $this->isBuiltRow($index))
+            ->sum(fn ($row) => round((float) ($row['amount'] ?? 0), 2)), 2);
     }
 
     /** What stays project-level. Negative means the grid is over-allocated. */
@@ -384,19 +433,29 @@ class ProjectIncome extends Component
     #[Computed]
     public function selectedSiteCount(): int
     {
-        return collect($this->distributionRows)->filter(fn ($row) => $row['selected'])->count();
+        return collect($this->distributionRows)
+            ->filter(fn ($row, $index) => $this->isBuiltRow($index) && ($row['selected'] ?? false))
+            ->count();
     }
 
-    /** Rows after the site search — the grid never loses the hidden ones. */
+    /** A row this component built, rather than one the client invented. */
+    protected function isBuiltRow($index): bool
+    {
+        return isset($this->distributionRows[$index]['job_site_id'], $this->distributionRows[$index]['job_site_name']);
+    }
+
+    /**
+     * Rows after the site search — the grid never loses the hidden ones.
+     *
+     * Malformed rows are dropped here too, so nothing the client injects can
+     * reach the view and blow up on a missing key.
+     */
     #[Computed]
     public function visibleDistributionRows(): array
     {
-        if (! $this->distributionSearch) {
-            return $this->distributionRows;
-        }
-
         return collect($this->distributionRows)
-            ->filter(fn ($row) => str_contains(
+            ->filter(fn ($row, $index) => $this->isBuiltRow($index))
+            ->filter(fn ($row) => ! $this->distributionSearch || str_contains(
                 mb_strtolower($row['job_site_name']),
                 mb_strtolower($this->distributionSearch)
             ))

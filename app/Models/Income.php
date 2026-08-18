@@ -53,11 +53,17 @@ class Income extends Model
                 return;
             }
 
-            if ($income->isDirty('job_site_id') && $income->getAttributes()['job_site_id'] !== null) {
+            $attributes = $income->getAttributes();
+
+            if ($income->isDirty('job_site_id') && ($attributes['job_site_id'] ?? null) !== null) {
                 throw new \DomainException(__('This income is distributed across locations. Remove the distribution before assigning it to a single location.'));
             }
 
-            if ((int) $income->getAttributes()['amount'] < $distributed) {
+            // Raw cents, not the accessor — and falling back to the stored
+            // value keeps a partially-selected model from reading as zero.
+            $amountCents = (int) ($attributes['amount'] ?? $income->getRawOriginal('amount'));
+
+            if ($amountCents < $distributed) {
                 throw new \DomainException(__('The amount cannot be lower than the :total already distributed across locations. Adjust the distribution first.', [
                     'total' => \Illuminate\Support\Number::currency($distributed / 100, config('app.currency'), config('app.locale')),
                 ]));
