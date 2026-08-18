@@ -267,3 +267,25 @@ When `APP_LOCALE=en`, Laravel's `__('Job Site Name')` looks up the key in `en.js
 - Brand names like `PIX` are kept as-is (not translated)
 - Payment method labels use `__(str_replace('_', ' ', ucfirst($method)))` for dynamic translation
 - When a module exists at both project and job site level, translate both locations (same keys are reused)
+
+## Sweep safety rule (added 2026-08-18)
+
+A sweep must only wrap **literal display text**. In Aug 2026 one wrapped a PHP property
+name inside a Blade expression:
+
+```blade
+{{ $changeOrder->{{ __('amount') }} < 0 ? '…' : '…' }}
+```
+
+Blade compiles that to broken PHP, so three pages returned a 500 on every render until it
+was found. Nothing detects this at write time — Blade only fails when the view is rendered.
+
+**Therefore every translation sweep ends with a full-view compile check:**
+`Blade::compileString()` over every `.blade.php` under `resources/views`, then `php -l` on
+the compiled output. It takes seconds and catches exactly this class of damage.
+
+Audit script for coverage: extract `__('…')` / `@lang('…')` literals from `resources/views`
+and `app`, diff against `lang/pt_BR.json`. Also check that every `:placeholder` in a key
+survives into its translation — a dropped one silently prints the raw placeholder.
+Orphan keys are **not** safe to delete automatically: call sites like `__($status)` resolve
+keys at runtime, so a static scan cannot prove a key is dead.

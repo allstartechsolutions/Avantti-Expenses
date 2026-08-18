@@ -21,6 +21,8 @@ class ProjectIncome extends Component
     // Form modal (create/edit)
     public $editingIncomeId = null;
     public $income_date = '';
+    public $income_status = 'received';
+    public $income_due_date = '';
     public $income_job_site_id = '';
     public $income_title = '';
     public $income_description = '';
@@ -38,7 +40,9 @@ class ProjectIncome extends Component
     public function openAddModal(): void
     {
         $this->resetForm();
+        $this->income_status = 'received';
         $this->income_date = now()->format('Y-m-d');
+        $this->income_due_date = '';
         $this->dispatch('open-modal', 'income-form-modal');
     }
 
@@ -52,6 +56,8 @@ class ProjectIncome extends Component
 
         $this->editingIncomeId = $income->id;
         $this->income_date = $income->income_date->format('Y-m-d');
+        $this->income_status = $income->status ?? 'received';
+        $this->income_due_date = $income->due_date?->format('Y-m-d') ?? '';
         $this->income_job_site_id = $income->job_site_id ?? '';
         $this->income_title = $income->title;
         $this->income_description = $income->description ?? '';
@@ -70,6 +76,8 @@ class ProjectIncome extends Component
     {
         $validated = $this->validate([
             'income_date' => 'required|date',
+            'income_status' => 'required|in:received,expected',
+            'income_due_date' => 'nullable|date|required_if:income_status,expected',
             'income_title' => 'required|string|max:255',
             'income_description' => 'nullable|string',
             'income_amount' => 'required|numeric|min:0.01|max:99999999',
@@ -77,6 +85,8 @@ class ProjectIncome extends Component
             'income_uploads.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
         ], [], [
             'income_date' => __('date'),
+            'income_status' => __('status'),
+            'income_due_date' => __('due date'),
             'income_title' => __('title'),
             'income_description' => __('description'),
             'income_amount' => __('amount'),
@@ -93,6 +103,10 @@ class ProjectIncome extends Component
 
         $data = [
             'income_date' => $validated['income_date'],
+            'status' => $validated['income_status'],
+            // Kept even once received: it records what was expected, and
+            // only expected records ever read it back.
+            'due_date' => $validated['income_due_date'] ?: null,
             'job_site_id' => $jobSiteId,
             'title' => $validated['income_title'],
             'description' => $validated['income_description'] ?: null,
@@ -150,11 +164,34 @@ class ProjectIncome extends Component
         session()->flash('message', __('Income deleted successfully.'));
     }
 
+    /**
+     * Book expected money as received today. The report then counts it as
+     * cash instead of a receivable.
+     */
+    public function markReceived(int $incomeId): void
+    {
+        $income = $this->project->income()->findOrFail($incomeId);
+
+        if ($income->isReceived()) {
+            return;
+        }
+
+        $income->markReceived();
+
+        if ($this->viewingIncome && $this->viewingIncome->id === $income->id) {
+            $this->viewingIncome = $income->fresh();
+        }
+
+        session()->flash('message', __('Income marked as received.'));
+    }
+
     protected function resetForm(): void
     {
         $this->reset([
             'editingIncomeId',
             'income_date',
+            'income_status',
+            'income_due_date',
             'income_job_site_id',
             'income_title',
             'income_description',
@@ -187,10 +224,25 @@ class ProjectIncome extends Component
             });
         }
 
-        $incomeRecords = $incomeQuery->orderBy('income_date', 'desc')->get();
-        $totalIncomeAmount = $incomeRecords->sum('amount');
-        $thisMonthAmount = $incomeRecords
+        // Ordered by the date the list actually shows: the receipt date for
+        // received money, the due date for money still expected.
+        $incomeRecords = $incomeQuery
+            ->orderByRaw('COALESCE(due_date, income_date) DESC')
+            ->get();
+
+        // Received money only — mixing in what has not arrived would make
+        // this page disagree with the company financial report.
+        $received = $incomeRecords->filter(fn ($income) => $income->isReceived());
+
+        $totalIncomeAmount = $received->sum('amount');
+        $thisMonthAmount = $received
             ->filter(fn ($income) => $income->income_date->isSameMonth(now()))
+            ->sum('amount');
+        $expectedAmount = $incomeRecords
+            ->filter(fn ($income) => $income->isExpected())
+            ->sum('amount');
+        $overdueAmount = $incomeRecords
+            ->filter(fn ($income) => $income->isOverdue())
             ->sum('amount');
 
         return view('livewire.project.project-income', [
@@ -198,6 +250,8 @@ class ProjectIncome extends Component
             'jobSites' => $jobSites,
             'totalIncomeAmount' => $totalIncomeAmount,
             'thisMonthAmount' => $thisMonthAmount,
+            'expectedAmount' => $expectedAmount,
+            'overdueAmount' => $overdueAmount,
         ])->layout('components.layouts.app');
     }
 }

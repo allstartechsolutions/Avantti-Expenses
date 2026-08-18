@@ -15,7 +15,8 @@ use Illuminate\Support\Collection;
  * and everything it is still owed and still owes — in one place.
  *
  * MONEY IN
- *   - Income records (cash already received, by income_date)
+ *   - Income records: received ones by income_date, expected ones by their
+ *     due date — so a receivable never depends on an invoice existing
  *   - Invoice payments (completed, net of refunds, by payment_date)
  *   - Open invoices: balance due, by the invoice due date (drafts excluded)
  *
@@ -135,19 +136,27 @@ class CompanyFinancialService
             ->get();
 
         foreach ($incomes as $income) {
-            if (! $this->inRange($income->income_date)) {
+            // Expected income is a receivable dated by its due date;
+            // received income is cash dated by the day it arrived.
+            $date = $income->effectiveDate();
+
+            if (! $this->inRange($date)) {
                 continue;
             }
 
             $rows[] = $this->row([
-                'date' => $income->income_date,
+                'date' => $date,
                 'direction' => 'in',
                 'source' => 'income',
                 'party' => $income->project?->client?->company_name,
                 'project' => $income->project?->project_name,
                 'job_site' => $income->jobSite?->job_site_name,
                 'description' => $income->title ?: __('Income'),
-                'status' => 'settled',
+                'status' => match (true) {
+                    $income->isReceived() => 'settled',
+                    $income->isOverdue() => 'overdue',
+                    default => 'open',
+                },
                 'amount' => (float) $income->amount,
             ]);
         }

@@ -16,6 +16,9 @@
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Payment Schedule') }}</h3>
             <div class="flex items-center space-x-2">
+                <x-ui.button variant="secondary" size="sm" href="{{ route('contracts.schedule.pdf.view', $contract->id) }}" target="_blank" icon="printer">
+                    {{ __('PDF') }}
+                </x-ui.button>
                 <x-ui.button variant="secondary" size="sm" wire:click="openHistoryModal" icon="clock">
                     {{ __('History') }}
                 </x-ui.button>

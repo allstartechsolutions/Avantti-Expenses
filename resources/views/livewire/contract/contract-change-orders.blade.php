@@ -41,7 +41,7 @@
                                         {{ $co->amount >= 0 ? '+' : '' }}{{ Number::currency($co->amount, config('app.currency'), config('app.locale')) }}
                                     </td>
                                     <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                        {{ $co->createdBy?->name ?? 'Unknown' }}
+                                        {{ $co->createdBy?->name ?? __('Unknown') }}
                                     </td>
                                     <td class="px-3 py-3 text-sm text-center">
                                         @if($co->file_path)

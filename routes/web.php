@@ -91,6 +91,8 @@ use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\AccountsPayableReport;
 use App\Http\Controllers\CompanyFinancialReportPdfController;
+use App\Http\Controllers\ContractMeasurementPdfController;
+use App\Http\Controllers\ContractSchedulePdfController;
 use App\Livewire\Report\CompanyFinancialReport;
 use App\Livewire\Report\PaymentDetailReport;
 use App\Livewire\Report\PaymentScheduleReport;
@@ -205,6 +207,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/daily-reports/{dailyReport}/edit', DailyReportForm::class)->name('dailyreports.project.edit');
 
     // Daily Report PDF routes
+    // Cronograma físico-financeiro
+    Route::get('contracts/{contract}/schedule/pdf', [ContractSchedulePdfController::class, 'download'])->name('contracts.schedule.pdf.download');
+    Route::get('contracts/{contract}/schedule/pdf/view', [ContractSchedulePdfController::class, 'stream'])->name('contracts.schedule.pdf.view');
+
+    // Boletim de medição (contract measurement)
+    Route::get('measurements/{measurement}/pdf', [ContractMeasurementPdfController::class, 'download'])->name('measurements.pdf.download');
+    Route::get('measurements/{measurement}/pdf/view', [ContractMeasurementPdfController::class, 'stream'])->name('measurements.pdf.view');
+
     Route::get('daily-reports/{dailyReport}/pdf', [DailyReportPdfController::class, 'download'])->name('dailyreports.pdf.download');
     Route::get('daily-reports/{dailyReport}/pdf/view', [DailyReportPdfController::class, 'stream'])->name('dailyreports.pdf.view');
 

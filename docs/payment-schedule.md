@@ -22,6 +22,8 @@ Contracts used to be point-in-time totals excluded from the projection. They are
 - **A parcela with no date of its own** (an evento with no data prevista) falls back to the contract end date too.
 - **Contracts with no end date** land in the *No due date* bucket rather than being forced into a month or dropped.
 - The split is `balance due = Σ open parcelas + remainder`, so a contract's dated items always add up to what it still owes — no double counting, nothing lost.
+- **When the parcelas exceed the balance due they are scaled down to it** (proportionally, with the rounding crumb on the first item). That happens whenever money was paid without settling a parcela — a payment made before the cronograma existed, or a payment batch — or when the cronograma schedules more than the adjusted contract amount. Without the clamp both reports over-state payables by the unlinked amount (a 25.600 parcela on a contract owing 4.247 reported 25.600).
+- **`Contract::getUnscheduledRemaining()`** is the matching rule on the payment side: the unscheduled amount minus what has already been paid off-schedule, capped at the balance due. The contract page and the payment-batch gate both call it, so "what may be paid without naming a parcela" cannot drift between them.
 - The split itself lives on the model: **`Contract::openPayableItems()`** returns `['date', 'amount', 'label', 'scheduled']` per item and is the single definition shared with the **Accounts Payable** report (see below).
 - **The date range now filters contracts too**, like expenses: open items by their due date, contract payments by their payment date. Undated contract money is therefore excluded whenever a range is set (a filter cannot place what has no date). With no range, the strip's Adjusted/Paid/Balance are exactly the old point-in-time numbers.
 
@@ -62,3 +64,8 @@ This install remaps terminology app-wide: code "Project" displays as **"Job Site
 - Amounts are stored in cents; query-level `sum('amount')` is divided by 100, collection sums use the dollar accessors (same convention as `AccountsPayableService`).
 - The projection issues ~2 queries per month row; volumes per project are small and `due_date` is indexed. A single GROUP BY month query is a drop-in optimization inside the service if ever needed.
 - No migrations — pure read-layer feature.
+
+## See also
+`docs/company-financials.md` — the company-wide report (Aug 2026) that puts this payables
+picture next to the money coming in, with a line-level detail table. Its out side is
+cross-checked against this service's numbers.

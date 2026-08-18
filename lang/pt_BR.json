@@ -2179,5 +2179,18 @@
     "Nothing matches the selected filters.": "Nada corresponde aos filtros selecionados.",
     "Party": "Contraparte",
     "Listed": "Listados",
-    "COMPANY FINANCIALS": "FINANCEIRO DA EMPRESA"
+    "COMPANY FINANCIALS": "FINANCEIRO DA EMPRESA",
+    "Expected": "A Receber",
+    "Mark as received": "Marcar como recebido",
+    "Mark this income as received today?": "Marcar esta receita como recebida hoje?",
+    "Income marked as received.": "Receita marcada como recebida.",
+    "Reference Date": "Data de Referência",
+    "due date": "data de vencimento",
+    "Total Received": "Total Recebido",
+    "MEASUREMENT REPORT": "BOLETIM DE MEDIÇÃO",
+    "Print measurement report": "Imprimir boletim de medição",
+    "Created by": "Criado por",
+    "Contractor": "Contratante",
+    "No installments scheduled yet.": "Nenhuma parcela programada ainda.",
+    "PDF": "PDF"
 }

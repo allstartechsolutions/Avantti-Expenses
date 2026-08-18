@@ -72,14 +72,17 @@ class ContractPayment extends Model
 
     public function getPaymentMethodLabel(): string
     {
+        // Translated here so every consumer gets it — some call sites
+        // wrap this in __() and some do not; a second __() on an already
+        // translated string is a no-op.
         return match ($this->payment_method) {
-            'cash' => 'Cash',
-            'check' => 'Check',
-            'credit_card' => 'Credit Card',
-            'debit_card' => 'Debit Card',
-            'bank_transfer' => 'Bank Transfer',
-            'pix' => 'PIX',
-            'other' => 'Other',
+            'cash' => __('Cash'),
+            'check' => __('Check'),
+            'credit_card' => __('Credit Card'),
+            'debit_card' => __('Debit Card'),
+            'bank_transfer' => __('Bank Transfer'),
+            'pix' => __('PIX'),
+            'other' => __('Other'),
             default => ucfirst($this->payment_method),
         };
     }

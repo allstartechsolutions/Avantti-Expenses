@@ -34,12 +34,12 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Total Income -->
             <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-white/80">{{ __('Total Income') }}</p>
+                        <p class="text-sm font-medium text-white/80">{{ __('Total Received') }}</p>
                         <p class="text-2xl font-bold mt-1">{{ Number::currency($totalIncomeAmount, config('app.currency'), config('app.locale')) }}</p>
                     </div>
                     <div class="bg-white/10 rounded-full p-3">
@@ -64,6 +64,25 @@
                     </div>
                 </div>
             </div>
+            <!-- To Receive -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('To Receive') }}</p>
+                        <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ Number::currency($expectedAmount, config('app.currency'), config('app.locale')) }}</p>
+                        @if($overdueAmount > 0)
+                            <p class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                {{ __('Overdue') }}: {{ Number::currency($overdueAmount, config('app.currency'), config('app.locale')) }}
+                            </p>
+                        @endif
+                    </div>
+                    <div class="bg-amber-100 dark:bg-amber-900/20 rounded-full p-3">
+                        <svg class="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Income List -->
@@ -77,6 +96,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Title') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Amount') }}</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
@@ -84,7 +104,10 @@
                             @foreach($incomeRecords as $income)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $income->income_date->format('M d, Y') }}
+                                        {{ $income->effectiveDate()?->format('M d, Y') }}
+                                        @if($income->isExpected())
+                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Due') }}</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2">
@@ -113,8 +136,20 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold {{ $income->isReceived() ? 'text-green-600 dark:text-green-400' : 'text-slate-700 dark:text-slate-300' }}">
                                         {{ Number::currency($income->amount, config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        @php
+                                            $incomeBadge = [
+                                                'green' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+                                                'amber' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
+                                                'red' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+                                            ];
+                                        @endphp
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $incomeBadge[$income->getStatusColor()] }}">
+                                            {{ $income->getStatusLabel() }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end space-x-2">
@@ -127,6 +162,17 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                 </svg>
                                             </button>
+                                            @if($income->isExpected())
+                                                <button
+                                                    wire:click="markReceived({{ $income->id }})"
+                                                    wire:confirm="{{ __('Mark this income as received today?') }}"
+                                                    class="text-green-600 dark:text-green-400 hover:text-green-700"
+                                                    title="{{ __('Mark as received') }}">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                </button>
+                                            @endif
                                             <button
                                                 wire:click="openEditModal({{ $income->id }})"
                                                 class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
@@ -185,7 +231,29 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Date') }} <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Status') }} <span class="text-red-500">*</span></label>
+                        <select
+                            wire:model.live="income_status"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <option value="received">{{ __('Received') }}</option>
+                            <option value="expected">{{ __('Expected') }}</option>
+                        </select>
+                        @error('income_status') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                    </div>
+                    @if($income_status === 'expected')
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Due Date') }} <span class="text-red-500">*</span></label>
+                            <input
+                                type="date"
+                                wire:model="income_due_date"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            @error('income_due_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            {{ $income_status === 'expected' ? __('Reference Date') : __('Date') }} <span class="text-red-500">*</span>
+                        </label>
                         <input
                             type="date"
                             wire:model="income_date"
@@ -285,8 +353,28 @@
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Date') }}</label>
-                            <p class="text-slate-900 dark:text-white">{{ $viewingIncome->income_date->format('M d, Y') }}</p>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Status') }}</label>
+                            @php
+                                $viewBadge = [
+                                    'green' => 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+                                    'amber' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
+                                    'red' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+                                ];
+                            @endphp
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $viewBadge[$viewingIncome->getStatusColor()] }}">
+                                {{ $viewingIncome->getStatusLabel() }}
+                            </span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                {{ $viewingIncome->isExpected() ? __('Due Date') : __('Date') }}
+                            </label>
+                            <p class="text-slate-900 dark:text-white">{{ $viewingIncome->effectiveDate()?->format('M d, Y') }}</p>
+                            @if($viewingIncome->isExpected())
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ __('Reference Date') }}: {{ $viewingIncome->income_date->format('M d, Y') }}
+                                </p>
+                            @endif
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Location') }}</label>
@@ -304,7 +392,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Amount') }}</label>
-                            <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ Number::currency($viewingIncome->amount, config('app.currency'), config('app.locale')) }}</p>
+                            <p class="text-xl font-bold {{ $viewingIncome->isReceived() ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400' }}">{{ Number::currency($viewingIncome->amount, config('app.currency'), config('app.locale')) }}</p>
                         </div>
                     </div>
 

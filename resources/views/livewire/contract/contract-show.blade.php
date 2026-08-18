@@ -14,7 +14,7 @@
             $breadcrumbs[] = ['label' => __('Contracts'), 'url' => route('projects.contracts', $contract->project)];
         }
 
-        $breadcrumbs[] = ['label' => 'Contract ' . $contract->contract_number];
+        $breadcrumbs[] = ['label' => __('Contract') . ' ' . $contract->contract_number];
     @endphp
     <x-ui.breadcrumb :items="$breadcrumbs" />
 
@@ -24,7 +24,7 @@
             <div>
                 <div class="flex items-center space-x-3">
                     <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-                        Contract {{ $contract->contract_number }}
+                        {{ __('Contract') }} {{ $contract->contract_number }}
                     </h1>
                     @php
                         $statusColors = [
@@ -35,11 +35,11 @@
                             'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
                         ];
                         $statusLabels = [
-                            'active' => 'Active',
-                            'completed' => 'Completed',
-                            'partially_paid' => 'Partially Paid',
-                            'paid' => 'Paid',
-                            'cancelled' => 'Cancelled',
+                            'active' => __('Active'),
+                            'completed' => __('Completed'),
+                            'partially_paid' => __('Partially Paid'),
+                            'paid' => __('Paid'),
+                            'cancelled' => __('Cancelled'),
                         ];
                     @endphp
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$contract->status] ?? '' }}">
@@ -101,12 +101,12 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Subcontractor') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? 'Not specified' }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? __('Not specified') }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Contact') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
-                                {{ $contract->subcontractorEmployee?->name ?? 'Not specified' }}@if($contract->subcontractorEmployee?->title) ({{ $contract->subcontractorEmployee->title }})@endif
+                                {{ $contract->subcontractorEmployee?->name ?? __('Not specified') }}@if($contract->subcontractorEmployee?->title) ({{ $contract->subcontractorEmployee->title }})@endif
                             </dd>
                         </div>
                         <div>
@@ -123,7 +123,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->createdBy?->name ?? 'Unknown' }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->createdBy?->name ?? __('Unknown') }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Start Date') }}</dt>
@@ -517,7 +517,7 @@
                                             </p>
                                         @endif
                                         <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                                            by {{ $payment->createdBy?->name ?? 'Unknown' }}
+                                            {{ __('by') }} {{ $payment->createdBy?->name ?? __('Unknown') }}
                                         </p>
                                     </div>
                                     <x-ui.button

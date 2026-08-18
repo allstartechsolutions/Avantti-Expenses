@@ -76,6 +76,13 @@
                                             <x-ui.icon-button
                                                 variant="secondary"
                                                 size="sm"
+                                                icon="printer"
+                                                href="{{ route('measurements.pdf.view', $measurement->id) }}"
+                                                target="_blank"
+                                                title="{{ __('Print measurement report') }}" />
+                                            <x-ui.icon-button
+                                                variant="secondary"
+                                                size="sm"
                                                 icon="eye"
                                                 wire:click="openEditor({{ $measurement->id }})"
                                                 title="{{ $measurement->isDraft() ? __('Edit measurement') : __('View measurement') }}" />

@@ -1,16 +1,17 @@
 # Contract Payment Schedule (Cronograma Físico-Financeiro)
 
-**Status as of 2026-08-17:** Phases 1, 2, 2.5 and 4 are **merged to `main`** (squash PRs
-#1 and #2, main at `bed4f82`) — schema, cronograma card, approval-gated payment linking,
-undo of an approval, and retenção. Their migrations are in that merge; a deploy needs
-`php artisan migrate` and `view:clear`.
+**Status as of 2026-08-18:** Phases **1, 2, 2.5, 3, 4 and 5 are done and committed on
+`main`** — schema, cronograma card, approval-gated payment linking with undo, retenção,
+medição por produção (boletim with two-way %/valor entry, parcela link, payment), and
+payment-batch integration. Reviewed in 6 rounds; every migration is additive, so a deploy
+needs `php artisan migrate` and `view:clear`.
 
-**Phase 3 (medição por produção) is done and tested but uncommitted in the working tree**,
-together with the medição↔parcela link. No migration of its own — it uses the tables
-shipped in phase 1.
+Beyond the original plan, contract money is now dated in the reports (payment schedule and
+accounts payable, see `docs/payment-schedule.md`) and feeds the new company-wide report
+(`docs/company-financials.md`).
 
-**Next: `/code-review` on phase 3, then Phase 5 (payment batch integration)** — see
-"Next phases" below.
+**All seven phases are complete.** What is left is optional polish, tracked in
+`docs/wishlist.md` if it is ever wanted.
 
 ---
 
@@ -254,18 +255,63 @@ contract with a cronograma or medições must name what the money pays, the targ
 still be payable, and the amount may not exceed what it owes. So batch money can no
 longer bypass the cronograma and leave a parcela payable a second time.
 
+Both gates share one rule for money the cronograma does not cover:
+`Contract::getUnscheduledRemaining()` (see `docs/payment-schedule.md`), so a partial
+cronograma's remainder stays payable from the contract page *and* from a batch, capped at
+the same figure in both.
+
 **Schema limit worth knowing:** `payment_batch_items` is unique per
 (batch, contract), so a batch can settle at most **one** parcela or medição per contract.
 Paying two parcelas of the same contract needs two batches (or a payment on the contract
 page). Lifting it would mean dropping that unique index.
 
-### Phase 6 — PDFs (dompdf, existing pattern: `buildPdfData()`, DejaVu Sans, #3F5189)
-- Cronograma físico-financeiro (parcelas, previsto/realizado/saldo, delays, releases).
-- Boletim de medição per medição.
+### Phase 6 — DONE 2026-08-18
+Both PDFs follow the house pattern (dompdf, DejaVu Sans, #3F5189, logo + scope header).
 
-### Phase 7 — Translation sweep
-- Every phase already ships pt_BR keys with its views (project rule); do a final
-  audit for coverage/regressions when the feature completes.
+**Boletim de medição** — `ContractMeasurementPdfController` +
+`pdf/contract-measurement.blade.php`, routes `measurements/{measurement}/pdf[/view]`,
+printer button on every medição row. Carries the contract identification block, the
+boletim grid (cost code / previsto / % anterior / % atual / valor do período), the
+Bruto → Retenção (at the snapshotted %) → Líquido totals, the payment position
+(líquido / pago / saldo), notes, the created-and-approved trail, and **signature lines for
+both parties** — the reason the document is printed at all.
+
+**Cronograma físico-financeiro** — `ContractSchedulePdfController` +
+`pdf/contract-schedule.blade.php`, routes `contracts/{contract}/schedule/pdf[/view]`,
+PDF button in the cronograma card header. Lists the parcelas with previsto / realizado /
+saldo / status, the trigger with its date, delay lines, approval info, the totals with
+the unscheduled balance, and the retention position when the contract has one.
+
+Both render for every state (draft / approved / cancelled medição; contracts with and
+without parcelas or retention).
+
+### Phase 7 — DONE 2026-08-18
+Audit script: extract every `__('…')` / `@lang('…')` literal from `resources/views` and
+`app`, diff against `lang/pt_BR.json`.
+
+Result: **2.014 strings used, 0 missing translations** — every translated string in the
+codebase has a pt_BR key. Also verified: **0 placeholder mismatches** (a `:name` in a key
+that the translation drops would silently print the placeholder), 0 empty translations, and
+the 27 key/value pairs that are identical are legitimately identical in Portuguese
+(Menu, Status, Total, Bairro, brand names).
+
+Fixed — strings that were never wrapped in `__()` at all, so no key could have covered them:
+- `contract-show.blade.php`: the page title and breadcrumb ("Contract " + number), the
+  status label map (Active / Completed / Partially Paid / Paid / Cancelled), the
+  "Not specified" and "Unknown" fallbacks, and "by {user}" in the payment history.
+- `contract-change-orders.blade.php`: the "Unknown" fallback.
+- `ContractPayment::getPaymentMethodLabel()` returned English; some call sites wrapped it
+  in `__()` and some did not. It now translates at the source, which fixes every consumer
+  (a second `__()` on a translated string is a no-op).
+
+**180 orphan keys** (present in pt_BR.json, no literal call site) were deliberately left
+alone: call sites like `__($item->getPaymentMethodLabel())` and `__($status)` resolve keys
+at runtime, so a static scan cannot prove a key is dead. Deleting them risks silent
+regressions for no gain.
+
+Every sweep must end with the full-view compile check — a bad sweep once wrapped a PHP
+property (`$changeOrder->{{ __('amount') }}`) and 500'd three pages:
+`Blade::compileString()` over all views, then `php -l` on the output. **172 views, 0 errors.**
 
 ## 7. Process rules for this feature (user-set)
 
@@ -307,7 +353,23 @@ page). Lifting it would mean dropping that unique index.
     retention held, "Liberar Retenção" appears; releasing more than the outstanding
     silently caps at it, and the payment shows the orange "Liberação de Retenção" chip.
 
-## 9. Review history (5 review rounds, 39 findings fixed total)
+## 9. Review history (7 review rounds, 53 findings fixed total)
+
+- **Round 7 (income receivables, 4 findings — all fixed):** the project page's "Total
+  Income" card summed expected money into received, so it disagreed with the company
+  report; "This Month" counted an expected record's reference date; the list ordered by
+  `income_date` while showing `effectiveDate()`; the view modal ignored the new status.
+  Also reversed a judgment call it surfaced — `markReceived()` no longer clears
+  `due_date`, since destroying it on one click (no undo) loses what was expected for
+  nothing.
+- **Round 6 (phase 5, 8 findings — all fixed):** two were in code written to fix round 5 —
+  the `LogicException` retry re-threw because `update()` leaves the model dirty (needs
+  `refresh()` first), and batch rows could be created that no approval would ever accept
+  (a cronograma contract with nothing approved yet now says so and hides the amount box).
+  Plus: a stale saved target stayed invisible and unclearable; the medição line-ownership
+  flag was still lossy (indexes are tracked now, and choosing a medição says it replaced
+  the lines); `payTargets` missing from the save key merge; a typed batch amount being
+  overwritten; a stale `colspan`; and an N+1 on the new Pays cell.
 
 - **Round 5 (phase 3, 7 findings — 6 fixed, 1 became phase 5):**
   - *Fixed:* `openPayableItems()` could report more open money than the contract owed
