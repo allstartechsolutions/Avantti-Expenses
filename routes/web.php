@@ -31,6 +31,7 @@ use App\Livewire\Project\ProjectFinancialReport;
 use App\Livewire\JobSite\JobSiteFinancialReport;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteContracts;
+use App\Livewire\JobSite\JobSiteIncome;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
@@ -176,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
     // Job Site section routes (new navigation structure)
     Route::get('job-sites/{jobSite}', JobSiteOverview::class)->name('jobsites.overview');
     Route::get('job-sites/{jobSite}/expenses', JobSiteShow::class)->name('jobsites.expenses');
+    Route::get('job-sites/{jobSite}/income', JobSiteIncome::class)->name('jobsites.income');
     Route::get('job-sites/{jobSite}/change-orders', JobSiteShow::class)->name('jobsites.change-orders');
     Route::get('job-sites/{jobSite}/contracts', JobSiteContracts::class)->name('jobsites.contracts');
     Route::get('job-sites/{jobSite}/purchase-orders', JobSiteShow::class)->name('jobsites.purchase-orders');

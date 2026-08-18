@@ -43,6 +43,7 @@ When enhancing a feature (e.g., adding a new filter, a new column, export functi
 | Daily Reports | `ProjectDailyReports` | `JobSiteShow` (daily reports tab) |
 | Purchase Orders | `ProjectPurchaseOrders` | `JobSiteShow` (purchase orders tab) |
 | Contracts | `ProjectContracts` | `JobSiteContracts` |
+| Income | `ProjectIncome` | `JobSiteIncome` |
 | Budget | `ProjectBudget` | `JobSiteShow` (budget tab) |
 | Delete | `ProjectIndex`, `ProjectOverview` | `ProjectJobSites`, `JobSiteOverview` |
 

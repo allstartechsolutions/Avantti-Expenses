@@ -7,6 +7,33 @@
 - Tailwind CSS
 - MySQL (as configured)
 
+## Design Standard (applies to EVERYTHING)
+
+**Never ship the bare minimum.** This is a commercial product sold to real companies; every
+screen is judged by a paying user. When a request could be satisfied cheaply or properly,
+build it properly and say what was built.
+
+Concretely, for every feature:
+1. **Full-page modals for real work** — use `<x-ui.modal maxWidth="full">` for forms and
+   detail views that carry more than a couple of fields. Sticky header (title + context +
+   close), a spacious body on a `max-w-7xl` centre column, sticky footer with the actions.
+   Small dialogs are for confirmations, not for data entry.
+2. **Detail views show EVERYTHING the record knows** — every stored field, every derived
+   figure, every related record (splits, payments, history, attachments), plus audit facts
+   (created by / created at / last updated). If the database knows it, the detail view shows
+   it. Never a subset.
+3. **Show the numbers, not just the inputs** — running totals, remainders, percentages,
+   progress bars. The user should never need a calculator to check the screen.
+4. **Bulk and shortcut actions where a user would repeat themselves** — select all, split
+   evenly, take remainder, and equivalents.
+5. **Empty, partial and error states are designed too** — say what is missing and what to do
+   about it, never a blank panel.
+6. **Both themes, both locales, every screen size** — dark mode, `__()` on every string with
+   the pt_BR translation added in the same change, and no horizontal scroll on mobile.
+7. **Consistency beats novelty** — reuse the existing components (`x-ui.*`) and the layout
+   patterns already in the codebase; when a level (project / job site) gains a UI
+   improvement, the other level gains it too.
+
 ## Critical Rules
 1. **PRODUCTION CODE ONLY** - Treat all code as production-ready
 2. **NO FRESH MIGRATIONS** - NEVER use `migrate:fresh` or `migrate:refresh`. Only use `php artisan migrate` for incremental changes

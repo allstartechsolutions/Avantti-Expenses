@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 class Income extends Model
 {
@@ -35,6 +37,31 @@ class Income extends Model
 
         static::deleting(function ($income) {
             $income->attachments->each->delete();
+        });
+
+        // The distribution can never describe more money than exists, and it
+        // only makes sense on project-level income. Both rules live here so
+        // no call site can route around them.
+        static::updating(function (Income $income) {
+            if (! $income->isDirty('amount') && ! $income->isDirty('job_site_id')) {
+                return;
+            }
+
+            $distributed = (int) $income->distributions()->sum('amount');
+
+            if ($distributed <= 0) {
+                return;
+            }
+
+            if ($income->isDirty('job_site_id') && $income->getAttributes()['job_site_id'] !== null) {
+                throw new \DomainException(__('This income is distributed across locations. Remove the distribution before assigning it to a single location.'));
+            }
+
+            if ((int) $income->getAttributes()['amount'] < $distributed) {
+                throw new \DomainException(__('The amount cannot be lower than the :total already distributed across locations. Adjust the distribution first.', [
+                    'total' => \Illuminate\Support\Number::currency($distributed / 100, config('app.currency'), config('app.locale')),
+                ]));
+            }
         });
     }
 
@@ -133,6 +160,14 @@ class Income extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * The job-site shares of this income. Only project-level income has them.
+     */
+    public function distributions(): HasMany
+    {
+        return $this->hasMany(IncomeDistribution::class);
+    }
+
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable')->latest();
@@ -145,5 +180,72 @@ class Income extends Model
     public function isProjectLevel(): bool
     {
         return $this->job_site_id === null;
+    }
+
+    // =========================================================================
+    // DISTRIBUTION — project-level money shared across the project's job sites
+    // =========================================================================
+
+    /** How much of this income has been assigned to job sites. */
+    public function distributedTotal(): float
+    {
+        $cents = $this->relationLoaded('distributions')
+            ? $this->distributions->sum(fn ($d) => round($d->amount * 100))
+            : $this->distributions()->sum('amount');
+
+        return round($cents / 100, 2);
+    }
+
+    /** What is still project-level: the part no job site has claimed. */
+    public function undistributedAmount(): float
+    {
+        return round($this->amount - $this->distributedTotal(), 2);
+    }
+
+    public function isDistributed(): bool
+    {
+        return $this->distributedTotal() > 0;
+    }
+
+    /**
+     * Replace the whole distribution in one transaction.
+     *
+     * @param  array<int, float>  $shares  job_site_id => amount, zero/blank drops the row
+     */
+    public function syncDistributions(array $shares): void
+    {
+        $shares = collect($shares)
+            ->map(fn ($amount) => round((float) $amount, 2))
+            ->filter(fn ($amount) => $amount > 0);
+
+        // Clearing is always allowed — it is how an income stops being split.
+        // Only handing money to a job site needs the income to be
+        // project-level, so the check sits after the empty case.
+        if ($shares->isNotEmpty() && ! $this->isProjectLevel()) {
+            throw new \DomainException(__('Only income received at the project level can be distributed.'));
+        }
+
+        $validJobSiteIds = $this->project->jobSites()->pluck('id');
+
+        if ($shares->keys()->diff($validJobSiteIds)->isNotEmpty()) {
+            throw new \DomainException(__('The selected location is invalid.'));
+        }
+
+        if (round($shares->sum(), 2) > $this->amount) {
+            throw new \DomainException(__('The distribution cannot exceed the income amount.'));
+        }
+
+        DB::transaction(function () use ($shares) {
+            $this->distributions()->whereNotIn('job_site_id', $shares->keys()->all() ?: [0])->delete();
+
+            foreach ($shares as $jobSiteId => $amount) {
+                $this->distributions()->updateOrCreate(
+                    ['job_site_id' => $jobSiteId],
+                    ['amount' => $amount],
+                );
+            }
+        });
+
+        $this->unsetRelation('distributions');
     }
 }

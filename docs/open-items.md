@@ -1,59 +1,46 @@
 # Open Items — handoff for the next session
 
-Written 2026-08-18. Everything below is either **not started** or **known but deliberately
+Written 2026-08-18, updated the same day after the distribution work. Everything below is
+either **done and awaiting commit**, **not started**, or **known but deliberately
 deferred**. Finished work is documented in its own file (see the index at the bottom).
 
 ---
 
 ## 1. State of the repo
 
-- `main` at `f726ea8`; working tree clean. The contract payment schedule feature is
-  complete through **all seven phases** (`docs/contract-payment-schedule-plan.md`).
-- **Deploy needs:** `php artisan migrate` (phase-4 audit enum + the incomes
-  status/due-date migration) and `php artisan view:clear`.
+- `main` at `5be0c44`. The contract payment schedule feature is complete through **all
+  seven phases** (`docs/contract-payment-schedule-plan.md`).
+- **Uncommitted in the working tree:** income distribution + the job site income page
+  (section 2 below).
+- **Deploy needs:** `php artisan migrate` (phase-4 audit enum, the incomes
+  status/due-date migration, and `income_distributions`) and `php artisan view:clear`.
 - **Process rules (user-set):** never commit, never merge, never push — the user does all
   three. Leave finished work in the working tree and report it.
 
-## 2. Next feature — income distribution across job sites
+## 2. Income distribution across job sites — DONE (2026-08-18)
 
-**The requirement (user, 2026-08-18):** income received at **project level** must be
-distributable to that project's **job sites**. Income received **directly on a job site**
-stays as it is — no distribution involved.
+Built and verified; see `docs/income-module.md` and
+`docs/changelog-2026-08-18-income-distribution.md`. Decisions taken with the user:
 
-Today `incomes` has a single nullable `job_site_id`: null = project-level, set = that job
-site. There is no way to say "this 50.000 deposit covers 30.000 of Lot A and 20.000 of
-Lot B".
+| Question | Decision |
+|---|---|
+| Amounts or percentages | **Both**, per row, like the cronograma. Only the amount is stored. |
+| Partial distribution | **Allowed** — the remainder stays project-level. |
+| Expected income | **Distributable** — the split describes the money either way. |
+| Amount lowered below the distributed total | **Blocked**, with a form error. Nothing is rescaled silently. |
+| Distributed income on the project list | **One row**, with the split shown under the location badge and in the view modal. |
+| Where the split is edited | **Inside the income form** (full-page modal), not a separate step — decided together with the amount. |
+| Detail views | **Full page, every field the record holds** — see the Design Standard added to `CLAUDE.md`. |
 
-### Proposed shape (to confirm before building)
+The job-site income page (income module phase 2) shipped with it, including the read-only
+**Project share** row.
 
-- New table `income_distributions`: `income_id`, `job_site_id`, `amount` (cents),
-  timestamps. One row per job site receiving a share.
-- The income keeps its own amount; the distribution rows explain how it is split. The
-  undistributed remainder stays project-level, which makes partial distribution natural
-  (and lets a deposit be allocated as the work is assigned).
-- Guard: `Σ distributions ≤ income.amount`, enforced in the model, not just the form.
-- UI on the project income page: a "Distribuir" action on project-level rows opening a
-  grid of the project's job sites with amount (and maybe %) per row, live remainder,
-  one-transaction save — the same shape as the cronograma grid editor.
-- Reporting: a job-site-scoped query must count each job site's **share**, while the
-  project-scoped query counts the income **once**. `CompanyFinancialService::applyScope()`
-  and the project/job-site financial reports are the call sites to change.
-
-### Questions to settle first
-
-1. **Amounts or percentages** in the distribution grid (or both, like the cronograma)?
-2. Must a distribution be **complete** before it counts, or is a partial split fine with
-   the remainder staying project-level? (Proposal: partial is fine.)
-3. Can **expected** income (status `expected`) be distributed, or only received money?
-   (Proposal: yes — the distribution describes the money regardless of arrival.)
-4. What happens to distributions when the income **amount is reduced** below the
-   distributed total — block the edit, or scale the rows?
-5. Should a distributed income still appear on the **project** income list as one row
-   (proposal: yes, with a "distributed" badge and the split visible in the view modal)?
+**Still in the working tree, uncommitted** — the user commits, merges and pushes.
+Deploy needs `php artisan migrate` + `php artisan view:clear`.
 
 ## 3. Engineering items still open
 
-- **Code review of phases 6 and 7** — the boletim/cronograma PDFs and the translation
+- **Code review of phases 6 and 7, and of the income distribution work** — the boletim/cronograma PDFs and the translation
   sweep are the only work that never went through one. The sweep touched
   `ContractPayment::getPaymentMethodLabel()`, which the invoice and sales-tax views also
   render.
@@ -63,9 +50,6 @@ Lot B".
 - **One batch row per contract** — `payment_batch_items` is unique per
   (batch, contract), so a batch settles at most one parcela or medição per contract.
   Lifting it means dropping that unique index.
-- **Income module phase 2** — the job-site income page was never built
-  (`JobSite::income()` already exists). Worth doing **with** the distribution work above,
-  since both touch the same page.
 - **`fputcsv()` PHP 8.4 deprecation** — every report CSV export omits the explicit
   `$escape` argument, including the new Company Financials one. One line per call site;
   four call sites.
@@ -97,3 +81,4 @@ Lot B".
 | Income module, incl. received/expected | `docs/income-module.md` |
 | Translation system + sweep safety rule | `docs/translation-system.md` |
 | What shipped 2026-08-17/18 | `docs/changelog-2026-08-18.md` |
+| Income distribution + job site income page | `docs/changelog-2026-08-18-income-distribution.md` |

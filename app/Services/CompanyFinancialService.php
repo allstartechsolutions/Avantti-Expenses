@@ -131,8 +131,14 @@ class CompanyFinancialService
         $rows = [];
 
         $incomes = Income::query()
-            ->with(['project:id,project_name,client_id', 'jobSite:id,job_site_name'])
-            ->tap(fn ($q) => $this->applyScope($q))
+            ->with(['project:id,project_name,client_id', 'jobSite:id,job_site_name', 'distributions.jobSite:id,job_site_name'])
+            ->tap(fn ($q) => $this->applyScope($q, hasJobSite: false))
+            // Under a job-site scope, project-level money reaches the job site
+            // through its distribution, so both routes have to be matched.
+            ->when($this->jobSiteId, fn ($q) => $q->where(function ($w) {
+                $w->where('job_site_id', $this->jobSiteId)
+                    ->orWhereHas('distributions', fn ($d) => $d->where('job_site_id', $this->jobSiteId));
+            }))
             ->get();
 
         foreach ($incomes as $income) {
@@ -144,20 +150,36 @@ class CompanyFinancialService
                 continue;
             }
 
+            $amount = (float) $income->amount;
+            $jobSiteName = $income->jobSite?->job_site_name;
+
+            // A shared deposit counts here only for this job site's share.
+            // The project scope still counts the income once, whole.
+            if ($this->jobSiteId && $income->isProjectLevel()) {
+                $share = $income->distributions->firstWhere('job_site_id', $this->jobSiteId);
+
+                if (! $share) {
+                    continue;
+                }
+
+                $amount = (float) $share->amount;
+                $jobSiteName = $share->jobSite?->job_site_name;
+            }
+
             $rows[] = $this->row([
                 'date' => $date,
                 'direction' => 'in',
                 'source' => 'income',
                 'party' => $income->project?->client?->company_name,
                 'project' => $income->project?->project_name,
-                'job_site' => $income->jobSite?->job_site_name,
+                'job_site' => $jobSiteName,
                 'description' => $income->title ?: __('Income'),
                 'status' => match (true) {
                     $income->isReceived() => 'settled',
                     $income->isOverdue() => 'overdue',
                     default => 'open',
                 },
-                'amount' => (float) $income->amount,
+                'amount' => $amount,
             ]);
         }
 

@@ -33,6 +33,10 @@ coming in.
 - **Income** records: `status = received` counts as cash on `income_date`; `status =
   expected` is a receivable on its `due_date`. This is what lets receivables exist
   **without** an invoice (see `income-module.md`).
+  Under a **job-site scope** the query also matches project-level income distributed to
+  that job site, and counts **only that job site's share**. The project and client scopes
+  count the income **once, whole** — so a project's job sites can sum to less than the
+  project total, by exactly the undistributed remainder.
 - **Invoice payments** — `completed` / `partially_refunded`, net of refunds, by payment date.
 - **Open invoices** — balance due on the invoice due date. Drafts are excluded.
 
