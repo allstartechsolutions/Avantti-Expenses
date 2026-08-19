@@ -1,144 +1,94 @@
 # Header Search
 
-## Overview
+The global search box in the desktop top header. It finds **projects** and **job sites**
+and jumps straight to their overview pages.
 
-The header search provides a quick way to find and navigate to projects from any page in the application. The search is optimized for performance to handle thousands of projects without slowing down page loads.
+- Component: `app/Livewire/Shared/HeaderSearch.php`
+- View: `resources/views/livewire/shared/header-search.blade.php`
+- Mounted from: `resources/views/components/layouts/inc/header.blade.php`
 
-## Key Features
+---
 
-- **Debounced Search**: Only queries the database after 300ms of no typing
-- **Minimum Characters**: Requires at least 2 characters before searching
-- **Limited Results**: Returns maximum of 8 projects to keep the dropdown manageable
-- **Lazy Loading**: No database queries on page load - only when user actively searches
-- **Indexed Column**: The `project_name` column is indexed for fast searches
+## Behaviour
 
-## How It Works
+**Nothing is queried until someone searches.** `HeaderSearch::term()` returns `null` while
+the trimmed term is shorter than `MIN_LENGTH` (2), and every computed property short-circuits
+on it. A normal page load issues **zero** queries for the search box; the first query only
+runs on the debounced (300 ms) Livewire round trip once the second character is typed.
 
-1. User types in the search field
-2. After 2 characters and 300ms pause, a Livewire request is made
-3. Database is queried using `LIKE %search%` on `project_name`
-4. Results show project name and address
-5. Clicking a result navigates to the project detail page
+Verified with the query log:
 
-## Files
+| State | Queries |
+|---|---|
+| Page load, empty box | 0 |
+| 1 character typed | 0 |
+| 2+ characters typed | 3 (projects, their clients, job sites — plus their projects when matched) |
 
-### Livewire Component
+## What it matches
 
-**Location**: `app/Livewire/Shared/HeaderSearch.php`
+Each group returns at most `PER_GROUP` (5) rows, ordered by name.
 
-```php
-namespace App\Livewire\Shared;
+| Group | Matched against |
+|---|---|
+| Projects | `project_name`, `street`, `city`, `contact_person`, client `company_name` |
+| Job sites | `job_site_name`, `street`, `city`, `contact_person`, parent project `project_name` |
 
-class HeaderSearch extends Component
-{
-    public string $search = '';
-    public bool $showResults = false;
+`%` and `_` in the term are escaped before they reach the `LIKE`, so a user typing a wildcard
+searches for that literal character instead of matching everything.
 
-    // Computed property - only queries when accessed
-    public function getResultsProperty()
-    {
-        if (strlen($this->search) < 2) {
-            return collect();
-        }
+Relations are eager-loaded (`client:id,company_name`, `project:id,project_name`) and the
+selects are narrowed to the columns the dropdown renders, so a search is a fixed small number
+of queries regardless of how many rows come back.
 
-        return Project::where('project_name', 'like', '%' . $this->search . '%')
-            ->select('id', 'project_name', 'street', 'city', 'state')
-            ->orderBy('project_name')
-            ->limit(8)
-            ->get();
-    }
-}
-```
+## The dropdown
 
-### View
+- Grouped by entity, with a count next to each group heading.
+- Each row: status dot, name, parent (client for a project, project for a job site), address,
+  and the status label.
+- **Keyboard**: `↑`/`↓` browse, `↵` opens the highlighted row, `Esc` closes. The highlight is
+  pure Alpine over the rendered anchors, so browsing costs no server round trips.
+- **Loading**: a spinner replaces the clear button while the debounced request is in flight.
+- **Empty state**: names the term that failed and says what the search actually covers, with
+  a link to browse all projects.
+- **Below minimum length**: tells the user how many characters are needed.
+- `x-cloak` keeps the panel hidden until Alpine takes over, so there is no flash on load.
+- Right-aligned and capped at `calc(100vw - 3rem)` so it cannot push the page sideways.
 
-**Location**: `resources/views/livewire/shared/header-search.blade.php`
+## Terminology
 
-Key features:
-- Uses `wire:model.live.debounce.300ms` for debounced input
-- Alpine.js `@click.away` to close dropdown when clicking outside
-- Clear button (X) to reset search
-- Smooth transitions for dropdown appearance
+Group labels use `__('Projects')` and `__('Job Sites')`, so they follow whatever each install
+calls those levels. In the current English file that renders as **Job Sites** and **Lots**;
+in pt_BR as **Projetos** and **Locais**. Strings that name the entities have their own
+per-locale wording in `lang/en.json` and `lang/pt_BR.json` under `_header_search`.
 
-### Header Integration
+## Known gaps
 
-**Location**: `resources/views/components/layouts/inc/header.blade.php`
+- **Desktop only.** `inc/header.blade.php` is `hidden lg:block`; the mobile header has no
+  search. Adding it means a full-width overlay panel rather than a 384 px dropdown.
+- **Not permission-scoped.** Every signed-in user searches every project and job site. See
+  `docs/permissions-notes.md` → N9, which rides on the N4 decision about per-project
+  confinement.
+- **"See all matches"** goes to the projects index filtered by the term. There is no combined
+  results page covering job sites as well.
 
-```blade
-<!-- Search Projects -->
-<livewire:shared.header-search />
-```
+---
 
-## Performance Considerations
+## Tuning knobs
 
-### Why This Approach is Efficient
+| What | Where |
+|---|---|
+| Minimum characters before any query | `HeaderSearch::MIN_LENGTH` |
+| Rows per group | `HeaderSearch::PER_GROUP` |
+| Debounce | `wire:model.live.debounce.300ms` in the view |
+| Fields matched | the `where(...)` closure in `projects()` / `jobSites()` |
 
-1. **No Preloading**: Projects are never loaded until user searches
-2. **Debounce**: Prevents excessive queries while typing
-3. **Minimum Characters**: Avoids broad queries that return too many results
-4. **Result Limit**: Only 8 results are fetched, regardless of total matches
-5. **Database Index**: The `project_name` column has an index for fast lookups
+## A note on indexes
 
-### Database Index
+`projects.project_name` carries an index (`projects_project_name_index`, added in the projects
+migration); `job_sites.job_site_name` does not. Neither matters much here — the search uses
+`LIKE '%term%'`, and a leading wildcard cannot use a B-tree index, so both groups are a table
+scan either way. The scan is bounded by `LIMIT 5` and the narrow column list, which is what
+keeps it cheap at the scale these installs run at.
 
-The index was created in the projects migration:
-
-```php
-// database/migrations/2025_12_26_152439_create_projects_table.php
-$table->index('project_name');
-```
-
-## Search Results Display
-
-Each result shows:
-- **Project Name**: Bold, primary text
-- **Address**: Street, City, State in smaller secondary text
-
-Example result:
-```
-Johnson Residence
-123 Main St, Miami, FL
-```
-
-## Extending the Search
-
-### Adding More Searchable Fields
-
-To search by additional fields (e.g., client name, city):
-
-```php
-// In HeaderSearch.php getResultsProperty()
-return Project::where('project_name', 'like', '%' . $this->search . '%')
-    ->orWhere('city', 'like', '%' . $this->search . '%')
-    ->orWhereHas('client', function ($query) {
-        $query->where('name', 'like', '%' . $this->search . '%');
-    })
-    ->select('id', 'project_name', 'street', 'city', 'state')
-    ->orderBy('project_name')
-    ->limit(8)
-    ->get();
-```
-
-### Changing Result Limit
-
-Modify the `limit()` value in `getResultsProperty()`:
-
-```php
-->limit(10)  // Show 10 results instead of 8
-```
-
-### Adjusting Debounce Time
-
-In the view, modify the debounce value:
-
-```blade
-wire:model.live.debounce.500ms="search"  <!-- 500ms instead of 300ms -->
-```
-
-## Usage
-
-1. Click on the search field in the header
-2. Type at least 2 characters of a project name
-3. Wait briefly for results to appear
-4. Click on a project to navigate to its detail page
-5. Click the X button or click outside to close the dropdown
+If an install ever grows to where that scan is felt, the fix is a FULLTEXT index and
+`MATCH ... AGAINST` (or a trigram index) rather than more B-tree indexes on the same columns.

@@ -5,7 +5,9 @@
 (`docs/requisition-module.md`). The round can be raised, scoped, have its vendors invited,
 be **e-mailed to the vendors from the app** with the scope as a PDF, have **each vendor's
 proposal keyed in** with equalized totals, be **compared on the map**, and have every
-**round of negotiation recorded**. **The award is phase 6.**
+**round of negotiation recorded**, be **awarded with its reason on the record**, and be
+**turned into the purchase orders or contracts that get paid** — with the agreed prices
+taught back to the catalog. **Only phase 9, the review, remains.**
 
 ```
 requisição ──► COTAÇÃO ──► PROPOSTAS ──► MAPA ──► NEGOCIAÇÃO ──► ADJUDICAÇÃO ──► PEDIDO / CONTRATO
@@ -24,8 +26,8 @@ standalone), `quotation_number` (`COT-0001`), `type` (`material` | `service`), `
 `converted_type` + `converted_id`, `created_by`, timestamps.
 
 Status: `draft → sent → comparing → negotiating → awarded → converted`, plus `cancelled`.
-Phase 2 drives `draft → sent` and `cancelled`; the award columns are written by phase 6 and
-the conversion columns by phase 7.
+Phase 2 drives `draft → sent` and `cancelled`; the award columns are written by the award
+(phase 6) and the conversion columns by the conversion (phase 7). Both are built.
 
 ### `quotation_items` — the shared scope
 `quotation_id`, `purchase_requisition_item_id` (nullable — where the line came from),
@@ -295,7 +297,7 @@ says something.
 |---|---|
 | Lowest Equalized Offer | the benchmark total, and whose it is |
 | Saving vs the Highest | measured **inside the comparable set** — with only one comparable offer it says so instead of inventing a saving |
-| If Split Line by Line | what the round would cost taking each line's best price, and how much below the single winner that is (phase 6 decides whether to split) |
+| If Split Line by Line | what the round would cost taking each line's best price, and how much below the single winner that is — the award screen is where the split is actually chosen |
 | Against the Budget | the benchmark against the linked budget item, red when over — a warning, never a block |
 
 **Warnings that must not be buried** sit above the grid: fewer than two proposals (an award

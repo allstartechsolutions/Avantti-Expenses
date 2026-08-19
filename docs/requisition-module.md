@@ -1,8 +1,8 @@
 # Purchase Requisitions (Solicitação de Compra) — phase 1 of the quotation chain
 
-**Shipped 2026-08-18.** Phase 1 of `docs/quotation-module-plan.md`. Nothing else in the
-chain is built yet: a requisition can be raised, reviewed and approved, and it then waits
-for the quotation module (phase 2).
+**Shipped 2026-08-18.** Phase 1 of `docs/quotation-module-plan.md`. **The rest of the chain
+is built too** — see `docs/quotation-module.md` — so an approved requisition here is quoted,
+awarded and turned into a purchase order or contract without leaving the app.
 
 The chain it starts:
 
@@ -114,14 +114,27 @@ cancel, delete.
 
 ---
 
-## What phase 2 needs from this
+## How it joins the rest of the chain (built)
 
-- `quotations.purchase_requisition_id` points back here; a requisition may be quoted by more
-  than one quotation (split by vendor speciality).
-- The quotation copies `purchase_requisition_items` into `quotation_items`, so the vendors
-  price exactly the scope the site asked for.
-- Once a quotation references it, the requisition moves to `quoted`, and to `fulfilled` when
-  the award is converted.
-- **Vendors do not type their own prices.** The RFQ (cotação request) goes out by e-mail
-  from the system, and procurement keys in what comes back, attaching the vendor's PDF to
+- **`quotations.purchase_requisition_id` points back here**, and a requisition may be quoted
+  by **more than one round** — the steel to the steel merchants, the concrete to the plants.
+  The detail view says which case it is: **Quote it** when no round exists, **Raise Another
+  Round** (secondary, with an explanation) once one does, and **Quote it** again if every
+  round was cancelled. The list carries a "2 rounds" note on the row.
+- **The round copies `purchase_requisition_items` into `quotation_items`**, keeping
+  `purchase_requisition_item_id` on each line, so the vendors price exactly the scope the
+  site asked for and the trail runs both ways.
+- **The status follows the chain automatically** — `PurchaseRequisition::refreshChainStatus()`
+  sets `quoted` while a live round points at it, `fulfilled` once a round is converted into
+  a purchase order or contract, and back to `approved` if every round is cancelled or
+  deleted. Only that derived part of the lifecycle is touched.
+- **Vendors do not type their own prices.** The RFQ goes out by e-mail from the system with
+  a priceable PDF, and procurement keys in what comes back, attaching the vendor's PDF to
   their proposal row.
+
+## Still open on this page
+
+- A requisition **being quoted cannot be cancelled** (`canBeCancelled()` stops at
+  `approved`); the round has to be cancelled first — `docs/review-and-improvements.md` Q22.
+- **No duplicate action** yet, which is the honest alternative to bypassing approval — the
+  owner asked for it, pending the N1 decision in `docs/permissions-notes.md`.

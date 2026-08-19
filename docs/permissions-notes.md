@@ -62,8 +62,9 @@ per install. That is an install-level switch, **not** a per-user permission.
 | Key in a proposal, record a negotiation round | any signed-in user |
 | Cancel a round | admin or manager |
 | Delete a round, remove a proposal | admin (delete) / admin or manager (remove) |
-| Award a round *(phase 6, not built)* | **decision needed** |
-| Convert to a PO or contract *(phase 7, not built)* | **decision needed** |
+| **Award a round** (built 2026-08-19) | **admin or manager**, no value threshold — the assumption below was taken as the default |
+| **Revoke an award** | admin or manager |
+| **Convert to a PO or contract** (built 2026-08-19) | admin or manager |
 
 The intent behind the split: **approving is a control, buying is daily work.** Procurement
 should not need an admin to key in a price or haggle; they should need one to say a purchase
@@ -119,16 +120,20 @@ different people, often with a value threshold below which it does not matter.
 **Options:** block self-approval outright; block it above a value; allow it but record it
 plainly on the detail view and in the history ("approved by the person who raised it").
 
-### N3 — Award and conversion authority (phase 6/7, before they are built)
-*Opened 2026-08-19. Status: open — needs a decision before phase 6.*
+### N3 — Award and conversion authority
+*Opened 2026-08-19. Status: **built on the assumption**, still open for a decision.*
 
-Currently assumed **admin or manager, no value thresholds** (agreed earlier). Worth
-revisiting now that the chain is real, because the award is where money is committed:
+The award and the conversion shipped as **admin or manager, no value thresholds**, which was
+the stated assumption. Both are guarded server-side and neither action is offered to an
+employee on any screen. Worth revisiting now that money is genuinely committed by them:
 
 - Should awarding above a value need an admin specifically?
 - Should converting to a contract (which creates a payment schedule) be tighter than
   converting to a PO (which creates an expense on approval)?
 - Should the person who keyed in the proposals be allowed to award them?
+
+Changing any of these is now a change to working code rather than a design decision, so it
+belongs in the module's review phase (`docs/review-and-improvements.md`).
 
 ### N4 — No per-project scoping
 *Opened 2026-08-19 (from the audit). Status: open.*
@@ -191,6 +196,18 @@ byte through the application, which forfeits the reason for using R2 at all.
 
 **Related:** N5 — the PDF controllers are auth-only across the app. Whatever is decided there
 should take the same view of the repository's links.
+
+### N9 — The header search is not scoped
+*Opened 2026-08-19. Status: open.*
+
+The global search in the top header (`app/Livewire/Shared/HeaderSearch.php`) queries every
+project and job site in the install, with no filter beyond the search term. It is a direct
+consequence of N4 rather than a separate problem: while everyone can open every project,
+searching everything is consistent. The moment per-project confinement lands, this component
+has to be scoped in the same pass, otherwise it becomes the easiest way to enumerate records
+a user is not meant to see — names, clients and addresses are all shown in the dropdown.
+
+**Question for the owner:** none of its own. It rides on the answer to N4.
 
 ---
 

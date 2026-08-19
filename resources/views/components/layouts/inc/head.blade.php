@@ -25,6 +25,15 @@
     </script>
     @endif
 
+    <!-- Restore the saved sidebar state before first paint to avoid a flash of the wrong width -->
+    <script>
+        try {
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed-init');
+            }
+        } catch (e) {}
+    </script>
+
     <style>
         [x-cloak] { display: none !important; }
         .sidebar-collapsed {
@@ -36,6 +45,16 @@
         @media (max-width: 1024px) {
             .sidebar-collapsed, .sidebar-expanded {
                 width: 260px;
+            }
+        }
+
+        /* Pre-Alpine paint only: removed by x-init as soon as Alpine takes over */
+        @media (min-width: 1024px) {
+            html.sidebar-collapsed-init .app-sidebar {
+                width: 70px;
+            }
+            html.sidebar-collapsed-init .app-content {
+                margin-left: 70px;
             }
         }
 

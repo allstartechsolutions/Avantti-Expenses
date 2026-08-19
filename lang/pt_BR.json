@@ -2938,5 +2938,17 @@
     "Items:": "Itens:",
     "Freight:": "Frete:",
     "Tax:": "Impostos:",
-    "Discount:": "Desconto:"
+    "Discount:": "Desconto:",
+
+    "_header_search": "========== Busca do Cabeçalho ==========",
+    "Search projects and job sites": "Buscar projetos e locais",
+    "Search projects or job sites...": "Buscar projetos ou locais...",
+    "Clear search": "Limpar busca",
+    "On Hold": "Em Espera",
+    "↑↓ to browse · ↵ to open · Esc to close": "↑↓ navegar · ↵ abrir · Esc fechar",
+    "See all matches": "Ver todos os resultados",
+    "No matches for \":term\"": "Nenhum resultado para \":term\"",
+    "Searches project and job site names, clients, contacts and addresses.": "Busca nomes de projetos e locais, clientes, contatos e endereços.",
+    "Browse all projects": "Ver todos os projetos",
+    "Type at least :count characters to search.": "Digite ao menos :count caracteres para buscar."
 }

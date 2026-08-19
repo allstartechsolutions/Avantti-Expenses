@@ -1614,5 +1614,17 @@
     "e.g., Standard Payment Terms": "e.g., Standard Payment Terms",
     "e.g., TX, CA, NY": "e.g., TX, CA, NY",
     "or drag and drop": "or drag and drop",
-    "vs last month": "vs last month"
+    "vs last month": "vs last month",
+
+    "_header_search": "========== Header Search ==========",
+    "Search projects and job sites": "Search job sites and lots",
+    "Search projects or job sites...": "Search job sites or lots...",
+    "Clear search": "Clear search",
+    "On Hold": "On Hold",
+    "↑↓ to browse · ↵ to open · Esc to close": "↑↓ to browse · ↵ to open · Esc to close",
+    "See all matches": "See all matches",
+    "No matches for \":term\"": "No matches for \":term\"",
+    "Searches project and job site names, clients, contacts and addresses.": "Searches job site and lot names, clients, contacts and addresses.",
+    "Browse all projects": "Browse all job sites",
+    "Type at least :count characters to search.": "Type at least :count characters to search."
 }

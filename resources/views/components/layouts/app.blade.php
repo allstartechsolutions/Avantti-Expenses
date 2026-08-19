@@ -3,7 +3,7 @@
 @include('components.layouts.inc.head')
 <body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col" x-data="{
     sidebarOpen: false,
-    sidebarCollapsed: false,
+    sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     profileDropdownOpen: false,
     activeSubmenu: @js(
         request()->routeIs('company.*') || request()->routeIs('users.*')
@@ -15,6 +15,12 @@
                     : null))
     ),
     welcomeSectionVisible: localStorage.getItem('welcomeSectionDismissed') !== 'true',
+    // Desktop rail: collapsed, and not the mobile drawer.
+    get rail() { return this.sidebarCollapsed && ! this.sidebarOpen },
+    toggleSidebar() {
+        this.sidebarCollapsed = !this.sidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed ? 'true' : 'false');
+    },
     toggleSubmenu(menu) {
         this.activeSubmenu = this.activeSubmenu === menu ? null : menu;
     },
@@ -22,7 +28,7 @@
         this.welcomeSectionVisible = false;
         localStorage.setItem('welcomeSectionDismissed', 'true');
     }
-}">
+}" x-init="document.documentElement.classList.remove('sidebar-collapsed-init')">
 <!-- Main Content Wrapper -->
 <div class="flex-1 flex flex-col">
     <!-- Mobile Header -->
@@ -96,7 +102,7 @@
     <!-- Sidebar -->
     @include('components.layouts.inc.sidebar')
     <!-- Main Content -->
-    <div class="transition-all duration-300"
+    <div class="app-content transition-all duration-300"
          :class="sidebarCollapsed ? 'lg:ml-[70px]' : 'lg:ml-[260px]'">
 
         <!-- Top Header (Desktop) -->

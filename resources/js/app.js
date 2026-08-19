@@ -522,3 +522,59 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+
+/*
+ * Collapsed-sidebar flyouts.
+ *
+ * A 70px rail has no room for submenu items or even labels, so hovering (or
+ * clicking, or tabbing to) a rail item shows them in a panel pinned to the
+ * right of the rail. With the sidebar expanded the menu keeps its normal
+ * inline accordion and this component stays out of the way.
+ *
+ * Usage: <div x-data="railFlyout" @mouseenter="rail && show()" @mouseleave="hide()">
+ *        — `rail` is the layout's root-scope getter for "collapsed on desktop".
+ */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('railFlyout', () => ({
+        open: false,
+        top: 0,
+        timer: null,
+
+        show() {
+            clearTimeout(this.timer);
+            this.open = true;
+            this.place();
+        },
+
+        /**
+         * Closing is deferred so the pointer can cross the gap between the
+         * rail and the panel — the panel's own mouseenter cancels this.
+         */
+        hide() {
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => (this.open = false), 200);
+        },
+
+        toggle() {
+            this.open ? this.hide() : this.show();
+        },
+
+        /**
+         * Pin the panel to its anchor, pulled up when it would otherwise run
+         * off the bottom of the window — the lowest groups have the longest
+         * menus, so this is the normal case, not the edge case.
+         */
+        place() {
+            const anchor = this.$el.getBoundingClientRect().top;
+            this.top = anchor;
+
+            this.$nextTick(() => {
+                const panel = this.$refs.panel;
+                if (! panel) return;
+
+                const lowest = window.innerHeight - panel.offsetHeight - 12;
+                this.top = Math.max(12, Math.min(anchor, lowest));
+            });
+        },
+    }));
+});
