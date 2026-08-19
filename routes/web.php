@@ -21,6 +21,7 @@ use App\Livewire\Project\ProjectEdit;
 use App\Livewire\Project\ProjectIndex;
 use App\Livewire\Project\ProjectShow;
 use App\Livewire\Project\ProjectOverview;
+use App\Livewire\Project\ProjectDocuments;
 use App\Livewire\Project\ProjectExpenses;
 use App\Livewire\Project\ProjectIncome;
 use App\Livewire\Project\ProjectJobSites;
@@ -31,7 +32,10 @@ use App\Livewire\Project\ProjectFinancialReport;
 use App\Livewire\JobSite\JobSiteFinancialReport;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteContracts;
+use App\Livewire\JobSite\JobSiteDocuments;
 use App\Livewire\JobSite\JobSiteIncome;
+use App\Livewire\JobSite\JobSiteQuotations;
+use App\Livewire\JobSite\JobSiteRequisitions;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\DailyReport\DailyReportForm;
@@ -41,10 +45,15 @@ use App\Http\Controllers\PaymentDetailReportPdfController;
 use App\Http\Controllers\PaymentScheduleReportPdfController;
 use App\Http\Controllers\ExpenseReportPdfController;
 use App\Http\Controllers\JobSiteFinancialReportPdfController;
+use App\Http\Controllers\QuotationMapPdfController;
+use App\Http\Controllers\QuotationRfqPdfController;
 use App\Http\Controllers\ProjectFinancialReportPdfController;
 use App\Http\Controllers\DailyReportPdfController;
 use App\Http\Controllers\EstimatePdfController;
+use App\Http\Controllers\DocumentFileController;
+use App\Http\Controllers\DocumentUploadController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\SharedDocumentController;
 use App\Livewire\Catalog\CatalogItemIndex;
 use App\Livewire\Catalog\CatalogItemCreate;
 use App\Livewire\Catalog\CatalogItemEdit;
@@ -77,6 +86,8 @@ use App\Livewire\PaymentBatch\PaymentBatchShow;
 use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Livewire\Project\ProjectContracts;
 use App\Livewire\Project\ProjectPurchaseOrders;
+use App\Livewire\Project\ProjectQuotations;
+use App\Livewire\Project\ProjectRequisitions;
 use App\Livewire\Estimate\EstimateIndex;
 use App\Livewire\Estimate\EstimateCreate;
 use App\Livewire\Estimate\EstimateShow;
@@ -88,6 +99,7 @@ use App\Livewire\Invoice\InvoiceEdit;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\EmailTrackingController;
 use App\Livewire\Invoice\PublicInvoicePay;
+use App\Livewire\Share\SharedDocument;
 use App\Livewire\SystemSettings\SettingsIndex;
 use App\Livewire\Profile\UserProfile;
 use App\Livewire\Report\AccountsPayableReport;
@@ -118,6 +130,18 @@ Route::get('setup', SetupWizard::class)->name('setup');
 // Public (no auth)
 Route::get('email/track/{token}', [EmailTrackingController::class, 'track'])->name('email.track');
 Route::get('pay/{token}', PublicInvoicePay::class)->name('invoice.pay')->middleware('throttle:20,1');
+
+// Document share links — public by design, no login. The token is the only
+// credential, so every route here is throttled and re-checks the link.
+Route::get('s/{token}', SharedDocument::class)
+    ->name('documents.share')
+    ->middleware('throttle:30,1');
+Route::get('s/{token}/view/{document?}', [SharedDocumentController::class, 'view'])
+    ->name('documents.share.view')
+    ->middleware('throttle:60,1');
+Route::get('s/{token}/download/{document?}', [SharedDocumentController::class, 'download'])
+    ->name('documents.share.download')
+    ->middleware('throttle:30,1');
 
 Route::get('dashboard', DashboardIndex::class)
     ->middleware(['auth', 'verified'])
@@ -181,6 +205,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('job-sites/{jobSite}/change-orders', JobSiteShow::class)->name('jobsites.change-orders');
     Route::get('job-sites/{jobSite}/contracts', JobSiteContracts::class)->name('jobsites.contracts');
     Route::get('job-sites/{jobSite}/purchase-orders', JobSiteShow::class)->name('jobsites.purchase-orders');
+    Route::get('job-sites/{jobSite}/requisitions', JobSiteRequisitions::class)->name('jobsites.requisitions');
+    Route::get('job-sites/{jobSite}/quotations', JobSiteQuotations::class)->name('jobsites.quotations');
     Route::get('job-sites/{jobSite}/daily-reports', JobSiteShow::class)->name('jobsites.daily-reports');
     Route::get('job-sites/{jobSite}/budget', JobSiteShow::class)->name('jobsites.budget');
     Route::get('job-sites/{jobSite}/report', JobSiteFinancialReport::class)->name('jobsites.report');
@@ -303,12 +329,34 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/budgets/create', BudgetCreate::class)->name('projects.budgets.create');
     Route::get('job-sites/{jobSite}/budgets/create', BudgetCreate::class)->name('job-sites.budgets.create');
 
+    // Purchase requisition routes (the buy-side chain starts here)
+    Route::get('projects/{project}/requisitions', ProjectRequisitions::class)->name('projects.requisitions');
+    Route::get('projects/{project}/quotations', ProjectQuotations::class)->name('projects.quotations');
+    Route::get('quotations/{quotation}/rfq/pdf', [QuotationRfqPdfController::class, 'download'])->name('quotations.rfq.pdf.download');
+    Route::get('quotations/{quotation}/rfq/pdf/view', [QuotationRfqPdfController::class, 'stream'])->name('quotations.rfq.pdf.view');
+    Route::get('quotations/{quotation}/map/pdf', [QuotationMapPdfController::class, 'download'])->name('quotations.map.pdf.download');
+    Route::get('quotations/{quotation}/map/pdf/view', [QuotationMapPdfController::class, 'stream'])->name('quotations.map.pdf.view');
+
     // Purchase Order routes
     Route::get('projects/{project}/purchase-orders', ProjectPurchaseOrders::class)->name('projects.purchase-orders');
     Route::get('projects/{project}/purchase-orders/create', PurchaseOrderCreate::class)->name('purchase-orders.project.create');
     Route::get('job-sites/{jobSite}/purchase-orders/create', PurchaseOrderCreate::class)->name('purchase-orders.jobsite.create');
     Route::get('purchase-orders/{purchaseOrder}', PurchaseOrderShow::class)->name('purchase-orders.show');
     Route::get('purchase-orders/{purchaseOrder}/edit', PurchaseOrderEdit::class)->name('purchase-orders.edit');
+
+    // Document repository (file repository for projects and job sites)
+    Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');
+    Route::get('job-sites/{jobSite}/documents', JobSiteDocuments::class)->name('jobsites.documents');
+    Route::get('documents/{document}/download', [DocumentFileController::class, 'download'])->name('documents.download');
+    Route::get('documents/{document}/preview', [DocumentFileController::class, 'preview'])->name('documents.preview');
+    Route::get('documents/{document}/versions/{version}/download', [DocumentFileController::class, 'downloadVersion'])
+        ->name('documents.versions.download');
+
+    // Direct-to-storage upload handshake (no file content passes through PHP)
+    Route::post('documents/uploads/init', [DocumentUploadController::class, 'init'])->name('documents.uploads.init');
+    Route::post('documents/uploads/parts', [DocumentUploadController::class, 'parts'])->name('documents.uploads.parts');
+    Route::post('documents/uploads/complete', [DocumentUploadController::class, 'complete'])->name('documents.uploads.complete');
+    Route::post('documents/uploads/abort', [DocumentUploadController::class, 'abort'])->name('documents.uploads.abort');
 
     // File download route (protected)
     Route::get('files/download', [FileController::class, 'download'])->name('files.download');

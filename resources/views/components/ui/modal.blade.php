@@ -1,4 +1,4 @@
-@props(['name', 'show' => false, 'maxWidth' => '2xl'])
+@props(['name', 'show' => false, 'maxWidth' => '2xl', 'layer' => 'base'])
 
 @php
 // 'full' fills the viewport: a working surface rather than a dialog.
@@ -16,11 +16,62 @@ $maxWidthClass = [
     '6xl' => 'sm:max-w-6xl',
     'full' => 'max-w-none',
 ][$maxWidth];
+
+// A modal opened from inside another one has to paint above it, or the click
+// looks like it did nothing. The z-index is inline on purpose: a Tailwind
+// class would need the CSS bundle rebuilt before the fix took effect.
+$zIndex = $layer === 'top' ? 60 : 50;
 @endphp
 
 <div
     x-data="{
+        name: '{{ $name }}',
         show: @js($show),
+        /*
+         * Which modals are open is read from the DOM rather than kept in a
+         * variable: Livewire can remove an open modal from the page outright,
+         * and a counter would then never come back down — leaving the page
+         * permanently unable to scroll.
+         */
+        openModals() {
+            return [...document.querySelectorAll('[data-ui-modal-open=\'true\']')];
+        },
+        isTopmost() {
+            const open = this.openModals();
+            if (! open.length) return false;
+            const top = open.reduce((best, el) =>
+                (parseInt(el.style.zIndex || 0, 10) >= parseInt(best.style.zIndex || 0, 10)) ? el : best
+            );
+            return top === $el;
+        },
+        syncScrollLock() {
+            // The last modal to close gives the page its scrolling back; a
+            // child closing must not unlock the page under its parent.
+            if (this.openModals().length) {
+                document.body.classList.add('overflow-hidden');
+            } else {
+                document.body.classList.remove('overflow-hidden');
+            }
+        },
+        init() {
+            this.$nextTick(() => this.syncScrollLock());
+
+            this.$watch('show', value => {
+                this.$nextTick(() => this.syncScrollLock());
+
+                if (value) {
+                    setTimeout(() => this.firstFocusable()?.focus(), 100);
+                    this.$dispatch('modal-opened', this.name);
+                } else {
+                    this.$dispatch('modal-closed', this.name);
+                }
+            });
+        },
+        destroy() {
+            // Removed from the page while open — release the lock if it was
+            // the only thing holding it.
+            this.$nextTick(() => this.syncScrollLock());
+        },
         focusables() {
             let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
             return [...$el.querySelectorAll(selector)]
@@ -33,25 +84,17 @@ $maxWidthClass = [
         nextFocusableIndex() { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1) },
         prevFocusableIndex() { return Math.max(0, this.focusables().indexOf(document.activeElement)) -1 },
     }"
-    x-init="$watch('show', value => {
-        if (value) {
-            document.body.classList.add('overflow-hidden');
-            setTimeout(() => firstFocusable().focus(), 100);
-            $dispatch('modal-opened', '{{ $name }}');
-        } else {
-            document.body.classList.remove('overflow-hidden');
-            $dispatch('modal-closed', '{{ $name }}');
-        }
-    })"
-    x-on:open-modal.window="$event.detail == '{{ $name }}' ? show = true : null"
-    x-on:close-modal.window="$event.detail == '{{ $name }}' ? show = false : null"
+    x-on:open-modal.window="$event.detail == name ? show = true : null"
+    x-on:close-modal.window="$event.detail == name ? show = false : null"
     x-on:close.stop="show = false"
-    x-on:keydown.escape.window="show = false"
+    x-on:keydown.escape.window="if (show && isTopmost()) show = false"
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
-    class="fixed inset-0 z-50 overflow-y-auto"
-    style="display: {{ $show ? 'block' : 'none' }};"
+    :data-ui-modal-open="show ? 'true' : 'false'"
+    data-ui-modal-open="{{ $show ? 'true' : 'false' }}"
+    class="fixed inset-0 overflow-y-auto"
+    style="display: {{ $show ? 'block' : 'none' }}; z-index: {{ $zIndex }};"
 >
     <!-- Backdrop -->
     <div

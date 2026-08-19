@@ -15,6 +15,34 @@ return [
         'route_prefixes' => ['company.*', 'users.*', 'system-settings.*'],
     ],
 
+    // Declared before 'projects': the module check stops at the first
+    // matching prefix, and 'projects.*' would otherwise claim these routes.
+    'quotations' => [
+        'name' => 'Quotations',
+        'description' => 'Purchase requisitions and vendor quotations (cotações) — the buy-side chain.',
+        'route_prefixes' => [
+            'projects.requisitions',
+            'jobsites.requisitions',
+            'projects.quotations',
+            'jobsites.quotations',
+            'requisitions.*',
+            'quotations.*',
+        ],
+    ],
+
+    // Declared before 'projects' for the same reason as 'quotations': the
+    // module check stops at the first matching prefix, and 'projects.*' would
+    // otherwise claim projects.documents.
+    'documents' => [
+        'name' => 'Documents',
+        'description' => 'File repository for projects and job sites — folders, versions and share links.',
+        'route_prefixes' => [
+            'projects.documents',
+            'jobsites.documents',
+            'documents.*',
+        ],
+    ],
+
     'projects' => [
         'name' => 'Projects',
         'description' => 'Project management including job sites, expenses, daily reports, budgets, and purchase orders.',

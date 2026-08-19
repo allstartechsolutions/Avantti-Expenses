@@ -47,6 +47,25 @@ return [
             'report' => false,
         ],
 
+        /*
+        | Cloudflare R2 — the document repository's cloud disk. R2 speaks the S3
+        | API, so the s3 driver is used with a region of "auto" and the account
+        | endpoint. Leave the credentials empty and the documents module falls
+        | back to the local private disk (see config/documents.php).
+        */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'url' => env('R2_PUBLIC_URL'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+            'report' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -147,6 +147,22 @@ class JobSite extends Model
     }
 
     /**
+     * Repository documents filed under this job site
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Repository folders belonging to this job site
+     */
+    public function documentFolders(): HasMany
+    {
+        return $this->hasMany(DocumentFolder::class);
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

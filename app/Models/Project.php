@@ -210,6 +210,38 @@ class Project extends Model
     }
 
     /**
+     * Every document in the repository for this project, job site ones included
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Only project-level documents (not filed under a job site)
+     */
+    public function projectLevelDocuments(): HasMany
+    {
+        return $this->hasMany(Document::class)->whereNull('job_site_id');
+    }
+
+    /**
+     * Every repository folder for this project, job site ones included
+     */
+    public function documentFolders(): HasMany
+    {
+        return $this->hasMany(DocumentFolder::class);
+    }
+
+    /**
+     * Only project-level folders (not tied to a job site)
+     */
+    public function projectLevelDocumentFolders(): HasMany
+    {
+        return $this->hasMany(DocumentFolder::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Get the full address as a formatted string
      */
     public function getFullAddressAttribute(): string

@@ -45,6 +45,7 @@ class JobSiteFinancialReportPdfController extends Controller
         $totalExpenses = $expensesCollection->sum('total_amount');
 
         $contractsCollection = $jobSite->contracts()
+            ->committed()
             ->with(['subcontractor:id,name', 'changeOrders', 'payments'])
             ->orderBy('contract_number')
             ->get();

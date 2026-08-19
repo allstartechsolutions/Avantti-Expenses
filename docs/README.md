@@ -70,7 +70,11 @@
 
 ### Planned
 
-- **[Quotation Module plan](./quotation-module-plan.md)** - Buy-side quotations (BR: *Cotação*): requisition → quote several vendors → comparative map with equalization → negotiation rounds → justified award → contract (service) or purchase order (material). Researched against Brazilian practice; decisions agreed, not yet built.
+- **[Quotation Module plan](./quotation-module-plan.md)** - Buy-side quotations (BR: *Cotação*): requisition → quote several vendors → comparative map with equalization → negotiation rounds → justified award → contract (service) or purchase order (material). Researched against Brazilian practice; **phase 1 built**, phases 2–8 planned.
+- **[Quotation Rounds](./quotation-module.md)** - Phase 2 of that chain, as built: one scope, several vendors invited, the request e-mailed from the app with a priceable PDF per vendor, every send on the record, the 2/3-proposal rule visible from the start, each vendor's proposal keyed in with equalized totals, the comparison map with its PDF, negotiation rounds kept with their before/after totals, and the award with its justification, 2/3-proposal rule and split-by-line option. and conversion into the draft purchase orders or contracts that actually get paid. Awarded prices are taught back to the catalog so the next round opens with what was really paid. Phase 9, the review, is what remains.
+- **[Review and Improvements](./review-and-improvements.md)** - The standing final phase every module now gets, and the backlog of things noticed mid-build waiting to be worked.
+- **[Permissions — running notations](./permissions-notes.md)** - Notes only, nothing built: what the role system does today, where the approval gate can be walked around, and the decisions needed before permission work starts. Add new observations here rather than fixing them one screen at a time.
+- **[Purchase Requisitions](./requisition-module.md)** - Phase 1 of that chain, as built: the site asks for what it needs, an admin or manager approves it, and the approved requisition waits to be quoted. Project and job-site pages, full-page form and detail, status history, attachments.
 
 ### Session handoff
 

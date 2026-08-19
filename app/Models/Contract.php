@@ -15,6 +15,7 @@ class Contract extends Model
         'project_id',
         'job_site_id',
         'subcontractor_id',
+        'quotation_id',
         'subcontractor_employee_id',
         'contract_number',
         'status',
@@ -66,6 +67,25 @@ class Contract extends Model
         return is_null($this->job_site_id);
     }
 
+    /**
+     * Statuses that do not commit money. A draft is a contract on paper only —
+     * raised from an award, not yet activated — and a cancelled one is gone.
+     * Every figure that says what the company owes excludes both, through
+     * scopeCommitted().
+     */
+    public const UNCOMMITTED_STATUSES = ['draft', 'cancelled'];
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    /** Contracts that count as real money: everything except drafts and cancellations. */
+    public function scopeCommitted($query)
+    {
+        return $query->whereNotIn('status', self::UNCOMMITTED_STATUSES);
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -99,6 +119,12 @@ class Contract extends Model
     public function jobSite(): BelongsTo
     {
         return $this->belongsTo(JobSite::class);
+    }
+
+    /** The quotation round this contract was awarded from, when it came from one. */
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     public function subcontractor(): BelongsTo

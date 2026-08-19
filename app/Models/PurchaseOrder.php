@@ -16,6 +16,7 @@ class PurchaseOrder extends Model
         'project_id',
         'job_site_id',
         'supplier_id',
+        'quotation_id',
         'expense_id',
         'status',
         'revision_number',
@@ -79,6 +80,12 @@ class PurchaseOrder extends Model
     public function expense(): BelongsTo
     {
         return $this->belongsTo(Expense::class);
+    }
+
+    /** The quotation round this order was awarded from, when it came from one. */
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     public function items(): HasMany

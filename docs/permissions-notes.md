@@ -1,0 +1,184 @@
+# Permissions — running notations
+
+**Status: notes only. Nothing here is built.** This is the place to write down permission
+problems as they are noticed, so the eventual permission work is designed once, from a full
+list, instead of being patched one screen at a time.
+
+Started 2026-08-19, from the observation that a requisition must be approved before it can
+be quoted — and that the rule only holds if a lesser user cannot go around it.
+
+**How to use this file:** add a numbered notation with the date, what was observed, why it
+matters, and the options. Leave it `open` until a decision is taken; then record the
+decision and, when built, link the doc that describes it.
+
+---
+
+## 1. What exists today
+
+**Three roles**, seeded in `RoleSeeder`: `admin`, `manager`, `employee`. One role per user
+(`users.role_id`), no per-project assignment beyond `projects.project_manager_id`, which is
+used for reporting, not for access.
+
+**Two helpers on `User`:**
+
+| Helper | Means |
+|---|---|
+| `$user->is_admin` | role is `admin` |
+| `$user->is_manager` | role is `manager` |
+| `$user->canReviewRequisitions()` | admin **or** manager |
+
+**Two guard patterns, both server-side:**
+
+- `AuthorizesAdmin::authorizeAdmin()` — used by 15 Livewire components, mostly for deletes.
+- `authorizeReview()` in the requisition and quotation traits — admin or manager.
+
+**Module access** (`config/modules.php` + `module_access` table) switches whole modules off
+per install. That is an install-level switch, **not** a per-user permission.
+
+**What does not exist:**
+
+- No `app/Policies`, no gates, no permission table — authorization is inline in components.
+- **No per-project or per-job-site scoping.** Any signed-in user can reach any project's
+  data. The chain's own screens scope by project only to stop cross-project id tampering,
+  not to restrict people.
+- No concept of **owning** a record. Anyone can act on anyone's draft.
+- PDF controllers (estimates, invoices, reports, and the two new quotation ones) are behind
+  `auth` only: any signed-in user can fetch any document by id. Consistent across the app,
+  and consistently a gap.
+
+---
+
+## 2. The buy-side chain as it stands
+
+| Action | Who can do it today |
+|---|---|
+| Raise a requisition | any signed-in user |
+| Submit a requisition for approval | any signed-in user — **including on someone else's draft** |
+| **Approve / reject a requisition** | **admin or manager** |
+| Cancel a requisition (draft or pending) | any signed-in user |
+| Cancel an **approved** requisition | admin or manager |
+| Delete a requisition | admin |
+| Raise a quotation round, invite vendors, send the RFQ | any signed-in user |
+| Key in a proposal, record a negotiation round | any signed-in user |
+| Cancel a round | admin or manager |
+| Delete a round, remove a proposal | admin (delete) / admin or manager (remove) |
+| Award a round *(phase 6, not built)* | **decision needed** |
+| Convert to a PO or contract *(phase 7, not built)* | **decision needed** |
+
+The intent behind the split: **approving is a control, buying is daily work.** Procurement
+should not need an admin to key in a price or haggle; they should need one to say a purchase
+is justified.
+
+---
+
+## 3. Notations
+
+### N1 — Approval must not be bypassable, and there needs to be a way around it that is honest
+*Opened 2026-08-19 (owner). Status: open.*
+
+**Observed.** The approval gate is only meaningful if a lesser user cannot reach the same
+outcome another way. Today an employee cannot approve, but the surrounding rules are loose
+enough to matter:
+
+- An employee can **cancel** someone else's pending requisition, and can **submit** someone
+  else's draft.
+- An employee can edit a requisition while it is `pending` — i.e. change what is being asked
+  for after it was submitted, without a new approval.
+- Nothing stops an employee **raising a quotation round standalone**, with no requisition at
+  all. The requisition step is enforced as a *habit*, not as a rule: `quotations.purchase_
+  requisition_id` is nullable by design (a round can legitimately be standalone), so the
+  approval gate can simply be walked around by starting at the round.
+
+**Why it matters.** The whole reason the requisition exists in the chain is that somebody
+with authority says "yes, buy this" before vendors are approached. If the round can start
+without one, the control is decorative.
+
+**Owner's direction.** A lesser employee should be able to **duplicate a requisition** — so
+they can raise a near-identical ask without touching an approved one, and without needing to
+bypass approval.
+
+**Options to weigh:**
+
+1. **Require a requisition on a round** — per install, or per requisition type, or only for
+   users below a role. Keeps standalone rounds for admins/managers.
+2. **Restrict editing after submission**: a pending requisition becomes read-only to its
+   raiser; changes send it back to draft and require re-approval.
+3. **Ownership rules**: you may submit, edit and cancel **your own** draft; someone else's
+   needs a reviewer.
+4. **Duplicate action** on a requisition (any status, including approved and rejected) that
+   copies title, type, location, budget item and items into a new **draft** owned by the
+   person duplicating. This is the piece the owner asked for.
+
+### N2 — Self-approval
+*Opened 2026-08-19 (from the audit). Status: open.*
+
+A manager can raise a requisition and approve it themselves; nothing checks that the
+reviewer is not the requester. Standard BR practice for larger purchases is that the two are
+different people, often with a value threshold below which it does not matter.
+
+**Options:** block self-approval outright; block it above a value; allow it but record it
+plainly on the detail view and in the history ("approved by the person who raised it").
+
+### N3 — Award and conversion authority (phase 6/7, before they are built)
+*Opened 2026-08-19. Status: open — needs a decision before phase 6.*
+
+Currently assumed **admin or manager, no value thresholds** (agreed earlier). Worth
+revisiting now that the chain is real, because the award is where money is committed:
+
+- Should awarding above a value need an admin specifically?
+- Should converting to a contract (which creates a payment schedule) be tighter than
+  converting to a PO (which creates an expense on approval)?
+- Should the person who keyed in the proposals be allowed to award them?
+
+### N4 — No per-project scoping
+*Opened 2026-08-19 (from the audit). Status: open.*
+
+Every signed-in user can open every project. For a company where a site supervisor should
+only see their own site, there is no way to express that today. `projects.project_manager_id`
+exists but is only used for reporting.
+
+**Question for the owner:** do any of the installs need people confined to their own
+projects or job sites? If yes, that is a much larger change than role tweaks, and it should
+be decided before more screens are built on the assumption that everyone sees everything.
+
+### N5 — Documents are reachable by id
+*Opened 2026-08-19 (from the audit). Status: open.*
+
+`/quotations/{id}/rfq/pdf`, `/quotations/{id}/map/pdf` and every existing report/estimate/
+invoice PDF are behind `auth` only. Any signed-in user can fetch any of them by guessing an
+id. Consistent with the rest of the app, which is why it was not "fixed" in the quotation
+work alone — it needs one decision applied everywhere.
+
+### N6 — Roles are a single flat field
+*Opened 2026-08-19 (from the audit). Status: open.*
+
+One role per user, three roles, checked by name in code. There is no way to say "this person
+may approve requisitions but not delete anything", or "this person is procurement". As the
+chain grows (award, conversion, payments) the number of distinct capabilities will outgrow
+three names.
+
+**Options:** keep roles but attach a capability list to each; add a fourth role
+(`procurement`); or move to per-capability permissions with roles as presets.
+
+---
+
+## 4. Decisions needed from the owner
+
+1. **Can a quotation round start without an approved requisition?** Always, never, or only
+   for admins/managers?
+2. **Duplicate a requisition** — available to everyone, on any status? (N1, the owner has
+   already said yes in principle.)
+3. **Self-approval** — blocked, allowed, or allowed-but-flagged?
+4. **Own vs anyone's records** — should submitting, editing and cancelling be restricted to
+   the person who raised it, plus reviewers?
+5. **Award authority** and any value thresholds (N3).
+6. **Per-project confinement** — needed by any install? (N4)
+7. **Document access** — tighten PDFs app-wide? (N5)
+
+---
+
+## 5. Related
+
+- `docs/quotation-module-plan.md` — the chain and its phases.
+- `docs/requisition-module.md`, `docs/quotation-module.md` — what each phase enforces today.
+- `docs/module-access.md` — the install-level module switch, which is not user permissions.

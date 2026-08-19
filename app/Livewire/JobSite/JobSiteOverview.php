@@ -129,7 +129,7 @@ class JobSiteOverview extends Component
         $expenses = $this->jobSite->expenses()->get();
         $totalExpensesAmount = $expenses->sum('total_amount');
 
-        $contracts = $this->jobSite->contracts()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
         $totalContractsAdjusted = 0;
         $totalContractsPaid = 0;
         foreach ($contracts as $contract) {

@@ -314,7 +314,7 @@ class CompanyFinancialService
                 'project:id,project_name', 'jobSite:id,job_site_name', 'subcontractor:id,name',
                 'changeOrders', 'payments', 'scheduleItems.payments', 'scheduleItems.measurements.payments',
             ])
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->tap(fn ($q) => $this->applyScope($q))
             ->get();
 

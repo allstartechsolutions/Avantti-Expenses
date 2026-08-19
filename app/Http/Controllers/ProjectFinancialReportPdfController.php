@@ -49,6 +49,7 @@ class ProjectFinancialReportPdfController extends Controller
         $totalExpenses = $expensesCollection->sum('total_amount');
 
         $contractsCollection = $project->contracts()
+            ->committed()
             ->with([
                 'subcontractor:id,name',
                 'jobSite:id,job_site_name',
@@ -132,7 +133,7 @@ class ProjectFinancialReportPdfController extends Controller
             $jsContractValue = round((float) $jobSite->job_amount + ($jsCoTotal / 100), 2);
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
-            $jsContracts = $jobSite->contracts()->with(['changeOrders', 'payments'])->get();
+            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
             $jsContractsAdjusted = 0;
             $jsContractsPaid = 0;
             foreach ($jsContracts as $contract) {

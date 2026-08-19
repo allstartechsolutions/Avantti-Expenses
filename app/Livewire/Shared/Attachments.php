@@ -7,6 +7,9 @@ use App\Models\Attachment;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequisition;
+use App\Models\Quotation;
+use App\Models\QuotationVendor;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -15,7 +18,7 @@ class Attachments extends Component
 {
     use WithFileUploads, AuthorizesAdmin;
 
-    public string $modelType; // 'expense', 'purchase-order' or 'income'
+    public string $modelType; // 'expense', 'purchase-order', 'income', 'requisition', 'quotation' or 'quotation-vendor'
     public int $modelId;
     public $upload = null;
 
@@ -25,6 +28,9 @@ class Attachments extends Component
             'expense' => Expense::findOrFail($this->modelId),
             'purchase-order' => PurchaseOrder::findOrFail($this->modelId),
             'income' => Income::findOrFail($this->modelId),
+            'requisition' => PurchaseRequisition::findOrFail($this->modelId),
+            'quotation' => Quotation::findOrFail($this->modelId),
+            'quotation-vendor' => QuotationVendor::findOrFail($this->modelId),
         };
     }
 
@@ -34,6 +40,9 @@ class Attachments extends Component
             'expense' => 'expenses',
             'purchase-order' => 'purchase-orders',
             'income' => 'income',
+            'requisition' => 'requisitions',
+            'quotation' => 'quotations',
+            'quotation-vendor' => 'quotations',
         };
     }
 

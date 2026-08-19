@@ -1,6 +1,10 @@
 # Quotation Module — research and plan
 
-**Status:** plan agreed, nothing built. Written 2026-08-18.
+**Status:** plan agreed. **Phases 1–8 are built** (requisition, round + RFQ e-mail,
+proposal entry, comparison map, negotiation rounds, the award, conversion, catalog and
+budget) — see `docs/requisition-module.md` and `docs/quotation-module.md`. **Phase 9,
+Review and Improvements, is what remains.** Written 2026-08-18, phases 3–8 added
+2026-08-19.
 
 **Decisions taken with the owner (2026-08-18):**
 
@@ -10,6 +14,10 @@
 | Split award | **Supported**, but awarding the whole quote to one vendor is the default |
 | Minimum proposals | **Warn under 3, block under 2** |
 | Requisition (solicitação de compra) | **Included** — the flow starts with a site requisition, not with the quote |
+| Who approves a requisition | **Admin or manager** (decided 2026-08-18) |
+| Who may award a quotation | **Admin or manager**, no value thresholds |
+| Vendor prices | **Procurement keys them in.** No vendor portal — in BR the vendors reply by e-mail |
+| RFQ delivery | **Sent from the system by e-mail** (the app already sends mail: `EstimateMail`, `InvoiceMail`) |
 
 This is the **buy side**: asking several vendors what they would charge, comparing the
 offers, negotiating, and awarding one. It is not the client-facing quote — that is the
@@ -93,10 +101,15 @@ Follows the dual-FK rule from `docs/project-jobsite-parity-rule.md` (`project_id
 The chain starts here: whoever is on site says what is needed, a manager approves it, and
 only then does procurement quote it.
 
-`project_id`, `job_site_id` (nullable), `requisition_number` (REQ-0001), `type`
-(`material` | `service`), `title`, `justification`, `needed_by`, `priority`
-(`low` | `normal` | `urgent`), `status`, `requested_by`, `reviewed_by`, `reviewed_at`,
-`review_notes`, `cost_code_id` / `budget_item_id` (nullable), `created_by`, timestamps.
+**As built** (see `docs/requisition-module.md`): `project_id`, `job_site_id` (nullable),
+`requisition_number` (REQ-0001), `type` (`material` | `service`), `title`, `justification`,
+`needed_by`, `priority` (`low` | `normal` | `urgent`), `status`, `requested_by` (nullable)
+**and `requested_by_name`** — office staff raise requisitions for site people with no login
+— `reviewed_by`, `reviewed_at`, `review_notes`, `budget_item_id` (nullable), `created_by`,
+timestamps.
+
+The planned `cost_code_id` was **dropped**: nothing else in this app carries a cost-code FK,
+the budget item is what holds the code, so the budget item is the only link.
 
 Status: `draft → pending → approved → quoted → fulfilled`, plus `rejected` and `cancelled`.
 `quoted` and `fulfilled` are **derived from the quotations that reference it**, mirroring the
@@ -127,8 +140,14 @@ a fair map): `quotation_id`, `catalog_item_id` (nullable), `budget_item_id` (nul
 `item_name`, `description`, `quantity`, `unit`, `sort_order`.
 
 ### `quotation_vendors` — one row per invited vendor = one proposal
+Because the round is sent by e-mail and answered by e-mail, this row records **how the
+vendor was asked and how the answer arrived**, so the map shows who was really invited and
+every keyed-in price has the original document behind it.
+
 `quotation_id`, `vendor_id`, `status` (`invited` | `responded` | `declined` | `awarded` |
-`rejected`), `responded_at`, `proposal_valid_until` (validade), `lead_time_days` (prazo),
+`rejected`), `invited_at`, `invite_method` (`email` | `whatsapp` | `phone` | `in_person`),
+`invited_email` (the address used), `source` (how the proposal came back, same list),
+`received_at`, `responded_at`, `proposal_valid_until` (validade), `lead_time_days` (prazo),
 `payment_terms` (text or the existing Net-15/30/60/90 list), `freight_type` (`cif` | `fob`),
 `freight_amount`, `discount_amount`, `tax_amount`, `notes`, `created_by`, timestamps.
 
@@ -188,14 +207,15 @@ Full-page (per the Design Standard in `CLAUDE.md`): **items as rows, vendors as 
 
 | Phase | Deliverable |
 |---|---|
-| 1 | Requisition: migrations, models, index/create/detail, approve–reject with audit trail |
-| 2 | Quotation round: migrations, models, create from a requisition (or standalone), items, invited vendors |
-| 3 | Proposal entry per vendor (prices, terms, freight, validity, attachments) |
-| 4 | Comparison map, full page, with equalization |
-| 5 | Negotiation rounds |
-| 6 | Award with justification, whole or split, with the 2/3-proposal rule |
-| 7 | Conversion to contract / PO, with backlinks both ways |
-| 8 | PDF of the map, budget + catalog price-history integration, pt_BR sweep, docs |
+| ~~1~~ | **Done.** Requisition: migrations, models, list + full-page form + full-page detail, approve–reject with audit trail — `docs/requisition-module.md` |
+| ~~2~~ | **Done.** Round: migrations, models, create from a requisition or standalone, scope, invited vendors, send-out recording, **and the RFQ e-mail** — one message and one scope PDF per vendor, failures logged per vendor, PDF fallback when the install has no mail — `docs/quotation-module.md` |
+| ~~3~~ | **Done.** Proposal entry per vendor: `quotation_vendor_items`, prices with server-computed line totals, cannot-supply and substitute handling, terms, how-it-arrived, the vendor's PDF on their own row, equalized totals live on screen — `docs/quotation-module.md` |
+| ~~4~~ | **Done.** Comparison map, full page, equalized, with the benchmark restricted to complete unexpired offers, split-award and budget comparisons, designed empty state, and a landscape PDF — `docs/quotation-module.md` |
+| ~~5~~ | **Done.** Negotiation rounds: `quotation_negotiations`, the price screen in negotiation mode with a required note, live movement against the standing offer, and the rounds shown on the detail, the map and the PDF — `docs/quotation-module.md` |
+| ~~6~~ | **Done.** Award with a required justification, whole or split by line, the 2-proposal block and 3-proposal warning, expired-proposal acknowledgement, losing proposals marked not selected, prices frozen, and a revoke path — `docs/quotation-module.md` |
+| ~~7~~ | **Done.** Conversion: material → one draft PO per winning vendor with the awarded lines and budget items, service → one contract per winning vendor, vendor flags set, links written both ways, `converted` terminal — `docs/quotation-module.md` |
+| ~~8~~ | **Done.** Awarded prices written to `catalog_item_price_history` (catalog `current_cost` deliberately untouched), the last real price shown in the scope picker and on the proposal screen, the budget position stated on the award screen (warn, never block), and the pt_BR sweep — 2,925 keys, no duplicates, no missing strings, no mismatched plural forms |
+| **9** | **Review and Improvements** — the standing final phase from `CLAUDE.md`: review the whole chain, walk every screen in both themes and locales, close the gap between what the screens promise and what the code enforces, and work the backlog in `docs/review-and-improvements.md` |
 
 Each phase gets tested before the next starts.
 
@@ -210,11 +230,11 @@ Still open, and none of them blocks phase 1:
 
 | # | Question | Assumption if you do not say otherwise |
 |---|---|---|
-| 1 | Who may **approve a requisition** — any manager, or admin only? | Admin, matching the existing delete/approve pattern |
-| 2 | Who may **award** a quotation? Value thresholds? | Admin; no thresholds |
+| ~~1~~ | ~~Who may **approve a requisition**~~ | **Settled: admin or manager.** Built in phase 1 |
+| ~~2~~ | ~~Who may **award** a quotation?~~ | **Settled: admin or manager, no thresholds** |
 | 3 | Equalization depth | Phase 4 shows freight + tax + discount + lead time + terms side by side; unit-of-measure conversion and payment-term present value only if asked |
 | 4 | Budget enforcement | Warn when the awarded total exceeds the linked budget item, never block |
-| 5 | Do vendors ever type their own prices (portal/e-mail link)? | No — procurement keys in what the vendors send |
+| ~~5~~ | ~~Do vendors ever type their own prices?~~ | **Settled: no.** Procurement keys in the e-mailed proposals |
 | 6 | Module access | New `quotations` module in `config/modules.php` covering `requisitions.*` and `quotations.*`, so an install can switch the whole chain off |
 
 ---

@@ -141,6 +141,7 @@
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: center;">
                         @php
                             $statusColors = [
+                                'draft' => '#95a5a6',
                                 'active' => '#3498db',
                                 'completed' => '#8e44ad',
                                 'partially_paid' => '#e67e22',

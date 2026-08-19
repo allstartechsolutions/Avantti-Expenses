@@ -31,7 +31,7 @@ class ProjectFinancialReport extends Component
         $totalExpenses = $expenses->sum('total_amount');
 
         // Cost: contracts adjusted (each Contract::getAdjustedAmount already includes ContractChangeOrders)
-        $contracts = $this->project->contracts()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->project->contracts()->committed()->with(['changeOrders', 'payments'])->get();
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contracts as $contract) {
@@ -99,7 +99,7 @@ class ProjectFinancialReport extends Component
 
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
-            $jsContracts = $jobSite->contracts()->with(['changeOrders', 'payments'])->get();
+            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
             $jsContractsAdjusted = 0;
             $jsContractsPaid = 0;
             foreach ($jsContracts as $contract) {
@@ -134,6 +134,7 @@ class ProjectFinancialReport extends Component
     public function getContractsDetailProperty()
     {
         return $this->project->contracts()
+            ->committed()
             ->with([
                 'subcontractor:id,name',
                 'jobSite:id,job_site_name',

@@ -6,7 +6,6 @@ use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Project;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -74,7 +73,7 @@ class PaymentDashboard extends Component
         $pendingOneTime = Expense::where('status', 'unpaid')
             ->where('total_installments', 1)
             ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
-            ->sum(DB::raw('quantity * unit_price'));
+            ->sum('total_amount');
 
         // Overdue installment payments
         $overdueInstallments = ExpensePayment::where('status', 'overdue')
@@ -90,7 +89,7 @@ class PaymentDashboard extends Component
         $overdueOneTime = Expense::where('status', 'overdue')
             ->where('total_installments', 1)
             ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
-            ->sum(DB::raw('quantity * unit_price'));
+            ->sum('total_amount');
 
         // Due this month (installments)
         $thisMonthInstallments = ExpensePayment::where('status', 'pending')
@@ -108,7 +107,7 @@ class PaymentDashboard extends Component
             ->where('total_installments', 1)
             ->whereBetween('payment_due_date', [$today, $endOfMonth])
             ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
-            ->sum(DB::raw('quantity * unit_price'));
+            ->sum('total_amount');
 
         // Paid this month (installments)
         $paidInstallments = ExpensePayment::where('status', 'paid')
@@ -125,7 +124,7 @@ class PaymentDashboard extends Component
             ->where('total_installments', 1)
             ->whereBetween('paid_date', [now()->startOfMonth(), $endOfMonth])
             ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
-            ->sum(DB::raw('quantity * unit_price'));
+            ->sum('total_amount');
 
         return [
             'pending' => ($pendingInstallments + $pendingOneTime) / 100,
@@ -215,7 +214,6 @@ class PaymentDashboard extends Component
 
         // Get one-time expenses
         $oneTime = $oneTimeQuery->get()->map(function ($expense) use ($today) {
-            $amount = $expense->quantity * $expense->unit_price;
             return [
                 'id' => $expense->id,
                 'type' => 'one_time',
@@ -224,7 +222,7 @@ class PaymentDashboard extends Component
                 'project' => $expense->project->project_name,
                 'job_site' => $expense->jobSite?->job_site_name,
                 'payment_label' => '1/1',
-                'amount' => $amount / 100,
+                'amount' => (float) $expense->total_amount,
                 'due_date' => $expense->payment_due_date,
                 'is_overdue' => $expense->payment_due_date && $expense->payment_due_date < $today,
                 'status' => $expense->status === 'overdue' ? 'overdue' : 'pending',
@@ -232,8 +230,10 @@ class PaymentDashboard extends Component
             ];
         });
 
-        // Merge and sort by due date
-        $merged = $installments->merge($oneTime)
+        // Merge and sort by due date.
+        // toBase(): both sides are arrays now, and an Eloquent collection's
+        // merge() asks each item for getKey() — which fatals on an array.
+        $merged = $installments->toBase()->merge($oneTime)
             ->sortBy('due_date')
             ->values();
 

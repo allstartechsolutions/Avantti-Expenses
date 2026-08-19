@@ -149,7 +149,7 @@ class AccountsPayableService
                 'scheduleItems.payments',
                 'scheduleItems.measurements.payments',
             ])
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()
@@ -417,7 +417,7 @@ class AccountsPayableService
                 'jobSite:id,job_site_name',
                 'subcontractor:id,name',
             ])
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()
@@ -450,7 +450,7 @@ class AccountsPayableService
     {
         return Contract::query()
             ->with(['subcontractor:id,name'])
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()

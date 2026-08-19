@@ -27,7 +27,7 @@ class JobSiteFinancialReport extends Component
         $totalExpenses = $expenses->sum('total_amount');
 
         // Cost: contracts scoped to this jobsite, each adjusted for their own change orders
-        $contracts = $this->jobSite->contracts()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contracts as $contract) {
@@ -63,6 +63,7 @@ class JobSiteFinancialReport extends Component
     public function getContractsDetailProperty()
     {
         return $this->jobSite->contracts()
+            ->committed()
             ->with([
                 'subcontractor:id,name',
                 'changeOrders',

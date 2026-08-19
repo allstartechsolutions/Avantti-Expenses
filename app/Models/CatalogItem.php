@@ -109,6 +109,22 @@ class CatalogItem extends Model
     }
 
     /**
+     * What this item last actually cost, and when.
+     *
+     * The catalog's own `current_cost` is a figure somebody typed; the price
+     * history also carries what was really paid, written by the quotation
+     * module when a round is awarded. Buyers price the next round against the
+     * last real one, so that is what the pickers show.
+     */
+    public function lastPaid(): ?CatalogItemPriceHistory
+    {
+        return $this->priceHistory()
+            ->whereNotNull('notes')
+            ->orderBy('changed_at', 'desc')
+            ->first();
+    }
+
+    /**
      * Scope for active items
      */
     public function scopeActive($query)

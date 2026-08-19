@@ -71,7 +71,7 @@ class Budget extends Model
     {
         $contracts = Contract::where('project_id', $this->project_id)
             ->where('job_site_id', $this->job_site_id)
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->get();
 
         $agg = [];

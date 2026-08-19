@@ -96,6 +96,7 @@ class ContractShow extends Component
     public function getAvailableStatusesProperty(): array
     {
         return match ($this->contract->status) {
+            'draft' => ['active' => 'Active', 'cancelled' => 'Cancelled'],
             'active' => ['completed' => 'Completed', 'cancelled' => 'Cancelled'],
             'completed' => ['paid' => 'Paid', 'partially_paid' => 'Partially Paid'],
             'partially_paid' => ['paid' => 'Paid'],

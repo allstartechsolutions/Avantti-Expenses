@@ -164,7 +164,7 @@ class PaymentScheduleService
                 'scheduleItems.payments',
                 'scheduleItems.measurements.payments',
             ])
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->tap(fn ($q) => $this->applyScope($q));
     }
 

@@ -25,6 +25,16 @@
             'route' => 'projects.income',
             'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'
         ],
+        'requisitions' => [
+            'label' => __('Requisitions'),
+            'route' => 'projects.requisitions',
+            'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'
+        ],
+        'quotations' => [
+            'label' => __('Quotations'),
+            'route' => 'projects.quotations',
+            'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2'
+        ],
         'purchase-orders' => [
             'label' => __('Purchase Orders'),
             'route' => 'projects.purchase-orders',
@@ -39,6 +49,11 @@
             'label' => __('Contracts'),
             'route' => 'projects.contracts',
             'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+        ],
+        'documents' => [
+            'label' => __('Documents'),
+            'route' => 'projects.documents',
+            'icon' => 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
         ],
         'daily-reports' => [
             'label' => __('Daily Reports'),
@@ -56,6 +71,14 @@
             'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
         ],
     ];
+
+    if (! \App\Models\ModuleAccess::isEnabled('quotations')) {
+        unset($menuItems['requisitions'], $menuItems['quotations']);
+    }
+
+    if (! \App\Models\ModuleAccess::isEnabled('documents')) {
+        unset($menuItems['documents']);
+    }
 @endphp
 
 <div class="mb-6">

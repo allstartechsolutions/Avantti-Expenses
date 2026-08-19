@@ -313,6 +313,29 @@ Route::get('job-sites/{jobSite}/contracts/create', ContractCreate::class)
 
 ---
 
+## Contract statuses
+
+`draft` → `active` → `completed` → `partially_paid` / `paid`, plus `cancelled`.
+
+**`draft` was added 2026-08-19**, when quotation awards started raising contracts
+automatically (`docs/quotation-module.md`). A contract raised from an award is not yet a
+commitment: its dates, retention and payment schedule still have to be set, so it starts as
+a draft and is activated deliberately — the same shape as a purchase order being approved.
+
+- **Hand-created contracts are unaffected**: `ContractCreate` still writes `active`, and
+  `active` is still the column default, so every existing row behaves exactly as before.
+- **A draft is not committed money.** `Contract::scopeCommitted()` — everything except
+  `draft` and `cancelled` — is the single definition, and it is applied by the payment
+  schedule, accounts payable, the project and job-site financial reports, the job-site
+  overview, the budget cost-code grid, the dashboard's cash-to-pay, the contract payments
+  dashboard and its CSV, and the payment batch screen.
+- **A draft cannot be paid**: it is not offered on the payments dashboard or in a batch, and
+  the bulk-payment validation refuses one even if its id is submitted directly.
+- **A draft is still visible** on the project and job-site contract lists (with a Draft
+  filter and badge) and opens normally — it just does not count until activated. The
+  activation is the ordinary status change on the contract: `draft → active` or
+  `draft → cancelled`.
+
 ## Status Workflow
 
 ```

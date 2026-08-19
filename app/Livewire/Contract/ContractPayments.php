@@ -100,7 +100,8 @@ class ContractPayments extends Component
     #[Computed]
     public function contracts()
     {
-        return Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
+        return Contract::committed()
+            ->with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
@@ -118,6 +119,7 @@ class ContractPayments extends Component
     public function summary(): array
     {
         $baseQuery = Contract::query()
+            ->committed()
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
@@ -180,6 +182,13 @@ class ContractPayments extends Component
                 continue;
             }
 
+            // A draft is a contract on paper only — it owes nothing until it
+            // is activated, and the list never offers one.
+            if ($contract->isDraft()) {
+                $errors[] = __(':number is still a draft and cannot be paid.', ['number' => $contract->contract_number]);
+                continue;
+            }
+
             $balance = $contract->amount - (($contract->total_paid_cents ?? 0) / 100);
             if ((float) $amount > $balance + 0.01) {
                 $errors[] = __('Payment for :number exceeds balance due ($:balance).', [
@@ -224,7 +233,8 @@ class ContractPayments extends Component
 
     public function exportCsv()
     {
-        $contracts = Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
+        $contracts = Contract::committed()
+            ->with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))

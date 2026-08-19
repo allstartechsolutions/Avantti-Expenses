@@ -61,7 +61,8 @@ class ContractPaymentsPdfController extends Controller
             $eagerLoad[] = 'payments';
         }
 
-        return Contract::with($eagerLoad)
+        return Contract::committed()
+            ->with($eagerLoad)
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)))

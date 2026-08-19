@@ -257,7 +257,7 @@ class ExpenseReportService
     protected function contracts(): Collection
     {
         return $this->contractCache ??= Contract::query()
-            ->where('status', '!=', 'cancelled')
+            ->committed()
             ->whereDate('start_date', '<=', $this->end)
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))

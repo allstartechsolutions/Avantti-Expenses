@@ -80,6 +80,51 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Whether the user holds the manager role.
+     * Exposed as $user->is_manager.
+     */
+    protected function isManager(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->role?->name === 'manager',
+        );
+    }
+
+    /**
+     * Who may approve or reject a purchase requisition: admins and managers.
+     */
+    public function canReviewRequisitions(): bool
+    {
+        return $this->is_admin || $this->is_manager;
+    }
+
+    /**
+     * Who may add, rename, move, tag or share a repository document, and who
+     * may create folders: admins and managers.
+     */
+    public function canManageDocuments(): bool
+    {
+        return $this->is_admin || $this->is_manager;
+    }
+
+    /**
+     * Who may delete a repository document or folder, restore one, or purge
+     * the trash: admins only.
+     */
+    public function canDeleteDocuments(): bool
+    {
+        return $this->is_admin;
+    }
+
+    /**
+     * Documents flagged internal are hidden from ordinary employees.
+     */
+    public function canSeeInternalDocuments(): bool
+    {
+        return $this->is_admin || $this->is_manager;
+    }
+
     public function managedProjects(): HasMany
     {
         return $this->hasMany(Project::class, 'project_manager_id');

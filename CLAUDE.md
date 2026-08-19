@@ -34,6 +34,25 @@ Concretely, for every feature:
    patterns already in the codebase; when a level (project / job site) gains a UI
    improvement, the other level gains it too.
 
+## Every Module Ends With a Review Phase
+
+**No module is finished when its features are.** Every module gets one extra, explicit
+final phase — **Review and Improvements** — planned from the start and never skipped:
+
+1. **Code review of the whole module**, not just the last change: correctness, the guards,
+   the money maths, N+1s, and anything keyed in by hand that the server should compute.
+2. **Walk the real screens** in both themes, both locales and on a phone: empty states,
+   partial states, error states, long names, many rows.
+3. **Close the gap between what the screens say and what the code does** — wording that
+   promises something the code does not enforce is a bug.
+4. **Sweep the notations** collected while building (see `docs/permissions-notes.md` and
+   the module's own review backlog in `docs/review-and-improvements.md`) and either fix
+   them, schedule them, or record the decision not to.
+5. **Docs and pt_BR** brought level with what was actually built.
+
+Items noticed mid-build go into the module's review backlog rather than derailing the
+feature in hand — but the backlog is worked, not archived.
+
 ## Critical Rules
 1. **PRODUCTION CODE ONLY** - Treat all code as production-ready
 2. **NO FRESH MIGRATIONS** - NEVER use `migrate:fresh` or `migrate:refresh`. Only use `php artisan migrate` for incremental changes

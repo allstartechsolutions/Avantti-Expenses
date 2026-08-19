@@ -14,7 +14,6 @@ use App\Models\PaymentBatch;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class DashboardIndex extends Component
@@ -70,10 +69,10 @@ class DashboardIndex extends Component
         $cashToPayOneTime = Expense::where('status', 'unpaid')
             ->where('total_installments', 1)
             ->whereBetween('payment_due_date', [$start, $end])
-            ->sum(DB::raw('quantity * unit_price'));
+            ->sum('total_amount');
 
         $contractBalances = 0;
-        $unpaidContracts = \App\Models\Contract::whereNotIn('status', ['cancelled', 'paid'])->get();
+        $unpaidContracts = \App\Models\Contract::committed()->where('status', '!=', 'paid')->get();
         foreach ($unpaidContracts as $contract) {
             $contractBalances += max(0, $contract->getBalanceDue());
         }
@@ -128,7 +127,7 @@ class DashboardIndex extends Component
             ->count();
 
         $projectsOverBudget = Project::where('status', ProjectStatus::IN_PROGRESS)
-            ->withSum('expenses as expenses_total', DB::raw('quantity * unit_price'))
+            ->withSum('expenses as expenses_total', 'total_amount')
             ->get()
             ->filter(function ($p) {
                 $contractValue = $p->getAdjustedContractValue();
@@ -181,7 +180,7 @@ class DashboardIndex extends Component
     public function getOverBudgetProjectsProperty()
     {
         return Project::where('status', ProjectStatus::IN_PROGRESS)
-            ->withSum('expenses as expenses_total', DB::raw('quantity * unit_price'))
+            ->withSum('expenses as expenses_total', 'total_amount')
             ->get()
             ->filter(function ($p) {
                 $contractValue = $p->getAdjustedContractValue();

@@ -670,7 +670,8 @@ class PaymentBatchEdit extends Component
 
     public function render()
     {
-        $contracts = Contract::with([
+        $contracts = Contract::committed()
+            ->with([
             'project.client', 'jobSite', 'subcontractor', 'latestPayment',
             // payableTargetsFor() runs per row: eager-load what it needs so
             // 50 contracts don't become hundreds of queries.
