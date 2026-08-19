@@ -178,43 +178,15 @@ class CostCodeTemplateShow extends Component
 
         $path = $this->importFile->getRealPath();
 
-        // Read file content and handle encoding
-        $content = file_get_contents($path);
+        // Read the file and bring whatever the spreadsheet exported to UTF-8
+        $content = $this->normalizeToUtf8(file_get_contents($path));
 
-        // Remove BOM if present (UTF-8 BOM)
-        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+        // Drop control characters that would corrupt the values (keep tabs and line breaks)
+        $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $content) ?? $content;
 
-        // Fix common corrupted Portuguese character sequences
-        // These occur when files are saved with wrong encoding
-        $corruptedReplacements = [
-            "\x8d\x8b" => 'çã',  // ção
-            "\x8d" => 'ç',       // ç alone
-            "\x8b" => 'ã',       // ã alone
-            "\x87" => 'á',       // á
-            "\x88" => 'é',       // é
-            "\x8c" => 'í',       // í
-            "\x8e" => 'ó',       // ó
-            "\x8f" => 'ú',       // ú
-            "\x8a" => 'ê',       // ê
-            "\x89" => 'ô',       // ô
-        ];
-        $content = str_replace(array_keys($corruptedReplacements), array_values($corruptedReplacements), $content);
-
-        // Check if content is valid UTF-8, if not convert from Windows-1252
-        if (!mb_check_encoding($content, 'UTF-8')) {
-            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
-        }
-
-        // Remove any remaining invalid UTF-8 sequences
-        $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $content);
-
-        // Parse CSV from string - handle both \r\n and \n line endings
-        $content = str_replace("\r\n", "\n", $content);
-        $content = str_replace("\r", "\n", $content);
-        $lines = explode("\n", $content);
-        $rows = array_map(function($line) {
-            return str_getcsv(trim($line));
-        }, array_filter($lines, fn($line) => trim($line) !== ''));
+        // Parse through a stream so quoted fields may contain commas and line breaks,
+        // and so \r\n, \n and \r line endings all work
+        $rows = $this->parseCsv($content, $this->detectDelimiter($content));
 
         if (count($rows) < 2) {
             $this->importErrors[] = 'CSV file is empty or has no data rows.';
@@ -289,6 +261,95 @@ class CostCodeTemplateShow extends Component
         }
     }
 
+    /**
+     * Convert raw CSV bytes to UTF-8, whatever the spreadsheet exported.
+     *
+     * Handles UTF-8 (with or without BOM), UTF-16 LE/BE ("Unicode text" from Excel)
+     * and the single-byte legacy encodings: Mac Roman (Excel for Mac) and
+     * Windows-1252 / ISO-8859-1 (Excel for Windows).
+     */
+    private function normalizeToUtf8(string $content): string
+    {
+        // UTF-16 exports always carry a BOM
+        if (str_starts_with($content, "\xFF\xFE")) {
+            return mb_convert_encoding(substr($content, 2), 'UTF-8', 'UTF-16LE');
+        }
+
+        if (str_starts_with($content, "\xFE\xFF")) {
+            return mb_convert_encoding(substr($content, 2), 'UTF-8', 'UTF-16BE');
+        }
+
+        // UTF-8 BOM: strip it, the rest is already UTF-8
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            return substr($content, 3);
+        }
+
+        // Already valid UTF-8: leave it exactly as it is
+        if (mb_check_encoding($content, 'UTF-8')) {
+            return $content;
+        }
+
+        // Legacy single byte file. Every byte is valid in both Mac Roman and
+        // Windows-1252, so decide by where the high bytes sit: in Mac Roman the
+        // accented letters live in 0x80-0x9F, in Windows-1252 they live in 0xC0-0xFF.
+        $macRange = preg_match_all('/[\x80-\x9F]/', $content);
+        $winRange = preg_match_all('/[\xC0-\xFF]/', $content);
+
+        if ($macRange > $winRange && function_exists('iconv')) {
+            $converted = @iconv('MACINTOSH', 'UTF-8//TRANSLIT', $content);
+
+            if ($converted !== false) {
+                return $converted;
+            }
+        }
+
+        return mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+    }
+
+    /**
+     * Pick the column separator: Excel in a pt_BR locale writes semicolons.
+     */
+    private function detectDelimiter(string $content): string
+    {
+        $firstLine = strtok($content, "\r\n") ?: '';
+
+        $counts = [
+            ',' => substr_count($firstLine, ','),
+            ';' => substr_count($firstLine, ';'),
+            "\t" => substr_count($firstLine, "\t"),
+        ];
+
+        arsort($counts);
+        $delimiter = array_key_first($counts);
+
+        return $counts[$delimiter] > 0 ? $delimiter : ',';
+    }
+
+    /**
+     * Parse CSV content into rows, skipping blank lines.
+     */
+    private function parseCsv(string $content, string $delimiter): array
+    {
+        $handle = fopen('php://temp', 'r+');
+        fwrite($handle, $content);
+        rewind($handle);
+
+        $rows = [];
+
+        while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
+            // fgetcsv returns [null] for a blank line
+            if ($row === null || count(array_filter($row, fn ($value) => trim((string) $value) !== '')) === 0) {
+                continue;
+            }
+
+            $rows[] = array_map(fn ($value) => (string) $value, $row);
+        }
+
+        fclose($handle);
+
+        return $rows;
+    }
+
     public function executeImport()
     {
         if (!empty($this->importErrors) || empty($this->importPreview)) {
@@ -355,12 +416,14 @@ class CostCodeTemplateShow extends Component
     public function downloadSampleCsv()
     {
         $headers = [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="cost-codes-sample.csv"',
         ];
 
         $callback = function () {
             $file = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel opens (and saves) the file as UTF-8
+            fwrite($file, "\xEF\xBB\xBF");
             fputcsv($file, ['code', 'name', 'description', 'parent_code']);
             fputcsv($file, ['01', 'General Requirements', 'General project requirements', '']);
             fputcsv($file, ['01.1', 'Summary of Work', 'Project scope summary', '01']);
