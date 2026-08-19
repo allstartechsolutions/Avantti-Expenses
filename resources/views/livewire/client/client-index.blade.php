@@ -98,9 +98,11 @@
                                             </div>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                            <a href="{{ route('clients.show', $client->id) }}"
+                                               class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                               title="{{ __('View client') }}">
                                                 {{ $client->company_name }}
-                                            </div>
+                                            </a>
                                             @if($client->website)
                                                 <div class="text-sm text-slate-500 dark:text-slate-400">
                                                     <a href="{{ $client->website }}" target="_blank" class="hover:text-[#3F5189] dark:hover:text-[#4A5A96]">

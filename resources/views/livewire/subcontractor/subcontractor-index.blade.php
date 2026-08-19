@@ -105,9 +105,11 @@
                                             </div>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                            <a href="{{ route('subcontractors.show', $subcontractor->id) }}"
+                                               class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                               title="{{ __('View subcontractor') }}">
                                                 {{ $subcontractor->company_name }}
-                                            </div>
+                                            </a>
                                             <div class="mt-0.5 flex flex-wrap gap-1">
                                                 @if($subcontractor->is_supplier)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">{{ __('Supplier') }}</span>

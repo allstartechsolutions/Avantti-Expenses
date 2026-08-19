@@ -130,9 +130,11 @@
                                 <!-- Project -->
                                 <td class="px-6 py-4">
                                     <div>
-                                        <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                        <a href="{{ route('projects.overview', $project->id) }}"
+                                           class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                           title="{{ __('View project') }}">
                                             {{ $project->project_name }}
-                                        </div>
+                                        </a>
                                         @if($project->full_address)
                                             <div class="text-sm text-slate-500 dark:text-slate-400">
                                                 {{ Str::limit($project->full_address, 40) }}

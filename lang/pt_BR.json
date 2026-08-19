@@ -2918,11 +2918,15 @@
     "{0} never opened|{1} :count download|[2,*] :count downloads": "{0} nunca aberto|{1} :count download|[2,*] :count downloads",
     "This document is marked internal. A share link hands it to someone outside the company, which is the opposite of that — consider a password and a short expiry.": "Este documento está marcado como interno. Um link de compartilhamento o entrega a alguém de fora da empresa, o que é o oposto disso — considere usar senha e validade curta.",
     "Everything in this folder and its subfolders will be listed, except documents marked internal. Anything added later is included automatically.": "Tudo nesta pasta e nas subpastas será listado, exceto documentos marcados como internos. O que for adicionado depois entra automaticamente.",
-
     ":number awarded to :vendor": ":number adjudicada a :vendor",
     "last paid :amount on :date": "última compra :amount em :date",
     "This award commits": "Esta adjudicação compromete",
     "Over budget": "Acima do orçado",
     "Left in the budget item": "Saldo no item do orçamento",
-    "This award goes over the budgeted figure. That does not block it — say why in the justification below.": "Esta adjudicação passa do valor orçado. Isso não bloqueia — explique o motivo na justificativa abaixo."
+    "This award goes over the budgeted figure. That does not block it — say why in the justification below.": "Esta adjudicação passa do valor orçado. Isso não bloqueia — explique o motivo na justificativa abaixo.",
+    "View project": "Ver projeto",
+    "View job site": "Ver local",
+    "View client": "Ver cliente",
+    "View subcontractor": "Ver subempreiteiro",
+    "View supplier": "Ver fornecedor"
 }

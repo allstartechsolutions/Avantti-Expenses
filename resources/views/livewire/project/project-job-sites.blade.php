@@ -334,9 +334,11 @@
                                 @foreach($jobSites as $jobSite)
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                            <a href="{{ route('jobsites.overview', $jobSite->id) }}"
+                                               class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                               title="{{ __('View job site') }}">
                                                 {{ $jobSite->job_site_name }}
-                                            </div>
+                                            </a>
                                             <div class="text-sm text-slate-500 dark:text-slate-400">
                                                 {{ $jobSite->email }}
                                             </div>

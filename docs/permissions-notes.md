@@ -160,6 +160,38 @@ three names.
 **Options:** keep roles but attach a capability list to each; add a fourth role
 (`procurement`); or move to per-capability permissions with roles as presets.
 
+### N7 — A share link is unauthenticated access, granted by a manager
+*Opened 2026-08-19 (document repository, phase 7). Status: open.*
+
+**Observed.** The file repository lets an admin **or manager** create a public link that hands
+a document — or a whole folder, including anything filed into it later — to someone with no
+login at all. The link is revocable, can carry a password and an expiry, and every access is
+recorded against it, so it is auditable. But it is still the one place in the application
+where a non-admin grants access to an outsider, and the folder form of it is open-ended by
+nature.
+
+Internal-only documents are excluded from folder links, and sharing one directly warns the
+user, so the obvious foot-gun is covered. What is not decided is **who should hold the
+authority**.
+
+**Options:** leave it with admin and manager; restrict creation to admins; or allow managers
+to create links only for a single document, keeping folder links to admins.
+
+### N8 — Download links are bearer access for their lifetime
+*Opened 2026-08-19 (document repository). Status: recorded, not a defect.*
+
+**Observed.** Files are served by redirecting to a presigned Cloudflare R2 URL, so the bytes
+never pass through PHP. The signature in that URL *is* the credential: for as long as it is
+valid, anyone holding it can fetch that one file, logged in or not. Permission is checked
+before the link is issued and each download is recorded, but a copied URL is access.
+
+The window is `DOCUMENTS_PRESIGN_TTL`, set to **60 seconds** by the owner on 2026-08-19. This
+is inherent to serving files directly from object storage; the alternative is streaming every
+byte through the application, which forfeits the reason for using R2 at all.
+
+**Related:** N5 — the PDF controllers are auth-only across the app. Whatever is decided there
+should take the same view of the repository's links.
+
 ---
 
 ## 4. Decisions needed from the owner
@@ -174,6 +206,7 @@ three names.
 5. **Award authority** and any value thresholds (N3).
 6. **Per-project confinement** — needed by any install? (N4)
 7. **Document access** — tighten PDFs app-wide? (N5)
+8. **Share links** — may managers create them, or admins only? Folder links too? (N7)
 
 ---
 
@@ -182,3 +215,4 @@ three names.
 - `docs/quotation-module-plan.md` — the chain and its phases.
 - `docs/requisition-module.md`, `docs/quotation-module.md` — what each phase enforces today.
 - `docs/module-access.md` — the install-level module switch, which is not user permissions.
+- `docs/file-repository-plan.md` — the document repository, its roles and its share links.
