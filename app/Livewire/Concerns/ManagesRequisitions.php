@@ -345,9 +345,8 @@ trait ManagesRequisitions
                     $requisition->recordStatusChange($user, $oldStatus, $mode);
                 }
             } else {
-                $requisition = PurchaseRequisition::create($data + [
+                $requisition = PurchaseRequisition::createWithNumber($data + [
                     'project_id' => $this->contextProject()->id,
-                    'requisition_number' => PurchaseRequisition::generateRequisitionNumber(),
                     'status' => $mode,
                     'created_by' => $user->id,
                 ]);

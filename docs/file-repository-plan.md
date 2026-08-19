@@ -421,7 +421,7 @@ Defaults taken while building; say the word and any of them changes.
 | 5 — Detail modal & versions | **Done.** Full-page detail view: preview (PDF/image/video), every stored field, version history with per-version download and "make current", and the activity trail. |
 | 6 — Categories & tags | Mostly delivered with phase 3 (chips, filters, tag CRUD by typing); the remainder rides with phase 5. |
 | 7 — Share links | **Done.** Expiring public links for a document or a folder, with optional password, download limit, view-only mode, revocation and full logging. Folder links exclude internal documents. |
-| 8 — Review & Improvements | Next — the mandatory final phase (CLAUDE.md). |
+| 8 — Review & Improvements | **Done.** Full-diff code review; six document-module findings fixed and re-verified; query counts, long names, dark mode and both locales checked; notations N7/N8 recorded. See `docs/review-and-improvements.md`. |
 
 **Verified so far:** both pages render 200 in English and pt_BR at both levels; folder create / duplicate refusal / rename / delete (contents move up, including trashed documents); local upload of several files; blocked file types refused; new version keeps the old one; rename, move, recategorise, tag; delete → trash → restore → purge; the full activity trail; employee blocked from every write; internal documents hidden from employees; ids from another project or another location refused at every entry point; module toggle hides the nav and 403s the route.
 

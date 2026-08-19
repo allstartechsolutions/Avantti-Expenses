@@ -197,6 +197,33 @@
                             @endforeach
                         </tbody>
                         <tfoot class="bg-slate-50 dark:bg-slate-900/50">
+                            {{-- Freight, tax and a discount come from the winning
+                                 proposal and sit on the order, not on its lines,
+                                 so the lines keep the vendor's quoted prices.
+                                 They are shown here or the total looks wrong. --}}
+                            @php($hasExtras = $purchaseOrder->freight_amount || $purchaseOrder->tax_amount || $purchaseOrder->discount_amount)
+                            @if($hasExtras)
+                                <tr>
+                                    <td colspan="4" class="px-6 pt-4 text-sm text-slate-500 dark:text-slate-400 text-right">{{ __('Items:') }}</td>
+                                    <td class="px-6 pt-4 text-sm text-slate-600 dark:text-slate-300 text-right">
+                                        {{ Number::currency($purchaseOrder->itemsTotal(), config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                </tr>
+                                @foreach([
+                                    ['label' => __('Freight:'), 'amount' => $purchaseOrder->freight_amount, 'sign' => 1],
+                                    ['label' => __('Tax:'), 'amount' => $purchaseOrder->tax_amount, 'sign' => 1],
+                                    ['label' => __('Discount:'), 'amount' => $purchaseOrder->discount_amount, 'sign' => -1],
+                                ] as $extra)
+                                    @if($extra['amount'] > 0)
+                                        <tr>
+                                            <td colspan="4" class="px-6 py-1 text-sm text-slate-500 dark:text-slate-400 text-right">{{ $extra['label'] }}</td>
+                                            <td class="px-6 py-1 text-sm text-slate-600 dark:text-slate-300 text-right">
+                                                {{ $extra['sign'] < 0 ? '−' : '' }}{{ Number::currency($extra['amount'], config('app.currency'), config('app.locale')) }}
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            @endif
                             <tr>
                                 <td colspan="4" class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white text-right">{{ __('Total:') }}</td>
                                 <td class="px-6 py-4 text-lg font-bold text-slate-900 dark:text-white text-right">

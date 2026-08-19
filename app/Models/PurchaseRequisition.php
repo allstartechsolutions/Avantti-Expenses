@@ -107,6 +107,29 @@ class PurchaseRequisition extends Model
     // NUMBERING
     // =========================================================================
 
+    /**
+     * Create a record with the next number, retrying if another request took
+     * that number first. The column is unique, so the loser of the race gets a
+     * duplicate-key error rather than a duplicate document — this turns that
+     * into simply taking the next one.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createWithNumber(array $attributes): self
+    {
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            try {
+                return static::create($attributes + ['requisition_number' => static::generateRequisitionNumber()]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($attempt === 5) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Could not allocate a number.');
+    }
+
     public static function generateRequisitionNumber(): string
     {
         // Numeric max, not string max: 'REQ-9999' > 'REQ-10000' lexically.
@@ -145,10 +168,15 @@ class PurchaseRequisition extends Model
         }
 
         $quotations = $this->quotations()->get(['status']);
+        $live = $quotations->where('status', '!=', 'cancelled');
 
+        // One requisition may be split across several rounds, so it is only
+        // fulfilled once every live round has been converted. Treating the
+        // first conversion as fulfilment made it unquotable while a second
+        // round was still open, and that round then lost its link back.
         $status = match (true) {
-            $quotations->contains('status', 'converted') => 'fulfilled',
-            $quotations->where('status', '!=', 'cancelled')->isNotEmpty() => 'quoted',
+            $live->isNotEmpty() && $live->every(fn ($row) => $row->status === 'converted') => 'fulfilled',
+            $live->isNotEmpty() => 'quoted',
             default => 'approved',
         };
 

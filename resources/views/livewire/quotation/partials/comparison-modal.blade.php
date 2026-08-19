@@ -91,6 +91,11 @@
                         <div class="{{ $card }}">
                             <p class="{{ $factLabel }}">{{ __('If Split Line by Line') }}</p>
                             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ $money($summary['split_total']) }}</p>
+                            @if(($summary['split_vendors'] ?? 0) > 1)
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ __('across :count vendors, each charging its own freight', ['count' => $summary['split_vendors']]) }}
+                                </p>
+                            @endif
                             <p class="mt-2 text-xs {{ $summary['split_saving'] > 0 ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400' }}">
                                 {{ $summary['split_saving'] > 0
                                     ? __(':amount below the single winner', ['amount' => $money($summary['split_saving'])])

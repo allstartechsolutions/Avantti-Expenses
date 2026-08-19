@@ -148,6 +148,15 @@ class QuotationVendor extends Model
         return $this->items->isNotEmpty();
     }
 
+    /**
+     * Did this vendor actually price anything? A reply saying "cannot supply"
+     * on every line is a reply, but it is not a proposal to compare.
+     */
+    public function hasAnyPrice(): bool
+    {
+        return $this->items->where('is_unavailable', false)->isNotEmpty();
+    }
+
     public function unavailableCount(): int
     {
         return $this->items->where('is_unavailable', true)->count();

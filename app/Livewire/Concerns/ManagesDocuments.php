@@ -101,6 +101,32 @@ trait ManagesDocuments
     // Trash
     public bool $showTrash = false;
 
+    /**
+     * Runs on every request, before anything reads state.
+     *
+     * folderId is a query-string property, so it arrives from the browser and
+     * may point at a folder in another project or another location. Anything
+     * that does not belong to what this page is showing is dropped back to the
+     * root rather than trusted — otherwise new folders and uploads get filed
+     * somewhere neither tree can reach.
+     */
+    public function bootedManagesDocuments(): void
+    {
+        if (! $this->folderId) {
+            return;
+        }
+
+        $folder = DocumentFolder::find($this->folderId);
+
+        $belongsHere = $folder
+            && $folder->project_id === $this->contextProject()->id
+            && $folder->job_site_id === $this->activeJobSiteId();
+
+        if (! $belongsHere) {
+            $this->folderId = null;
+        }
+    }
+
     // =========================================================================
     // CONTEXT — supplied by the host component
     // =========================================================================
@@ -387,9 +413,12 @@ trait ManagesDocuments
             Document::withTrashed()->where('folder_id', $folder->id)->update(['folder_id' => $folder->parent_id]);
             DocumentFolder::where('parent_id', $folder->id)->update(['parent_id' => $folder->parent_id]);
 
+            $revoked = $this->revokeSharesFor($folder);
+
             DocumentActivity::record(DocumentActivity::FOLDER_DELETED, ['folder_id' => null], [
                 'name' => $folder->name,
                 'project_id' => $folder->project_id,
+                'shares_revoked' => $revoked,
             ]);
 
             $folder->delete();
@@ -444,7 +473,7 @@ trait ManagesDocuments
         return [
             'projectId' => $this->contextProject()->id,
             'jobSiteId' => $this->activeJobSiteId(),
-            'folderId' => $this->folderId,
+            'folderId' => $this->currentFolder?->id,
             'documentId' => $this->uploadDocumentId,
             'mode' => DocumentSettings::isCloudConfigured() ? 'cloud' : 'local',
             'maxBytes' => DocumentSettings::maxUploadBytes(),
@@ -488,7 +517,7 @@ trait ManagesDocuments
 
         if (! $this->uploadDocumentId) {
             $document->update([
-                'category' => $this->uploadCategory,
+                'category' => DocumentCategory::tryFrom($this->uploadCategory) ?? DocumentCategory::OTHER,
                 'is_internal' => $this->uploadIsInternal,
             ]);
 
@@ -525,6 +554,20 @@ trait ManagesDocuments
             return;
         }
 
+        if (! DocumentCategory::tryFrom($this->uploadCategory)) {
+            $this->uploadCategory = DocumentCategory::OTHER->value;
+        }
+
+        $incoming = collect($this->localUploads)->sum(fn ($file) => (int) $file->getSize());
+
+        if (DocumentSettings::wouldExceedQuota($incoming)) {
+            $this->addError('localUploads', __('This install has reached its storage limit of :size.', [
+                'size' => DocumentSettings::formatBytes(DocumentSettings::storageQuotaBytes()),
+            ]));
+
+            return;
+        }
+
         $storage = app(DocumentStorageService::class);
         $stored = 0;
 
@@ -543,7 +586,7 @@ trait ManagesDocuments
                     : Document::create([
                         'project_id' => $this->contextProject()->id,
                         'job_site_id' => $this->activeJobSiteId(),
-                        'folder_id' => $this->folderId,
+                        'folder_id' => $this->currentFolder?->id,
                         'name' => DocumentSettings::sanitizeFileName($originalName),
                         'category' => $this->uploadCategory,
                         'is_internal' => $this->uploadIsInternal,
@@ -636,7 +679,7 @@ trait ManagesDocuments
         $this->validate([
             'documentName' => ['required', 'string', 'max:255'],
             'documentDescription' => ['nullable', 'string', 'max:2000'],
-            'documentCategory' => ['required', 'string'],
+            'documentCategory' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys(DocumentCategory::options()))],
             'documentTags' => ['nullable', 'string', 'max:500'],
         ], [], [
             'documentName' => __('name'),
@@ -785,10 +828,14 @@ trait ManagesDocuments
     {
         $this->authorizeDocumentWrite();
 
-        $version = DocumentVersion::with('document')->findOrFail($versionId);
-        $document = $version->document;
+        $version = DocumentVersion::findOrFail($versionId);
+        $document = Document::withTrashed()->find($version->document_id);
+
+        abort_unless($document, 404);
 
         $this->assertDocumentInProject($document);
+
+        abort_if($document->trashed(), 409, 'Restore the document before changing its versions.');
 
         abort_unless($version->isAvailable(), 409, 'That version was never uploaded successfully.');
 
@@ -966,12 +1013,20 @@ trait ManagesDocuments
     {
         $this->authorizeDocumentWrite();
 
-        $share = DocumentShare::with(['document', 'folder'])->findOrFail($shareId);
+        // withTrashed: a link to a deleted document must still be revocable,
+        // which is exactly when someone is most likely to want it gone.
+        $share = DocumentShare::with(['documentWithTrashed', 'folderWithTrashed'])->findOrFail($shareId);
+        $document = $share->documentWithTrashed;
+        $folder = $share->folderWithTrashed;
 
-        if ($share->document) {
-            $this->assertDocumentInProject($share->document);
-        } elseif ($share->folder) {
-            abort_unless($share->folder->project_id === $this->contextProject()->id, 403);
+        if ($document) {
+            abort_unless($document->project_id === $this->contextProject()->id, 403);
+
+            if ($jobSite = $this->contextJobSite()) {
+                abort_unless($document->job_site_id === $jobSite->id, 403);
+            }
+        } elseif ($folder) {
+            abort_unless($folder->project_id === $this->contextProject()->id, 403);
         } else {
             abort(404);
         }
@@ -991,6 +1046,23 @@ trait ManagesDocuments
         unset($this->shares, $this->viewingDocument);
 
         session()->flash('message', __('Share link revoked. It stops working immediately.'));
+    }
+
+    /**
+     * Kill every live link to something being deleted. The model refuses a
+     * link whose target is gone anyway; this makes it explicit, auditable, and
+     * visible in the share list rather than only implied.
+     */
+    protected function revokeSharesFor(Document|DocumentFolder $target): int
+    {
+        $query = $target instanceof Document
+            ? DocumentShare::where('document_id', $target->id)
+            : DocumentShare::where('folder_id', $target->id);
+
+        return $query->whereNull('revoked_at')->update([
+            'revoked_at' => now(),
+            'revoked_by' => auth()->id(),
+        ]);
     }
 
     /**
@@ -1043,8 +1115,11 @@ trait ManagesDocuments
         $document->update(['deleted_by' => auth()->id()]);
         $document->delete();
 
+        $revoked = $this->revokeSharesFor($document);
+
         DocumentActivity::record(DocumentActivity::DELETED, ['document_id' => $document->id], [
             'name' => $document->name,
+            'shares_revoked' => $revoked,
         ]);
 
         $this->selected = array_values(array_diff($this->selected, [$documentId]));
@@ -1148,6 +1223,10 @@ trait ManagesDocuments
         $this->authorizeDocumentWrite();
 
         if (! $this->selected || $this->bulkCategory === '') {
+            return;
+        }
+
+        if (! DocumentCategory::tryFrom($this->bulkCategory)) {
             return;
         }
 
@@ -1270,8 +1349,11 @@ trait ManagesDocuments
             $document->update(['deleted_by' => auth()->id()]);
             $document->delete();
 
+            $revoked = $this->revokeSharesFor($document);
+
             DocumentActivity::record(DocumentActivity::DELETED, ['document_id' => $document->id], [
                 'name' => $document->name,
+                'shares_revoked' => $revoked,
             ]);
         }
 
@@ -1325,7 +1407,22 @@ trait ManagesDocuments
     #[Computed]
     public function currentFolder(): ?DocumentFolder
     {
-        return $this->folderId ? DocumentFolder::find($this->folderId) : null;
+        if (! $this->folderId) {
+            return null;
+        }
+
+        $folder = DocumentFolder::find($this->folderId);
+
+        // Same check as bootedManagesDocuments(), because a computed property
+        // can be reached in a request where the boot hook has already run and
+        // the value changed since.
+        if (! $folder
+            || $folder->project_id !== $this->contextProject()->id
+            || $folder->job_site_id !== $this->activeJobSiteId()) {
+            return null;
+        }
+
+        return $folder;
     }
 
     /**
@@ -1377,9 +1474,14 @@ trait ManagesDocuments
 
         $quota = DocumentSettings::storageQuotaBytes();
 
-        // The usage bar reports the whole project, not the filtered view.
+        // Two different numbers, and they must not be confused: what this
+        // project holds, and what the whole install holds. The quota is an
+        // install-wide ceiling (config/documents.php), so the bar measures the
+        // install — ten projects at 40% each are 400% of one limit.
         $projectBytes = (int) Document::where('project_id', $this->contextProject()->id)
             ->sum('current_size_bytes');
+
+        $installBytes = $quota ? DocumentSettings::installUsedBytes() : $projectBytes;
 
         return [
             'count' => (int) ($totals->document_count ?? 0),
@@ -1388,9 +1490,10 @@ trait ManagesDocuments
             'by_category' => $byCategory,
             'project_bytes' => $projectBytes,
             'project_size' => DocumentSettings::formatBytes($projectBytes),
+            'install_size' => DocumentSettings::formatBytes($installBytes),
             'quota' => $quota,
             'quota_size' => $quota ? DocumentSettings::formatBytes($quota) : null,
-            'quota_percent' => $quota ? min(100, round($projectBytes / max($quota, 1) * 100)) : null,
+            'quota_percent' => $quota ? min(100, (int) round($installBytes / max($quota, 1) * 100)) : null,
         ];
     }
 

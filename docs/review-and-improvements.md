@@ -93,3 +93,45 @@ One row, in the right module section, with: what was noticed, why it matters, an
 not obvious — what a fix would look like. Date the section, not each row. If something turns
 out to be a real defect rather than an improvement, fix it there and then and note it in the
 module doc's rules section instead of parking it here.
+
+---
+
+## Code review — 2026-08-19 (document repository + quotation chain)
+
+A full review of the working tree at the end of the document repository build. Fifteen findings;
+the six in the document module and eight of the nine in the quotation chain were fixed in the
+same session. Verified before and after in each case.
+
+### Document repository
+
+| Was | Now |
+|---|---|
+| Deleting a shared document or folder left its link live — the public page **500'd** on the missing record, and the link could no longer be revoked | A link whose target is gone is unusable and says so; deleting revokes its links; revoking works on trashed targets |
+| The upload size ceiling was client-side only: declare 1 byte at init, then PUT anything | The real size is checked against the ceiling when the upload completes, and an oversized object is deleted |
+| `?folderId=` was trusted — folders and uploads could be filed into another project's folder, orphaned from both trees | Validated on every request and again in `currentFolder()` |
+| `post_max_size=0` (unlimited) read as zero, so the panel promised 5 GB while uploads died at 8 MB | Unlimited reads as unlimited; verified across four php.ini combinations |
+| The storage quota was displayed but never enforced, and measured one project against an install-wide ceiling | Enforced on both upload paths and measured install-wide, as documented |
+| Two uploads for one document could collide on `version_number`; a rolled-back init left multipart uploads R2 bills forever | Collisions retry; the prune command reaps uploads the bucket holds with no version row behind them |
+| A tampered category value 500'd on the enum cast; `restoreVersion()` crashed on a trashed document | Both validated |
+
+### Quotation chain
+
+| Was | Now |
+|---|---|
+| An award wrote freight/tax/discount into the PO header while the items held only the lines — the first save of that PO recomputed from the items and **silently deleted the difference**, and the freight never reached a cost code | `purchase_orders` carries the three amounts; every total includes them; the expense created from the PO gets freight and tax as lines with the discount apportioned, so its items sum to its header |
+| The comparison map compared an equalized total against raw line prices, advertising a "saving" that was really the winner's freight | A split now pays each winning vendor's freight and a pro-rata share of their tax and discount; the screens say how many vendors a split would involve |
+| A requisition was `fulfilled` on the first conversion, so a second open round lost its link back to it, silently | Fulfilled only when every live round is converted; an existing link is never dropped on save |
+| A vendor answering "cannot supply" on every line counted toward the two-proposal floor | Only proposals with at least one price count |
+| Two concurrent conversions each created a full set of orders, committing the money twice | The row is locked inside the transaction and re-checked |
+| `COT-0001` could be issued twice and go out to vendors | Both numbers are unique in the database, and allocation retries on collision |
+| Dropping an invited vendor left orphaned attachment rows and files | Deleted one at a time so the model's cleanup hook runs |
+| Quotations had no `module_access` row, so it could never be switched off from the settings screen | Registered like every other module |
+| Draft contracts showed as outstanding balances in the payment detail report, and could be written into and approved in a payment batch | `committed()` in the report; drafts refused on batch save and on both approve paths |
+
+### Not fixed
+
+- `Quotation::isOpen()` still permits re-sending an RFQ on an awarded round.
+- `proposalTotals()` sums unrounded line products while `saveProposal()` stores rounded ones, so
+  the live form total can differ from the saved total by cents.
+- `documents:purge-deleted --days=0` purges the whole trash immediately, which is what it says but
+  is an easy mis-type.

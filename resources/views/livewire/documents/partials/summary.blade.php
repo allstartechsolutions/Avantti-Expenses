@@ -30,7 +30,9 @@
                 <div class="h-full rounded-full {{ $stats['quota_percent'] >= 90 ? 'bg-red-500' : ($stats['quota_percent'] >= 70 ? 'bg-amber-500' : 'bg-[#3F5189]') }}"
                      style="width: {{ $stats['quota_percent'] }}%"></div>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ $stats['project_size'] }} / {{ $stats['quota_size'] }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {{ __(':used of :total used across all projects', ['used' => $stats['install_size'], 'total' => $stats['quota_size']]) }}
+            </p>
         @else
             <p class="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{{ $stats['project_size'] }}</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('No storage limit set') }}</p>

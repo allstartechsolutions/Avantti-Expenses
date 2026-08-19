@@ -240,6 +240,23 @@ class PaymentBatchEdit extends Component
 
         $rowsToRemove = $allContractIds->diff($rowsToSave);
 
+        // The screen lists committed contracts only, but these ids come back
+        // from the browser: a draft must not be written into the batch, or it
+        // would sit there waiting to be approved as if it were money owed.
+        $draftIds = Contract::whereIn('id', $rowsToSave)
+            ->whereIn('status', Contract::UNCOMMITTED_STATUSES)
+            ->pluck('id');
+
+        if ($draftIds->isNotEmpty()) {
+            $rowsToSave = $rowsToSave->reject(fn ($id) => $draftIds->contains($id))->values();
+
+            session()->flash('error', trans_choice(
+                '{1} :count contract was left out: it is still a draft.|[2,*] :count contracts were left out: they are still drafts.',
+                $draftIds->count(),
+                ['count' => $draftIds->count()]
+            ));
+        }
+
         DB::transaction(function () use ($rowsToSave, $rowsToRemove) {
             foreach ($rowsToSave as $contractId) {
                 $amount = $this->payAmounts[$contractId] ?? null;
@@ -478,6 +495,18 @@ class PaymentBatchEdit extends Component
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->find($item->contract_id);
 
+        // The list only offers committed contracts, but the item id arrives
+        // from the browser and a contract can become a draft — or be raised as
+        // one by a quotation award — after the row was added. A draft owes
+        // nothing yet, so it cannot be paid. Same rule as ContractPayments.
+        if (! $contract || $contract->isDraft()) {
+            session()->flash('error', __(':number is still a draft and cannot be paid.', [
+                'number' => $contract?->contract_number ?? '',
+            ]));
+
+            return;
+        }
+
         $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
         $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
         $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
@@ -566,6 +595,14 @@ class PaymentBatchEdit extends Component
             $contract = Contract::withSum('payments as total_paid_cents', 'amount')
                 ->withSum('changeOrders as change_orders_total_cents', 'amount')
                 ->find($item->contract_id);
+
+            if (! $contract || $contract->isDraft()) {
+                $errors[] = __(':number is still a draft and cannot be paid.', [
+                    'number' => $contract?->contract_number ?? '',
+                ]);
+
+                continue;
+            }
 
             $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
             $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;

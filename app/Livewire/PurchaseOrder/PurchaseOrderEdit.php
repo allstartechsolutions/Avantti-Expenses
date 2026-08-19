@@ -41,6 +41,18 @@ class PurchaseOrderEdit extends Component
     public $items = [];
     public $po_total_amount = 0;
 
+    /**
+     * Freight, tax and discount come from a quotation award and live on the
+     * header, in cents. They are not editable here, but they must survive the
+     * save — recomputing the total from the items alone used to drop them.
+     */
+    public $po_freight_amount = 0;
+    public $po_tax_amount = 0;
+    public $po_discount_amount = 0;
+
+    /** The priced lines on their own, for the summary. */
+    public $po_items_amount = 0;
+
     // Item Modal
     public $showItemModal = false;
     public $editingItemIndex = null;
@@ -100,6 +112,10 @@ class PurchaseOrderEdit extends Component
                 'total_amount' => $item->total_amount,
             ];
         }
+
+        $this->po_freight_amount = (int) $this->purchaseOrder->freight_amount;
+        $this->po_tax_amount = (int) $this->purchaseOrder->tax_amount;
+        $this->po_discount_amount = (int) $this->purchaseOrder->discount_amount;
 
         $this->calculatePOTotal();
     }
@@ -292,7 +308,19 @@ class PurchaseOrderEdit extends Component
         foreach ($this->items as $item) {
             $total += floatval($item['total_amount'] ?? 0);
         }
-        $this->po_total_amount = round($total, 2);
+
+        $this->po_items_amount = round($total, 2);
+
+        // The header extras are part of what this order is worth. Leaving them
+        // out here is what silently deleted a quotation's freight the first
+        // time anyone saved the purchase order it produced.
+        $this->po_total_amount = max(0, round(
+            $total
+            + floatval($this->po_freight_amount)
+            + floatval($this->po_tax_amount)
+            - floatval($this->po_discount_amount),
+            2
+        ));
     }
 
     public function removeExistingReceipt()
@@ -357,6 +385,9 @@ class PurchaseOrderEdit extends Component
                 'notes' => $this->po_notes,
                 'receipt_path' => $receiptPath,
                 'total_amount' => $this->po_total_amount,
+                'freight_amount' => $this->po_freight_amount,
+                'tax_amount' => $this->po_tax_amount,
+                'discount_amount' => $this->po_discount_amount,
                 'payment_method' => $this->po_payment_method,
                 'is_auto_payment' => $this->po_is_auto_payment,
                 'total_installments' => $this->po_has_installments ? $this->po_total_installments : 1,

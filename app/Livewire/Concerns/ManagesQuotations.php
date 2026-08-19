@@ -480,6 +480,20 @@ trait ManagesQuotations
                 ? (int) $this->quo_requisition_id
                 : null;
 
+        // A round that already points at a requisition keeps pointing at it.
+        // The picker only offers quotable ones, so re-saving a round whose
+        // requisition has since moved on would otherwise quietly cut the link
+        // between them — and nothing would say so.
+        if ($requisitionId === null && $this->editingQuotationId) {
+            $existingRequisitionId = Quotation::whereKey($this->editingQuotationId)
+                ->value('purchase_requisition_id');
+
+            if ($existingRequisitionId
+                && (int) $this->quo_requisition_id === (int) $existingRequisitionId) {
+                $requisitionId = (int) $existingRequisitionId;
+            }
+        }
+
         $budgetItemId = $this->quo_budget_item_id
             && $this->projectBudgetItems()->whereKey($this->quo_budget_item_id)->exists()
                 ? $this->quo_budget_item_id
@@ -518,9 +532,8 @@ trait ManagesQuotations
                 $quotation->update($data);
             } else {
                 $previousRequisitionId = null;
-                $quotation = Quotation::create($data + [
+                $quotation = Quotation::createWithNumber($data + [
                     'project_id' => $this->contextProject()->id,
-                    'quotation_number' => Quotation::generateQuotationNumber(),
                     'status' => 'draft',
                     'created_by' => $user->id,
                 ]);
@@ -695,9 +708,16 @@ trait ManagesQuotations
 
         // Anyone dropped from the form goes, except a vendor who has already
         // answered — their proposal is part of the record.
+        //
+        // Deleted one at a time on purpose: a mass delete skips the model's
+        // deleting hook, which is what removes the attachments a vendor row
+        // carries. Dropping an invited vendor used to leave its attachment
+        // rows behind and the files themselves in storage forever.
         $quotation->quotationVendors()
             ->whereNotIn('id', $keptIds ?: [0])
             ->where('status', 'invited')
+            ->get()
+            ->each
             ->delete();
     }
 
@@ -1817,6 +1837,17 @@ trait ManagesQuotations
 
         try {
             DB::transaction(function () use ($quotation, $winners, $user, &$created) {
+                // Re-read the row under a row lock, inside the transaction,
+                // and check again. Without this a double click or two people
+                // converting at once both pass the check above and each create
+                // a full set of purchase orders or contracts — committing the
+                // money twice, with only the last conversion recorded.
+                $locked = Quotation::whereKey($quotation->id)->lockForUpdate()->first();
+
+                if (! $locked || ! $locked->canBeConverted()) {
+                    throw new \DomainException(__('This round has already been converted.'));
+                }
+
                 foreach ($winners as $winner) {
                     $lines = $this->awardedLinesFor($quotation, $winner);
 
@@ -1908,6 +1939,11 @@ trait ManagesQuotations
             'po_date' => now()->format('Y-m-d'),
             'notes' => $this->conversionNote($quotation, $winner),
             'total_amount' => $this->winnerTotal($lines, $winner),
+            // Kept on the header so the lines stay exactly as the vendor
+            // priced them, and so no later recalculation loses them.
+            'freight_amount' => (int) $winner->freight_amount,
+            'tax_amount' => (int) $winner->tax_amount,
+            'discount_amount' => (int) $winner->discount_amount,
             'total_installments' => 1,
             'payment_due_date' => $quotation->needed_by?->format('Y-m-d'),
             'created_by' => $user->id,

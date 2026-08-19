@@ -129,6 +129,29 @@ class Quotation extends Model
     // NUMBERING
     // =========================================================================
 
+    /**
+     * Create a record with the next number, retrying if another request took
+     * that number first. The column is unique, so the loser of the race gets a
+     * duplicate-key error rather than a duplicate document — this turns that
+     * into simply taking the next one.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createWithNumber(array $attributes): self
+    {
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            try {
+                return static::create($attributes + ['quotation_number' => static::generateQuotationNumber()]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($attempt === 5) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Could not allocate a number.');
+    }
+
     public static function generateQuotationNumber(): string
     {
         // Numeric max, not string max: 'COT-9999' > 'COT-10000' lexically.
@@ -216,15 +239,31 @@ class Quotation extends Model
         return $this->quotationVendors->where('status', 'invited')->count();
     }
 
+    /**
+     * Replies that actually priced something.
+     *
+     * A vendor who answers "cannot supply" on every line has responded, and is
+     * counted as a response on screen, but there is nothing in it to compare —
+     * so it cannot help satisfy the rule that exists to stop a round being
+     * awarded on a single quote.
+     */
+    public function pricedProposalCount(): int
+    {
+        return $this->quotationVendors
+            ->whereIn('status', ['responded', 'awarded', 'rejected'])
+            ->filter(fn ($vendor) => $vendor->hasAnyPrice())
+            ->count();
+    }
+
     /** Three proposals is the Brazilian norm; two is the floor. */
     public function meetsProposalMinimum(): bool
     {
-        return $this->respondedCount() >= 2;
+        return $this->pricedProposalCount() >= 2;
     }
 
     public function meetsProposalNorm(): bool
     {
-        return $this->respondedCount() >= 3;
+        return $this->pricedProposalCount() >= 3;
     }
 
     public function responsesOverdue(): bool

@@ -170,6 +170,9 @@
                 <td style="width: 25%; padding: 6px; border: 1px solid #ddd; vertical-align: top;">
                     <div style="font-size: 7pt; color: #666; text-transform: uppercase;">{{ __('If Split Line by Line') }}</div>
                     <div style="font-size: 11pt; font-weight: bold;">{{ $money($summary['split_total']) }}</div>
+                    @if(($summary['split_vendors'] ?? 0) > 1)
+                        <div style="font-size: 7.5pt; color: #64748b;">{{ __('across :count vendors, each charging its own freight', ['count' => $summary['split_vendors']]) }}</div>
+                    @endif
                     <div style="font-size: 7.5pt; color: #666;">
                         {{ $summary['split_saving'] > 0
                             ? __(':amount below the single winner', ['amount' => $money($summary['split_saving'])])

@@ -171,11 +171,49 @@ class QuotationComparisonService
 
         // Cherry-picking every line's best price: what the round could cost if
         // it were split across vendors. Phase 6 decides whether it is.
-        $splitTotal = $rows->sum(function ($row) {
-            $best = $row['cells']->where('state', 'priced')->pluck('total')->filter(fn ($t) => $t !== null);
+        //
+        // The line prices alone are not comparable with a vendor's equalized
+        // total, which already carries freight, tax and discount. Splitting
+        // means paying *each* winning vendor's freight, so the same costs are
+        // added back here — otherwise the screen advertises a saving that is
+        // really just the winner's freight going unmentioned.
+        $winningLines = [];
 
-            return $best->isNotEmpty() ? $best->min() : 0;
-        });
+        foreach ($rows as $row) {
+            $priced = $row['cells']->where('state', 'priced')->filter(fn ($cell) => $cell['total'] !== null);
+
+            if ($priced->isEmpty()) {
+                continue;
+            }
+
+            $best = $priced->sortBy('total')->first();
+            $rowId = $best['vendor_row_id'];
+
+            $winningLines[$rowId] = ($winningLines[$rowId] ?? 0) + (float) $best['total'];
+        }
+
+        $splitTotal = 0.0;
+
+        foreach ($winningLines as $rowId => $linesTotal) {
+            $column = $columns->firstWhere(fn ($candidate) => $candidate['row']->id === $rowId);
+
+            if (! $column) {
+                $splitTotal += $linesTotal;
+
+                continue;
+            }
+
+            // Freight is charged per delivery, so every vendor drawn into the
+            // split charges it in full. Tax and discount scale with value, so
+            // they are taken in proportion to the part of that proposal used.
+            $subtotal = (float) $column['subtotal'];
+            $share = $subtotal > 0 ? min(1, $linesTotal / $subtotal) : 0;
+
+            $splitTotal += $linesTotal
+                + (float) $column['freight']
+                + ((float) $column['tax'] * $share)
+                - ((float) $column['discount'] * $share);
+        }
 
         $budgetAmount = $quotation->budgetItem ? (float) $quotation->budgetItem->budgeted_amount : null;
         $lowestTotal = $lowestColumn['total'] ?? ($totals->isNotEmpty() ? $totals->min() : null);
@@ -188,6 +226,7 @@ class QuotationComparisonService
             'comparable' => $comparable->count(),
             'lowest_vendor' => $lowestColumn['vendor_name'] ?? null,
             'split_total' => round((float) $splitTotal, 2),
+            'split_vendors' => count($winningLines),
             'split_saving' => $lowestTotal !== null ? round($lowestTotal - (float) $splitTotal, 2) : 0.0,
             'budget_amount' => $budgetAmount,
             'budget_delta' => $budgetAmount !== null && $lowestTotal !== null

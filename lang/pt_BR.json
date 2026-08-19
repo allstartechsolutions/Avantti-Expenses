@@ -2928,5 +2928,15 @@
     "View job site": "Ver local",
     "View client": "Ver cliente",
     "View subcontractor": "Ver subempreiteiro",
-    "View supplier": "Ver fornecedor"
+    "View supplier": "Ver fornecedor",
+    "What this link pointed to has been deleted.": "O que este link apontava foi excluído.",
+    "This install has reached its storage limit of :size.": "Esta instalação atingiu o limite de armazenamento de :size.",
+    ":used of :total used across all projects": ":used de :total usados em todos os projetos",
+    "across :count vendors, each charging its own freight": "entre :count fornecedores, cada um cobrando seu frete",
+    "{1} :count contract was left out: it is still a draft.|[2,*] :count contracts were left out: they are still drafts.": "{1} :count contrato ficou de fora: ainda é rascunho.|[2,*] :count contratos ficaram de fora: ainda são rascunhos.",
+    "This round has already been converted.": "Esta rodada já foi convertida.",
+    "Items:": "Itens:",
+    "Freight:": "Frete:",
+    "Tax:": "Impostos:",
+    "Discount:": "Desconto:"
 }

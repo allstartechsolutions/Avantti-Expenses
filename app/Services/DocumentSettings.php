@@ -73,7 +73,7 @@ class DocumentSettings
             self::phpIniBytes('post_max_size')
         );
 
-        return $phpLimit > 0 ? min($configured, $phpLimit) : $configured;
+        return min($configured, $phpLimit);
     }
 
     /**
@@ -181,6 +181,25 @@ class DocumentSettings
     }
 
     /**
+     * Everything the install is storing, which is what the quota is measured
+     * against — not one project's share of it.
+     */
+    public static function installUsedBytes(): int
+    {
+        return (int) \App\Models\Document::withTrashed()->sum('current_size_bytes');
+    }
+
+    /**
+     * Would this upload put the install over its ceiling? Null quota means no.
+     */
+    public static function wouldExceedQuota(int $incomingBytes): bool
+    {
+        $quota = self::storageQuotaBytes();
+
+        return $quota !== null && (self::installUsedBytes() + $incomingBytes) > $quota;
+    }
+
+    /**
      * "1.4 GB" — used everywhere a size is shown.
      */
     public static function formatBytes(?int $bytes, int $precision = 1): string
@@ -205,8 +224,10 @@ class DocumentSettings
     {
         $value = trim((string) ini_get($directive));
 
-        if ($value === '' || $value === '-1') {
-            return 0;
+        // Unlimited. PHP treats -1 and 0 that way, and reporting them as zero
+        // would make min() pick "no limit at all" as the smallest limit.
+        if ($value === '' || $value === '-1' || $value === '0') {
+            return PHP_INT_MAX;
         }
 
         $unit = strtolower(substr($value, -1));

@@ -66,6 +66,14 @@ class DocumentUploadController extends Controller
             ], 422);
         }
 
+        if (DocumentSettings::wouldExceedQuota((int) $data['size_bytes'])) {
+            return response()->json([
+                'message' => __('This install has reached its storage limit of :size.', [
+                    'size' => DocumentSettings::formatBytes(DocumentSettings::storageQuotaBytes()),
+                ]),
+            ], 422);
+        }
+
         $project = Project::findOrFail($data['project_id']);
         $jobSite = $this->resolveJobSite($project, $data['job_site_id'] ?? null);
         $folder = $this->resolveFolder($project, $jobSite?->id, $data['folder_id'] ?? null);

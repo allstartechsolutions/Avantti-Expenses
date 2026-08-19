@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\DocumentVersion;
 use Aws\S3\S3Client;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -30,25 +31,42 @@ class DocumentStorageService
      */
     public function beginUpload(Document $document, string $fileName, int $sizeBytes, ?string $mimeType): array
     {
-        $versionNumber = (int) $document->versions()->max('version_number') + 1;
+        // version_number is unique per document and MAX()+1 is read without a
+        // lock, so two uploads starting together would collide on the index.
+        // The loser retries with the next number instead of throwing a raw
+        // duplicate-key error at whoever pressed the button second.
+        $version = null;
+        $key = null;
 
-        $key = DocumentSettings::objectKey(
-            $document->project_id,
-            $document->uuid,
-            $versionNumber,
-            $fileName
-        );
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $versionNumber = (int) $document->versions()->max('version_number') + $attempt;
 
-        $version = $document->versions()->create([
-            'version_number' => $versionNumber,
-            'disk' => DocumentSettings::disk(),
-            'object_key' => $key,
-            'original_name' => $fileName,
-            'size_bytes' => $sizeBytes,
-            'mime_type' => $mimeType,
-            'upload_status' => DocumentVersion::STATUS_PENDING,
-            'uploaded_by' => auth()->id(),
-        ]);
+            $key = DocumentSettings::objectKey(
+                $document->project_id,
+                $document->uuid,
+                $versionNumber,
+                $fileName
+            );
+
+            try {
+                $version = $document->versions()->create([
+                    'version_number' => $versionNumber,
+                    'disk' => DocumentSettings::disk(),
+                    'object_key' => $key,
+                    'original_name' => $fileName,
+                    'size_bytes' => $sizeBytes,
+                    'mime_type' => $mimeType,
+                    'upload_status' => DocumentVersion::STATUS_PENDING,
+                    'uploaded_by' => auth()->id(),
+                ]);
+
+                break;
+            } catch (UniqueConstraintViolationException $e) {
+                if ($attempt === 3) {
+                    throw $e;
+                }
+            }
+        }
 
         if (! DocumentSettings::isCloudConfigured()) {
             // The Livewire component uploads the file itself and then calls
@@ -165,6 +183,23 @@ class DocumentStorageService
             $version->update(['upload_status' => DocumentVersion::STATUS_FAILED]);
 
             throw new RuntimeException('The uploaded file could not be found in storage.');
+        }
+
+        // The size checked at init() was the browser's word for it, and the
+        // presigned URL does not constrain what actually gets PUT. This is the
+        // first point where the real size is known, so it is where the ceiling
+        // is enforced — and an oversized object is removed rather than kept.
+        $maximum = DocumentSettings::maxUploadBytes();
+
+        if ($head['size'] > $maximum) {
+            $this->deleteObject($version);
+            $version->update(['upload_status' => DocumentVersion::STATUS_FAILED]);
+
+            throw new RuntimeException(sprintf(
+                'The uploaded file is %s, over the %s limit.',
+                DocumentSettings::formatBytes($head['size']),
+                DocumentSettings::formatBytes($maximum)
+            ));
         }
 
         $version->update([
@@ -349,6 +384,11 @@ class DocumentStorageService
             $this->abortUpload($version);
         }
 
+        // Multipart uploads R2 still holds with no version row behind them:
+        // an init() whose transaction rolled back leaves exactly this, and
+        // nothing else would ever clean it up.
+        $orphanedUploads = $this->abortOrphanedMultipartUploads($cutoff);
+
         // A document whose first upload never finished has nothing to show and
         // no file behind it. It is removed outright rather than soft deleted:
         // the trash is for documents someone actually had, not for the debris
@@ -364,10 +404,57 @@ class DocumentStorageService
         }
 
         return [
-            'aborted' => $aborted,
+            'aborted' => $aborted + $orphanedUploads,
             'versions' => $stale->count(),
             'documents' => $orphans->count(),
         ];
+    }
+
+    /**
+     * Ask storage what it is still holding and abort anything old that the
+     * application has no record of.
+     */
+    private function abortOrphanedMultipartUploads(\Carbon\Carbon $cutoff): int
+    {
+        if (! DocumentSettings::isCloudConfigured()) {
+            return 0;
+        }
+
+        try {
+            $result = $this->client()->listMultipartUploads(['Bucket' => $this->bucket()]);
+        } catch (\Throwable) {
+            return 0;
+        }
+
+        $known = DocumentVersion::whereNotNull('multipart_upload_id')
+            ->pluck('multipart_upload_id')
+            ->all();
+
+        $aborted = 0;
+
+        foreach ($result['Uploads'] ?? [] as $upload) {
+            if (in_array($upload['UploadId'], $known, true)) {
+                continue;
+            }
+
+            if (isset($upload['Initiated']) && $upload['Initiated'] > $cutoff) {
+                continue;
+            }
+
+            try {
+                $this->client()->abortMultipartUpload([
+                    'Bucket' => $this->bucket(),
+                    'Key' => $upload['Key'],
+                    'UploadId' => $upload['UploadId'],
+                ]);
+
+                $aborted++;
+            } catch (\Throwable) {
+                // Gone already, or storage is unreachable; the next run retries.
+            }
+        }
+
+        return $aborted;
     }
 
     // =========================================================================

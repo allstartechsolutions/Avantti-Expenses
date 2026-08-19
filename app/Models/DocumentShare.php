@@ -70,9 +70,23 @@ class DocumentShare extends Model
         return $this->belongsTo(Document::class);
     }
 
+    /**
+     * Including trashed ones: a link outlives the delete, and the app still
+     * has to be able to show and revoke it.
+     */
+    public function documentWithTrashed(): BelongsTo
+    {
+        return $this->belongsTo(Document::class, 'document_id')->withTrashed();
+    }
+
     public function folder(): BelongsTo
     {
         return $this->belongsTo(DocumentFolder::class, 'folder_id');
+    }
+
+    public function folderWithTrashed(): BelongsTo
+    {
+        return $this->belongsTo(DocumentFolder::class, 'folder_id')->withTrashed();
     }
 
     public function createdBy(): BelongsTo
@@ -119,9 +133,24 @@ class DocumentShare extends Model
         return $this->max_downloads && $this->download_count >= $this->max_downloads;
     }
 
+    /**
+     * The document or folder this points at may have been deleted since. The
+     * link must stop working the moment that happens — a public page cannot be
+     * left dereferencing a missing record.
+     */
+    public function targetIsGone(): bool
+    {
+        return $this->isFolderShare()
+            ? ! $this->folder()->exists()
+            : ! $this->document()->exists();
+    }
+
     public function isUsable(): bool
     {
-        return ! $this->isRevoked() && ! $this->isExpired() && ! $this->isExhausted();
+        return ! $this->isRevoked()
+            && ! $this->isExpired()
+            && ! $this->isExhausted()
+            && ! $this->targetIsGone();
     }
 
     /**
@@ -134,6 +163,7 @@ class DocumentShare extends Model
             $this->isRevoked() => __('This link has been revoked.'),
             $this->isExpired() => __('This link expired on :date.', ['date' => $this->expires_at->format('d/m/Y')]),
             $this->isExhausted() => __('This link has reached its download limit.'),
+            $this->targetIsGone() => __('What this link pointed to has been deleted.'),
             default => null,
         };
     }

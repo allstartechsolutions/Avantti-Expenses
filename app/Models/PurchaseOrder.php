@@ -30,6 +30,9 @@ class PurchaseOrder extends Model
         'payment_frequency',
         'payment_due_date',
         'total_amount',
+        'freight_amount',
+        'tax_amount',
+        'discount_amount',
         'created_by',
         'approved_by',
         'approved_at',
@@ -404,12 +407,104 @@ class PurchaseOrder extends Model
             ]);
         }
 
+        // Without this the expense header would carry the freight and the
+        // discount while its items did not, so the cost codes would be short
+        // of what was actually committed.
+        $this->applyQuoteExtrasToExpense($expense);
+
         // Generate payment schedule if installments
         if ($expense->total_installments > 1) {
             $expense->generatePaymentSchedule();
         }
 
         return $expense;
+    }
+
+    /**
+     * Push this order's freight, tax and discount into the expense's items, so
+     * the items add up to the expense total.
+     *
+     * Freight and tax become their own lines. A discount cannot be a negative
+     * line — the money columns are unsigned — so it is spread across the lines
+     * in proportion to their value, which is the ordinary accounting treatment
+     * anyway. The purchase order itself keeps the vendor's quoted prices
+     * untouched; only this accounting copy is adjusted.
+     */
+    protected function applyQuoteExtrasToExpense(Expense $expense): void
+    {
+        $budgetItemId = $expense->items()->value('budget_item_id');
+        $sortOrder = (int) $expense->items()->max('sort_order') + 1;
+
+        // Currency units: the expense item accessors convert to cents on save.
+        foreach ([
+            ['amount' => (float) $this->freight_amount, 'name' => __('Freight')],
+            ['amount' => (float) $this->tax_amount, 'name' => __('Tax')],
+        ] as $extra) {
+            if ($extra['amount'] <= 0) {
+                continue;
+            }
+
+            $expense->items()->create([
+                'budget_item_id' => $budgetItemId,
+                'item_name' => $extra['name'],
+                'item_type' => 'custom',
+                'quantity' => 1,
+                'unit_price' => $extra['amount'],
+                'total_amount' => $extra['amount'],
+                'sort_order' => $sortOrder++,
+            ]);
+        }
+
+        // The discount is apportioned in cents so the rounding is exact, which
+        // is why the raw column values are used from here on rather than the
+        // accessors.
+        $discount = (int) round(((float) $this->discount_amount) * 100);
+
+        if ($discount <= 0) {
+            return;
+        }
+
+        $items = $expense->items()->orderByDesc('total_amount')->get();
+        $gross = (int) $items->sum(fn ($item) => (int) $item->getRawOriginal('total_amount'));
+
+        if ($gross <= 0) {
+            return;
+        }
+
+        // Largest remainder, so the cents removed add up to the discount
+        // exactly rather than drifting by a cent per line.
+        $discount = min($discount, $gross);
+        $shares = [];
+        $allocated = 0;
+
+        foreach ($items as $item) {
+            $exact = $discount * (int) $item->getRawOriginal('total_amount') / $gross;
+            $shares[$item->id] = ['floor' => (int) floor($exact), 'remainder' => $exact - floor($exact)];
+            $allocated += $shares[$item->id]['floor'];
+        }
+
+        $leftover = $discount - $allocated;
+
+        foreach (collect($shares)->sortByDesc('remainder')->keys()->take($leftover) as $id) {
+            $shares[$id]['floor']++;
+        }
+
+        foreach ($items as $item) {
+            $take = $shares[$item->id]['floor'];
+
+            if ($take <= 0) {
+                continue;
+            }
+
+            $newTotalCents = max(0, (int) $item->getRawOriginal('total_amount') - $take);
+            $newTotal = round($newTotalCents / 100, 2);
+            $quantity = (float) $item->quantity ?: 1;
+
+            $item->update([
+                'total_amount' => $newTotal,
+                'unit_price' => round($newTotal / $quantity, 2),
+            ]);
+        }
     }
 
     /**
@@ -459,13 +554,68 @@ class PurchaseOrder extends Model
     // =========================================================================
 
     /**
-     * Recalculate total_amount from items.
+     * The priced lines only.
+     *
+     * Monetary columns are stored in cents and the model's accessors present
+     * them in currency units (docs/monetary-storage.md). A query aggregate
+     * bypasses those accessors, so the raw sum is converted here — everything
+     * this class returns is in currency units.
+     */
+    public function itemsTotal(): float
+    {
+        return round(((int) $this->items()->sum('total_amount')) / 100, 2);
+    }
+
+    /**
+     * What the whole order comes to: the lines, plus whatever the winning
+     * proposal added on top.
+     *
+     * Freight, tax and the discount live on the header because the lines must
+     * keep the vendor's quoted unit prices exactly — this is the document the
+     * vendor is sent.
+     */
+    public function computeTotal(): float
+    {
+        return max(0, round(
+            $this->itemsTotal()
+            + (float) $this->freight_amount
+            + (float) $this->tax_amount
+            - (float) $this->discount_amount,
+            2
+        ));
+    }
+
+    /**
+     * Recalculate total_amount from the items and the header extras.
      */
     public function recalculateTotal(): void
     {
-        $totalCents = $this->items()->sum('total_amount');
-        $this->total_amount = $totalCents / 100;
+        $this->total_amount = $this->computeTotal();
         $this->save();
+    }
+
+    protected function freightAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => round($value / 100, 2),
+            set: fn ($value) => round($value * 100),
+        );
+    }
+
+    protected function taxAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => round($value / 100, 2),
+            set: fn ($value) => round($value * 100),
+        );
+    }
+
+    protected function discountAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => round($value / 100, 2),
+            set: fn ($value) => round($value * 100),
+        );
     }
 
     // =========================================================================

@@ -233,7 +233,11 @@ class PaymentDetailReportService
 
     protected function contractScope($query): void
     {
-        $query->where('status', '!=', 'cancelled')
+        // committed(), not "anything but cancelled": a draft contract is not
+        // money owed to anyone yet, and every other report excludes it. A
+        // contract raised by a quotation award starts as a draft, so this was
+        // showing its full value as an outstanding balance.
+        $query->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
