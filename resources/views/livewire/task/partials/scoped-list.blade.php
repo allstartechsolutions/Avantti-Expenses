@@ -47,20 +47,20 @@
 
             <select wire:model.live="statusFilter" class="{{ $field }}">
                 <option value="">{{ __('All Statuses') }}</option>
-                <option value="open">{{ __('Open') }}</option>
-                <option value="in_progress">{{ __('In Progress') }}</option>
-                <option value="blocked">{{ __('Blocked') }}</option>
-                <option value="ready">{{ __('Awaiting Confirmation') }}</option>
-                <option value="completed">{{ __('Completed') }}</option>
-                <option value="cancelled">{{ __('Cancelled') }}</option>
+                <option value="open">{{ __('Task status: open') }}</option>
+                <option value="in_progress">{{ __('Task status: in progress') }}</option>
+                <option value="blocked">{{ __('Task status: blocked') }}</option>
+                <option value="ready">{{ __('Task status: awaiting confirmation') }}</option>
+                <option value="completed">{{ __('Task status: completed') }}</option>
+                <option value="cancelled">{{ __('Task status: cancelled') }}</option>
             </select>
 
             <select wire:model.live="priorityFilter" class="{{ $field }}">
                 <option value="">{{ __('All Priorities') }}</option>
-                <option value="urgent">{{ __('Urgent') }}</option>
-                <option value="high">{{ __('High') }}</option>
-                <option value="normal">{{ __('Normal') }}</option>
-                <option value="low">{{ __('Low') }}</option>
+                <option value="urgent">{{ __('Task priority: urgent') }}</option>
+                <option value="high">{{ __('Task priority: high') }}</option>
+                <option value="normal">{{ __('Task priority: normal') }}</option>
+                <option value="low">{{ __('Task priority: low') }}</option>
             </select>
 
             @if($this->taskOwners->isNotEmpty())

@@ -87,7 +87,8 @@ $zIndex = $layer === 'top' ? 60 : 50;
     x-on:open-modal.window="$event.detail == name ? show = true : null"
     x-on:close-modal.window="$event.detail == name ? show = false : null"
     x-on:close.stop="show = false"
-    x-on:keydown.escape.window="if (show && isTopmost()) show = false"
+    {{-- Escape leaving a full-screen preview must not also close the modal behind it. --}}
+    x-on:keydown.escape.window="if (show && isTopmost() && ! document.fullscreenElement) show = false"
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"

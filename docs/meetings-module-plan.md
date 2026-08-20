@@ -1031,3 +1031,95 @@ site in one save — the task took all four, and `owner_changed` / `due_date_cha
 history; an information item was renamed and changed to a decision; clearing the owner was refused;
 the same edit worked from the run screen; and after publishing, the attempt left the title
 untouched.
+
+### Phase 6 — the minute as a document (2026-08-20)
+
+Done, **not committed**. A published minute now leaves the system.
+
+**The PDF** (`pdf.meeting-minute`, dompdf, same house style as the other reports): company header,
+the minute number and series, date/time/location/chair, the **attendance register including who
+was absent or excused**, the meeting notes with editor markup stripped for print, the agenda in
+numbered order with discussion and each decision in its own box, and then the table people
+actually act on — **action items with owner, due date, status and "open since SITE-2026-001"**.
+Corrections and the next meeting date close it out. A draft can be previewed and is stamped
+**DRAFT — NOT YET PUBLISHED** so a printed copy can never be mistaken for the record.
+
+**Kept, filed and sent.** `MeetingMinuteDistributor` does three things on publish:
+
+- **Kept** — the PDF as it read that day is stored against the meeting, so a later correction
+  cannot quietly change what people were sent.
+- **Filed** — into the project's document repository when the meeting was about exactly one
+  project (and pinned to a job site only when every item was about that site). A minute spanning
+  several projects has no single home, so it stays on the meeting; the publish dialog says which
+  will happen before you press the button.
+- **Sent** — to every attendee with a usable address, internal or external. Each recipient's mail
+  opens with **the items they personally own**, and the PDF is attached. Addresses that fail are
+  logged and counted without stopping the rest of the room being told.
+
+All three run **after the response and after the publishing transaction**: a slow mail server must
+not make publishing feel slow, and a failure there must not undo a publication that happened.
+**Send Again** on the minute re-runs it — for a mistyped address, a late addition, or a mail
+server that was down.
+
+Two defects found while testing, both by looking in the bucket rather than at the code:
+
+- **Every resend filed a brand-new document.** Six copies of the same minute, each with its own
+  uuid. Re-filing now versions the existing document instead.
+- **The obvious guard for that did not work.** Comparing the PDF bytes never matches, because
+  dompdf stamps a creation date and re-rendering the same minute produces different bytes every
+  time. The test is now whether a **correction has been recorded since the filed version was
+  written**: a resend files nothing, a corrected minute becomes version 2 with a note saying where
+  it came from.
+
+Verified: the PDF template carries all fourteen things it should (checked through the HTML dompdf
+is handed, since the embedded font makes the PDF's own text unsearchable); publishing produced a
+859 KB PDF kept on the meeting **and** filed under the right project and job site with the object
+really in storage; two of three attendees were e-mailed and the third — with no address — skipped;
+the external attendee was addressed and the PDF attached; a two-project meeting was correctly
+**not** filed under either; three resends created nothing; a recorded correction created version 2;
+and the screens show the PDF button, Send Again, and who the minute will reach.
+
+**Deploy:** unchanged.
+
+### Phase 7 — the four notification triggers (2026-08-20)
+
+Done, **not committed**. People are now told about their work instead of having to come and look.
+
+**The four the owner asked for**, and nothing else:
+
+| Trigger | Who | When |
+|---|---|---|
+| Created / assigned to you | owner and assignees, **never the person who did it** | immediately; adding somebody later mails only them, and handing a task over mails the new owner |
+| Closed | owner, assignees, whoever raised it, and the chair of the origin meeting — minus the actor | immediately, on completion or cancellation |
+| Went past due | owner and assignees | **once**, the morning after; the weekly digest carries it afterwards |
+| Weekly digest | everybody with something open | on the configured day and hour, grouped overdue / awaiting confirmation / this week / later |
+
+Admins and managers get a short **company roll-up** at the foot of their digest: open, overdue, and
+the five oldest with their owners.
+
+**Three gates before any mail goes out**, in order: the install has the trigger on
+(System Settings → Notifications, admin only), the person has not switched it off
+(Settings → Notifications, everybody), and it has not already been sent. Every send is written to
+`task_notifications` with its address and outcome, so a command that runs twice mails nobody twice
+and *"why did I not get an e-mail?"* is a query rather than a guess. Failures are kept as rows with
+the error, not silently dropped.
+
+**Delivery.** Interactive mail is dispatched `afterResponse()` — no queue worker required, and the
+person who pressed the button never waits on SMTP. The two scheduled commands are
+`tasks:notify-overdue` (daily 07:00) and `tasks:send-weekly-digest` (**hourly**, sending only on
+the configured day and hour, so moving the digest in System Settings takes effect without a
+deploy). Both need the scheduler, which the settings screen says plainly.
+
+Verified end to end: creating a task mailed the owner and the assignee but **not the person who
+created it**; adding somebody later mailed only them; closing mailed all three people on it and not
+the closer; the overdue run mailed once and **the second run mailed nobody**; moving the due date
+forward cleared the stamp so it can fire again; the digest sent one per person and **nothing on a
+second run in the same week**; the admin's digest carried the roll-up; switching a trigger off at
+the install sent nothing; a personal opt-out stopped that person's mail while others still got
+theirs. All four templates render, in both locales.
+
+One defect found while testing: **`afterResponse()` never runs on the console**, so a task created
+by a command would have notified nobody — and the tests saw nothing sent. The notifier now sends
+inline when running in console and defers only for real requests.
+
+**Deploy:** `php artisan migrate` (two additive migrations), and the scheduler must be running.

@@ -80,9 +80,9 @@
 
         <select wire:model.live="statusFilter" class="{{ $field }}">
             <option value="">{{ __('All Statuses') }}</option>
-            <option value="draft">{{ __('Draft') }}</option>
-            <option value="published">{{ __('Published') }}</option>
-            <option value="cancelled">{{ __('Cancelled') }}</option>
+            <option value="draft">{{ __('Meeting status: draft') }}</option>
+            <option value="published">{{ __('Meeting status: published') }}</option>
+            <option value="cancelled">{{ __('Meeting status: cancelled') }}</option>
         </select>
 
         <input type="date" wire:model.live="fromDate" class="{{ $field }}" title="{{ __('From') }}">
@@ -179,6 +179,11 @@
                                         @if($meeting->isDraft() && $this->canManage())
                                             <x-ui.button variant="primary" size="sm" href="{{ route('meetings.agenda', $meeting) }}">
                                                 {{ __('Agenda') }}
+                                            </x-ui.button>
+                                        @elseif($meeting->isPublished())
+                                            <x-ui.button variant="secondary" size="sm"
+                                                         href="{{ route('meetings.minute.pdf.download', $meeting) }}">
+                                                {{ __('PDF') }}
                                             </x-ui.button>
                                         @endif
                                     </div>

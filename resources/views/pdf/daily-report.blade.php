@@ -203,7 +203,7 @@
     <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background-color: #fafafa;">
         <span style="display: inline-block; background-color: #3F5189; color: white; width: 18px; height: 18px; text-align: center; line-height: 18px; font-size: 8pt; font-weight: bold; margin-right: 8px;">{{ $index + 1 }}</span>
         <span style="font-weight: bold; font-size: 9pt;">Task {{ $index + 1 }}</span>
-        <div style="font-size: 8pt; color: #555; margin-top: 8px; line-height: 1.5;">{!! strip_tags($task->description, '<br><p><ul><li><ol>') !!}</div>
+        <div style="font-size: 8pt; color: #555; margin-top: 8px; line-height: 1.5;">{!! strip_tags(App\Support\RichText::sanitize($task->description), '<br><p><ul><li><ol>') !!}</div>
     </div>
     @endforeach
     @endif

@@ -587,7 +587,7 @@
                             </div>
                         </div>
                         <div class="prose prose-sm dark:prose-invert max-w-none text-slate-600 dark:text-slate-400">
-                            {!! $task['description'] !!}
+                            {!! App\Support\RichText::sanitize($task['description']) !!}
                         </div>
                         @if(!empty($task['images']))
                             <div class="mt-3">

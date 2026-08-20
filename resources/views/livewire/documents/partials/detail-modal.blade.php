@@ -65,7 +65,10 @@
 
             {{-- Body --}}
             <div class="flex-1 bg-slate-50 dark:bg-slate-900">
-                <div class="mx-auto max-w-7xl px-6 py-6 space-y-6">
+                {{-- `wide` is set by the preview stage when the user asks the file for more room. --}}
+                <div class="mx-auto max-w-7xl px-6 py-6 space-y-6"
+                     x-data="{ wide: false }"
+                     x-on:viewer-wide="wide = $event.detail">
 
                     @if(session('error'))
                         <div class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-800 dark:text-red-300">
@@ -75,41 +78,18 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {{-- Preview --}}
-                        <div class="lg:col-span-2 {{ $card }} overflow-hidden">
-                            <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700">
-                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Preview') }}</h3>
-                            </div>
-                            <div class="bg-slate-100 dark:bg-slate-900/60">
-                                @if($document->trashed())
-                                    <div class="px-6 py-16 text-center">
-                                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('This document is in the trash. Restore it to open the file again.') }}</p>
-                                    </div>
-                                @elseif($document->isPdf())
-                                    <iframe src="{{ route('documents.preview', $document) }}" class="w-full h-[70vh]" title="{{ $document->name }}"></iframe>
-                                @elseif($document->isImage())
-                                    <div class="flex items-center justify-center p-4">
-                                        <img src="{{ route('documents.preview', $document) }}" alt="{{ $document->name }}" class="max-h-[70vh] w-auto rounded">
-                                    </div>
-                                @elseif($document->isVideo())
-                                    <video controls preload="metadata" class="w-full max-h-[70vh] bg-black">
-                                        <source src="{{ route('documents.preview', $document) }}" type="{{ $document->current_mime_type }}">
-                                    </video>
-                                @else
-                                    <div class="px-6 py-16 text-center">
-                                        <x-document-icon :document="$document" size="w-12 h-12 mx-auto" />
-                                        <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">{{ __('This file type cannot be shown in the browser.') }}</p>
-                                        <div class="mt-4">
-                                            <x-ui.button variant="secondary" size="sm" icon="download" href="{{ route('documents.download', $document) }}">
-                                                {{ __('Download to open it') }}
-                                            </x-ui.button>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
+                        <x-document-preview
+                            :document="$document"
+                            :src="route('documents.preview', $document)"
+                            class="lg:col-span-2 {{ $card }} overflow-hidden"
+                            x-bind:class="wide ? 'lg:col-span-3' : ''">
+                            <x-ui.button variant="secondary" size="sm" icon="download" href="{{ route('documents.download', $document) }}">
+                                {{ __('Download to open it') }}
+                            </x-ui.button>
+                        </x-document-preview>
 
                         {{-- Every stored field --}}
-                        <div class="{{ $card }}">
+                        <div class="{{ $card }}" x-show="! wide">
                             <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700">
                                 <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Details') }}</h3>
                             </div>

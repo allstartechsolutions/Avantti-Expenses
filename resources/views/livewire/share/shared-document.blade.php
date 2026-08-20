@@ -104,19 +104,11 @@
             </div>
 
             @if($document->isPreviewable())
-                <div class="bg-slate-100">
-                    @if($document->isPdf())
-                        <iframe src="{{ route('documents.share.view', $share->token) }}" class="w-full h-[70vh]" title="{{ $document->name }}"></iframe>
-                    @elseif($document->isImage())
-                        <div class="flex items-center justify-center p-4">
-                            <img src="{{ route('documents.share.view', $share->token) }}" alt="{{ $document->name }}" class="max-h-[70vh] w-auto rounded">
-                        </div>
-                    @else
-                        <video controls preload="metadata" class="w-full max-h-[70vh] bg-black">
-                            <source src="{{ route('documents.share.view', $share->token) }}" type="{{ $document->current_mime_type }}">
-                        </video>
-                    @endif
-                </div>
+                <x-document-preview
+                    :document="$document"
+                    :src="route('documents.share.view', $share->token)"
+                    :allowWide="false"
+                    class="border-t border-slate-200" />
             @endif
 
             <div class="px-6 py-5 flex flex-wrap items-center justify-between gap-3">

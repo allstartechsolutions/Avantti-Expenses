@@ -176,8 +176,8 @@ Improvements** (see `docs/meetings-module-plan.md`).
 
 | # | Item | Status |
 |---|---|---|
-| M1 | **Shared status words carry the wrong gender for tasks.** `Open`, `In Progress`, `Completed`, `Cancelled` and `Draft` already existed in `lang/pt_BR.json` for other modules, translated in the masculine ("Concluído", "Em Aberto"). A *tarefa* is feminine, so the task screens will read slightly wrong in pt_BR. Existing keys were deliberately not changed — they are shared with expenses, contracts and quotations. Fix by giving the task screens their own keys (e.g. `Task completed` → "Concluída") rather than by editing the shared ones. | open |
-| M2 | **`Task::isMeetingTracked()` and `hasSubtasks()` each run a query.** Fine on a detail screen, an N+1 in a list. The list screens must use `withCount('meetingItems')` / `withCount('subtasks')` and read the counts; check every call site during the review. | open |
+| M1 | ~~Shared status words carry the wrong gender for tasks~~ | **done** 2026-08-20 — task and meeting screens have their own keys. See below. |
+| M2 | ~~`Task::isMeetingTracked()` and `hasSubtasks()` each run a query~~ | **done** 2026-08-20 — they use eager-loaded counts. See below. |
 | M3 | **Progress roll-up is only recalculated when something calls `refreshProgressFromSubtasks()`.** Phase 1 must call it from every path that moves a sub-task (progress, status, cancel, delete, re-parent), and the review has to prove no path was missed — a stale parent percentage on a screen the owner reads is worse than no percentage. | open |
 | M4 | **`Meeting::openActionCount()` runs two queries and cannot be eager-loaded.** Acceptable on a detail page, wrong on the meetings index. Give the index a single grouped count during phase 3. | open |
 | M6 | **`MyTasks::stats()` runs four counting queries on every render**, and `groups()` a fifth. Fine for one person's list; when the All Tasks page (phase 8) reuses the shape it needs one grouped query instead. | open |
@@ -185,7 +185,7 @@ Improvements** (see `docs/meetings-module-plan.md`).
 | M8 | **Deleting a task is not implemented.** The model has soft deletes and the plan gives admins a delete, but nothing calls it; cancel covers the real case. Decide in the review whether delete is wanted at all, and if so what happens to the meeting items that point at it. | open |
 | M9 | **The agenda reorders with up/down buttons, not drag-and-drop** as §5.2 of the plan describes. Buttons are keyboard-reachable, unambiguous on a phone (where dragging inside a scrolling list fights the scroll), and need no library. Decide in the review whether drag is worth adding on top — if so, keep the buttons as the accessible path. | open |
 | M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
-| M11 | **`strip_tags()` with an allowlist is used elsewhere in the app to print editor output** (`resources/views/pdf/daily-report.blade.php:206`, and wherever else TinyMCE content is echoed). It removes disallowed *tags* but keeps the *attributes* of the ones it allows, so `<p onclick="…">` survives it. The meetings module now routes editor output through `App\Support\RichText`; the review should sweep the other call sites onto it. Low exploitability (only admins and managers can author that content) but it is stored XSS. | open |
+| M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
 | M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
 | M5 | **Attendance defaults to `present`.** Convenient when the list is seeded from the series and most people turn up, but it means an untouched attendance list records everyone as present, including people who were never there. Decide in phase 3 whether the default should be blank until the secretary marks the register. | open |
 
@@ -248,3 +248,83 @@ Improvements** (see `docs/meetings-module-plan.md`).
   sites will feel it.
 - The **cost grid PDF is landscape while every other PDF is portrait** — nine money columns
   do not fit otherwise. Worth knowing before someone standardises the paper size.
+
+---
+
+## M11 — the editor-output sweep (done 2026-08-20)
+
+**What was wrong.** Three browser screens printed TinyMCE content with no filtering at all —
+`estimate-show.blade.php`, `invoice-show.blade.php` and `daily-report-form.blade.php` echoed
+`{!! $model->message_body !!}` straight out of the editor. A `<script>` stored in an estimate
+message ran in the browser of everyone who opened that estimate.
+
+**What was swept**, all through `App\Support\RichText`:
+
+| Where | Before | Now |
+|---|---|---|
+| `estimate-show`, `invoice-show`, `daily-report-form` | raw `{!! … !!}` | `RichText::sanitize()` |
+| `emails/estimate`, `emails/invoice`, `emails/quotation-rfq` | raw `{!! $emailBody !!}` | `RichText::sanitize()` |
+| `pdf/estimate`, `pdf/invoice`, `pdf/daily-report` | `strip_tags($html, '<p><br>…')` | sanitise **first**, then the same `strip_tags` allowlist |
+| `job-site-show` | `{!! Str::limit(strip_tags(…)) !!}` | `{{ … }}` — it was already plain text |
+
+The PDFs keep their original narrow tag lists, so nothing about their layout changes; sanitising
+first simply means no attribute survives to reach them. They were never the exposure — dompdf does
+not execute a click handler — but they are the same class of code and were cheaper to fix than to
+explain.
+
+**Verified** by compiling each swept Blade expression and running a payload carrying `onclick`,
+`<script>`, `<img onerror>` and a `javascript:` href through it: every one comes out clean, while
+bold, lists and a real `https://` link survive. External links also gain
+`rel="noopener noreferrer"`.
+
+**The invariant to keep:** editor output is never printed with `{!! … !!}` unless it has been
+through `RichText`. The only remaining unescaped echo of user content is the documentation
+article, which is sanitised in `DocumentationService` before it reaches the view.
+
+---
+
+## M1 — the feminine words (done 2026-08-20)
+
+`Task::getStatusLabel()`, `getPriorityLabel()` and `Meeting::getStatusLabel()` now use their own
+translation keys — `Task status: completed`, `Meeting status: cancelled` and so on — instead of the
+plain words shared with expenses, contracts and quotations. Those shared keys are **unchanged**, so
+nothing else in the app moved.
+
+| | was | now |
+|---|---|---|
+| task completed | Concluído | **Concluída** |
+| task cancelled | Cancelado | **Cancelada** |
+| meeting cancelled | Cancelado | **Cancelada** |
+| task priority low / high | Mínima / Máxima | **Baixa / Alta** |
+
+The priority change is not gender — *mínima* and *máxima* mean minimum and maximum, which is not
+what a task's priority says. The other words (*Em aberto*, *Em andamento*, *Impedida*, *Aguardando
+confirmação*, *Rascunho*, *Publicada*) were already right and read the same.
+
+The filter dropdowns that build their own labels were moved onto the same keys, so a filter and the
+badge it filters for cannot disagree. English is unchanged: `en.json` maps each new key to the
+display word it always had.
+
+## M2 — the N+1 on task lists (done 2026-08-20)
+
+**Measured first.** My Tasks with 22 rows ran **36 queries, 21 of them asking about sub-tasks** —
+one per row, from `canMarkReady()` calling `hasOpenSubtasks()`.
+
+`isMeetingTracked()`, `hasSubtasks()` and `hasOpenSubtasks()` now answer from whatever the query
+already loaded, and only fall back to their own query when nothing did:
+
+1. an eager-loaded relation, if there is one;
+2. an eager-loaded count (`subtasks_count`, `open_subtasks_count`, `meeting_items_count`);
+3. `subtasks_count === 0`, which settles `hasOpenSubtasks()` without asking;
+4. otherwise, the query — a detail screen can afford one.
+
+The two list queries (`MyTasks::groups()` and `ListsScopedTasks::groups()`) now load
+`subtasks as open_subtasks_count`.
+
+**After: 16 queries, 1 about sub-tasks.** The meeting screens were already covered — they eager-load
+`task.subtasks`, so the loaded-relation branch answers there.
+
+Because the guard now reads three different ways, all three were tested against the same task: a
+parent with an open sub-task refuses **Ready** whether it was loaded plain, with counts, or with the
+relation; after the sub-task closes, all three allow it; and a task with no sub-tasks at all is
+allowed through the count shortcut.

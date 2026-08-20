@@ -6,6 +6,7 @@ use App\Livewire\Concerns\ManagesTasks;
 use App\Livewire\Concerns\RaisesAgendaItems;
 use App\Models\Meeting;
 use App\Models\MeetingItem;
+use App\Services\MeetingMinuteDistributor;
 use App\Services\MeetingService;
 use App\Services\TaskService;
 use App\Support\RichText;
@@ -110,6 +111,13 @@ class MeetingShow extends Component
     public function counters(): array
     {
         return $this->meetings()->counters($this->meeting);
+    }
+
+    /** Attendees with a usable address — who the minute will actually reach. */
+    #[Computed]
+    public function minuteRecipients(): Collection
+    {
+        return app(MeetingMinuteDistributor::class)->recipients($this->meeting);
     }
 
     #[Computed]
@@ -282,9 +290,42 @@ class MeetingShow extends Component
 
         $this->dispatch('close-modal', 'publish-modal');
 
-        session()->flash('message', __('Minute :number published. It is now a record and is locked.', [
+        // Keeping, filing and sending happen after the publication, and after
+        // the response: a slow mail server must not make publishing feel slow,
+        // and a failure there must not undo a publication that happened.
+        $meeting = $this->meeting;
+        $actor = auth()->user();
+
+        dispatch(function () use ($meeting, $actor) {
+            app(MeetingService::class)->distribute($meeting, $actor);
+        })->afterResponse();
+
+        session()->flash('message', __('Minute :number published. It is being filed and sent to the attendees.', [
             'number' => $this->meeting->number,
         ]));
+    }
+
+    /**
+     * Send it again — an address was wrong, somebody was added, or the mail
+     * server was down when it was published.
+     */
+    public function resendMinute(MeetingMinuteDistributor $distributor): void
+    {
+        abort_unless($this->meeting->isPublished(), 403);
+        abort_unless(
+            auth()->user()?->is_admin || auth()->user()?->is_manager || $this->meeting->chair_id === auth()->id(),
+            403
+        );
+
+        $result = $distributor->distribute($this->meeting, auth()->user());
+
+        $this->meeting = $this->meeting->fresh(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy']);
+
+        session()->flash('message', $result['failed'] > 0
+            ? __('Sent to :sent attendee(s); :failed could not be reached — check the log for the addresses.', [
+                'sent' => $result['sent'], 'failed' => $result['failed'],
+            ])
+            : trans_choice('Sent to :count attendee.|Sent to :count attendees.', $result['sent'], ['count' => $result['sent']]));
     }
 
     public function createFollowUp()

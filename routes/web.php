@@ -57,6 +57,7 @@ use App\Http\Controllers\DocumentationFileController;
 use App\Http\Controllers\DocumentationImageController;
 use App\Http\Controllers\DocumentationUploadController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\MeetingMinutePdfController;
 use App\Livewire\Documentation\DocumentationArticle;
 use App\Livewire\Documentation\DocumentationForm;
 use App\Livewire\Documentation\DocumentationIndex;
@@ -388,6 +389,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('meetings/{meeting}', MeetingShow::class)->name('meetings.show');
     Route::get('meetings/{meeting}/edit', MeetingForm::class)->name('meetings.edit');
     Route::get('meetings/{meeting}/agenda', MeetingAgenda::class)->name('meetings.agenda');
+    Route::get('meetings/{meeting}/minute/pdf', [MeetingMinutePdfController::class, 'download'])->name('meetings.minute.pdf.download');
+    Route::get('meetings/{meeting}/minute/pdf/view', [MeetingMinutePdfController::class, 'stream'])->name('meetings.minute.pdf.view');
 
     // Document repository (file repository for projects and job sites)
     Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');
@@ -418,6 +421,7 @@ Route::middleware(['auth'])->group(function () {
 
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
+    Volt::route('settings/notifications', 'settings.notifications')->name('notifications.edit');
     Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
 
     Volt::route('settings/two-factor', 'settings.two-factor')

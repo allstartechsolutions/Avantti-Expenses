@@ -56,6 +56,22 @@
                 <x-ui.button variant="primary" size="sm" x-on:click="$dispatch('open-modal', 'publish-modal')">{{ __('Publish Minute') }}</x-ui.button>
             @endif
 
+            @if($meeting->isPublished() || $meeting->isDraft())
+                <x-ui.button variant="secondary" size="sm" icon="eye"
+                             href="{{ route('meetings.minute.pdf.view', $meeting) }}" target="_blank">
+                    {{ __('PDF') }}
+                </x-ui.button>
+            @endif
+
+            @if($meeting->isPublished() && ($me?->is_admin || $me?->is_manager || $meeting->chair_id === $me?->id))
+                <x-ui.button variant="secondary" size="sm" wire:click="resendMinute"
+                             wire:confirm="{{ trans_choice(
+                                'Send the minute to :count attendee again?|Send the minute to :count attendees again?',
+                                $this->minuteRecipients->count(), ['count' => $this->minuteRecipients->count()]) }}">
+                    {{ __('Send Again') }}
+                </x-ui.button>
+            @endif
+
             @if($meeting->isPublished() && $meeting->canRevise($me) && ! $revising)
                 <x-ui.button variant="warning" size="sm" x-on:click="$dispatch('open-modal', 'revision-modal')">{{ __('Correct the Record') }}</x-ui.button>
             @endif
@@ -106,6 +122,16 @@
                     'name' => $meeting->publishedBy?->name,
                     'date' => $meeting->published_at?->format($stampFormat),
                 ]) }}
+            </p>
+            <p class="mt-1 text-xs text-green-700 dark:text-green-400">
+                @if($meeting->document)
+                    {{ __('Filed in the project documents as ":name".', ['name' => $meeting->document->name]) }}
+                @endif
+                @php $notified = $meeting->attendees->whereNotNull('notified_at'); @endphp
+                @if($notified->isNotEmpty())
+                    {{ trans_choice('Sent to :count attendee.|Sent to :count attendees.', $notified->count(), ['count' => $notified->count()]) }}
+                    {{ __('Last sent :date', ['date' => $notified->max('notified_at')?->format($stampFormat)]) }}
+                @endif
             </p>
         </div>
     @endif

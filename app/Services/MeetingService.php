@@ -85,6 +85,21 @@ class MeetingService
         });
     }
 
+    /**
+     * Keep, file and send the minute.
+     *
+     * Deliberately after the transaction that publishes: rendering a PDF and
+     * talking to a mail server are slow and can fail, and neither may undo a
+     * publication that already happened. Whatever fails here can be retried
+     * from the screen.
+     *
+     * @return array{stored:bool, filed:bool, sent:int, failed:int}
+     */
+    public function distribute(Meeting $meeting, User $actor): array
+    {
+        return app(MeetingMinuteDistributor::class)->distribute($meeting, $actor);
+    }
+
     // =========================================================================
     // THE MEETING THAT FOLLOWS
     // =========================================================================

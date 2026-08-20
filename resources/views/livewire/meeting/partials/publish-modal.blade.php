@@ -39,6 +39,30 @@
                 </div>
             </dl>
 
+            <div class="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-3">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {{ trans_choice(
+                        'The minute will be e-mailed to :count attendee.|The minute will be e-mailed to :count attendees.',
+                        $this->minuteRecipients->count(), ['count' => $this->minuteRecipients->count()]) }}
+                </p>
+                @if($this->minuteRecipients->isEmpty())
+                    <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        {{ __('Nobody on the register has an e-mail address, so it will only be filed.') }}
+                    </p>
+                @else
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {{ $this->minuteRecipients->map(fn ($a) => $a->displayName())->join(', ', ' '.__('and').' ') }}
+                    </p>
+                @endif
+
+                @php $scope = app(App\Services\MeetingMinuteDistributor::class)->singleProject($meeting); @endphp
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {{ $scope
+                        ? __('It will also be filed in the project documents.')
+                        : __('It covers more than one project, so it is kept on the meeting rather than filed under one of them.') }}
+                </p>
+            </div>
+
             <div class="mt-4">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Next meeting') }}</label>
                 <input type="date" wire:model="nextMeetingDate"

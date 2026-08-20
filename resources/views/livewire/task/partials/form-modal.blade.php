@@ -163,10 +163,10 @@
                         <div>
                             <label class="{{ $label }}">{{ __('Priority') }} <span class="text-red-500">*</span></label>
                             <select wire:model="task_priority" class="{{ $field }}">
-                                <option value="low">{{ __('Low') }}</option>
-                                <option value="normal">{{ __('Normal') }}</option>
-                                <option value="high">{{ __('High') }}</option>
-                                <option value="urgent">{{ __('Urgent') }}</option>
+                                <option value="low">{{ __('Task priority: low') }}</option>
+                                <option value="normal">{{ __('Task priority: normal') }}</option>
+                                <option value="high">{{ __('Task priority: high') }}</option>
+                                <option value="urgent">{{ __('Task priority: urgent') }}</option>
                             </select>
                             @error('task_priority') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>

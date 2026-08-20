@@ -28,6 +28,11 @@
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'modules' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     {{ __('Modules') }}
                 </button>
+                <button
+                    wire:click="switchTab('notifications')"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'notifications' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    {{ __('Notifications') }}
+                </button>
             </nav>
         </div>
     </div>
@@ -39,5 +44,7 @@
         <livewire:system-settings.document-message-settings />
     @elseif($activeTab === 'modules')
         <livewire:system-settings.module-access-settings />
+    @elseif($activeTab === 'notifications')
+        <livewire:system-settings.notification-settings />
     @endif
 </div>

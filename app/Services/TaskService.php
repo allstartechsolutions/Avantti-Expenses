@@ -48,7 +48,11 @@ class TaskService
 
             $task->parent?->refreshProgressFromSubtasks();
 
-            return $task->fresh();
+            $task = $task->fresh();
+
+            app(TaskNotifier::class)->taskAssigned($task->load(['owner', 'assignees']), $actor);
+
+            return $task;
         });
     }
 
@@ -86,6 +90,11 @@ class TaskService
                 $this->log($task, $actor, 'owner_changed',
                     User::find($before['owner_id'])?->name,
                     $task->owner?->name);
+
+                // Handing a task to somebody is exactly when they need telling.
+                if ($task->owner) {
+                    app(TaskNotifier::class)->taskAssigned($task, $actor, collect([$task->owner]));
+                }
             }
 
             if ($assigneeIds !== null) {
@@ -129,11 +138,15 @@ class TaskService
             throw new RuntimeException(__('This task is not waiting for confirmation, or you may not confirm it.'));
         }
 
-        return $this->transition($task, $actor, 'completed', function (Task $task) use ($actor) {
+        $task = $this->transition($task, $actor, 'completed', function (Task $task) use ($actor) {
             $task->completed_at = now();
             $task->completed_by = $actor->id;
             $task->progress = 100;
         }, $meeting);
+
+        app(TaskNotifier::class)->taskClosed($task->load(['owner', 'assignees', 'createdBy', 'originMeeting.chair']), $actor);
+
+        return $task;
     }
 
     /**
@@ -197,11 +210,15 @@ class TaskService
             throw new RuntimeException(__('Say why the task is being cancelled.'));
         }
 
-        return $this->transition($task, $actor, 'cancelled', function (Task $task) use ($actor, $reason) {
+        $task = $this->transition($task, $actor, 'cancelled', function (Task $task) use ($actor, $reason) {
             $task->cancelled_at = now();
             $task->cancelled_by = $actor->id;
             $task->cancel_reason = $reason;
         }, notes: $reason);
+
+        app(TaskNotifier::class)->taskClosed($task->load(['owner', 'assignees', 'createdBy', 'originMeeting.chair']), $actor);
+
+        return $task;
     }
 
     // =========================================================================
@@ -284,8 +301,19 @@ class TaskService
             return;
         }
 
+        $newcomers = collect();
+
         foreach ($added as $id) {
-            $this->log($task, $actor, 'assignee_added', null, User::find($id)?->name);
+            $user = User::find($id);
+            $this->log($task, $actor, 'assignee_added', null, $user?->name);
+
+            if ($user) {
+                $newcomers->push($user);
+            }
+        }
+
+        if ($newcomers->isNotEmpty()) {
+            app(TaskNotifier::class)->taskAssigned($task, $actor, $newcomers);
         }
 
         foreach ($removed as $id) {

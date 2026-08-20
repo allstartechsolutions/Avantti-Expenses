@@ -182,7 +182,7 @@
             {{ $estimate->message_title ?? 'Message' }}
         </div>
         <div style="font-size: 8pt; color: #555; line-height: 1.5;">
-            {!! strip_tags($estimate->message_body, '<br><p><ul><li><ol><strong><em>') !!}
+            {!! strip_tags(App\Support\RichText::sanitize($estimate->message_body), '<br><p><ul><li><ol><strong><em>') !!}
         </div>
     </div>
     @endif

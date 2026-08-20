@@ -327,14 +327,35 @@ class Task extends Model
         return (int) Carbon::today()->diffInDays($this->due_date->startOfDay(), false);
     }
 
+    /**
+     * These three answer questions a list asks once per row, so each one uses
+     * an eager-loaded count when the query provided it and only falls back to
+     * its own query on a detail screen where one more is free.
+     *
+     * A list that wants them cheap loads:
+     *   ->withCount(['subtasks', 'meetingItems'])
+     *   ->withCount(['subtasks as open_subtasks_count' => fn ($q) => $q->open()])
+     */
     public function isMeetingTracked(): bool
     {
-        return $this->meetingItems()->exists();
+        if ($this->relationLoaded('meetingItems')) {
+            return $this->meetingItems->isNotEmpty();
+        }
+
+        return isset($this->attributes['meeting_items_count'])
+            ? $this->attributes['meeting_items_count'] > 0
+            : $this->meetingItems()->exists();
     }
 
     public function hasSubtasks(): bool
     {
-        return $this->subtasks()->exists();
+        if ($this->relationLoaded('subtasks')) {
+            return $this->subtasks->isNotEmpty();
+        }
+
+        return isset($this->attributes['subtasks_count'])
+            ? $this->attributes['subtasks_count'] > 0
+            : $this->subtasks()->exists();
     }
 
     public function isSubtask(): bool
@@ -428,6 +449,20 @@ class Task extends Model
 
     public function hasOpenSubtasks(): bool
     {
+        if (isset($this->attributes['open_subtasks_count'])) {
+            return $this->attributes['open_subtasks_count'] > 0;
+        }
+
+        if ($this->relationLoaded('subtasks')) {
+            return $this->subtasks->contains(fn (self $sub) => $sub->isOpen());
+        }
+
+        // A task with no sub-tasks at all cannot have an open one, and the
+        // list already knows that much.
+        if (isset($this->attributes['subtasks_count']) && $this->attributes['subtasks_count'] === 0) {
+            return false;
+        }
+
         return $this->subtasks()->open()->exists();
     }
 
@@ -478,13 +513,18 @@ class Task extends Model
 
     public function getStatusLabel(): string
     {
+        // Task-specific keys on purpose. The plain words are shared with
+        // expenses, contracts and quotations, where they are translated in the
+        // masculine — and a *tarefa* is feminine, so a task screen reading
+        // "Concluído" is wrong. Changing the shared keys would break those
+        // other modules instead.
         return match ($this->status) {
-            'open' => __('Open'),
-            'in_progress' => __('In Progress'),
-            'blocked' => __('Blocked'),
-            'ready' => __('Awaiting Confirmation'),
-            'completed' => __('Completed'),
-            'cancelled' => __('Cancelled'),
+            'open' => __('Task status: open'),
+            'in_progress' => __('Task status: in progress'),
+            'blocked' => __('Task status: blocked'),
+            'ready' => __('Task status: awaiting confirmation'),
+            'completed' => __('Task status: completed'),
+            'cancelled' => __('Task status: cancelled'),
             default => ucfirst($this->status),
         };
     }
@@ -505,10 +545,10 @@ class Task extends Model
     public function getPriorityLabel(): string
     {
         return match ($this->priority) {
-            'low' => __('Low'),
-            'normal' => __('Normal'),
-            'high' => __('High'),
-            'urgent' => __('Urgent'),
+            'low' => __('Task priority: low'),
+            'normal' => __('Task priority: normal'),
+            'high' => __('Task priority: high'),
+            'urgent' => __('Task priority: urgent'),
             default => ucfirst($this->priority),
         };
     }

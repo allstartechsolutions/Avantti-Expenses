@@ -23,7 +23,7 @@
                     <tr>
                         <td style="padding: 30px;">
                             <div style="font-size: 14px; line-height: 1.6; color: #555;">
-                                {!! $emailBody !!}
+                                {!! App\Support\RichText::sanitize($emailBody) !!}
                             </div>
                             @if(app(\App\Services\CardPointeService::class)->isConfigured() && $invoice->getBalanceDue() > 0)
                                 <div style="text-align: center; margin: 25px 0 15px;">

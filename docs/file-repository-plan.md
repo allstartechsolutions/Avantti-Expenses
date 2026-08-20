@@ -338,6 +338,21 @@ rewinding); active **share links** with expiry, downloads used and Revoke; and t
 log** — uploaded/downloaded/renamed/moved/shared/deleted with user, timestamp and IP; plus
 created by / created at / last updated by / last updated.
 
+**The preview stage** (`<x-document-preview>`, shared by the detail modal and the public share
+page) carries its own controls, because a PDF in a two-thirds column is unreadable:
+
+- **Hide details** — the details column steps aside and the file takes the full width of the page
+  (desktop only; the phone layout is already single column). The stage announces the change with a
+  `viewer-wide` event so the page decides what to hide.
+- **Full screen** — the native Fullscreen API on the stage itself, so the file gets the whole
+  monitor with no app chrome. Esc leaves it, and an "Exit full screen" chip travels with the file
+  for anyone who does not know that. While a preview is full screen, Esc no longer closes the
+  modal behind it.
+- **Open in new tab** — the browser's own PDF viewer, for people who prefer it.
+
+The three heights (70vh, widened, full screen) are Alpine class bindings on the same element, so
+nothing reloads and a PDF keeps its scroll position when the layout changes.
+
 **Share link modal** — expiry date (default 14 days), optional password, allow-download toggle,
 optional max downloads, the copyable URL and a QR-free plain link. Revoking is one click, and the
 public page after expiry says the link expired rather than 404-ing.

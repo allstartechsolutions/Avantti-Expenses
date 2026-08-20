@@ -216,7 +216,7 @@
                     </div>
                     <div class="p-6">
                         <div class="prose prose-xs dark:prose-invert max-w-none text-sm text-slate-600 dark:text-slate-300">
-                            {!! $estimate->message_body !!}
+                            {!! App\Support\RichText::sanitize($estimate->message_body) !!}
                         </div>
                     </div>
                 </div>

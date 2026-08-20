@@ -127,6 +127,7 @@ class MyTasks extends Component
         $tasks = $this->filtered($this->tabQuery($this->tab))
             ->with(['project', 'jobSite', 'owner', 'assignees'])
             ->withCount(['subtasks', 'meetingItems', 'notes'])
+            ->withCount(['subtasks as open_subtasks_count' => fn (Builder $q) => $q->open()])
             ->orderByRaw('due_date is null, due_date asc')
             ->orderByDesc('id')
             ->get();

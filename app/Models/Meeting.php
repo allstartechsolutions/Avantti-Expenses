@@ -282,10 +282,12 @@ class Meeting extends Model
 
     public function getStatusLabel(): string
     {
+        // Its own keys for the same reason as Task: a *reunião* is feminine and
+        // the shared "Cancelled" is translated in the masculine.
         return match ($this->status) {
-            'draft' => __('Draft'),
-            'published' => __('Published'),
-            'cancelled' => __('Cancelled'),
+            'draft' => __('Meeting status: draft'),
+            'published' => __('Meeting status: published'),
+            'cancelled' => __('Meeting status: cancelled'),
             default => ucfirst($this->status),
         };
     }

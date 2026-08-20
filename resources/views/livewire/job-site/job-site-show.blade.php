@@ -420,7 +420,7 @@
                                                         </svg>
                                                         <div class="flex-1">
                                                             <div class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                                                                {!! Str::limit(strip_tags($task->description), 150) !!}
+                                                                {{ Str::limit(strip_tags($task->description), 150) }}
                                                             </div>
                                                             @if($task->images->count() > 0)
                                                                 <span class="inline-flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1">

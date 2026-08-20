@@ -225,7 +225,7 @@
                     </div>
                     <div class="p-6">
                         <div class="prose prose-xs dark:prose-invert max-w-none text-sm text-slate-600 dark:text-slate-300">
-                            {!! $invoice->message_body !!}
+                            {!! App\Support\RichText::sanitize($invoice->message_body) !!}
                         </div>
                     </div>
                 </div>

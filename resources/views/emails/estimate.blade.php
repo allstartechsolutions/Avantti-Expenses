@@ -23,7 +23,7 @@
                     <tr>
                         <td style="padding: 30px;">
                             <div style="font-size: 14px; line-height: 1.6; color: #555;">
-                                {!! $emailBody !!}
+                                {!! App\Support\RichText::sanitize($emailBody) !!}
                             </div>
                         </td>
                     </tr>

@@ -33,6 +33,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'role_id',
+        'notification_preferences',
         'status',
     ];
 
@@ -56,6 +57,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'notification_preferences' => 'array',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
@@ -129,6 +131,17 @@ class User extends Authenticatable
     public function managedProjects(): HasMany
     {
         return $this->hasMany(Project::class, 'project_manager_id');
+    }
+
+    /**
+     * Has this person switched off one of the task e-mails?
+     *
+     * Null preferences mean "send me what everyone gets" — nobody needs a row
+     * written to receive the ordinary mail.
+     */
+    public function wantsNotification(string $key): bool
+    {
+        return (bool) (($this->notification_preferences[$key] ?? true));
     }
 
     /**

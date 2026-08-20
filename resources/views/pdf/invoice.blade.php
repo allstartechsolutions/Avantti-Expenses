@@ -217,7 +217,7 @@
             {{ $invoice->message_title ?? 'Message' }}
         </div>
         <div style="font-size: 8pt; color: #555; line-height: 1.5;">
-            {!! strip_tags($invoice->message_body, '<br><p><ul><li><ol><strong><em>') !!}
+            {!! strip_tags(App\Support\RichText::sanitize($invoice->message_body), '<br><p><ul><li><ol><strong><em>') !!}
         </div>
     </div>
     @endif
