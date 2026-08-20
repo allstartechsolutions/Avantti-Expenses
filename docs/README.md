@@ -40,12 +40,12 @@
 
 ### UI Components
 
-5. **[Header Search](./header-search.md)** - Project search in header
-   - Debounced search (300ms) for performance
-   - Searches by project name
-   - Shows project name and address in results
-   - Lazy loading - no queries on page load
-   - Optimized for thousands of projects
+5. **[Header Search](./header-search.md)** - Global search in the desktop header
+   - Finds **projects and job sites**, grouped, 5 rows each
+   - Matches names, client, contact person, street and city
+   - Debounced search (300ms), minimum 2 characters
+   - Lazy loading - zero queries on page load
+   - Keyboard nav (arrows / enter / escape), loading, empty and below-minimum states
 
 ### Data Management
 
@@ -73,6 +73,7 @@
 - **[Quotation Module plan](./quotation-module-plan.md)** - Buy-side quotations (BR: *Cotação*): requisition → quote several vendors → comparative map with equalization → negotiation rounds → justified award → contract (service) or purchase order (material). Researched against Brazilian practice; **phase 1 built**, phases 2–8 planned.
 - **[Quotation Rounds](./quotation-module.md)** - Phase 2 of that chain, as built: one scope, several vendors invited, the request e-mailed from the app with a priceable PDF per vendor, every send on the record, the 2/3-proposal rule visible from the start, each vendor's proposal keyed in with equalized totals, the comparison map with its PDF, negotiation rounds kept with their before/after totals, and the award with its justification, 2/3-proposal rule and split-by-line option. and conversion into the draft purchase orders or contracts that actually get paid. Awarded prices are taught back to the catalog so the next round opens with what was really paid. Phase 9, the review, is what remains.
 - **[Review and Improvements](./review-and-improvements.md)** - The standing final phase every module now gets, and the backlog of things noticed mid-build waiting to be worked.
+- **[Permissions Module plan](./permissions-module-plan.md)** - The design that answers those notations, planned 2026-08-20: abilities instead of three flat roles, a per-user Company-wide/Assigned switch, project and job-site memberships with an action matrix, reusable templates, invitations for staff and external guests, and the ten phases that get there without changing what anyone sees on deploy day.
 - **[Permissions — running notations](./permissions-notes.md)** - Notes only, nothing built: what the role system does today, where the approval gate can be walked around, and the decisions needed before permission work starts. Add new observations here rather than fixing them one screen at a time.
 - **[Purchase Requisitions](./requisition-module.md)** - Phase 1 of that chain, as built: the site asks for what it needs, an admin or manager approves it, and the approved requisition waits to be quoted. Project and job-site pages, full-page form and detail, status history, attachments.
 
@@ -276,17 +277,18 @@ WeatherService::getTemperatureUnit(); // "F" or "C"
 
 ### How It Works
 
-1. User types at least 2 characters in search field
-2. After 300ms pause, Livewire queries the database
-3. Results show project name and address (max 8 results)
-4. Click result to navigate to project page
+1. User types at least 2 characters in the search field
+2. After a 300ms pause, Livewire queries the database
+3. Results are grouped into **Projects** and **Job Sites**, up to 5 rows each, each row
+   showing a status dot, the name, its parent (client / project), the address and the status
+4. Arrows browse, enter opens, escape closes; clicking a row navigates
 
 ### Performance Features
 
 - **Debounced**: 300ms delay prevents excessive queries
-- **Lazy**: No database queries until user searches
-- **Limited**: Maximum 8 results returned
-- **Indexed**: `project_name` column is indexed
+- **Lazy**: zero database queries until the term reaches 2 characters — verified
+- **Limited**: 5 rows per group, narrow `select`, relations eager-loaded
+- **Safe**: `%` and `_` in the term are escaped before they reach the `LIKE`
 
 ### Files
 
@@ -303,7 +305,8 @@ WeatherService::getTemperatureUnit(); // "F" or "C"
 wire:model.live.debounce.500ms="search"
 ```
 
-**Change result limit:**
+**Change minimum length or rows per group:**
 ```php
-->limit(10)  // In getResultsProperty()
+HeaderSearch::MIN_LENGTH   // default 2
+HeaderSearch::PER_GROUP    // default 5
 ```

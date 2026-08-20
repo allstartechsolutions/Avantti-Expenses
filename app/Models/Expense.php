@@ -311,8 +311,11 @@ class Expense extends Model
      * Update the expense and record a change history entry with the field diff.
      * When installments have already been paid, payment-structure fields are
      * preserved so the existing schedule and status are not clobbered.
+     *
+     * $extraChanges are folded into the same entry, so a save that touched both
+     * the header and the line items reads as one edit rather than two.
      */
-    public function updateWithHistory(array $data): void
+    public function updateWithHistory(array $data, array $extraChanges = []): void
     {
         if ($this->hasLockedPayments()) {
             unset(
@@ -337,7 +340,7 @@ class Expense extends Model
 
         $this->update($data);
 
-        $diff = [];
+        $diff = $extraChanges;
         foreach ($this->getChanges() as $field => $new) {
             if (in_array($field, ['created_at', 'updated_at', 'paid_by'])) {
                 continue;

@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Project;
 
+use App\Models\Budget;
 use App\Models\Project;
+use App\Services\CostCodeLedger;
 use Livewire\Component;
 
 class ProjectBudget extends Component
@@ -18,19 +20,25 @@ class ProjectBudget extends Component
     {
         $jobSites = $this->project->jobSites()->orderBy('job_site_name')->get();
 
-        // Get project-level budget (budget with no job_site_id)
-        $projectBudget = $this->project->budget;
-
-        // Get job-site level budgets
-        $jobSiteBudgets = $this->project->budgets()
-            ->whereNotNull('job_site_id')
+        $budgets = Budget::where('project_id', $this->project->id)
+            ->with(['sourceTemplate'])
             ->withCount('items')
             ->get();
 
+        $totals = [];
+        $rollup = null;
+
+        foreach ($budgets as $budget) {
+            $totals[$budget->id] = CostCodeLedger::for($budget)->totals();
+            $rollup = CostCodeLedger::addTotals($rollup, $totals[$budget->id]);
+        }
+
         return view('livewire.project.project-budget', [
             'jobSites' => $jobSites,
-            'projectBudget' => $projectBudget,
-            'jobSiteBudgets' => $jobSiteBudgets,
+            'projectBudget' => $budgets->firstWhere('job_site_id', null),
+            'jobSiteBudgets' => $budgets->whereNotNull('job_site_id'),
+            'budgetTotals' => $totals,
+            'rollup' => $rollup,
         ])->layout('components.layouts.app');
     }
 }

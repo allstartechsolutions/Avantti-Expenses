@@ -8,6 +8,7 @@ use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -128,6 +129,24 @@ class User extends Authenticatable
     public function managedProjects(): HasMany
     {
         return $this->hasMany(Project::class, 'project_manager_id');
+    }
+
+    /**
+     * Tasks this user owns — the only person who may declare them ready
+     */
+    public function ownedTasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'owner_id');
+    }
+
+    /**
+     * Tasks this user works on without owning them
+     */
+    public function assignedTasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_assignees')
+            ->withPivot(['assigned_by', 'assigned_at'])
+            ->withTimestamps();
     }
 
     /**

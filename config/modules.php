@@ -43,6 +43,27 @@ return [
         ],
     ],
 
+    'documentation' => [
+        'name' => 'Documentation',
+        'description' => 'Guides and tutorials — the ones shipped with the product and the ones this company writes.',
+        'route_prefixes' => ['documentation.*'],
+    ],
+
+    // Declared before 'projects' for the same reason as 'documents': the
+    // module check stops at the first matching prefix, and 'projects.*' would
+    // otherwise claim projects.tasks.
+    'meetings' => [
+        'name' => 'Meetings',
+        'description' => 'Meeting minutes (atas), agendas and the task system behind them.',
+        'route_prefixes' => [
+            'projects.tasks',
+            'jobsites.tasks',
+            'meetings.*',
+            'meeting-series.*',
+            'tasks.*',
+        ],
+    ],
+
     'projects' => [
         'name' => 'Projects',
         'description' => 'Project management including job sites, expenses, daily reports, budgets, and purchase orders.',

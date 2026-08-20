@@ -3,6 +3,8 @@
 namespace App\Livewire\JobSite;
 
 use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\ManagesChangeOrders;
+use App\Services\CostCodeLedger;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
@@ -20,7 +22,7 @@ use Livewire\WithFileUploads;
 
 class JobSiteShow extends Component
 {
-    use WithFileUploads, AuthorizesAdmin;
+    use WithFileUploads, AuthorizesAdmin, ManagesChangeOrders;
 
     public JobSite $jobSite;
     public $activeTab = 'overview';
@@ -28,22 +30,6 @@ class JobSiteShow extends Component
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
     public $deleteJobSiteData = [];
-
-    // Change Order search
-    public $changeOrderSearch = '';
-
-    // Change Order modal state
-    public $showChangeOrderModal = false;
-    public $modalMode = 'create';
-    public $editingChangeOrder = null;
-
-    // Change Order form properties
-    public $title = '';
-    public $requested_date = '';
-    public $description = '';
-    public $amount = '';
-    public $file = null;
-    public $existingFilePath = null;
 
     // Expense properties
     public $expenseSearch = '';
@@ -92,31 +78,8 @@ class JobSiteShow extends Component
     public $expense_payment_schedule_preview = [];
     public $expenseStatusFilter = 'all';
 
-    protected function rules()
-    {
-        $rules = [
-            'title' => 'required|string|max:255',
-            'requested_date' => 'required|date',
-            'description' => 'nullable|string',
-            'amount' => 'required|numeric',
-        ];
-
-        if ($this->modalMode === 'create') {
-            $rules['file'] = 'nullable|file|max:10240';
-        } else {
-            $rules['file'] = 'nullable|file|max:10240';
-        }
-
-        return $rules;
-    }
-
-    protected $validationAttributes = [
-        'title' => 'title',
-        'requested_date' => 'requested date',
-        'description' => 'description',
-        'amount' => 'amount',
-        'file' => 'file',
-    ];
+    /** Narrow the expense list to one cost code. */
+    public $expenseCostCodeFilter = 'all';
 
     public $activeNavTab = 'overview';
 
@@ -148,110 +111,20 @@ class JobSiteShow extends Component
         $this->activeTab = $tab;
     }
 
-    public function openCreateModal()
+    protected function changeOrderProjectId(): int
     {
-        $this->reset(['title', 'requested_date', 'description', 'amount', 'file', 'existingFilePath', 'editingChangeOrder']);
-        $this->requested_date = now()->format('Y-m-d');
-        $this->modalMode = 'create';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
+        return $this->jobSite->project_id;
     }
 
-    public function openEditModal($changeOrderId)
+    /** This screen only ever shows and writes change orders for its own job site. */
+    protected function changeOrderPinnedJobSiteId(): int|false
     {
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        $this->editingChangeOrder = $changeOrder->id;
-        $this->title = $changeOrder->title;
-        $this->requested_date = $changeOrder->requested_date->format('Y-m-d');
-        $this->description = $changeOrder->description;
-        $this->amount = $changeOrder->amount;
-        $this->existingFilePath = $changeOrder->file_path;
-        $this->file = null;
-
-        $this->modalMode = 'edit';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
+        return $this->jobSite->id;
     }
 
-    public function openViewModal($changeOrderId)
+    protected function afterChangeOrderSaved(): void
     {
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        $this->editingChangeOrder = $changeOrder->id;
-        $this->title = $changeOrder->title;
-        $this->requested_date = $changeOrder->requested_date->format('Y-m-d');
-        $this->description = $changeOrder->description;
-        $this->amount = $changeOrder->amount;
-        $this->existingFilePath = $changeOrder->file_path;
-
-        $this->modalMode = 'view';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
-    }
-
-    public function saveChangeOrder()
-    {
-        $this->validate();
-
-        $filePath = $this->existingFilePath;
-
-        if ($this->file) {
-            if ($this->existingFilePath) {
-                Storage::delete($this->existingFilePath);
-            }
-            $filePath = $this->file->store('change_orders', 'local');
-        }
-
-        if ($this->modalMode === 'edit' && $this->editingChangeOrder) {
-            $changeOrder = ChangeOrder::findOrFail($this->editingChangeOrder);
-            $changeOrder->update([
-                'title' => $this->title,
-                'requested_date' => $this->requested_date,
-                'description' => $this->description,
-                'amount' => $this->amount,
-                'file_path' => $filePath,
-            ]);
-
-            session()->flash('message', __('Change order updated successfully!'));
-        } else {
-            ChangeOrder::create([
-                'project_id' => $this->jobSite->project_id,
-                'job_site_id' => $this->jobSite->id,
-                'title' => $this->title,
-                'requested_date' => $this->requested_date,
-                'description' => $this->description,
-                'amount' => $this->amount,
-                'file_path' => $filePath,
-                'created_by' => Auth::id(),
-            ]);
-
-            session()->flash('message', __('Change order created successfully!'));
-        }
-
-        $this->closeModal();
         $this->jobSite->refresh();
-    }
-
-    public function deleteChangeOrder($changeOrderId)
-    {
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        if ($changeOrder->file_path) {
-            Storage::delete($changeOrder->file_path);
-        }
-
-        $changeOrder->delete();
-
-        session()->flash('message', __('Change order deleted successfully!'));
-        $this->jobSite->refresh();
-    }
-
-    public function closeModal()
-    {
-        $this->showChangeOrderModal = false;
-        $this->reset(['title', 'requested_date', 'description', 'amount', 'file', 'existingFilePath', 'editingChangeOrder']);
-        $this->dispatch('close-modal', 'change-order-modal');
     }
 
     // Expense methods
@@ -951,20 +824,20 @@ class JobSiteShow extends Component
 
     public function render()
     {
-        $changeOrdersQuery = $this->jobSite->changeOrders()->with('createdBy');
-
-        if ($this->changeOrderSearch) {
-            $changeOrdersQuery->where(function($query) {
-                $query->where('title', 'like', '%' . $this->changeOrderSearch . '%')
-                    ->orWhere('description', 'like', '%' . $this->changeOrderSearch . '%');
-            });
-        }
-
-        $changeOrders = $changeOrdersQuery->orderBy('created_at', 'desc')->get();
-        $totalChangeOrdersAmount = $changeOrders->sum('amount');
+        $changeOrders = $this->changeOrderQuery()
+            ->orderByDesc('requested_date')
+            ->orderByDesc('id')
+            ->get();
 
         // Expenses
-        $expensesQuery = $this->jobSite->expenses()->with(['catalogItem', 'createdBy', 'payments']);
+        $expensesQuery = $this->jobSite->expenses()->with(['catalogItem', 'createdBy', 'payments', 'items.budgetItem']);
+
+        // Apply cost code filter
+        if ($this->expenseCostCodeFilter !== 'all') {
+            $expensesQuery->whereHas('items.budgetItem', function ($q) {
+                $q->where('code', $this->expenseCostCodeFilter);
+            });
+        }
 
         // Apply status filter
         if ($this->expenseStatusFilter !== 'all') {
@@ -1009,6 +882,12 @@ class JobSiteShow extends Component
         // Budget
         $budget = $this->jobSite->budget?->load(['sourceTemplate', 'parentItems']);
 
+        // Only the budget tab shows these figures, and building them walks every
+        // contract, expense and purchase order for the location.
+        $budgetLedger = ($budget && $this->activeTab === 'budget')
+            ? CostCodeLedger::for($budget)
+            : null;
+
         // Purchase Orders
         $purchaseOrders = PurchaseOrder::where('job_site_id', $this->jobSite->id)
             ->with(['supplier', 'createdBy'])
@@ -1025,7 +904,12 @@ class JobSiteShow extends Component
 
         return view('livewire.job-site.job-site-show', [
             'changeOrders' => $changeOrders,
-            'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
+            'changeOrderSummary' => $this->changeOrderSummary($changeOrders),
+            'coBudget' => $this->changeOrderBudget(),
+            'coLineSuggestions' => $this->changeOrderLineSearchResults(),
+            'changeOrderRecord' => $this->editingChangeOrder
+                ? ChangeOrder::with(['createdBy', 'approvedBy'])->find($this->editingChangeOrder)
+                : null,
             'expenses' => $expenses,
             'totalExpensesAmount' => $totalExpensesAmount,
             'totalPaidAmount' => $totalPaidAmount,
@@ -1034,6 +918,11 @@ class JobSiteShow extends Component
             'dailyReports' => $dailyReports,
             'viewingExpense' => $viewingExpense,
             'budget' => $budget,
+            'expenseCostCodes' => $budget
+                ? $budget->items()->orderBy('code')->get(['id', 'code', 'name'])
+                : collect(),
+            'budgetTotals' => $budgetLedger?->totals(),
+            'budgetLedgerRows' => $budgetLedger?->rowsByItem() ?? [],
             'purchaseOrders' => $purchaseOrders,
             'purchaseOrderStats' => $purchaseOrderStats,
         ])->layout('components.layouts.app');

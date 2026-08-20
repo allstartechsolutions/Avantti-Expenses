@@ -353,6 +353,77 @@
 
             @endif
 
+            <!-- Meetings, minutes and tasks -->
+            @if(\App\Models\ModuleAccess::isEnabled('meetings'))
+            <div class="mb-1" x-data="railFlyout"
+                 @mouseenter="rail && show()" @mouseleave="hide()"
+                 @focusin="rail && show()"
+                 @focusout="$el.contains($event.relatedTarget) || hide()"
+                 @keydown.escape="hide()" @click.outside="open = false"
+                 @rail-reposition.window="open && place()"
+                 x-effect="rail || hide()">
+                <button @click="rail ? toggle() : toggleSubmenu('meetings')"
+                        class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('meetings.*') || request()->routeIs('meeting-series.*') || request()->routeIs('tasks.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Meetings') }}</span>
+                    </div>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'meetings'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu === 'meetings'" x-cloak
+                         class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- Meetings Submenu -->
+                <div x-show="rail ? open : activeSubmenu === 'meetings'" x-cloak x-ref="panel"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     :class="rail
+                        ? 'fixed left-[70px] z-50 w-64 max-h-[80vh] overflow-y-auto overscroll-contain p-2 space-y-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl'
+                        : 'ml-8 mt-2 space-y-1'"
+                     :style="{ top: rail ? top + 'px' : null }"
+                     @mouseenter="rail && show()" @mouseleave="hide()">
+                    <div x-show="rail" x-cloak
+                         class="px-3 pb-2 mb-1 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        {{ __('Meetings') }}
+                    </div>
+                    <a href="{{ route('meetings.index') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('meetings.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ __('Minutes') }}
+                    </a>
+                    <a href="{{ route('tasks.mine') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('tasks.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        {{ __('My Tasks') }}
+                    </a>
+                    @if(auth()->user()?->is_admin || auth()->user()?->is_manager)
+                    <a href="{{ route('meeting-series.index') }}"
+                       class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('meeting-series.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        {{ __('Meeting Series') }}
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <!-- Reports (admin only) -->
             @admin
             @if(\App\Models\ModuleAccess::isEnabled('reports'))
@@ -445,6 +516,30 @@
             </div>
             @endif
             @endadmin
+
+            <!-- Documentation -->
+            @if(\App\Models\ModuleAccess::isEnabled('documentation'))
+            <div x-data="railFlyout"
+                 @mouseenter="rail && show()" @mouseleave="hide()"
+                 @focusin="rail && show()" @focusout="hide()"
+                 @rail-reposition.window="open && place()"
+                 x-effect="rail || hide()">
+                <a href="{{ route('documentation.index') }}" class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('documentation.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>{{ __('Documentation') }}</span>
+                </a>
+                <div x-show="rail && open" x-cloak x-ref="panel"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     :style="{ top: top + 'px' }"
+                     class="fixed left-[70px] z-50 px-3 py-2 whitespace-nowrap rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {{ __('Documentation') }}
+                </div>
+            </div>
+            @endif
         </div>
     </nav>
 

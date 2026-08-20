@@ -8,12 +8,9 @@ use App\Models\ExpenseItem;
 
 class BudgetService
 {
-    public const MISCELLANEOUS_CODE = '999999';
-    public const MISCELLANEOUS_NAME = 'Miscellaneous';
-
     /**
      * Get or create a budget for a location (project + optional job_site).
-     * If no budget exists, creates one with only the Miscellaneous item.
+     * If no budget exists, creates one with only the default (catch-all) cost code.
      */
     public static function getOrCreateBudget(int $projectId, ?int $jobSiteId, int $createdBy): Budget
     {
@@ -32,49 +29,31 @@ class BudgetService
                 'created_by' => $createdBy,
             ]);
 
-            // Create Miscellaneous item
-            self::getOrCreateMiscellaneousItem($budget);
+            // Seed the catch-all bucket so uncoded costs have somewhere to land
+            $budget->ensureDefaultItem();
         }
 
         return $budget;
     }
 
     /**
-     * Get or create the Miscellaneous budget item for a budget.
+     * Get the catch-all cost code for a location — the bucket an uncoded cost
+     * lands in. Creates the budget and the bucket if they don't exist.
+     *
+     * The bucket is the item flagged `is_default`, never a code looked up by
+     * number, so contracts, expenses, purchase orders and change orders all
+     * fall into the same one.
      */
-    public static function getOrCreateMiscellaneousItem(Budget $budget): BudgetItem
-    {
-        $item = $budget->items()
-            ->where('code', self::MISCELLANEOUS_CODE)
-            ->first();
-
-        if (!$item) {
-            $item = $budget->items()->create([
-                'code' => self::MISCELLANEOUS_CODE,
-                'name' => self::MISCELLANEOUS_NAME,
-                'description' => 'Uncategorized expenses',
-                'budgeted_amount' => 0,
-                'sort_order' => 99999,
-            ]);
-        }
-
-        return $item;
-    }
-
-    /**
-     * Get the Miscellaneous budget item for a location.
-     * Creates budget and item if they don't exist.
-     */
-    public static function getMiscellaneousItem(int $projectId, ?int $jobSiteId, int $createdBy): BudgetItem
+    public static function getDefaultItem(int $projectId, ?int $jobSiteId, int $createdBy): BudgetItem
     {
         $budget = self::getOrCreateBudget($projectId, $jobSiteId, $createdBy);
 
-        return self::getOrCreateMiscellaneousItem($budget);
+        return $budget->ensureDefaultItem();
     }
 
     /**
      * Ensure an expense item has a budget_item_id.
-     * If null, assigns to Miscellaneous.
+     * If null, assigns it to the budget's default cost code.
      */
     public static function ensureBudgetItem(ExpenseItem $expenseItem): void
     {
@@ -83,13 +62,13 @@ class BudgetService
         }
 
         $expense = $expenseItem->expense;
-        $miscItem = self::getMiscellaneousItem(
+        $defaultItem = self::getDefaultItem(
             $expense->project_id,
             $expense->job_site_id,
             $expense->created_by
         );
 
-        $expenseItem->budget_item_id = $miscItem->id;
+        $expenseItem->budget_item_id = $defaultItem->id;
         $expenseItem->save();
     }
 

@@ -1,6 +1,15 @@
 # File Repository (Documents Module) — Plan
 
 **Status: phases 0–4 built (2026-08-19), not yet committed.** See §13 for the build log.
+
+> **2026-08-19 — the storage layer is now shared.** `DocumentStorageService` works on the
+> `App\Contracts\StoredFile` contract rather than on `DocumentVersion`, and the presign /
+> multipart decision lives in the extracted `planUpload()`. The Alpine `documentUploader` is
+> one factory registered under two names. The repository's behaviour, payloads and endpoints
+> are unchanged — the meetings module reuses them for task attachments instead of growing a
+> second copy. Note for phase 5: `abortOrphanedMultipartUploads()` must keep checking
+> `file_uploads` as well as `document_versions`, or it will abort other modules' live uploads.
+> See `docs/meetings-module-plan.md` §12.
 Plan written 2026-08-19.
 
 A document repository at the **Project** and **Job Site** level: folders, categories and tags,

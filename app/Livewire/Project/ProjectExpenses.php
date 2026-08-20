@@ -3,6 +3,8 @@
 namespace App\Livewire\Project;
 
 use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Models\Budget;
+use App\Models\BudgetItem;
 use App\Models\Expense;
 use App\Models\Project;
 use Illuminate\Support\Facades\Storage;
@@ -51,6 +53,9 @@ class ProjectExpenses extends Component
     public $editDueDateId = null;
     public $editDueDate = '';
 
+    /** Narrow the list to one cost code, matched by code across the project's budgets. */
+    public $expenseCostCodeFilter = 'all';
+
     public function mount(Project $project): void
     {
         $this->project = $project;
@@ -77,6 +82,7 @@ class ProjectExpenses extends Component
                 $this->expenseItems[] = [
                     'id' => $item->id,
                     'budget_item_id' => $item->budget_item_id,
+                    'cost_code' => $item->cost_code_display,
                     'catalog_item_id' => $item->catalog_item_id,
                     'item_name' => $item->item_name,
                     'item_type' => $item->item_type,
@@ -275,6 +281,13 @@ class ProjectExpenses extends Component
             $expensesQuery->where('status', $this->expenseStatusFilter);
         }
 
+        // Apply cost code filter
+        if ($this->expenseCostCodeFilter !== 'all') {
+            $expensesQuery->whereHas('items.budgetItem', function ($q) {
+                $q->where('code', $this->expenseCostCodeFilter);
+            });
+        }
+
         // Apply search filter
         if ($this->expenseSearch) {
             $expensesQuery->where(function ($query) {
@@ -293,9 +306,16 @@ class ProjectExpenses extends Component
         $totalPaidAmount = $expenses->sum(fn ($e) => $e->getPaidAmount());
         $totalPendingAmount = $expenses->sum(fn ($e) => $e->getPendingAmount());
 
+        $costCodes = BudgetItem::whereIn('budget_id', Budget::where('project_id', $this->project->id)->pluck('id'))
+            ->orderBy('code')
+            ->get(['id', 'code', 'name'])
+            ->unique('code')
+            ->values();
+
         return view('livewire.project.project-expenses', [
             'expenses' => $expenses,
             'jobSites' => $jobSites,
+            'costCodes' => $costCodes,
             'totalExpensesAmount' => $totalExpensesAmount,
             'totalPaidAmount' => $totalPaidAmount,
             'totalPendingAmount' => $totalPendingAmount,

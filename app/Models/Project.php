@@ -218,6 +218,22 @@ class Project extends Model
     }
 
     /**
+     * Every task on this project, its job sites' tasks included
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Only project-level tasks (not filed under a job site)
+     */
+    public function projectLevelTasks(): HasMany
+    {
+        return $this->hasMany(Task::class)->whereNull('job_site_id');
+    }
+
+    /**
      * Only project-level documents (not filed under a job site)
      */
     public function projectLevelDocuments(): HasMany

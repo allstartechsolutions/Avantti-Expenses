@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\DocumentSettings;
+use App\Contracts\StoredFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * starts pushing bytes to storage, so a version is only real once its status
  * is 'available'.
  */
-class DocumentVersion extends Model
+class DocumentVersion extends Model implements StoredFile
 {
     public const STATUS_PENDING = 'pending';
     public const STATUS_AVAILABLE = 'available';

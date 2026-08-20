@@ -50,6 +50,11 @@
             'route' => 'jobsites.documents',
             'icon' => 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
         ],
+        'tasks' => [
+            'label' => __('Tasks'),
+            'route' => 'jobsites.tasks',
+            'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'
+        ],
         'daily-reports' => [
             'label' => __('Daily Reports'),
             'route' => 'jobsites.daily-reports',
@@ -73,6 +78,10 @@
 
     if (! \App\Models\ModuleAccess::isEnabled('documents')) {
         unset($menuItems['documents']);
+    }
+
+    if (! \App\Models\ModuleAccess::isEnabled('meetings')) {
+        unset($menuItems['tasks']);
     }
 @endphp
 

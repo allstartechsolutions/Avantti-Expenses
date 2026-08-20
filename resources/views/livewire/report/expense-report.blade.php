@@ -296,7 +296,10 @@
                 <div class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">{{ __('No expenses match the selected filters.') }}</div>
             @else
                 <div class="overflow-x-auto mt-2">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <p class="px-6 pt-4 text-xs text-slate-500 dark:text-slate-400">
+                    {{ __('Spend in the selected period. Click a code to see it against its budget, where the figures are lifetime.') }}
+                </p>
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead class="bg-slate-50 dark:bg-slate-700/50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Cost Code') }}</th>
@@ -310,7 +313,17 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach ($byCostCode as $cc)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                    <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $cc['code'] }}</td>
+                                    <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                                        @if($cc['budget_id'] && $cc['budget_item_id'])
+                                            <a href="{{ route('budgets.cost-code', [$cc['budget_id'], $cc['budget_item_id']]) }}"
+                                               class="text-[#3F5189] dark:text-[#4A5A96] hover:underline"
+                                               title="{{ __('See this code against its budget') }}">
+                                                {{ $cc['code'] }}
+                                            </a>
+                                        @else
+                                            {{ $cc['code'] }}
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-3 text-sm text-right text-slate-600 dark:text-slate-400">{{ $cc['count'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($cc['expenses'], $currency, $locale) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($cc['contracted'], $currency, $locale) }}</td>

@@ -308,6 +308,17 @@ Legend: ▼ = Expanded, ▶ = Collapsed, [+] = Add Child (Level 1 only), [✎] =
 
 ### Add/Edit Cost Code Modal
 
+*Built as `x-ui.modal` (`maxWidth="2xl"`), opened by `open-modal` / closed by `close-modal`.
+Partials: `livewire/budget/partials/item-modal.blade.php` and
+`livewire/cost-code/partials/code-modal.blade.php`. Both dialogs autofocus the Code field,
+prefill Sort Order with the next free position under the parent, and offer **Save & Add
+Another** when adding — it keeps the dialog open, clears the fields, holds the same parent
+and bumps the sort order, so a run of codes is one dialog rather than one per code.
+`2xl` is deliberate, not an oversight: a full-page modal is for forms with repeating rows,
+computed totals or context needed while typing — a cost code is a handful of fields on one
+record, and a full screen would slow down entry done twenty times in a row.*
+
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Add Cost Code                                              [X]  │

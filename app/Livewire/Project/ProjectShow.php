@@ -4,6 +4,7 @@ namespace App\Livewire\Project;
 
 use App\Enums\JobSiteStatus;
 use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\ManagesChangeOrders;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\DailyReportImage;
@@ -24,7 +25,7 @@ use Livewire\WithFileUploads;
 
 class ProjectShow extends Component
 {
-    use WithFileUploads, AuthorizesAdmin;
+    use WithFileUploads, AuthorizesAdmin, ManagesChangeOrders;
 
     public Project $project;
     public $activeTab = 'overview';
@@ -80,21 +81,8 @@ class ProjectShow extends Component
     public $expense_payment_schedule_preview = [];
     public $expenseStatusFilter = 'all'; // Filter for expense list
 
-    // Change Order properties
-    public $changeOrderSearch = '';
+    // Change Order list filter (the rest lives in ManagesChangeOrders)
     public $changeOrderLocationFilter = 'all';
-    public $showChangeOrderModal = false;
-    public $changeOrderModalMode = 'create';
-    public $editingChangeOrder = null;
-
-    // Change Order form properties
-    public $co_job_site_id = null;
-    public $co_title = '';
-    public $co_requested_date = '';
-    public $co_description = '';
-    public $co_amount = '';
-    public $co_file = null;
-    public $existingFilePath = null;
 
     // Daily Reports properties
     public $dailyReportSearch = '';
@@ -724,14 +712,14 @@ class ProjectShow extends Component
                 foreach ($this->expenseItems as $index => $itemData) {
                     $budgetItemId = $itemData['budget_item_id'] ?: null;
 
-                    // If no budget item selected, assign to Miscellaneous
+                    // If no budget item selected, assign to the budget default bucket
                     if (!$budgetItemId) {
-                        $miscItem = BudgetService::getMiscellaneousItem(
+                        $defaultItem = BudgetService::getDefaultItem(
                             $this->project->id,
                             $this->expense_job_site_id,
                             Auth::id()
                         );
-                        $budgetItemId = $miscItem->id;
+                        $budgetItemId = $defaultItem->id;
                     }
 
                     $itemPayload = [
@@ -784,14 +772,14 @@ class ProjectShow extends Component
                 foreach ($this->expenseItems as $index => $itemData) {
                     $budgetItemId = $itemData['budget_item_id'] ?: null;
 
-                    // If no budget item selected, assign to Miscellaneous
+                    // If no budget item selected, assign to the budget default bucket
                     if (!$budgetItemId) {
-                        $miscItem = BudgetService::getMiscellaneousItem(
+                        $defaultItem = BudgetService::getDefaultItem(
                             $this->project->id,
                             $this->expense_job_site_id,
                             Auth::id()
                         );
-                        $budgetItemId = $miscItem->id;
+                        $budgetItemId = $defaultItem->id;
                     }
 
                     $expense->items()->create([
@@ -1086,115 +1074,14 @@ class ProjectShow extends Component
         }
     }
 
-    // Change Order methods
-    public function openChangeOrderCreateModal()
+    protected function changeOrderProjectId(): int
     {
-        $this->reset(['co_job_site_id', 'co_title', 'co_requested_date', 'co_description', 'co_amount', 'co_file', 'existingFilePath', 'editingChangeOrder']);
-        $this->co_requested_date = now()->format('Y-m-d');
-        $this->changeOrderModalMode = 'create';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
+        return $this->project->id;
     }
 
-    public function openChangeOrderEditModal($changeOrderId)
+    protected function afterChangeOrderSaved(): void
     {
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        $this->editingChangeOrder = $changeOrder->id;
-        $this->co_job_site_id = $changeOrder->job_site_id;
-        $this->co_title = $changeOrder->title;
-        $this->co_requested_date = $changeOrder->requested_date->format('Y-m-d');
-        $this->co_description = $changeOrder->description;
-        $this->co_amount = $changeOrder->amount;
-        $this->existingFilePath = $changeOrder->file_path;
-        $this->co_file = null;
-
-        $this->changeOrderModalMode = 'edit';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
-    }
-
-    public function openChangeOrderViewModal($changeOrderId)
-    {
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        $this->editingChangeOrder = $changeOrder->id;
-        $this->co_job_site_id = $changeOrder->job_site_id;
-        $this->co_title = $changeOrder->title;
-        $this->co_requested_date = $changeOrder->requested_date->format('Y-m-d');
-        $this->co_description = $changeOrder->description;
-        $this->co_amount = $changeOrder->amount;
-        $this->existingFilePath = $changeOrder->file_path;
-
-        $this->changeOrderModalMode = 'view';
-        $this->showChangeOrderModal = true;
-        $this->dispatch('open-modal', 'change-order-modal');
-    }
-
-    public function saveChangeOrder()
-    {
-        $this->validate([
-            'co_title' => 'required|string|max:255',
-            'co_requested_date' => 'required|date',
-            'co_description' => 'nullable|string',
-            'co_amount' => 'required|numeric',
-            'co_file' => 'nullable|file|max:10240',
-            'co_job_site_id' => 'nullable|exists:job_sites,id',
-        ]);
-
-        $filePath = $this->existingFilePath;
-
-        if ($this->co_file) {
-            if ($this->existingFilePath) {
-                Storage::delete($this->existingFilePath);
-            }
-            $filePath = $this->co_file->store('change_orders', 'local');
-        }
-
-        $data = [
-            'project_id' => $this->project->id,
-            'job_site_id' => $this->co_job_site_id ?: null,
-            'title' => $this->co_title,
-            'requested_date' => $this->co_requested_date,
-            'description' => $this->co_description,
-            'amount' => $this->co_amount,
-            'file_path' => $filePath,
-        ];
-
-        if ($this->changeOrderModalMode === 'edit' && $this->editingChangeOrder) {
-            $changeOrder = ChangeOrder::findOrFail($this->editingChangeOrder);
-            $changeOrder->update($data);
-            session()->flash('message', __('Change order updated successfully!'));
-        } else {
-            $data['created_by'] = Auth::id();
-            ChangeOrder::create($data);
-            session()->flash('message', __('Change order created successfully!'));
-        }
-
-        $this->closeChangeOrderModal();
         $this->project->refresh();
-    }
-
-    public function deleteChangeOrder($changeOrderId)
-    {
-        $this->authorizeAdmin();
-        $changeOrder = ChangeOrder::findOrFail($changeOrderId);
-
-        if ($changeOrder->file_path) {
-            Storage::delete($changeOrder->file_path);
-        }
-
-        $changeOrder->delete();
-
-        session()->flash('message', __('Change order deleted successfully!'));
-        $this->project->refresh();
-    }
-
-    public function closeChangeOrderModal()
-    {
-        $this->showChangeOrderModal = false;
-        $this->reset(['co_job_site_id', 'co_title', 'co_requested_date', 'co_description', 'co_amount', 'co_file', 'existingFilePath', 'editingChangeOrder']);
-        $this->dispatch('close-modal', 'change-order-modal');
     }
 
     // =========================================================================
@@ -1487,15 +1374,7 @@ class ProjectShow extends Component
         }
 
         // Apply search filter
-        if ($this->changeOrderSearch) {
-            $changeOrdersQuery->where(function($query) {
-                $query->where('title', 'like', '%' . $this->changeOrderSearch . '%')
-                    ->orWhere('description', 'like', '%' . $this->changeOrderSearch . '%');
-            });
-        }
-
-        $changeOrders = $changeOrdersQuery->orderBy('requested_date', 'desc')->get();
-        $totalChangeOrdersAmount = $changeOrders->sum('amount');
+        $changeOrders = $changeOrdersQuery->orderByDesc('requested_date')->orderByDesc('id')->get();
 
         // Daily Reports query with filters
         $dailyReportsQuery = $this->project->dailyReports()->with(['jobSite', 'preparedBy', 'tasks']);
@@ -1544,7 +1423,12 @@ class ProjectShow extends Component
             'activeSearchIndex' => $activeSearchIndex,
             'suppliers' => $suppliers,
             'changeOrders' => $changeOrders,
-            'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
+            'changeOrderSummary' => $this->changeOrderSummary($changeOrders),
+            'coBudget' => $this->changeOrderBudget(),
+            'coLineSuggestions' => $this->changeOrderLineSearchResults(),
+            'changeOrderRecord' => $this->editingChangeOrder
+                ? ChangeOrder::with(['createdBy', 'approvedBy'])->find($this->editingChangeOrder)
+                : null,
             'dailyReports' => $dailyReports,
             'viewingExpense' => $viewingExpense,
             'projectBudget' => $projectBudget,

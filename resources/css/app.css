@@ -64,3 +64,90 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/*
+ * Rendered rich text — documentation guides and anything written in the
+ * editor. Tailwind's reset removes list markers and heading sizes, so content
+ * that did not come from a Blade file needs its own typography or it arrives
+ * as one undifferentiated block.
+ *
+ * Used by .doc-body (a full guide) and .rich-text (a short note).
+ */
+.doc-body, .rich-text {
+    color: inherit;
+    line-height: 1.7;
+}
+
+.doc-body > *:first-child, .rich-text > *:first-child { margin-top: 0; }
+.doc-body > *:last-child, .rich-text > *:last-child { margin-bottom: 0; }
+
+.doc-body p, .rich-text p { margin: 0.9em 0; }
+
+.doc-body h1 { font-size: 1.875rem; font-weight: 700; margin: 0 0 0.6em; letter-spacing: -0.02em; }
+.doc-body h2 {
+    font-size: 1.375rem; font-weight: 700; margin: 2em 0 0.6em;
+    padding-bottom: 0.3em; border-bottom: 1px solid rgb(226 232 240);
+    scroll-margin-top: 1.5rem;
+}
+.doc-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.6em 0 0.5em; scroll-margin-top: 1.5rem; }
+.doc-body h4 { font-size: 1rem; font-weight: 600; margin: 1.4em 0 0.4em; }
+.rich-text h1, .rich-text h2 { font-size: 1.15rem; font-weight: 700; margin: 1em 0 0.4em; }
+.rich-text h3, .rich-text h4 { font-size: 1rem; font-weight: 600; margin: 0.9em 0 0.3em; }
+
+.doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4,
+.rich-text h1, .rich-text h2, .rich-text h3, .rich-text h4 { color: rgb(15 23 42); }
+.dark .doc-body h1, .dark .doc-body h2, .dark .doc-body h3, .dark .doc-body h4,
+.dark .rich-text h1, .dark .rich-text h2, .dark .rich-text h3, .dark .rich-text h4 { color: rgb(255 255 255); }
+.dark .doc-body h2 { border-bottom-color: rgb(51 65 85); }
+
+.doc-body ul, .rich-text ul { list-style: disc; margin: 0.9em 0; padding-left: 1.4em; }
+.doc-body ol, .rich-text ol { list-style: decimal; margin: 0.9em 0; padding-left: 1.4em; }
+.doc-body li, .rich-text li { margin: 0.35em 0; }
+.doc-body li::marker, .rich-text li::marker { color: rgb(148 163 184); }
+
+.doc-body a, .rich-text a { color: #3F5189; text-decoration: underline; text-underline-offset: 2px; }
+.dark .doc-body a, .dark .rich-text a { color: #8fa2df; }
+
+.doc-body strong, .rich-text strong, .doc-body b, .rich-text b { font-weight: 600; color: rgb(15 23 42); }
+.dark .doc-body strong, .dark .rich-text strong, .dark .doc-body b, .dark .rich-text b { color: rgb(241 245 249); }
+
+.doc-body blockquote, .rich-text blockquote {
+    margin: 1.2em 0; padding: 0.75em 1em;
+    border-left: 3px solid #3F5189;
+    background: rgb(248 250 252); border-radius: 0 0.5rem 0.5rem 0;
+}
+.dark .doc-body blockquote, .dark .rich-text blockquote { background: rgb(30 41 59); }
+.doc-body blockquote p:first-child { margin-top: 0; }
+.doc-body blockquote p:last-child { margin-bottom: 0; }
+
+.doc-body code, .rich-text code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em; padding: 0.15em 0.4em; border-radius: 0.3rem;
+    background: rgb(241 245 249); color: rgb(190 24 93);
+}
+.dark .doc-body code, .dark .rich-text code { background: rgb(51 65 85); color: rgb(244 114 182); }
+
+.doc-body pre {
+    margin: 1.2em 0; padding: 1em; border-radius: 0.5rem; overflow-x: auto;
+    background: rgb(15 23 42); color: rgb(226 232 240);
+}
+.doc-body pre code { background: none; color: inherit; padding: 0; font-size: 0.85em; }
+
+/* Wide tables scroll inside their own box rather than pushing the page sideways. */
+.doc-body .table-scroll { overflow-x: auto; margin: 1.2em 0; }
+.doc-body table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+.doc-body th, .doc-body td { border: 1px solid rgb(226 232 240); padding: 0.55em 0.75em; text-align: left; vertical-align: top; }
+.doc-body th { background: rgb(248 250 252); font-weight: 600; color: rgb(15 23 42); }
+.dark .doc-body th, .dark .doc-body td { border-color: rgb(51 65 85); }
+.dark .doc-body th { background: rgb(30 41 59); color: rgb(241 245 249); }
+.dark .doc-body td { color: rgb(203 213 225); }
+
+.doc-body img {
+    max-width: 100%; height: auto; margin: 1.4em 0;
+    border-radius: 0.5rem; border: 1px solid rgb(226 232 240);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+.dark .doc-body img { border-color: rgb(51 65 85); }
+
+.doc-body hr { margin: 2em 0; border: 0; border-top: 1px solid rgb(226 232 240); }
+.dark .doc-body hr { border-top-color: rgb(51 65 85); }

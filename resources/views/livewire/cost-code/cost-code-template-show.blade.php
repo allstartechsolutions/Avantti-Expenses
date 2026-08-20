@@ -181,115 +181,6 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1 space-y-6">
-            <!-- Add/Edit Form -->
-            @if($showForm)
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                            {{ $editingCostCodeId ? __('Edit Cost Code') : ($parentId ? __('Add Child Code') : __('Add Cost Code')) }}
-                        </h3>
-                        <button wire:click="closeForm" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <form wire:submit="save" class="p-6 space-y-4">
-                        @if($parentId)
-                            @php
-                                $parentCode = $template->costCodes->find($parentId);
-                            @endphp
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">{{ __('Parent Code') }}</p>
-                                <p class="text-sm font-medium text-slate-900 dark:text-white">
-                                    {{ $parentCode?->code }} - {{ $parentCode?->name }}
-                                </p>
-                            </div>
-                        @endif
-
-                        <!-- Code -->
-                        <div>
-                            <label for="code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Code') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="code"
-                                wire:model="code"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono"
-                                placeholder="{{ __('e.g., 01, 01.1, A100') }}">
-                            @error('code')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Name -->
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Name') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                wire:model="name"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="{{ __('e.g., General Requirements') }}">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Description -->
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Description') }}
-                            </label>
-                            <textarea
-                                id="description"
-                                wire:model="description"
-                                rows="2"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="{{ __('Optional description') }}"></textarea>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Sort Order -->
-                        <div>
-                            <label for="sort_order" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Sort Order') }}
-                            </label>
-                            <input
-                                type="number"
-                                id="sort_order"
-                                wire:model="sort_order"
-                                min="0"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            @error('sort_order')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Form Actions -->
-                        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                            <x-ui.button
-                                type="button"
-                                variant="secondary"
-                                wire:click="closeForm">
-                                {{ __('Cancel') }}
-                            </x-ui.button>
-                            <x-ui.button
-                                type="submit"
-                                variant="primary"
-                                icon="check">
-                                {{ $editingCostCodeId ? __('Update') : __('Add') }}
-                            </x-ui.button>
-                        </div>
-                    </form>
-                </div>
-            @endif
-
             <!-- Template Info -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -463,4 +354,6 @@
             </div>
         </div>
     @endif
+
+    @include('livewire.cost-code.partials.code-modal')
 </div>

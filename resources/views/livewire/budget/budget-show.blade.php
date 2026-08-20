@@ -46,20 +46,62 @@
         </div>
     @endif
 
-    <!-- Summary Card -->
+    @php
+        $fmt = fn ($v) => Number::currency((float) $v, config('app.currency'), config('app.locale'));
+        $signedAmount = fn ($v) => ((float) $v > 0 ? '+' : '') . Number::currency((float) $v, config('app.currency'), config('app.locale'));
+        $usedPct = $ledgerTotals['percent_committed'];
+        $spentPct = $ledgerTotals['percent_spent'];
+    @endphp
+
+    <!-- Where this budget stands -->
     <div class="mb-6 bg-gradient-to-r from-[#3F5189] to-[#5A6FA8] rounded-lg p-6 text-white">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-                <p class="text-sm text-white/80">{{ __('Total Budget') }}</p>
-                <p class="text-3xl font-bold mt-1">{{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}</p>
-                <p class="text-sm text-white/70 mt-1">{{ $budget->items_count }} cost codes</p>
+                <p class="text-sm text-white/80">{{ __('Revised Budget') }}</p>
+                <p class="text-3xl font-bold mt-1">{{ $fmt($ledgerTotals['revised']) }}</p>
+                <p class="text-sm text-white/70 mt-1">
+                    {{ __('Original') }} {{ $fmt($ledgerTotals['original']) }}
+                    @if((float) $ledgerTotals['changes'] != 0.0)
+                        &bull; {{ __('Approved changes') }} {{ $signedAmount($ledgerTotals['changes']) }}
+                    @endif
+                    &bull; {{ trans_choice(':count cost code|:count cost codes', $budget->items_count, ['count' => $budget->items_count]) }}
+                </p>
             </div>
-            @if($budget->sourceTemplate)
-                <div class="text-right">
-                    <p class="text-sm text-white/80">{{ __('Template') }}</p>
-                    <p class="font-medium">{{ $budget->sourceTemplate->name }}</p>
-                </div>
-            @endif
+
+            <div class="lg:text-right">
+                <p class="text-sm text-white/80">{{ (float) $ledgerTotals['remaining'] < 0 ? __('Over budget') : __('Remaining') }}</p>
+                <p class="text-3xl font-bold mt-1 {{ (float) $ledgerTotals['remaining'] < 0 ? 'text-red-200' : '' }}">
+                    {{ $fmt(abs($ledgerTotals['remaining'])) }}
+                </p>
+                @if($usedPct !== null)
+                    <div class="mt-2 flex items-center gap-2 lg:justify-end">
+                        <div class="relative w-40 h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div class="absolute inset-y-0 left-0 bg-white/50" style="width: {{ min(100, max(0, $usedPct)) }}%"></div>
+                            <div class="absolute inset-y-0 left-0 bg-white" style="width: {{ min(100, max(0, $spentPct ?? 0)) }}%"></div>
+                        </div>
+                        <span class="text-sm text-white/80">{{ number_format($usedPct, 0) }}% {{ __('used') }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+                <p class="text-white/70">{{ __('Committed') }}</p>
+                <p class="font-semibold mt-0.5">{{ $fmt($ledgerTotals['committed']) }}</p>
+            </div>
+            <div>
+                <p class="text-white/70">{{ __('Actual') }}</p>
+                <p class="font-semibold mt-0.5">{{ $fmt($ledgerTotals['actual']) }}</p>
+            </div>
+            <div>
+                <p class="text-white/70">{{ __('Projected') }}</p>
+                <p class="font-semibold mt-0.5">{{ $fmt($ledgerTotals['projected']) }}</p>
+            </div>
+            <div>
+                <p class="text-white/70">{{ __('Template') }}</p>
+                <p class="font-semibold mt-0.5">{{ $budget->sourceTemplate?->name ?? __('None') }}</p>
+            </div>
         </div>
     </div>
 
@@ -90,7 +132,7 @@
                                                 {{ $parentItem->code }}
                                             </span>
                                             <div class="flex-1 min-w-0">
-                                                <span class="font-medium text-slate-900 dark:text-white">{{ $parentItem->name }}</span>
+                                                <a href="{{ route('budgets.cost-code', [$budget->id, $parentItem->id]) }}" class="font-medium text-slate-900 dark:text-white hover:text-[#3F5189] dark:hover:text-[#4A5A96] hover:underline">{{ $parentItem->name }}</a>
                                                 @if($parentItem->is_default)
                                                     <span class="ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">{{ __('Default') }}</span>
                                                 @endif
@@ -100,9 +142,11 @@
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-4 flex-shrink-0">
-                                            <span class="font-semibold text-slate-900 dark:text-white">
-                                                {{ Number::currency($parentItem->budgeted_amount, config('app.currency'), config('app.locale')) }}
-                                            </span>
+                                            @include('livewire.budget.partials.code-figures', [
+                                                'row' => $ledgerRows[$parentItem->id] ?? null,
+                                                'item' => $parentItem,
+                                                'size' => 'parent',
+                                            ])
                                             <div class="flex items-center gap-1">
                                                 <x-ui.button
                                                     variant="ghost"
@@ -151,7 +195,7 @@
                                                             {{ $childItem->code }}
                                                         </span>
                                                         <div class="flex-1 min-w-0">
-                                                            <span class="text-sm text-slate-900 dark:text-white">{{ $childItem->name }}</span>
+                                                            <a href="{{ route('budgets.cost-code', [$budget->id, $childItem->id]) }}" class="text-sm text-slate-900 dark:text-white hover:text-[#3F5189] dark:hover:text-[#4A5A96] hover:underline">{{ $childItem->name }}</a>
                                                             @if($childItem->is_default)
                                                                 <span class="ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">{{ __('Default') }}</span>
                                                             @endif
@@ -161,9 +205,11 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center gap-4 flex-shrink-0">
-                                                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                            {{ Number::currency($childItem->budgeted_amount, config('app.currency'), config('app.locale')) }}
-                                                        </span>
+                                                        @include('livewire.budget.partials.code-figures', [
+                                                            'row' => $ledgerRows[$childItem->id] ?? null,
+                                                            'item' => $childItem,
+                                                            'size' => 'child',
+                                                        ])
                                                         <div class="flex items-center gap-1">
                                                             <x-ui.button
                                                                 variant="ghost"
@@ -199,13 +245,33 @@
                             @endforeach
                         </div>
 
+                        @if(isset($ledgerRows[0]))
+                            <div class="mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex items-center justify-between gap-4">
+                                <div class="min-w-0">
+                                    <a href="{{ route('budgets.unassigned', $budget->id) }}" class="text-sm font-medium text-amber-900 dark:text-amber-200 hover:underline">{{ __('Unassigned') }}</a>
+                                    <p class="text-xs text-amber-700 dark:text-amber-300">
+                                        {{ __('Costs with no cost code. Star a code above to make it the default and they will land there instead.') }}
+                                    </p>
+                                </div>
+                                <span class="text-sm font-semibold text-amber-900 dark:text-amber-200 shrink-0">
+                                    {{ $fmt($ledgerRows[0]['projected']) }}
+                                </span>
+                            </div>
+                        @endif
+
                         <!-- Total Row -->
                         <div class="mt-6 pt-4 border-t-2 border-slate-300 dark:border-slate-600">
                             <div class="flex items-center justify-between px-4">
                                 <span class="font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</span>
-                                <span class="text-xl font-bold text-slate-900 dark:text-white">
-                                    {{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}
-                                </span>
+                                <div class="text-right">
+                                    <span class="text-xl font-bold text-slate-900 dark:text-white">{{ $fmt($ledgerTotals['revised']) }}</span>
+                                    <span class="block text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $fmt($ledgerTotals['actual']) }} {{ __('spent') }} &bull;
+                                        {{ (float) $ledgerTotals['remaining'] < 0
+                                            ? __(':amount over', ['amount' => $fmt(abs($ledgerTotals['remaining']))])
+                                            : __(':amount left', ['amount' => $fmt($ledgerTotals['remaining'])]) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     @else
@@ -231,136 +297,6 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1 space-y-6">
-            <!-- Add/Edit Form -->
-            @if($showForm)
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                            {{ $editingItemId ? 'Edit Cost Code' : ($parentId ? 'Add Child Code' : 'Add Cost Code') }}
-                        </h3>
-                        <button wire:click="closeForm" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <form wire:submit="save" class="p-6 space-y-4">
-                        @if($parentId)
-                            @php
-                                $parentItem = $budget->items->find($parentId);
-                            @endphp
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">{{ __('Parent Code') }}</p>
-                                <p class="text-sm font-medium text-slate-900 dark:text-white">
-                                    {{ $parentItem?->code }} - {{ $parentItem?->name }}
-                                </p>
-                            </div>
-                        @endif
-
-                        <!-- Code -->
-                        <div>
-                            <label for="code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Code') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="code"
-                                wire:model="code"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono"
-                                placeholder="e.g., 01, 01.1, A100">
-                            @error('code')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Name -->
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Name') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                wire:model="name"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="{{ __('e.g., General Requirements') }}">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Budgeted Amount -->
-                        <div>
-                            <label for="budgeted_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Budgeted Amount') }} <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400">$</span>
-                                <input
-                                    type="number"
-                                    id="budgeted_amount"
-                                    wire:model="budgeted_amount"
-                                    step="0.01"
-                                    min="0"
-                                    class="w-full pl-7 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    placeholder="0.00">
-                            </div>
-                            @error('budgeted_amount')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Description -->
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Description') }}
-                            </label>
-                            <textarea
-                                id="description"
-                                wire:model="description"
-                                rows="2"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="{{ __('Optional description') }}"></textarea>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Sort Order -->
-                        <div>
-                            <label for="sort_order" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Sort Order') }}
-                            </label>
-                            <input
-                                type="number"
-                                id="sort_order"
-                                wire:model="sort_order"
-                                min="0"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            @error('sort_order')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Form Actions -->
-                        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                            <x-ui.button
-                                type="button"
-                                variant="secondary"
-                                wire:click="closeForm">
-                                {{ __('Cancel') }}
-                            </x-ui.button>
-                            <x-ui.button
-                                type="submit"
-                                variant="primary"
-                                icon="check">
-                                {{ $editingItemId ? 'Update' : 'Add' }}
-                            </x-ui.button>
-                        </div>
-                    </form>
-                </div>
-            @endif
-
             <!-- Budget Info -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -420,4 +356,6 @@
             </div>
         </div>
     </div>
+
+    @include('livewire.budget.partials.item-modal')
 </div>

@@ -37,6 +37,16 @@
                             <option value="overdue">{{ __('Overdue') }}</option>
                             <option value="cancelled">{{ __('Cancelled') }}</option>
                         </select>
+
+                        <!-- Cost Code Filter -->
+                        <select
+                            wire:model.live="expenseCostCodeFilter"
+                            class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <option value="all">{{ __('All Cost Codes') }}</option>
+                            @foreach($expenseCostCodes as $code)
+                                <option value="{{ $code->code }}">{{ $code->code }} - {{ $code->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <x-ui.button
                         variant="primary"
@@ -102,6 +112,7 @@
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Item') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Cost Codes') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Payments') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
@@ -129,6 +140,23 @@
                                                         @endif
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                @php $codes = $expense->items->pluck('budgetItem')->filter()->unique('id')->values(); @endphp
+                                                @if($codes->isEmpty())
+                                                    <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Unassigned') }}</span>
+                                                @else
+                                                    <div class="flex flex-wrap gap-1">
+                                                        @foreach($codes->take(2) as $code)
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" title="{{ $code->name }}">
+                                                                {{ $code->code }}
+                                                            </span>
+                                                        @endforeach
+                                                        @if($codes->count() > 2)
+                                                            <span class="text-xs text-slate-500 dark:text-slate-400">+{{ $codes->count() - 2 }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-white">
                                                 {{ Number::currency($expense->total_amount, config('app.currency'), config('app.locale')) }}
@@ -166,22 +194,14 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </button>
-                                                    @if($expense->isEditableBy(auth()->user()))
-                                                        <button
-                                                            wire:click="openExpenseEditModal({{ $expense->id }})"
-                                                            class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                            title="{{ __('Edit') }}">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                            </svg>
-                                                        </button>
-                                                    @else
-                                                        <span class="text-slate-300 dark:text-slate-600 cursor-not-allowed" title="{{ __('Cannot edit - has payments') }}">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                            </svg>
-                                                        </span>
-                                                    @endif
+                                                    <a
+                                                        href="{{ route('expenses.edit', $expense->id) }}"
+                                                        class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]"
+                                                        title="{{ __('Edit') }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
+                                                    </a>
                                                     @if($expense->status !== 'paid' && $expense->isOneTime())
                                                         @if($markPaidType === 'expense' && $markPaidId === $expense->id)
                                                             <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
@@ -268,146 +288,43 @@
         <!-- Change Orders Tab -->
         @if($activeTab === 'changeorders')
             <div class="space-y-6">
-                <!-- Header with Search and Add Button -->
+                <!-- Search, filter and add -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ __('Change Orders') }} ({{ $changeOrders->count() }})</h3>
-                        <!-- Search Bar -->
+                    <div class="flex-1 flex flex-col sm:flex-row gap-4">
                         <div class="relative max-w-md">
                             <input
                                 type="text"
                                 wire:model.live.debounce.300ms="changeOrderSearch"
                                 placeholder="{{ __('Search change orders...') }}"
-                                class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-                            >
+                                class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
                             <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
+
+                        <select
+                            wire:model.live="changeOrderStatusFilter"
+                            class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <option value="all">{{ __('All Statuses') }}</option>
+                            <option value="draft">{{ __('Draft') }}</option>
+                            <option value="pending">{{ __('Pending') }}</option>
+                            <option value="approved">{{ __('Approved') }}</option>
+                            <option value="rejected">{{ __('Rejected') }}</option>
+                        </select>
                     </div>
-                    <x-ui.button
-                        variant="primary"
-                        wire:click="openCreateModal"
-                        icon="plus">
+
+                    <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
                         {{ __('Add Change Order') }}
                     </x-ui.button>
                 </div>
 
-                <!-- Change Orders Table -->
-                @if($changeOrders->count() > 0)
-                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead class="bg-slate-50 dark:bg-slate-700/50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('Title') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('Description') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('Amount') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('File') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('Created') }}
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            {{ __('Actions') }}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                                    @foreach($changeOrders as $changeOrder)
-                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                    {{ $changeOrder->title }}
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                                                    {{ $changeOrder->description ?? '-' }}
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium {{ $changeOrder->amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
-                                                    {{ $changeOrder->amount >= 0 ? '+' : '' }}{{ Number::currency($changeOrder->amount, config('app.currency'), config('app.locale')) }}
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                @if($changeOrder->file_path)
-                                                    <a href="{{ route('files.download', ['path' => $changeOrder->file_path]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline text-sm">
-                                                        <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                        {{ __('Download') }}
-                                                    </a>
-                                                @else
-                                                    <span class="text-sm text-slate-400">{{ __('No file') }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-slate-500 dark:text-slate-400">
-                                                    {{ $changeOrder->created_at->format('M d, Y') }}
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div class="flex items-center justify-end space-x-2">
-                                                    <button
-                                                        wire:click="openViewModal({{ $changeOrder->id }})"
-                                                        class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                        title="{{ __('View') }}">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        wire:click="openEditModal({{ $changeOrder->id }})"
-                                                        class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
-                                                        title="{{ __('Edit') }}">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        wire:click="deleteChangeOrder({{ $changeOrder->id }})"
-                                                        wire:confirm="{{ __('Are you sure you want to delete this change order?') }}"
-                                                        class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                                                        title="{{ __('Delete') }}">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                @else
-                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
-                        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No change orders') }}</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a new change order.') }}</p>
-                        <div class="mt-6">
-                            <x-ui.button
-                                variant="primary"
-                                wire:click="openCreateModal"
-                                icon="plus">
-                                {{ __('Add Change Order') }}
-                            </x-ui.button>
-                        </div>
-                    </div>
-                @endif
+                @include('livewire.change-order.partials.summary-cards', ['summary' => $changeOrderSummary])
+
+                @include('livewire.change-order.partials.list', [
+                    'changeOrders' => $changeOrders,
+                    'showLocationColumn' => false,
+                    'hasFilters' => $changeOrderSearch || $changeOrderStatusFilter !== 'all',
+                ])
             </div>
         @endif
 
@@ -711,10 +628,8 @@
                                     @endif
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-2xl font-bold text-slate-900 dark:text-white">
-                                        {{ Number::currency($budget->total_amount, config('app.currency'), config('app.locale')) }}
-                                    </p>
-                                    <div class="flex items-center gap-2 mt-2">
+                                    @include('livewire.budget.partials.budget-figures', ['totals' => $budgetTotals])
+                                    <div class="flex items-center justify-end gap-2 mt-2">
                                         <x-ui.button
                                             variant="secondary"
                                             size="sm"
@@ -740,13 +655,15 @@
                                     <div class="space-y-2">
                                         @foreach($budget->parentItems->take(5) as $item)
                                             <div class="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded">
-                                                <div class="flex items-center gap-2">
+                                                <a href="{{ route('budgets.cost-code', [$budget->id, $item->id]) }}" class="flex items-center gap-2 group">
                                                     <span class="px-2 py-0.5 text-xs font-mono font-medium rounded bg-[#3F5189] text-white">{{ $item->code }}</span>
-                                                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ $item->name }}</span>
-                                                </div>
-                                                <span class="text-sm font-medium text-slate-900 dark:text-white">
-                                                    {{ Number::currency($item->budgeted_amount, config('app.currency'), config('app.locale')) }}
-                                                </span>
+                                                    <span class="text-sm text-slate-700 dark:text-slate-300 group-hover:underline">{{ $item->name }}</span>
+                                                </a>
+                                                @include('livewire.budget.partials.code-figures', [
+                                                    'row' => $budgetLedgerRows[$item->id] ?? null,
+                                                    'item' => $item,
+                                                    'size' => 'child',
+                                                ])
                                             </div>
                                         @endforeach
                                         @if($budget->parentItems->count() > 5)
@@ -772,204 +689,14 @@
         @endif
     </div>
 
-    <!-- Change Order Modal -->
-    <x-ui.modal name="change-order-modal" maxWidth="2xl">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                @if($modalMode === 'view')
-                    {{ __('View Change Order') }}
-                @elseif($modalMode === 'edit')
-                    {{ __('Edit Change Order') }}
-                @else
-                    {{ __('Add New Change Order') }}
-                @endif
-            </h3>
-        </div>
-
-        <div class="p-6">
-            @if($modalMode === 'view')
-                <!-- View Mode -->
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Title') }}</label>
-                            <p class="text-slate-900 dark:text-white">{{ $title }}</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Requested Date') }}</label>
-                            <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($requested_date)->format('M d, Y') }}</p>
-                        </div>
-                    </div>
-
-                    @if($description)
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Description') }}</label>
-                            <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $description }}</p>
-                        </div>
-                    @endif
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Amount') }}</label>
-                        <p class="text-slate-900 dark:text-white font-medium">{{ Number::currency($amount ?: 0, config('app.currency'), config('app.locale')) }}</p>
-                    </div>
-
-                    @if($existingFilePath)
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Attached File') }}</label>
-                            <a href="{{ route('files.download', ['path' => $existingFilePath]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                {{ __('Download File') }}
-                            </a>
-                        </div>
-                    @endif
-
-                    @if($editingChangeOrder)
-                        @php
-                            $changeOrder = \App\Models\ChangeOrder::with('createdBy')->find($editingChangeOrder);
-                        @endphp
-                        @if($changeOrder && $changeOrder->createdBy)
-                            <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Created By') }}</label>
-                                        <p class="text-slate-900 dark:text-white">{{ $changeOrder->createdBy->name }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Created On') }}</label>
-                                        <p class="text-slate-900 dark:text-white">{{ $changeOrder->created_at->format('M d, Y g:i A') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    @endif
-                </div>
-
-                <div class="flex items-center justify-end space-x-4 mt-6">
-                    <x-ui.button
-                        type="button"
-                        variant="secondary"
-                        wire:click="closeModal">
-                        {{ __('Close') }}
-                    </x-ui.button>
-                </div>
-            @else
-                <!-- Create/Edit Form -->
-                <form wire:submit="saveChangeOrder" class="space-y-6">
-                    <!-- Title and Date -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="title" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Title') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="title"
-                                wire:model="title"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="{{ __('Enter change order title') }}"
-                            >
-                            @error('title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label for="requested_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                {{ __('Requested Date') }} <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                id="requested_date"
-                                wire:model="requested_date"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                            @error('requested_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ __('Description') }}
-                        </label>
-                        <textarea
-                            id="description"
-                            wire:model="description"
-                            rows="4"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="{{ __('Enter description (optional)') }}"
-                        ></textarea>
-                        @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- Amount -->
-                    <div>
-                        <label for="amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ __('Amount') }} <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                id="amount"
-                                wire:model="amount"
-                                class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="0.00"
-                            >
-                        </div>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Use a negative amount for deductive change orders (e.g., -500).') }}</p>
-                        @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- File Upload -->
-                    <div>
-                        <label for="file" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ __('Attach File') }}
-                        </label>
-                        @if($existingFilePath && !$file)
-                            <div class="mb-2 text-sm text-slate-600 dark:text-slate-400">
-                                {{ __('Current file:') }}
-                                <a href="{{ route('files.download', ['path' => $existingFilePath]) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                    {{ __('Download') }}
-                                </a>
-                            </div>
-                        @endif
-                        <input
-                            type="file"
-                            id="file"
-                            wire:model="file"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('Maximum file size: 10MB') }}</p>
-                        @error('file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-
-                        @if($file)
-                            <div class="mt-2 text-sm text-green-600 dark:text-green-400">
-                                {{ __('New file selected:') }} {{ $file->getClientOriginalName() }}
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Form Actions -->
-                    <div class="flex items-center justify-end space-x-4 pt-4">
-                        <x-ui.button
-                            type="button"
-                            variant="secondary"
-                            wire:click="closeModal">
-                            {{ __('Cancel') }}
-                        </x-ui.button>
-                        <x-ui.button
-                            type="submit"
-                            variant="primary">
-                            {{ $modalMode === 'edit' ? __('Update') : __('Create') }}
-                        </x-ui.button>
-                    </div>
-                </form>
-            @endif
-        </div>
-    </x-ui.modal>
+    @include('livewire.change-order.partials.form-modal', [
+        'contextName' => $jobSite->job_site_name,
+        'showJobSitePicker' => false,
+        'jobSites' => collect(),
+        'coBudget' => $coBudget,
+        'coLineSuggestions' => $coLineSuggestions,
+        'changeOrderRecord' => $changeOrderRecord,
+    ])
 
     <!-- Expense Modal -->
     <x-ui.modal name="expense-modal" maxWidth="2xl">

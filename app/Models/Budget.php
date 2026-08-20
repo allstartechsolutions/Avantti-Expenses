@@ -5,9 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Budget extends Model
 {
+    /**
+     * Code and name seeded for a budget's catch-all bucket the first time one
+     * is needed. Nothing ever *looks the bucket up* by this code — the
+     * `is_default` flag is the only way it is resolved — so the user is free to
+     * rename it or move the flag to a code of their own.
+     */
+    public const DEFAULT_ITEM_CODE = '999999';
+    public const DEFAULT_ITEM_NAME = 'Miscellaneous';
+
     protected $fillable = [
         'project_id',
         'job_site_id',
@@ -58,105 +68,63 @@ class Budget extends Model
     }
 
     /**
-     * Excel-style cost grid for this budget's location: every cost code
-     * grouped section → lines, with contract commitments and payments
-     * aggregated per code (via each contract's costCodeSchedule(), so
-     * default-code fallback applies). Cancelled contracts are excluded.
-     *
-     * Returns ['sections' => [...], 'unassigned' => ?row, 'totals' => row].
-     * Section: ['item' => parent BudgetItem, 'rows' => [row...], 'subtotal' => row, 'pct_of_budget' => ?float]
-     * Row: budget_item_id, code, name, budgeted, contracted, paid, percent (weighted, nullable), balance.
-     */
-    public function costCodeGrid(): array
-    {
-        $contracts = Contract::where('project_id', $this->project_id)
-            ->where('job_site_id', $this->job_site_id)
-            ->committed()
-            ->get();
-
-        $agg = [];
-        foreach ($contracts as $contract) {
-            foreach ($contract->costCodeSchedule() as $row) {
-                $key = $row['budget_item_id'] ?? 0;
-                $agg[$key] ??= ['contracted' => 0.0, 'paid' => 0.0, 'wsum' => 0.0, 'wtot' => 0.0];
-                $agg[$key]['contracted'] += $row['scheduled'];
-                $agg[$key]['paid'] += $row['paid'];
-                if ($row['percent_complete'] !== null && $row['scheduled'] > 0) {
-                    $agg[$key]['wsum'] += $row['percent_complete'] * $row['scheduled'];
-                    $agg[$key]['wtot'] += $row['scheduled'];
-                }
-            }
-        }
-
-        $makeRow = function (?BudgetItem $item) use ($agg): array {
-            $a = $agg[$item?->id ?? 0] ?? ['contracted' => 0.0, 'paid' => 0.0, 'wsum' => 0.0, 'wtot' => 0.0];
-
-            return [
-                'budget_item_id' => $item?->id,
-                'code' => $item?->code ?? '',
-                'name' => $item?->name ?? __('Unassigned'),
-                'is_default' => (bool) ($item?->is_default ?? false),
-                'budgeted' => $item?->budgeted_amount ?? 0.0,
-                'contracted' => round($a['contracted'], 2),
-                'paid' => round($a['paid'], 2),
-                'percent' => $a['wtot'] > 0 ? round($a['wsum'] / $a['wtot'], 2) : null,
-                'balance' => round($a['contracted'] - $a['paid'], 2),
-            ];
-        };
-
-        $sumRows = function (array $rows): array {
-            $wsum = 0.0;
-            $wtot = 0.0;
-            foreach ($rows as $r) {
-                if ($r['percent'] !== null && $r['contracted'] > 0) {
-                    $wsum += $r['percent'] * $r['contracted'];
-                    $wtot += $r['contracted'];
-                }
-            }
-
-            return [
-                'budgeted' => round(array_sum(array_column($rows, 'budgeted')), 2),
-                'contracted' => round(array_sum(array_column($rows, 'contracted')), 2),
-                'paid' => round(array_sum(array_column($rows, 'paid')), 2),
-                'percent' => $wtot > 0 ? round($wsum / $wtot, 2) : null,
-                'balance' => round(array_sum(array_column($rows, 'balance')), 2),
-            ];
-        };
-
-        $sections = [];
-        $allRows = [];
-        foreach ($this->parentItems()->with(['children'])->get() as $parent) {
-            $rows = [$makeRow($parent)];
-            foreach ($parent->children as $child) {
-                $rows[] = $makeRow($child);
-            }
-            $subtotal = $sumRows($rows);
-            $sections[] = ['item' => $parent, 'rows' => $rows, 'subtotal' => $subtotal];
-            $allRows = array_merge($allRows, $rows);
-        }
-
-        $unassigned = isset($agg[0]) ? $makeRow(null) : null;
-        if ($unassigned) {
-            $allRows[] = $unassigned;
-        }
-
-        $totals = $sumRows($allRows);
-
-        foreach ($sections as &$section) {
-            $section['pct_of_budget'] = $totals['budgeted'] > 0
-                ? round($section['subtotal']['budgeted'] / $totals['budgeted'] * 100, 2)
-                : null;
-        }
-
-        return ['sections' => $sections, 'unassigned' => $unassigned, 'totals' => $totals];
-    }
-
-    /**
      * Get the item that uncoded (unallocated) amounts roll into.
      */
     public function defaultItem(): ?BudgetItem
     {
         return $this->items()->where('is_default', true)->first();
+    }
+
+    /**
+     * Get the default item, creating it if this budget has none yet.
+     *
+     * A budget written before the flag existed may carry the old hardcoded
+     * '999999 Miscellaneous' code; that item is adopted as the default rather
+     * than a second catch-all bucket being created next to it.
+     */
+    public function ensureDefaultItem(): BudgetItem
+    {
+        if ($item = $this->defaultItem()) {
+            return $item;
+        }
+
+        $legacy = $this->items()
+            ->where('code', self::DEFAULT_ITEM_CODE)
+            ->orderBy('id')
+            ->first();
+
+        if ($legacy) {
+            $legacy->is_default = true;
+            $legacy->save();
+
+            return $legacy;
+        }
+
+        return $this->items()->create([
+            'code' => self::DEFAULT_ITEM_CODE,
+            'name' => self::DEFAULT_ITEM_NAME,
+            'description' => __('Costs that have not been given a cost code.'),
+            'budgeted_amount' => 0,
+            'sort_order' => 99999,
+            'is_default' => true,
+        ]);
+    }
+
+    /**
+     * Move the catch-all flag to another cost code. Exactly one item per budget
+     * carries it.
+     */
+    public function setDefaultItem(BudgetItem $item): void
+    {
+        if ($item->budget_id !== $this->id) {
+            throw new \InvalidArgumentException('The default cost code must belong to this budget.');
+        }
+
+        DB::transaction(function () use ($item) {
+            $this->items()->where('is_default', true)->update(['is_default' => false]);
+            $item->is_default = true;
+            $item->save();
+        });
     }
 
     /**

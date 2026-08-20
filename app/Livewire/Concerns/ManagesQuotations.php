@@ -1953,7 +1953,7 @@ trait ManagesQuotations
             $purchaseOrder->items()->create([
                 'budget_item_id' => $line['item']->budget_item_id
                     ?? $quotation->budget_item_id
-                    ?? BudgetService::getMiscellaneousItem($quotation->project_id, $quotation->job_site_id, $user->id)->id,
+                    ?? BudgetService::getDefaultItem($quotation->project_id, $quotation->job_site_id, $user->id)->id,
                 'catalog_item_id' => $line['item']->catalog_item_id,
                 'item_name' => $line['item']->item_name,
                 'item_type' => $line['item']->item_type,

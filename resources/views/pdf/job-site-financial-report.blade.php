@@ -122,7 +122,18 @@
             @forelse($changeOrders as $co)
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 4px 8px;">{{ $co['title'] }}</td>
-                    <td style="border: 1px solid #ddd; padding: 4px 8px; color: #666;">{{ $co['date']?->format('M d, Y') }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 8px; color: #666;">
+                        {{ $co['date']?->format('M d, Y') }}
+                        @if(($co['status'] ?? 'approved') !== 'approved')
+                            · <span style="color: #b7791f;">{{ __('not approved') }}</span>
+                        @endif
+                        @if(($co['cost'] ?? 0.0) != 0.0)
+                            · {{ __('cost') }} ${{ number_format($co['cost'], 2) }}
+                            · {{ __('margin') }} ${{ number_format($co['amount'] - $co['cost'], 2) }}
+                        @else
+                            · <span style="color: #999;">{{ __('no cost breakdown') }}</span>
+                        @endif
+                    </td>
                     <td style="border: 1px solid #ddd; padding: 4px 8px; text-align: right; color: {{ $co['amount'] < 0 ? '#e74c3c' : '#27ae60' }};">
                         {{ $co['amount'] >= 0 ? '+' : '' }}${{ number_format($co['amount'], 2) }}
                     </td>
@@ -147,6 +158,8 @@
     </table>
 
     {{-- Payment Schedule --}}
+    @include('pdf.partials.cost-code-section', ['costCodes' => $costCodes, 'showLocation' => false])
+
     @include('pdf.partials.payment-schedule', ['paymentSchedule' => $paymentSchedule])
 
     {{-- Expenses --}}

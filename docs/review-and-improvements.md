@@ -135,3 +135,116 @@ same session. Verified before and after in each case.
   the live form total can differ from the saved total by cents.
 - `documents:purge-deleted --days=0` purges the whole trash immediately, which is what it says but
   is an easy mis-type.
+
+---
+
+## Noticed while building change order cost codes — phase 1 (2026-08-19)
+
+Parked rather than fixed mid-build. Phase 5 and phase 7 of
+`docs/expense-changeorder-costcode-plan.md` own most of these.
+
+- ~~**Expenses cannot be edited at all.**~~ **Corrected 2026-08-20:** the project *page*
+  (`ProjectExpenses`) had no edit, but `JobSiteShow` and the legacy `ProjectShow` carried a
+  modal that edited the pre-items header fields (`item_name`, `quantity`, `unit_price`) and
+  had no cost code at all — wrong for every expense written since the items table existed.
+  Phase 5 replaced all three with one editor.
+- ~~**`ExpenseChangeHistory` is dead code.**~~ **Corrected 2026-08-20:** payment actions do
+  write history through `Expense::recordChange()` and `Expense::updateWithHistory()`. What was
+  missing was an `edited` writer covering the line items and their cost codes — phase 5 added
+  it, folding the line diff into the same entry as the header diff.
+- **N+1 in two Blade loops.** `project-expenses.blade.php:312` and
+  `partials/expense-modal.blade.php:63` call `BudgetItem::find()` per expense line inside the
+  loop, on a page that lists every expense. → phase 5.
+- **A contract can be paid more than its schedule allocates.** In the demo data, code 21.1
+  shows 16,650 paid against 12,820 scheduled: `Contract::costCodeSchedule()` books a payment
+  against the payment line's own cost code, which need not be one the contract allocated to.
+  Not introduced here, and the ledger reports it faithfully, but the contract module should
+  either prevent it or flag it.
+- **`Budget::costCodeGrid()` and `CostCodeLedger` now overlap.** The grid predates the ledger
+  and only knows about contracts. Phase 3 replaces the grid with the ledger; until then the
+  budget screens still show the contracts-only figures.
+- **`lang/en.json` carried a duplicate `"by"` key** (lines 176 and 299, same value). Collapsed
+  to one while adding this phase's strings — JSON keeps the last of a duplicate, so nothing
+  changed at runtime.
+
+---
+
+## Meetings, minutes and tasks
+
+Collected while building, from phase 0 on 2026-08-19. To be worked in **phase 9, Review and
+Improvements** (see `docs/meetings-module-plan.md`).
+
+| # | Item | Status |
+|---|---|---|
+| M1 | **Shared status words carry the wrong gender for tasks.** `Open`, `In Progress`, `Completed`, `Cancelled` and `Draft` already existed in `lang/pt_BR.json` for other modules, translated in the masculine ("Concluído", "Em Aberto"). A *tarefa* is feminine, so the task screens will read slightly wrong in pt_BR. Existing keys were deliberately not changed — they are shared with expenses, contracts and quotations. Fix by giving the task screens their own keys (e.g. `Task completed` → "Concluída") rather than by editing the shared ones. | open |
+| M2 | **`Task::isMeetingTracked()` and `hasSubtasks()` each run a query.** Fine on a detail screen, an N+1 in a list. The list screens must use `withCount('meetingItems')` / `withCount('subtasks')` and read the counts; check every call site during the review. | open |
+| M3 | **Progress roll-up is only recalculated when something calls `refreshProgressFromSubtasks()`.** Phase 1 must call it from every path that moves a sub-task (progress, status, cancel, delete, re-parent), and the review has to prove no path was missed — a stale parent percentage on a screen the owner reads is worse than no percentage. | open |
+| M4 | **`Meeting::openActionCount()` runs two queries and cannot be eager-loaded.** Acceptable on a detail page, wrong on the meetings index. Give the index a single grouped count during phase 3. | open |
+| M6 | **`MyTasks::stats()` runs four counting queries on every render**, and `groups()` a fifth. Fine for one person's list; when the All Tasks page (phase 8) reuses the shape it needs one grouped query instead. | open |
+| M7 | **A note can be edited for 30 minutes** (`TaskNote::canEdit()`) but no screen offers it yet — the timeline shows an "edited" marker that nothing can currently set. Either wire the edit control in phase 2 or drop the marker. | open |
+| M8 | **Deleting a task is not implemented.** The model has soft deletes and the plan gives admins a delete, but nothing calls it; cancel covers the real case. Decide in the review whether delete is wanted at all, and if so what happens to the meeting items that point at it. | open |
+| M9 | **The agenda reorders with up/down buttons, not drag-and-drop** as §5.2 of the plan describes. Buttons are keyboard-reachable, unambiguous on a phone (where dragging inside a scrolling list fights the scroll), and need no library. Decide in the review whether drag is worth adding on top — if so, keep the buttons as the accessible path. | open |
+| M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
+| M11 | **`strip_tags()` with an allowlist is used elsewhere in the app to print editor output** (`resources/views/pdf/daily-report.blade.php:206`, and wherever else TinyMCE content is echoed). It removes disallowed *tags* but keeps the *attributes* of the ones it allows, so `<p onclick="…">` survives it. The meetings module now routes editor output through `App\Support\RichText`; the review should sweep the other call sites onto it. Low exploitability (only admins and managers can author that content) but it is stored XSS. | open |
+| M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
+| M5 | **Attendance defaults to `present`.** Convenient when the list is seeded from the series and most people turn up, but it means an untouched attendance list records everyone as present, including people who were never there. Decide in phase 3 whether the default should be blank until the secretary marks the register. | open |
+
+### Noticed during phase 2 (change order editor)
+
+- **A third copy of the change order UI existed** on the legacy tabbed page
+  (`/projects/{project}/show`, `ProjectShow`) alongside the project and job-site screens. All
+  three now run off `ManagesChangeOrders` and the shared partials, but the legacy page itself
+  is still routed and duplicates a lot of what the split pages do — worth deciding whether it
+  should be retired.
+- **`change_orders.co_number` is not unique.** The form pre-fills the next number in the
+  project's series, but two people creating a change order at the same moment get the same
+  one. The quotation chain solved this with a unique index and retry on collision
+  (`2026_08_19_170001_add_unique_numbers_to_quotation_chain`); change orders should get the
+  same treatment.
+- **Approval has no permission guard** — see `docs/permissions-notes.md` §4b.
+- **Deleting an approved change order silently revises budgets back down.** It is the correct
+  arithmetic, but there is no warning that the cost codes will move.
+- The pt_BR file lost four keys (`_cost_code_dialog`, `Save & Add Another`,
+  `Filled in for you — change it only to reorder.`, `Costs that have not been given a cost
+  code.`) to a concurrent edit during this session and they were restored by hand. Worth a
+  look at whether anything else went with them.
+
+### Noticed during phase 3 (budget screens on the ledger)
+
+- **`ProjectBudget` builds one ledger per budget on the page.** A project with many job sites
+  runs the whole aggregation once per budget, and each one walks its contracts through
+  `Contract::costCodeSchedule()`. Fine at today's sizes, worth a single grouped query if a
+  project ever carries dozens of job sites.
+- **`BudgetShow::toggleDefaultItem()` clears the flag by hand** when un-starring, rather than
+  going through the model. Setting now uses `Budget::setDefaultItem()`; clearing has no model
+  method to call yet.
+- The cost grid needs `min-w-[1100px]` for its nine columns, so on a phone it scrolls inside
+  its own container. That is the documented behaviour for wide tables, but a stacked card view
+  for small screens would read better.
+
+### Noticed during phase 5 (expense editing)
+
+- **The legacy expense modal in `JobSiteShow` is now unreachable but still there.** Its create
+  and edit branches are dead (both entry points now go to `expenses.edit` / the create page),
+  but the modal also serves *view* mode, so the block cannot simply be deleted. `saveExpense()`,
+  `openExpenseCreateModal()` and `openExpenseEditModal()` in that component are dead code.
+  Same story in `ProjectShow`. Worth a dedicated cleanup pass with the view mode split out.
+- **Two more `BudgetItem::find()` N+1s remain**, in `purchase-order-create.blade.php:173` and
+  `purchase-order-edit.blade.php:184`. The fix is the one used for expenses — carry the code
+  label on the line state — but it means touching the PO save paths, so it was left alone.
+- **`Expense::isEditable()` and the new `ExpenseEdit` guards say different things.** The model
+  blocks editing when payments exist; the new screen allows it for admins and locks the
+  amounts instead. The model method is now only used by the dead modal code above; when that
+  goes, `isEditableBy()` should go with it or be brought in line.
+
+### Noticed during phase 6 (reports and PDFs)
+
+- **Every financial report is built twice** — once in the Livewire component and once in the
+  PDF controller, with the arithmetic copy-pasted between them. Phase 6 had to add the same
+  wiring in both places for both levels (four edits for one feature). A shared builder service
+  would have made it one.
+- **`ProjectFinancialReport` now builds a ledger per budget on every render**, on top of the
+  existing per-contract loops. Fine at today's sizes; the first project with dozens of job
+  sites will feel it.
+- The **cost grid PDF is landscape while every other PDF is portrait** — nine money columns
+  do not fit otherwise. Worth knowing before someone standardises the paper size.

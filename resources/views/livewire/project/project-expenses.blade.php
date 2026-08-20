@@ -35,6 +35,15 @@
                     <option value="overdue">{{ __('Overdue') }}</option>
                     <option value="cancelled">{{ __('Cancelled') }}</option>
                 </select>
+
+                <select
+                    wire:model.live="expenseCostCodeFilter"
+                    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="all">{{ __('All Cost Codes') }}</option>
+                    @foreach($costCodes as $code)
+                        <option value="{{ $code->code }}">{{ $code->code }} - {{ $code->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <x-ui.button
                 variant="primary"
@@ -100,6 +109,7 @@
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Date') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Supplier / Items') }}</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Cost Codes') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Total') }}</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Payments') }}</th>
@@ -128,6 +138,23 @@
                                                 @endif
                                             </div>
                                         </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @php $codes = $expense->items->pluck('budgetItem')->filter()->unique('id')->values(); @endphp
+                                        @if($codes->isEmpty())
+                                            <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Unassigned') }}</span>
+                                        @else
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach($codes->take(2) as $code)
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" title="{{ $code->name }}">
+                                                        {{ $code->code }}
+                                                    </span>
+                                                @endforeach
+                                                @if($codes->count() > 2)
+                                                    <span class="text-xs text-slate-500 dark:text-slate-400">+{{ $codes->count() - 2 }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($expense->jobSite)
@@ -165,6 +192,14 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end space-x-2">
+                                            <a
+                                                href="{{ route('expenses.edit', $expense->id) }}"
+                                                class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]"
+                                                title="{{ __('Edit') }}">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </a>
                                             <button
                                                 wire:click="openExpenseViewModal({{ $expense->id }})"
                                                 class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
@@ -308,10 +343,7 @@
                                         @foreach($expenseItems as $item)
                                             <tr>
                                                 <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
-                                                    @php
-                                                        $budgetItem = $item['budget_item_id'] ? \App\Models\BudgetItem::find($item['budget_item_id']) : null;
-                                                    @endphp
-                                                    {{ $budgetItem ? $budgetItem->code . ' - ' . $budgetItem->name : __('Miscellaneous') }}
+                                                    {{ $item['cost_code'] ?? __('Unassigned') }}
                                                 </td>
                                                 <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
                                                     {{ $item['item_name'] }}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\JobSite;
+use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
@@ -61,14 +62,19 @@ class JobSiteFinancialReportPdfController extends Controller
         $profit = round($contractValue - $totalExpenses - $contractsAdjusted, 2);
 
         $changeOrders = $jobSite->changeOrders()
+            ->with('items')
             ->orderBy('requested_date')
             ->get()
             ->map(fn ($co) => [
                 'date' => $co->requested_date,
                 'title' => $co->title,
+                'cost' => (float) $co->cost_impact,
+                'status' => $co->status,
                 'amount' => (float) $co->amount,
             ])
             ->all();
+
+        $ledger = $jobSite->budget ? CostCodeLedger::for($jobSite->budget) : null;
 
         return [
             'jobSite' => $jobSite,
@@ -88,6 +94,10 @@ class JobSiteFinancialReportPdfController extends Controller
             'changeOrders' => $changeOrders,
             'expenses' => $expensesCollection,
             'contracts' => $contractsCollection,
+            'costCodes' => [
+                'budgets' => $ledger ? [['budget' => $jobSite->budget, 'grid' => $ledger->grid()]] : [],
+                'totals' => $ledger?->totals(),
+            ],
             'paymentSchedule' => PaymentScheduleService::forJobSite($jobSite)->build(),
             'generatedAt' => now(),
         ];

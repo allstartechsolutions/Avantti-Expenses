@@ -403,14 +403,14 @@ class PurchaseOrderEdit extends Component
             foreach ($this->items as $index => $item) {
                 $budgetItemId = $item['budget_item_id'];
 
-                // Auto-assign to Miscellaneous if no cost code
+                // Auto-assign to the budget default bucket if no cost code
                 if (!$budgetItemId) {
-                    $miscItem = BudgetService::getMiscellaneousItem(
+                    $defaultItem = BudgetService::getDefaultItem(
                         $this->purchaseOrder->project_id,
                         $this->po_job_site_id,
                         Auth::id()
                     );
-                    $budgetItemId = $miscItem->id;
+                    $budgetItemId = $defaultItem->id;
                 }
 
                 $itemData = [

@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Models\Project;
+use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
 use Livewire\Component;
 
@@ -172,6 +173,8 @@ class ProjectFinancialReport extends Component
                     'date' => $co->requested_date,
                     'title' => $co->title,
                     'scope' => $co->jobSite?->job_site_name ?? __('Project-level'),
+                    'cost' => (float) $co->cost_impact,
+                    'status' => $co->status,
                     'amount' => (float) $co->amount,
                 ];
             })
@@ -191,6 +194,7 @@ class ProjectFinancialReport extends Component
     public function render()
     {
         return view('livewire.project.project-financial-report', [
+            'costCodes' => CostCodeLedger::forProject($this->project),
             'financials' => $this->financials,
             'breakdown' => $this->breakdown,
             'revenueDetail' => $this->revenueDetail,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Project;
+use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
@@ -93,6 +94,7 @@ class ProjectFinancialReportPdfController extends Controller
             'revenueDetail' => $revenueDetail,
             'expenses' => $expensesCollection,
             'contracts' => $contractsCollection,
+            'costCodes' => CostCodeLedger::forProject($project),
             'paymentSchedule' => PaymentScheduleService::forProject($project)->build(),
             'generatedAt' => now(),
         ];
@@ -174,13 +176,15 @@ class ProjectFinancialReportPdfController extends Controller
         }
 
         $changeOrders = $project->changeOrders()
-            ->with('jobSite:id,job_site_name')
+            ->with(['jobSite:id,job_site_name', 'items'])
             ->orderBy('requested_date')
             ->get()
             ->map(fn ($co) => [
                 'date' => $co->requested_date,
                 'title' => $co->title,
                 'scope' => $co->jobSite?->job_site_name ?? __('Project-level'),
+                'cost' => (float) $co->cost_impact,
+                'status' => $co->status,
                 'amount' => (float) $co->amount,
             ])
             ->all();

@@ -59,10 +59,7 @@
                                     @foreach($expenseItems as $item)
                                         <tr>
                                             <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
-                                                @php
-                                                    $budgetItem = $item['budget_item_id'] ? \App\Models\BudgetItem::find($item['budget_item_id']) : null;
-                                                @endphp
-                                                {{ $budgetItem ? $budgetItem->code . ' - ' . $budgetItem->name : __('Miscellaneous') }}
+                                                {{ $item['cost_code'] ?? __('Unassigned') }}
                                             </td>
                                             <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
                                                 {{ $item['item_name'] }}

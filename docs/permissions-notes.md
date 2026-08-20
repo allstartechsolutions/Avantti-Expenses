@@ -227,6 +227,44 @@ a user is not meant to see — names, clients and addresses are all shown in the
 
 ---
 
+## 4a. Decisions taken — 2026-08-20 (owner)
+
+Recorded when the permission module was designed. The design lives in
+**`docs/permissions-module-plan.md`**; this section is only the record of what was decided.
+
+| Question | Decision |
+|---|---|
+| 6. Per-project confinement (N4) | **Yes, as a per-user switch.** Each user is *Company-wide* or *Assigned only*. Existing users all migrate as Company-wide, so nothing changes on deploy; people are confined one at a time. |
+| 1, 3, 4. Approval gaps (N1, N2) | **Settled inside the permission module, not deferred.** Self-approval blocked; a submitted requisition locked to its raiser (an edit sends it back to draft and needs re-approval); a quotation round requires an approved requisition; **duplicate requisition** added so a lesser user has an honest way round. |
+| 2. Duplicate a requisition (N1) | **Yes**, any status, into a new draft owned by whoever duplicated it. |
+| 5. Award authority and thresholds (N3) | Abilities `quotations.award` / `quotations.convert`, plus an **optional `approval_limit`** per membership — nullable, so the feature is invisible until a customer wants it. |
+| 6b. Granularity (N6) | **Action matrix**: per area, View / Create / Edit / Approve / Delete plus a few area-specific actions. Roles and templates become presets over the same matrix. |
+| 7. Document access (N5, N8) | **Tightened app-wide** in the enforcement sweep: every PDF and file controller authorizes against the record's scope, and a presigned R2 URL is only minted after the check. |
+| 8. Share links (N7) | Becomes the `documents.share` **ability**, granted by template rather than by role name — so each install decides whether managers hold it, and folder links can be held tighter than single-document ones. |
+| — Global search (N9) | Scoped in the same phase as confinement. |
+| — External guests | **Allowed.** A client, engineer or vendor can hold a login confined to one project or job site, with no sidebar, no index of all projects and no global search. |
+| — Change-order approval (§4b) | Same answers as the requisition: its own ability, self-approval blocked, un-approving narrower than approving, and deleting an approved one behind a separate ability. |
+
+Still open, and not blocking: guest notifications, whether approval limits also belong on a
+role, what happens to a removed member's drafts and tasks, and whether any action needs a
+genuine two-person rule.
+
+## 4b. Change orders (added 2026-08-19, phase 2)
+
+Approving a change order is what moves the cost budget, and today **anyone who can reach the
+change orders screen can approve, reject or return one to pending**. No admin guard, no
+separation between the person who raises it and the person who approves it.
+
+Open questions for the owner:
+
+1. **Who may approve a change order** — everyone, managers, admins, or a value threshold?
+2. **Self-approval** — may the person who raised it approve it? (Same question as N3 for
+   requisitions; the answer should probably be the same for both.)
+3. **Un-approving** — Return to Pending and Reject pull money back out of a live budget. Should
+   those be narrower than approving in the first place?
+4. **Deleting an approved change order** — currently allowed, and it silently removes its cost
+   lines from every budget. Block it, or require admin?
+
 ## 5. Related
 
 - `docs/quotation-module-plan.md` — the chain and its phases.

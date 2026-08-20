@@ -86,348 +86,394 @@ document.addEventListener('alpine:init', () => {
  * Usage: <div x-data="documentUploader(config)"> — see
  * resources/views/livewire/documents/partials/upload-modal.blade.php.
  */
-document.addEventListener('alpine:init', () => {
-    window.Alpine.data('documentUploader', (config) => ({
-        config,
-        items: [],
-        dragging: false,
-        nextId: 1,
+/*
+ * The uploader used by every screen that puts a file in cloud storage.
+ *
+ * The transport — presigned single PUT or multipart with progress, retries,
+ * cancellation and abort — is the same wherever it is used. What differs is
+ * only what init() is told to create and who is told when a file lands, and
+ * both of those come from config.
+ *
+ * Registered twice: 'documentUploader' for the file repository, which keeps
+ * its original payload, and 'fileUploader' for anything else (tasks, task
+ * notes, meetings), which passes config.fields instead.
+ */
+const createUploader = (config) => ({
+    config,
+    items: [],
+    dragging: false,
+    nextId: 1,
 
-        // How many parts of one file are pushed at the same time. Three keeps
-        // a site connection saturated without starving the rest of the page.
-        concurrency: 3,
+    // How many parts of one file are pushed at the same time. Three keeps
+    // a site connection saturated without starving the rest of the page.
+    concurrency: 3,
 
-        init() {
-            // Files dropped on the page before the panel existed.
-            if (window.__documentDroppedFiles) {
-                this.addFiles(window.__documentDroppedFiles);
-                window.__documentDroppedFiles = null;
+    init() {
+        // Files dropped on the page before the panel existed.
+        const key = this.config.droppedFilesKey || '__documentDroppedFiles';
+
+        if (window[key]) {
+            this.addFiles(window[key]);
+            window[key] = null;
+        }
+    },
+
+    get busy() {
+        return this.items.some((item) => item.status === 'uploading' || item.status === 'finishing');
+    },
+
+    get queued() {
+        return this.items.filter((item) => item.status === 'queued');
+    },
+
+    get totalProgress() {
+        const active = this.items.filter((item) => item.status !== 'error');
+        if (! active.length) return 0;
+        return Math.round(active.reduce((sum, item) => sum + item.progress, 0) / active.length);
+    },
+
+    formatBytes(bytes) {
+        if (! bytes) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        const value = bytes / Math.pow(1024, power);
+        return `${power === 0 ? value : value.toFixed(1)} ${units[power]}`;
+    },
+
+    onDrop(event) {
+        this.dragging = false;
+        this.addFiles(event.dataTransfer.files);
+    },
+
+    onPick(event) {
+        this.addFiles(event.target.files);
+        event.target.value = '';
+    },
+
+    addFiles(fileList) {
+        const allowed = this.config.accept
+            .split(',')
+            .map((extension) => extension.trim().toLowerCase());
+
+        Array.from(fileList).forEach((file) => {
+            const extension = '.' + (file.name.split('.').pop() || '').toLowerCase();
+
+            const item = {
+                id: this.nextId++,
+                file,
+                name: file.name,
+                size: file.size,
+                progress: 0,
+                status: 'queued',
+                error: null,
+                versionId: null,
+                documentId: null,
+                uploadId: null,
+                key: null,
+                xhrs: [],
+            };
+
+            if (! allowed.includes(extension)) {
+                item.status = 'error';
+                item.error = this.config.messages.type;
+            } else if (file.size > this.config.maxBytes) {
+                item.status = 'error';
+                item.error = this.config.messages.size;
+            } else if (file.size === 0) {
+                item.status = 'error';
+                item.error = this.config.messages.empty;
             }
-        },
 
-        get busy() {
-            return this.items.some((item) => item.status === 'uploading' || item.status === 'finishing');
-        },
+            this.items.push(item);
+        });
+    },
 
-        get queued() {
-            return this.items.filter((item) => item.status === 'queued');
-        },
+    remove(item) {
+        if (item.status === 'uploading' || item.status === 'finishing') {
+            this.cancel(item);
+            return;
+        }
+        this.items = this.items.filter((candidate) => candidate.id !== item.id);
+    },
 
-        get totalProgress() {
-            const active = this.items.filter((item) => item.status !== 'error');
-            if (! active.length) return 0;
-            return Math.round(active.reduce((sum, item) => sum + item.progress, 0) / active.length);
-        },
+    clearFinished() {
+        this.items = this.items.filter((item) => item.status !== 'done');
+    },
 
-        formatBytes(bytes) {
-            if (! bytes) return '0 B';
-            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-            const value = bytes / Math.pow(1024, power);
-            return `${power === 0 ? value : value.toFixed(1)} ${units[power]}`;
-        },
+    async startAll() {
+        for (const item of this.queued) {
+            await this.upload(item);
+        }
+    },
 
-        onDrop(event) {
-            this.dragging = false;
-            this.addFiles(event.dataTransfer.files);
-        },
+    async retry(item) {
+        item.status = 'queued';
+        item.error = null;
+        item.progress = 0;
+        await this.upload(item);
+    },
 
-        onPick(event) {
-            this.addFiles(event.target.files);
-            event.target.value = '';
-        },
+    async upload(item) {
+        item.status = 'uploading';
+        item.error = null;
 
-        addFiles(fileList) {
-            const allowed = this.config.accept
-                .split(',')
-                .map((extension) => extension.trim().toLowerCase());
+        try {
+            const plan = await this.post(this.config.endpoints.init, this.initPayload(item));
 
-            Array.from(fileList).forEach((file) => {
-                const extension = '.' + (file.name.split('.').pop() || '').toLowerCase();
+            item.versionId = plan.version_id;
+            item.documentId = plan.document_id;
+            item.uploadId = plan.upload_id;
+            item.key = plan.key;
 
-                const item = {
-                    id: this.nextId++,
-                    file,
-                    name: file.name,
-                    size: file.size,
-                    progress: 0,
-                    status: 'queued',
-                    error: null,
-                    versionId: null,
-                    documentId: null,
-                    uploadId: null,
-                    key: null,
-                    xhrs: [],
-                };
-
-                if (! allowed.includes(extension)) {
-                    item.status = 'error';
-                    item.error = this.config.messages.type;
-                } else if (file.size > this.config.maxBytes) {
-                    item.status = 'error';
-                    item.error = this.config.messages.size;
-                } else if (file.size === 0) {
-                    item.status = 'error';
-                    item.error = this.config.messages.empty;
-                }
-
-                this.items.push(item);
-            });
-        },
-
-        remove(item) {
-            if (item.status === 'uploading' || item.status === 'finishing') {
-                this.cancel(item);
+            if (plan.mode === 'single') {
+                await this.putWhole(item, plan.urls[1]);
+                await this.finish(item, []);
+            } else if (plan.mode === 'multipart') {
+                const parts = await this.putParts(item, plan);
+                await this.finish(item, parts);
+            } else {
+                throw new Error(this.config.messages.failed);
+            }
+        } catch (error) {
+            if (item.status === 'cancelled') {
                 return;
             }
-            this.items = this.items.filter((candidate) => candidate.id !== item.id);
-        },
 
-        clearFinished() {
-            this.items = this.items.filter((item) => item.status !== 'done');
-        },
-
-        async startAll() {
-            for (const item of this.queued) {
-                await this.upload(item);
-            }
-        },
-
-        async retry(item) {
-            item.status = 'queued';
-            item.error = null;
-            item.progress = 0;
-            await this.upload(item);
-        },
-
-        async upload(item) {
-            item.status = 'uploading';
-            item.error = null;
-
-            try {
-                const plan = await this.post(this.config.endpoints.init, {
-                    project_id: this.config.projectId,
-                    job_site_id: this.config.jobSiteId,
-                    folder_id: this.config.folderId,
-                    document_id: this.config.documentId,
-                    file_name: item.name,
-                    size_bytes: item.size,
-                    mime_type: item.file.type || null,
-                    // Read at send time: the user may change these while a
-                    // queue is still going up.
-                    category: this.$wire.uploadCategory,
-                    is_internal: this.$wire.uploadIsInternal,
-                    notes: this.$wire.uploadVersionNotes,
-                });
-
-                item.versionId = plan.version_id;
-                item.documentId = plan.document_id;
-                item.uploadId = plan.upload_id;
-                item.key = plan.key;
-
-                if (plan.mode === 'single') {
-                    await this.putWhole(item, plan.urls[1]);
-                    await this.finish(item, []);
-                } else if (plan.mode === 'multipart') {
-                    const parts = await this.putParts(item, plan);
-                    await this.finish(item, parts);
-                } else {
-                    throw new Error(this.config.messages.failed);
-                }
-            } catch (error) {
-                if (item.status === 'cancelled') {
-                    return;
-                }
-
-                item.status = 'error';
-                item.error = error.message || this.config.messages.failed;
-
-                if (item.versionId) {
-                    this.post(this.config.endpoints.abort, { version_id: item.versionId }).catch(() => {});
-                    item.versionId = null;
-                }
-            }
-        },
-
-        /**
-         * One PUT for a small file, with real progress rather than a spinner.
-         */
-        putWhole(item, url) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                item.xhrs.push(xhr);
-
-                xhr.open('PUT', url, true);
-                if (item.file.type) {
-                    xhr.setRequestHeader('Content-Type', item.file.type);
-                }
-
-                xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        item.progress = Math.round((event.loaded / event.total) * 100);
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        item.progress = 100;
-                        resolve();
-                    } else {
-                        reject(new Error(this.config.messages.failed));
-                    }
-                };
-
-                xhr.onerror = () => reject(new Error(this.config.messages.network));
-                xhr.onabort = () => reject(new Error(this.config.messages.cancelled));
-                xhr.send(item.file);
-            });
-        },
-
-        /**
-         * Multipart: fixed-size slices, a few at a time, each retried twice
-         * before the whole upload is called a failure. R2 requires every part
-         * to be the same size except the last.
-         */
-        async putParts(item, plan) {
-            const partSize = plan.part_size;
-            const partCount = plan.part_count;
-            const urls = { ...plan.urls };
-            const done = [];
-            const loaded = new Array(partCount + 1).fill(0);
-
-            const updateProgress = () => {
-                const sum = loaded.reduce((total, value) => total + value, 0);
-                item.progress = Math.min(99, Math.round((sum / item.size) * 100));
-            };
-
-            let next = 1;
-
-            const worker = async () => {
-                while (next <= partCount) {
-                    const partNumber = next++;
-
-                    if (! urls[partNumber]) {
-                        const batch = [];
-                        for (let n = partNumber; n < partNumber + 50 && n <= partCount; n++) {
-                            if (! urls[n]) batch.push(n);
-                        }
-
-                        const signed = await this.post(this.config.endpoints.parts, {
-                            version_id: item.versionId,
-                            part_numbers: batch,
-                        });
-
-                        Object.assign(urls, signed.urls);
-                    }
-
-                    const start = (partNumber - 1) * partSize;
-                    const blob = item.file.slice(start, Math.min(start + partSize, item.size));
-
-                    let attempt = 0;
-                    for (;;) {
-                        try {
-                            const etag = await this.putPart(item, urls[partNumber], blob, (bytes) => {
-                                loaded[partNumber] = bytes;
-                                updateProgress();
-                            });
-                            done.push({ PartNumber: partNumber, ETag: etag });
-                            break;
-                        } catch (error) {
-                            if (item.status === 'cancelled') throw error;
-                            if (++attempt > 2) throw error;
-                            await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-                        }
-                    }
-                }
-            };
-
-            await Promise.all(
-                Array.from({ length: Math.min(this.concurrency, partCount) }, () => worker())
-            );
-
-            return done.sort((a, b) => a.PartNumber - b.PartNumber);
-        },
-
-        putPart(item, url, blob, onProgress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                item.xhrs.push(xhr);
-
-                xhr.open('PUT', url, true);
-
-                xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) onProgress(event.loaded);
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        // Requires the bucket's CORS policy to expose ETag —
-                        // see docs/deployment-cloudflare-r2.md §2.3.
-                        const etag = xhr.getResponseHeader('ETag');
-                        if (! etag) {
-                            reject(new Error(this.config.messages.etag));
-                            return;
-                        }
-                        onProgress(blob.size);
-                        resolve(etag.replace(/"/g, ''));
-                    } else {
-                        reject(new Error(this.config.messages.failed));
-                    }
-                };
-
-                xhr.onerror = () => reject(new Error(this.config.messages.network));
-                xhr.onabort = () => reject(new Error(this.config.messages.cancelled));
-                xhr.send(blob);
-            });
-        },
-
-        async finish(item, parts) {
-            item.status = 'finishing';
-            item.progress = 100;
-
-            const result = await this.post(this.config.endpoints.complete, {
-                version_id: item.versionId,
-                parts,
-            });
-
-            item.status = 'done';
-            item.documentId = result.document_id;
-
-            // Let the component apply tags and refresh the list.
-            this.$wire.documentUploaded(result.document_id);
-        },
-
-        cancel(item) {
-            item.status = 'cancelled';
-            item.xhrs.forEach((xhr) => xhr.abort());
+            item.status = 'error';
+            item.error = error.message || this.config.messages.failed;
 
             if (item.versionId) {
                 this.post(this.config.endpoints.abort, { version_id: item.versionId }).catch(() => {});
+                item.versionId = null;
             }
+        }
+    },
 
-            this.items = this.items.filter((candidate) => candidate.id !== item.id);
-        },
+    /**
+     * What init() is asked to create.
+     *
+     * config.fields names a target directly (a task, a note, a meeting).
+     * Without it this is the document repository, whose payload is the
+     * location plus three values read from the Livewire component at send
+     * time — the user may change them while a queue is still going up.
+     */
+    initPayload(item) {
+        const file = {
+            file_name: item.name,
+            size_bytes: item.size,
+            mime_type: item.file.type || null,
+        };
 
-        async post(url, body) {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                },
-                body: JSON.stringify(body),
+        if (this.config.fields) {
+            const live = {};
+
+            Object.entries(this.config.liveFields || {}).forEach(([key, property]) => {
+                live[key] = this.$wire[property];
             });
 
-            const data = await response.json().catch(() => ({}));
+            return { ...this.config.fields, ...file, ...live };
+        }
 
-            if (! response.ok) {
-                throw new Error(data.message || this.config.messages.failed);
+        return {
+            project_id: this.config.projectId,
+            job_site_id: this.config.jobSiteId,
+            folder_id: this.config.folderId,
+            document_id: this.config.documentId,
+            ...file,
+            category: this.$wire.uploadCategory,
+            is_internal: this.$wire.uploadIsInternal,
+            notes: this.$wire.uploadVersionNotes,
+        };
+    },
+
+    /**
+     * One PUT for a small file, with real progress rather than a spinner.
+     */
+    putWhole(item, url) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            item.xhrs.push(xhr);
+
+            xhr.open('PUT', url, true);
+            if (item.file.type) {
+                xhr.setRequestHeader('Content-Type', item.file.type);
             }
 
-            return data;
-        },
-    }));
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    item.progress = Math.round((event.loaded / event.total) * 100);
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    item.progress = 100;
+                    resolve();
+                } else {
+                    reject(new Error(this.config.messages.failed));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error(this.config.messages.network));
+            xhr.onabort = () => reject(new Error(this.config.messages.cancelled));
+            xhr.send(item.file);
+        });
+    },
+
+    /**
+     * Multipart: fixed-size slices, a few at a time, each retried twice
+     * before the whole upload is called a failure. R2 requires every part
+     * to be the same size except the last.
+     */
+    async putParts(item, plan) {
+        const partSize = plan.part_size;
+        const partCount = plan.part_count;
+        const urls = { ...plan.urls };
+        const done = [];
+        const loaded = new Array(partCount + 1).fill(0);
+
+        const updateProgress = () => {
+            const sum = loaded.reduce((total, value) => total + value, 0);
+            item.progress = Math.min(99, Math.round((sum / item.size) * 100));
+        };
+
+        let next = 1;
+
+        const worker = async () => {
+            while (next <= partCount) {
+                const partNumber = next++;
+
+                if (! urls[partNumber]) {
+                    const batch = [];
+                    for (let n = partNumber; n < partNumber + 50 && n <= partCount; n++) {
+                        if (! urls[n]) batch.push(n);
+                    }
+
+                    const signed = await this.post(this.config.endpoints.parts, {
+                        version_id: item.versionId,
+                        part_numbers: batch,
+                    });
+
+                    Object.assign(urls, signed.urls);
+                }
+
+                const start = (partNumber - 1) * partSize;
+                const blob = item.file.slice(start, Math.min(start + partSize, item.size));
+
+                let attempt = 0;
+                for (;;) {
+                    try {
+                        const etag = await this.putPart(item, urls[partNumber], blob, (bytes) => {
+                            loaded[partNumber] = bytes;
+                            updateProgress();
+                        });
+                        done.push({ PartNumber: partNumber, ETag: etag });
+                        break;
+                    } catch (error) {
+                        if (item.status === 'cancelled') throw error;
+                        if (++attempt > 2) throw error;
+                        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+                    }
+                }
+            }
+        };
+
+        await Promise.all(
+            Array.from({ length: Math.min(this.concurrency, partCount) }, () => worker())
+        );
+
+        return done.sort((a, b) => a.PartNumber - b.PartNumber);
+    },
+
+    putPart(item, url, blob, onProgress) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            item.xhrs.push(xhr);
+
+            xhr.open('PUT', url, true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) onProgress(event.loaded);
+            };
+
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Requires the bucket's CORS policy to expose ETag —
+                    // see docs/deployment-cloudflare-r2.md §2.3.
+                    const etag = xhr.getResponseHeader('ETag');
+                    if (! etag) {
+                        reject(new Error(this.config.messages.etag));
+                        return;
+                    }
+                    onProgress(blob.size);
+                    resolve(etag.replace(/"/g, ''));
+                } else {
+                    reject(new Error(this.config.messages.failed));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error(this.config.messages.network));
+            xhr.onabort = () => reject(new Error(this.config.messages.cancelled));
+            xhr.send(blob);
+        });
+    },
+
+    async finish(item, parts) {
+        item.status = 'finishing';
+        item.progress = 100;
+
+        const result = await this.post(this.config.endpoints.complete, {
+            version_id: item.versionId,
+            parts,
+        });
+
+        item.status = 'done';
+        item.documentId = result.document_id ?? null;
+
+        // Let the component apply tags, attach the file and refresh the
+        // list. The server decides what was stored; the browser only says
+        // which row it was.
+        const method = this.config.completedMethod || 'documentUploaded';
+        const argument = result[this.config.completedKey || 'document_id'];
+
+        this.$wire[method](argument);
+    },
+
+    cancel(item) {
+        item.status = 'cancelled';
+        item.xhrs.forEach((xhr) => xhr.abort());
+
+        if (item.versionId) {
+            this.post(this.config.endpoints.abort, { version_id: item.versionId }).catch(() => {});
+        }
+
+        this.items = this.items.filter((candidate) => candidate.id !== item.id);
+    },
+
+    async post(url, body) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+            },
+            body: JSON.stringify(body),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (! response.ok) {
+            throw new Error(data.message || this.config.messages.failed);
+        }
+
+        return data;
+    },
+});
+
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('documentUploader', createUploader);
+    window.Alpine.data('fileUploader', createUploader);
 });
 
 /*

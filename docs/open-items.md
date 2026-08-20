@@ -16,6 +16,10 @@ first; every finished piece of work has its own file (index at the bottom).
   models, a service, a mailable, two PDF controllers, four Livewire pages, shared traits and
   partials, routes, nav, module entry, pt_BR strings and docs. The shared `x-ui.modal`
   component also gained modal stacking, which touches every modal in the app.
+- **2026-08-19:** the header search rewrite (projects + job sites) is **committed** in
+  `fe5d7df`. The cost code add/edit dialogs on budgets and templates are **uncommitted** in
+  the working tree. Both are view + component work only — **no migrations** — plus 14
+  translation keys across both locales. See `docs/changelog-2026-08-19.md`.
 - Nothing is half-built.
 - **Deploy needs:** `php artisan migrate` (phase-4 audit enum, the incomes status/due-date
   migration, `income_distributions`, the three `purchase_requisition*` tables and the four
@@ -67,6 +71,16 @@ CLAUDE.md rule 7.
 
 Three smaller questions remain in §6 of the plan (equalization depth, budget enforcement,
 module coverage), each with a stated assumption; none blocks phase 2.
+
+## 2b. Also planned, not started — Meetings / Minutes / Tasks
+
+Planned with the owner 2026-08-19: a meeting-minutes module (ata de reunião) with a real task
+system behind it. Minutes are frozen records; tasks are living work; an agenda item is the join,
+which is what makes "open items from the last meeting show up on the next agenda" work. Nine
+decisions were taken with the owner and must not be re-litigated. **The plan is
+`docs/meetings-module-plan.md` — read it before writing anything.** Build order puts the task
+system first (phases 0–2), meetings after (3–6), then notifications, reports and the standing
+review phase. Nothing built.
 
 ## 3. Shipped 2026-08-19
 
@@ -218,6 +232,9 @@ observations, the options and the seven decisions needed.
 
 | Topic | File |
 |---|---|
+| **Documentation module (the in-app library)** | `docs/documentation-module.md` |
+| **Meetings — how to use it (the first shipped guide)** | `docs/meetings-module-guide.md` |
+| **Meetings / minutes / tasks plan + build log** | `docs/meetings-module-plan.md` |
 | **Quotation module plan (phases 2–8 next)** | `docs/quotation-module-plan.md` |
 | **Requisitions — phase 1, as built** | `docs/requisition-module.md` |
 | **Quotation rounds — phases 2-5, as built** | `docs/quotation-module.md` |
@@ -234,3 +251,5 @@ observations, the options and the seven decisions needed.
 | Translation system + sweep safety rule | `docs/translation-system.md` |
 | Project / job site parity rule | `docs/project-jobsite-parity-rule.md` |
 | What shipped 2026-08-17/18 | `docs/changelog-2026-08-18.md` |
+| What shipped 2026-08-19 (header search, cost code dialogs) | `docs/changelog-2026-08-19.md` |
+| Header search, as built | `docs/header-search.md` |

@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Contracts\StoredFile;
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Models\FileUpload;
 use Aws\S3\S3Client;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -68,11 +70,25 @@ class DocumentStorageService
             }
         }
 
+        return ['version_id' => $version->id] + $this->planUpload($version, $key, $sizeBytes, $mimeType);
+    }
+
+    /**
+     * How the browser should push one already-created row's object up.
+     *
+     * Split out of beginUpload() so anything else that stores a file — a task
+     * attachment, a note's photo — goes up through exactly the same presign,
+     * multipart and part-size rules as a repository document, rather than
+     * growing a second copy of them.
+     *
+     * @return array{mode:string, key:string, upload_id:?string, part_size:int, part_count:int, urls:array<int,string>}
+     */
+    public function planUpload(StoredFile $file, string $key, int $sizeBytes, ?string $mimeType): array
+    {
         if (! DocumentSettings::isCloudConfigured()) {
             // The Livewire component uploads the file itself and then calls
             // storeLocalUpload(); there is nothing to presign.
             return [
-                'version_id' => $version->id,
                 'mode' => 'local',
                 'key' => $key,
                 'upload_id' => null,
@@ -84,7 +100,6 @@ class DocumentStorageService
 
         if (! DocumentSettings::needsMultipart($sizeBytes)) {
             return [
-                'version_id' => $version->id,
                 'mode' => 'single',
                 'key' => $key,
                 'upload_id' => null,
@@ -103,10 +118,9 @@ class DocumentStorageService
             'ContentType' => $mimeType ?: 'application/octet-stream',
         ])['UploadId'];
 
-        $version->update(['multipart_upload_id' => $uploadId]);
+        $file->update(['multipart_upload_id' => $uploadId]);
 
         return [
-            'version_id' => $version->id,
             'mode' => 'multipart',
             'key' => $key,
             'upload_id' => $uploadId,
@@ -166,7 +180,7 @@ class DocumentStorageService
      *
      * @param  array<int, array{PartNumber:int, ETag:string}>  $parts
      */
-    public function completeUpload(DocumentVersion $version, array $parts = []): DocumentVersion
+    public function completeUpload(StoredFile $version, array $parts = [], ?int $maxBytes = null): StoredFile
     {
         if ($version->isMultipart()) {
             $this->client()->completeMultipartUpload([
@@ -180,7 +194,7 @@ class DocumentStorageService
         $head = $this->headObject($version);
 
         if (! $head) {
-            $version->update(['upload_status' => DocumentVersion::STATUS_FAILED]);
+            $version->update(['upload_status' => StoredFile::STATUS_FAILED]);
 
             throw new RuntimeException('The uploaded file could not be found in storage.');
         }
@@ -189,11 +203,11 @@ class DocumentStorageService
         // presigned URL does not constrain what actually gets PUT. This is the
         // first point where the real size is known, so it is where the ceiling
         // is enforced — and an oversized object is removed rather than kept.
-        $maximum = DocumentSettings::maxUploadBytes();
+        $maximum = $maxBytes ?? DocumentSettings::maxUploadBytes();
 
         if ($head['size'] > $maximum) {
             $this->deleteObject($version);
-            $version->update(['upload_status' => DocumentVersion::STATUS_FAILED]);
+            $version->update(['upload_status' => StoredFile::STATUS_FAILED]);
 
             throw new RuntimeException(sprintf(
                 'The uploaded file is %s, over the %s limit.',
@@ -206,7 +220,7 @@ class DocumentStorageService
             'size_bytes' => $head['size'],
             'mime_type' => $head['mime'] ?: $version->mime_type,
             'checksum' => $head['etag'],
-            'upload_status' => DocumentVersion::STATUS_AVAILABLE,
+            'upload_status' => StoredFile::STATUS_AVAILABLE,
             'multipart_upload_id' => null,
         ]);
 
@@ -217,7 +231,7 @@ class DocumentStorageService
      * Store a file that came through PHP — the local-disk path, and the way
      * every install without R2 uploads.
      */
-    public function storeLocalUpload(DocumentVersion $version, UploadedFile $file): DocumentVersion
+    public function storeLocalUpload(StoredFile $version, UploadedFile $file): StoredFile
     {
         $disk = Storage::disk($version->disk);
 
@@ -235,7 +249,7 @@ class DocumentStorageService
             'size_bytes' => (int) $disk->size($version->object_key),
             'mime_type' => $disk->mimeType($version->object_key) ?: $file->getMimeType(),
             'checksum' => md5_file($file->getRealPath()),
-            'upload_status' => DocumentVersion::STATUS_AVAILABLE,
+            'upload_status' => StoredFile::STATUS_AVAILABLE,
         ]);
 
         return $version->refresh();
@@ -245,7 +259,7 @@ class DocumentStorageService
      * Give up on an upload and leave nothing behind — an unfinished multipart
      * upload is billed by R2 until it is aborted.
      */
-    public function abortUpload(DocumentVersion $version): void
+    public function abortUpload(StoredFile $version): void
     {
         if ($version->isMultipart() && $this->isCloudVersion($version)) {
             try {
@@ -269,7 +283,7 @@ class DocumentStorageService
      *
      * @return array{size:int, mime:?string, etag:?string}|null
      */
-    public function headObject(DocumentVersion $version): ?array
+    public function headObject(StoredFile $version): ?array
     {
         if ($this->isCloudVersion($version)) {
             try {
@@ -305,7 +319,7 @@ class DocumentStorageService
      * A short-lived URL the browser can fetch the file from directly. Null on
      * the local disk, where the file has to be streamed by a controller.
      */
-    public function temporaryUrl(DocumentVersion $version, string $downloadName, bool $inline = false): ?string
+    public function temporaryUrl(StoredFile $version, string $downloadName, bool $inline = false): ?string
     {
         if (! $this->isCloudVersion($version)) {
             return null;
@@ -334,7 +348,7 @@ class DocumentStorageService
      *
      * Cloudflare R2 does this server side: nothing is downloaded or re-uploaded.
      */
-    public function copyObject(DocumentVersion $source, string $targetKey): void
+    public function copyObject(StoredFile $source, string $targetKey): void
     {
         $disk = Storage::disk($source->disk);
 
@@ -349,7 +363,7 @@ class DocumentStorageService
      * Remove the stored object for one version. Missing objects are not an
      * error — the point is that it is gone.
      */
-    public function deleteObject(DocumentVersion $version): void
+    public function deleteObject(StoredFile $version): void
     {
         try {
             $this->disk($version)->delete($version->object_key);
@@ -426,8 +440,16 @@ class DocumentStorageService
             return 0;
         }
 
+        // Every multipart this application knows about — document versions and
+        // the files any other module has in flight. Sweeping the bucket while
+        // only knowing half of them would abort live uploads.
         $known = DocumentVersion::whereNotNull('multipart_upload_id')
             ->pluck('multipart_upload_id')
+            ->merge(
+                FileUpload::withTrashed()
+                    ->whereNotNull('multipart_upload_id')
+                    ->pluck('multipart_upload_id')
+            )
             ->all();
 
         $aborted = 0;
@@ -461,7 +483,7 @@ class DocumentStorageService
     // INTERNALS
     // =========================================================================
 
-    private function disk(DocumentVersion $version): Filesystem
+    private function disk(StoredFile $version): Filesystem
     {
         return Storage::disk($version->disk ?: DocumentSettings::disk());
     }
@@ -470,7 +492,7 @@ class DocumentStorageService
      * Is this version's object on an S3-compatible disk? Versions uploaded
      * before an install moved to R2 stay on the disk they were written to.
      */
-    private function isCloudVersion(DocumentVersion $version): bool
+    private function isCloudVersion(StoredFile $version): bool
     {
         return config("filesystems.disks.{$version->disk}.driver") === 's3';
     }

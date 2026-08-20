@@ -309,14 +309,20 @@ class ExpenseReportService
             }
         }
 
+        // The budget each code belongs to, so a row can open its drill-down.
+        $budgetIds = \App\Models\BudgetItem::whereIn('id', array_filter(array_keys($buckets)))
+            ->pluck('budget_id', 'id');
+
         return collect($buckets)
-            ->map(fn (array $b) => [
+            ->map(fn (array $b, $key) => [
                 'code' => $b['code'],
                 'count' => $b['count'],
                 'expenses' => round($b['expenses'], 2),
                 'contracted' => round($b['contracted'], 2),
                 'contract_paid' => round($b['contract_paid'], 2),
                 'total' => round($b['expenses'] + $b['contracted'], 2),
+                'budget_item_id' => $key ?: null,
+                'budget_id' => $budgetIds[$key] ?? null,
             ])
             ->sortByDesc('total')
             ->values();

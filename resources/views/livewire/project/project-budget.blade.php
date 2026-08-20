@@ -1,5 +1,55 @@
 <x-project-layout :project="$project" active="budget" title="{{ __('Budget') }}">
+    @php
+        $fmt = fn ($v) => Number::currency((float) $v, config('app.currency'), config('app.locale'));
+        $signedAmount = fn ($v) => ((float) $v > 0 ? '+' : '') . Number::currency((float) $v, config('app.currency'), config('app.locale'));
+    @endphp
+
     <div class="space-y-6">
+        @if($rollup)
+            <!-- Every budget on this project, added up -->
+            <div class="bg-gradient-to-r from-[#3F5189] to-[#5A6FA8] rounded-lg p-6 text-white">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div>
+                        <p class="text-sm text-white/80">{{ __('Revised Budget') }} &mdash; {{ __('whole project') }}</p>
+                        <p class="text-3xl font-bold mt-1">{{ $fmt($rollup['revised']) }}</p>
+                        <p class="text-sm text-white/70 mt-1">
+                            {{ __('Original') }} {{ $fmt($rollup['original']) }}
+                            @if((float) $rollup['changes'] != 0.0)
+                                &bull; {{ __('Approved changes') }} {{ $signedAmount($rollup['changes']) }}
+                            @endif
+                        </p>
+                    </div>
+                    <div class="lg:text-right">
+                        <p class="text-sm text-white/80">{{ (float) $rollup['remaining'] < 0 ? __('Over budget') : __('Remaining') }}</p>
+                        <p class="text-3xl font-bold mt-1 {{ (float) $rollup['remaining'] < 0 ? 'text-red-200' : '' }}">{{ $fmt(abs($rollup['remaining'])) }}</p>
+                        @if($rollup['percent_committed'] !== null)
+                            <div class="mt-2 flex items-center gap-2 lg:justify-end">
+                                <div class="relative w-40 h-2 bg-white/20 rounded-full overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 bg-white/50" style="width: {{ min(100, max(0, $rollup['percent_committed'])) }}%"></div>
+                                    <div class="absolute inset-y-0 left-0 bg-white" style="width: {{ min(100, max(0, $rollup['percent_spent'] ?? 0)) }}%"></div>
+                                </div>
+                                <span class="text-sm text-white/80">{{ number_format($rollup['percent_committed'], 0) }}% {{ __('used') }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <p class="text-white/70">{{ __('Committed') }}</p>
+                        <p class="font-semibold mt-0.5">{{ $fmt($rollup['committed']) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/70">{{ __('Actual') }}</p>
+                        <p class="font-semibold mt-0.5">{{ $fmt($rollup['actual']) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/70">{{ __('Projected') }}</p>
+                        <p class="font-semibold mt-0.5">{{ $fmt($rollup['projected']) }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Project Budget Section -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -28,10 +78,10 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-2xl font-bold text-slate-900 dark:text-white">
-                                {{ Number::currency($projectBudget->total_amount, config('app.currency'), config('app.locale')) }}
-                            </p>
-                            <div class="flex items-center gap-2 mt-2">
+                            @include('livewire.budget.partials.budget-figures', [
+                                'totals' => $budgetTotals[$projectBudget->id] ?? null,
+                            ])
+                            <div class="flex items-center justify-end gap-2 mt-2">
                                 <x-ui.button
                                     variant="secondary"
                                     size="sm"
@@ -96,9 +146,9 @@
                             </div>
                             <div class="flex items-center gap-4">
                                 @if($jobSiteBudget)
-                                    <span class="font-semibold text-slate-900 dark:text-white">
-                                        {{ Number::currency($jobSiteBudget->total_amount, config('app.currency'), config('app.locale')) }}
-                                    </span>
+                                    @include('livewire.budget.partials.budget-figures', [
+                                        'totals' => $budgetTotals[$jobSiteBudget->id] ?? null,
+                                    ])
                                     <x-ui.button
                                         variant="ghost"
                                         size="sm"

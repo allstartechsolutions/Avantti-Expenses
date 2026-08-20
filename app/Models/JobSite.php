@@ -155,6 +155,14 @@ class JobSite extends Model
     }
 
     /**
+     * Tasks raised for this job site
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
      * Repository folders belonging to this job site
      */
     public function documentFolders(): HasMany

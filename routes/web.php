@@ -38,6 +38,7 @@ use App\Livewire\JobSite\JobSiteQuotations;
 use App\Livewire\JobSite\JobSiteRequisitions;
 use App\Livewire\JobSite\JobSiteOverview;
 use App\Livewire\Expense\ExpenseCreate;
+use App\Livewire\Expense\ExpenseEdit;
 use App\Livewire\DailyReport\DailyReportForm;
 use App\Http\Controllers\ContractPaymentsPdfController;
 use App\Http\Controllers\AccountsPayableReportPdfController;
@@ -52,6 +53,21 @@ use App\Http\Controllers\DailyReportPdfController;
 use App\Http\Controllers\EstimatePdfController;
 use App\Http\Controllers\DocumentFileController;
 use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\DocumentationFileController;
+use App\Http\Controllers\DocumentationImageController;
+use App\Http\Controllers\DocumentationUploadController;
+use App\Http\Controllers\FileUploadController;
+use App\Livewire\Documentation\DocumentationArticle;
+use App\Livewire\Documentation\DocumentationForm;
+use App\Livewire\Documentation\DocumentationIndex;
+use App\Livewire\JobSite\JobSiteTasks;
+use App\Livewire\Meeting\MeetingAgenda;
+use App\Livewire\Meeting\MeetingForm;
+use App\Livewire\Meeting\MeetingIndex;
+use App\Livewire\Meeting\MeetingSeriesIndex;
+use App\Livewire\Meeting\MeetingShow;
+use App\Livewire\Project\ProjectTasks;
+use App\Livewire\Task\MyTasks;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\SharedDocumentController;
 use App\Livewire\Catalog\CatalogItemIndex;
@@ -72,7 +88,9 @@ use App\Livewire\CostCode\CostCodeTemplateEdit;
 use App\Livewire\Budget\BudgetCreate;
 use App\Livewire\Budget\BudgetShow;
 use App\Livewire\Budget\BudgetEdit;
+use App\Http\Controllers\BudgetCostGridPdfController;
 use App\Livewire\Budget\BudgetCostGrid;
+use App\Livewire\Budget\CostCodeDetail;
 use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
 use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
 use App\Livewire\PurchaseOrder\PurchaseOrderShow;
@@ -225,6 +243,7 @@ Route::middleware(['auth'])->group(function () {
     // Expense routes
     Route::get('projects/{project}/expenses/create', ExpenseCreate::class)->name('expenses.project.create');
     Route::get('job-sites/{jobSite}/expenses/create', ExpenseCreate::class)->name('expenses.jobsite.create');
+    Route::get('expenses/{expense}/edit', ExpenseEdit::class)->name('expenses.edit');
 
     // Daily Report routes (Job Site level)
     Route::get('job-sites/{jobSite}/daily-reports/create', DailyReportForm::class)->name('dailyreports.create');
@@ -326,6 +345,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('budgets/{budget}', BudgetShow::class)->name('budgets.show');
     Route::get('budgets/{budget}/edit', BudgetEdit::class)->name('budgets.edit');
     Route::get('budgets/{budget}/cost-grid', BudgetCostGrid::class)->name('budgets.cost-grid');
+    Route::get('budgets/{budget}/cost-grid/pdf', [BudgetCostGridPdfController::class, 'download'])->name('budgets.cost-grid.pdf.download');
+    Route::get('budgets/{budget}/cost-grid/pdf/view', [BudgetCostGridPdfController::class, 'stream'])->name('budgets.cost-grid.pdf.view');
+    Route::get('budgets/{budget}/cost-codes/{budgetItem}', CostCodeDetail::class)->name('budgets.cost-code');
+    Route::get('budgets/{budget}/unassigned-costs', CostCodeDetail::class)->name('budgets.unassigned');
     Route::get('projects/{project}/budgets/create', BudgetCreate::class)->name('projects.budgets.create');
     Route::get('job-sites/{jobSite}/budgets/create', BudgetCreate::class)->name('job-sites.budgets.create');
 
@@ -344,6 +367,28 @@ Route::middleware(['auth'])->group(function () {
     Route::get('purchase-orders/{purchaseOrder}', PurchaseOrderShow::class)->name('purchase-orders.show');
     Route::get('purchase-orders/{purchaseOrder}/edit', PurchaseOrderEdit::class)->name('purchase-orders.edit');
 
+    // Documentation library — guides shipped with the product plus this
+    // company's own (docs/documentation-module.md)
+    Route::get('documentation', DocumentationIndex::class)->name('documentation.index');
+    Route::get('documentation/write', DocumentationForm::class)->name('documentation.create');
+    Route::get('documentation/{article}/edit', DocumentationForm::class)->name('documentation.edit');
+    Route::get('documentation/image/{uuid}', DocumentationFileController::class)->name('documentation.image');
+    Route::post('documentation/images', DocumentationUploadController::class)->name('documentation.images.store');
+    Route::get('documentation/assets/{path}', DocumentationImageController::class)
+        ->where('path', '.*')->name('documentation.asset');
+    Route::get('documentation/{slug}', DocumentationArticle::class)->name('documentation.show');
+
+    // Meetings, minutes and tasks (docs/meetings-module-plan.md)
+    Route::get('tasks/mine', MyTasks::class)->name('tasks.mine');
+    Route::get('projects/{project}/tasks', ProjectTasks::class)->name('projects.tasks');
+    Route::get('job-sites/{jobSite}/tasks', JobSiteTasks::class)->name('jobsites.tasks');
+    Route::get('meeting-series', MeetingSeriesIndex::class)->name('meeting-series.index');
+    Route::get('meetings', MeetingIndex::class)->name('meetings.index');
+    Route::get('meetings/create', MeetingForm::class)->name('meetings.create');
+    Route::get('meetings/{meeting}', MeetingShow::class)->name('meetings.show');
+    Route::get('meetings/{meeting}/edit', MeetingForm::class)->name('meetings.edit');
+    Route::get('meetings/{meeting}/agenda', MeetingAgenda::class)->name('meetings.agenda');
+
     // Document repository (file repository for projects and job sites)
     Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');
     Route::get('job-sites/{jobSite}/documents', JobSiteDocuments::class)->name('jobsites.documents');
@@ -357,6 +402,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('documents/uploads/parts', [DocumentUploadController::class, 'parts'])->name('documents.uploads.parts');
     Route::post('documents/uploads/complete', [DocumentUploadController::class, 'complete'])->name('documents.uploads.complete');
     Route::post('documents/uploads/abort', [DocumentUploadController::class, 'abort'])->name('documents.uploads.abort');
+
+    // The same handshake for everything that is not a repository document —
+    // tasks, task notes and meetings (see docs/meetings-module-plan.md §7)
+    Route::post('uploads/init', [FileUploadController::class, 'init'])->name('uploads.init');
+    Route::post('uploads/parts', [FileUploadController::class, 'parts'])->name('uploads.parts');
+    Route::post('uploads/complete', [FileUploadController::class, 'complete'])->name('uploads.complete');
+    Route::post('uploads/abort', [FileUploadController::class, 'abort'])->name('uploads.abort');
 
     // File download route (protected)
     Route::get('files/download', [FileController::class, 'download'])->name('files.download');

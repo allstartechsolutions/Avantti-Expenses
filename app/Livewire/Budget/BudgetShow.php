@@ -4,14 +4,17 @@ namespace App\Livewire\Budget;
 
 use App\Models\Budget;
 use App\Models\BudgetItem;
+use App\Services\CostCodeLedger;
 use Livewire\Component;
 
 class BudgetShow extends Component
 {
     public Budget $budget;
 
+    /** The add/edit cost code dialog. */
+    public const FORM_MODAL = 'budget-item-modal';
+
     // Form state for adding/editing budget items
-    public $showForm = false;
     public $editingItemId = null;
     public $parentId = null;
 
@@ -78,16 +81,25 @@ class BudgetShow extends Component
     {
         $this->resetForm();
         $this->parentId = $parentId;
-        $this->showForm = true;
+        $this->sort_order = $this->nextSortOrder($parentId);
 
-        // Set default sort order
+        $this->dispatch('open-modal', self::FORM_MODAL);
+    }
+
+    /**
+     * The next free position under a parent, so the user never has to key one in.
+     */
+    private function nextSortOrder($parentId): int
+    {
         $query = BudgetItem::where('budget_id', $this->budget->id);
+
         if ($parentId) {
             $query->where('parent_id', $parentId);
         } else {
             $query->whereNull('parent_id');
         }
-        $this->sort_order = $query->max('sort_order') + 1;
+
+        return (int) $query->max('sort_order') + 1;
     }
 
     public function openEditForm($itemId)
@@ -102,10 +114,16 @@ class BudgetShow extends Component
         $this->description = $item->description ?? '';
         $this->budgeted_amount = $item->budgeted_amount;
         $this->sort_order = $item->sort_order;
-        $this->showForm = true;
+
+        $this->dispatch('open-modal', self::FORM_MODAL);
     }
 
-    public function save()
+    /**
+     * @param  bool  $addAnother  Keep the dialog open, cleared and ready for the
+     *                            next code under the same parent. Adding cost
+     *                            codes is done in runs, not one at a time.
+     */
+    public function save($addAnother = false)
     {
         $this->validate();
 
@@ -128,8 +146,19 @@ class BudgetShow extends Component
             session()->flash('message', __('Budget item added successfully.'));
         }
 
-        $this->closeForm();
         $this->refreshBudget();
+
+        if ($addAnother && ! $this->editingItemId) {
+            $parentId = $this->parentId;
+            $this->resetForm();
+            $this->parentId = $parentId;
+            $this->sort_order = $this->nextSortOrder($parentId);
+            $this->dispatch('cost-code-saved');
+
+            return;
+        }
+
+        $this->closeForm();
     }
 
     /**
@@ -145,10 +174,7 @@ class BudgetShow extends Component
             $item->update(['is_default' => false]);
             session()->flash('message', __('Default cost code cleared.'));
         } else {
-            BudgetItem::where('budget_id', $this->budget->id)
-                ->where('is_default', true)
-                ->update(['is_default' => false]);
-            $item->update(['is_default' => true]);
+            $this->budget->setDefaultItem($item);
             session()->flash('message', __(':code is now the default cost code.', ['code' => $item->code . ' - ' . $item->name]));
         }
 
@@ -172,8 +198,8 @@ class BudgetShow extends Component
 
     public function closeForm()
     {
-        $this->showForm = false;
         $this->resetForm();
+        $this->dispatch('close-modal', self::FORM_MODAL);
     }
 
     private function resetForm()
@@ -195,7 +221,11 @@ class BudgetShow extends Component
 
     public function render()
     {
-        return view('livewire.budget.budget-show')
-            ->layout('components.layouts.app');
+        $ledger = CostCodeLedger::for($this->budget);
+
+        return view('livewire.budget.budget-show', [
+            'ledgerRows' => $ledger->rowsByItem(),
+            'ledgerTotals' => $ledger->totals(),
+        ])->layout('components.layouts.app');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Livewire\JobSite;
 
 use App\Models\JobSite;
+use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
 use Livewire\Component;
 
@@ -76,11 +77,14 @@ class JobSiteFinancialReport extends Component
     public function getRevenueDetailProperty(): array
     {
         $changeOrders = $this->jobSite->changeOrders()
+            ->with('items')
             ->orderBy('requested_date')
             ->get()
             ->map(fn ($co) => [
                 'date' => $co->requested_date,
                 'title' => $co->title,
+                'cost' => (float) $co->cost_impact,
+                'status' => $co->status,
                 'amount' => (float) $co->amount,
             ])
             ->all();
@@ -97,7 +101,14 @@ class JobSiteFinancialReport extends Component
 
     public function render()
     {
+        $budget = $this->jobSite->budget;
+        $ledger = $budget ? CostCodeLedger::for($budget) : null;
+
         return view('livewire.job-site.job-site-financial-report', [
+            'costCodes' => [
+                'budgets' => $ledger ? [['budget' => $budget, 'grid' => $ledger->grid()]] : [],
+                'totals' => $ledger?->totals(),
+            ],
             'financials' => $this->financials,
             'expensesDetail' => $this->expensesDetail,
             'contractsDetail' => $this->contractsDetail,

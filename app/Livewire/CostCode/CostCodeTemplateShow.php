@@ -14,8 +14,10 @@ class CostCodeTemplateShow extends Component
 
     public CostCodeTemplate $template;
 
+    /** The add/edit cost code dialog. */
+    public const FORM_MODAL = 'cost-code-form-modal';
+
     // Form state for adding/editing cost codes
-    public $showForm = false;
     public $editingCostCodeId = null;
     public $parentId = null;
 
@@ -55,16 +57,25 @@ class CostCodeTemplateShow extends Component
     {
         $this->resetForm();
         $this->parentId = $parentId;
-        $this->showForm = true;
+        $this->sort_order = $this->nextSortOrder($parentId);
 
-        // Set default sort order
+        $this->dispatch('open-modal', self::FORM_MODAL);
+    }
+
+    /**
+     * The next free position under a parent, so the user never has to key one in.
+     */
+    private function nextSortOrder($parentId): int
+    {
         $query = CostCode::where('template_id', $this->template->id);
+
         if ($parentId) {
             $query->where('parent_id', $parentId);
         } else {
             $query->whereNull('parent_id');
         }
-        $this->sort_order = $query->max('sort_order') + 1;
+
+        return (int) $query->max('sort_order') + 1;
     }
 
     public function openEditForm($costCodeId)
@@ -78,10 +89,16 @@ class CostCodeTemplateShow extends Component
         $this->name = $costCode->name;
         $this->description = $costCode->description ?? '';
         $this->sort_order = $costCode->sort_order;
-        $this->showForm = true;
+
+        $this->dispatch('open-modal', self::FORM_MODAL);
     }
 
-    public function save()
+    /**
+     * @param  bool  $addAnother  Keep the dialog open, cleared and ready for the
+     *                            next code under the same parent. Building a
+     *                            template is done in runs, not one code at a time.
+     */
+    public function save($addAnother = false)
     {
         $this->validate();
 
@@ -103,8 +120,19 @@ class CostCodeTemplateShow extends Component
             session()->flash('message', __('Cost code added successfully.'));
         }
 
-        $this->closeForm();
         $this->refreshTemplate();
+
+        if ($addAnother && ! $this->editingCostCodeId) {
+            $parentId = $this->parentId;
+            $this->resetForm();
+            $this->parentId = $parentId;
+            $this->sort_order = $this->nextSortOrder($parentId);
+            $this->dispatch('cost-code-saved');
+
+            return;
+        }
+
+        $this->closeForm();
     }
 
     public function deleteCostCode($costCodeId)
@@ -124,8 +152,8 @@ class CostCodeTemplateShow extends Component
 
     public function closeForm()
     {
-        $this->showForm = false;
         $this->resetForm();
+        $this->dispatch('close-modal', self::FORM_MODAL);
     }
 
     private function resetForm()

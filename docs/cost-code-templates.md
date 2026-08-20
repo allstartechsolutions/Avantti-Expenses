@@ -126,7 +126,9 @@ The Cost Code Templates module allows users to create and manage reusable cost c
 - Hierarchical display of cost codes (parent + children)
 - Add parent cost codes
 - Add child cost codes (under any parent)
-- Edit cost codes inline (sidebar form)
+- Add/edit cost codes in a dialog (`x-ui.modal`, name `cost-code-form-modal`), not a sidebar panel
+- **Save & Add Another** keeps the dialog open, clears it, holds the parent and bumps the sort order
+- Sort order is filled in with the next free position under the parent
 - Delete cost codes (only if no children)
 - Unique code validation within template
 - **Import CSV** - Import cost codes from CSV file

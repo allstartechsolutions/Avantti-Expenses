@@ -61,6 +61,46 @@ class BudgetItem extends Model
     }
 
     /**
+     * Expense lines coded to this cost code (the actual cost).
+     */
+    public function expenseItems(): HasMany
+    {
+        return $this->hasMany(ExpenseItem::class);
+    }
+
+    /**
+     * Purchase order lines coded to this cost code.
+     */
+    public function purchaseOrderItems(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    /**
+     * Project / job site change order lines that revise this cost code.
+     */
+    public function changeOrderItems(): HasMany
+    {
+        return $this->hasMany(ChangeOrderItem::class);
+    }
+
+    /**
+     * Contract amounts allocated to this cost code.
+     */
+    public function contractAllocations(): HasMany
+    {
+        return $this->hasMany(ContractBudgetAllocation::class);
+    }
+
+    /**
+     * Subcontract change orders booked against this cost code.
+     */
+    public function contractChangeOrders(): HasMany
+    {
+        return $this->hasMany(ContractChangeOrder::class);
+    }
+
+    /**
      * Check if this item is a parent (has no parent_id).
      */
     public function isParent(): bool

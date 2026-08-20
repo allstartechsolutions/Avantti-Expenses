@@ -126,7 +126,18 @@
                         <div class="flex justify-between gap-4 py-1.5 text-sm">
                             <div class="min-w-0 flex-1">
                                 <p class="text-slate-900 dark:text-white truncate">{{ $co['title'] }}</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">{{ $co['date']?->format('M d, Y') }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ $co['date']?->format('M d, Y') }}
+                                    @if(($co['status'] ?? 'approved') !== 'approved')
+                                        · <span class="text-amber-600 dark:text-amber-400">{{ __('not approved') }}</span>
+                                    @endif
+                                    @if(($co['cost'] ?? 0.0) != 0.0)
+                                        · {{ __('cost') }} {{ Number::currency($co['cost'], $currency, $locale) }}
+                                        · {{ __('margin') }} {{ Number::currency($co['amount'] - $co['cost'], $currency, $locale) }}
+                                    @else
+                                        · <span class="text-slate-400 dark:text-slate-500">{{ __('no cost breakdown') }}</span>
+                                    @endif
+                                </p>
                             </div>
                             <span class="font-medium whitespace-nowrap {{ $co['amount'] < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
                                 {{ $co['amount'] >= 0 ? '+' : '' }}{{ Number::currency($co['amount'], $currency, $locale) }}
@@ -150,6 +161,8 @@
     </div>
 
     <!-- Payment Schedule -->
+    @include('livewire.shared.cost-code-section', ['costCodes' => $costCodes, 'showLocation' => false])
+
     @include('livewire.shared.payment-schedule-section', ['schedule' => $paymentSchedule])
 
     <!-- Expenses detail -->
