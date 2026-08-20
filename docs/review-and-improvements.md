@@ -9,6 +9,10 @@ notations collected while building, and bring the docs and pt_BR level with what
 feature in hand gets written down here instead — with enough detail that it can be picked
 up cold — and is then worked during the module's review phase.
 
+**What is in here right now:** the quotation chain rows, the 2026-08-19 code review, the cost
+code / change order rows (phases 1–6, for that module's phase 7), and the meetings rows
+M1–M12 with the write-ups of the ones already done.
+
 Permission gaps go in `docs/permissions-notes.md` instead; they are a separate decision the
 owner has to take.
 
@@ -138,7 +142,14 @@ same session. Verified before and after in each case.
 
 ---
 
-## Noticed while building change order cost codes — phase 1 (2026-08-19)
+## Cost codes on expenses and change orders
+
+Collected while building phases 1–6 on 2026-08-19/20. **To be worked in phase 7, Review and
+Improvements** — the checklist is §14 of `docs/expense-changeorder-costcode-plan.md`, which
+groups everything below by what it costs to fix. Two earlier findings turned out to be wrong
+and are corrected in place rather than deleted, because the wrong version was acted on.
+
+### Noticed during phase 1 (data model and ledger)
 
 Parked rather than fixed mid-build. Phase 5 and phase 7 of
 `docs/expense-changeorder-costcode-plan.md` own most of these.
@@ -167,27 +178,6 @@ Parked rather than fixed mid-build. Phase 5 and phase 7 of
   to one while adding this phase's strings — JSON keeps the last of a duplicate, so nothing
   changed at runtime.
 
----
-
-## Meetings, minutes and tasks
-
-Collected while building, from phase 0 on 2026-08-19. To be worked in **phase 9, Review and
-Improvements** (see `docs/meetings-module-plan.md`).
-
-| # | Item | Status |
-|---|---|---|
-| M1 | ~~Shared status words carry the wrong gender for tasks~~ | **done** 2026-08-20 — task and meeting screens have their own keys. See below. |
-| M2 | ~~`Task::isMeetingTracked()` and `hasSubtasks()` each run a query~~ | **done** 2026-08-20 — they use eager-loaded counts. See below. |
-| M3 | ~~Progress roll-up is only recalculated when something calls it~~ | **done** 2026-08-20 — it is a model event now. See below. |
-| M4 | **`Meeting::openActionCount()` runs two queries and cannot be eager-loaded.** Acceptable on a detail page, wrong on the meetings index. Give the index a single grouped count during phase 3. | open |
-| M6 | **`MyTasks::stats()` runs four counting queries on every render**, and `groups()` a fifth. Fine for one person's list; when the All Tasks page (phase 8) reuses the shape it needs one grouped query instead. | open |
-| M7 | **A note can be edited for 30 minutes** (`TaskNote::canEdit()`) but no screen offers it yet — the timeline shows an "edited" marker that nothing can currently set. Either wire the edit control in phase 2 or drop the marker. | open |
-| M8 | ~~Deleting a task is not implemented~~ | **done** 2026-08-20 — admin-only, refused for anything in a published minute. See below. |
-| M9 | ~~The agenda reorders with up/down buttons, not drag-and-drop~~ | **done** 2026-08-20 — drag added, buttons kept. See below. |
-| M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
-| M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
-| M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
-| M5 | ~~Attendance defaults to `present`~~ | **done** 2026-08-20 — it starts blank. See below. |
 
 ### Noticed during phase 2 (change order editor)
 
@@ -250,6 +240,26 @@ Improvements** (see `docs/meetings-module-plan.md`).
   do not fit otherwise. Worth knowing before someone standardises the paper size.
 
 ---
+
+## Meetings, minutes and tasks
+
+Collected while building, from phase 0 on 2026-08-19. To be worked in **phase 9, Review and
+Improvements** (see `docs/meetings-module-plan.md`).
+
+| # | Item | Status |
+|---|---|---|
+| M1 | ~~Shared status words carry the wrong gender for tasks~~ | **done** 2026-08-20 — task and meeting screens have their own keys. See below. |
+| M2 | ~~`Task::isMeetingTracked()` and `hasSubtasks()` each run a query~~ | **done** 2026-08-20 — they use eager-loaded counts. See below. |
+| M3 | ~~Progress roll-up is only recalculated when something calls it~~ | **done** 2026-08-20 — it is a model event now. See below. |
+| M4 | **`Meeting::openActionCount()` runs two queries and cannot be eager-loaded.** Acceptable on a detail page, wrong on the meetings index. Give the index a single grouped count during phase 3. | open |
+| M6 | **`MyTasks::stats()` runs four counting queries on every render**, and `groups()` a fifth. Fine for one person's list; when the All Tasks page (phase 8) reuses the shape it needs one grouped query instead. | open |
+| M7 | **A note can be edited for 30 minutes** (`TaskNote::canEdit()`) but no screen offers it yet — the timeline shows an "edited" marker that nothing can currently set. Either wire the edit control in phase 2 or drop the marker. | open |
+| M8 | ~~Deleting a task is not implemented~~ | **done** 2026-08-20 — admin-only, refused for anything in a published minute. See below. |
+| M9 | ~~The agenda reorders with up/down buttons, not drag-and-drop~~ | **done** 2026-08-20 — drag added, buttons kept. See below. |
+| M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
+| M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
+| M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
+| M5 | ~~Attendance defaults to `present`~~ | **done** 2026-08-20 — it starts blank. See below. |
 
 ## M11 — the editor-output sweep (done 2026-08-20)
 

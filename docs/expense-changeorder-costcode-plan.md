@@ -1,6 +1,7 @@
 # Cost Codes on Expenses and Change Orders — Design Proposal
 
-**Status:** design agreed 2026-08-19. **Phases 1-6 built** (§8-§13). Phase 7 (review) open.
+**Status:** design agreed 2026-08-19. **Phases 1-6 built** (§8-§13) and committed. **Phase 7 — Review and Improvements — not started; its checklist is §14.**
+Deploy summary: [`changelog-2026-08-20-costcodes-changeorders.md`](./changelog-2026-08-20-costcodes-changeorders.md).
 **Date:** 2026-08-19
 
 ---
@@ -633,3 +634,123 @@ runtime for the new strings.
 The company financial report and the payment reports still know nothing about cost codes —
 they are about cash, not budgets, so that was left alone deliberately. Phase 7 is the module
 review.
+
+
+---
+
+## 14. Phase 7 — Review and Improvements (NOT STARTED)
+
+The standing final phase. Written out here so it can be picked up cold in another session.
+Nothing below has been done.
+
+### 14.1 What exists, in one list
+
+Read this first — it is what the review covers.
+
+**Service** — `app/Services/CostCodeLedger.php` (the single source for budget-versus-actual;
+`Budget::costCodeGrid()` was deleted).
+
+**Models** — `ChangeOrderItem` (new), `ChangeOrder` (status, approval, margin), `BudgetItem`
+(five reverse relations), `Budget` (`ensureDefaultItem()`, `setDefaultItem()`, `DEFAULT_ITEM_*`),
+`Expense::updateWithHistory($data, $extraChanges)`.
+
+**Concerns** — `ManagesChangeOrders`, `ManagesExpenseForm`.
+
+**Components** — `CostCodeDetail` (new), `ExpenseEdit` (new), plus rewritten
+`ProjectChangeOrders`, `BudgetCostGrid`, `BudgetShow`, `ProjectBudget`, `ExpenseCreate`,
+`ProjectExpenses`, and edits to `JobSiteShow`, `ProjectShow`, `ProjectFinancialReport`,
+`JobSiteFinancialReport`.
+
+**Controllers** — `BudgetCostGridPdfController` (new), plus the two financial report PDF
+controllers.
+
+**Views** — `livewire/change-order/partials/{form-modal,list,summary-cards}`,
+`livewire/budget/partials/{ledger-row-cells,code-figures,budget-figures}`,
+`livewire/budget/cost-code-detail`, `livewire/expense/partials/{form-body,item-modal}`,
+`livewire/expense/expense-edit`, `livewire/shared/cost-code-section`,
+`pdf/partials/cost-code-section`, `pdf/budget-cost-grid`, and the rebuilt
+`livewire/budget/budget-cost-grid`.
+
+**Routes** — `budgets.cost-code`, `budgets.unassigned`, `budgets.cost-grid.pdf.download`,
+`budgets.cost-grid.pdf.view`, `expenses.edit`.
+
+### 14.2 Screens to walk
+
+Both themes, both locales, and on a phone. Empty, partial and error states in each.
+
+| # | Screen | Watch for |
+|---|---|---|
+| 1 | Project → Change Orders | the four summary cards with no change orders at all; the uncosted-CO warning strip; filters that match nothing |
+| 2 | Job site → Change Orders | identical behaviour to #1 minus the location column |
+| 3 | Legacy `/projects/{id}/show` → Change Orders tab | same editor, same figures |
+| 4 | Change order full-page modal | a location with no budget; a change order with 20 cost lines; a negative billed amount; margin at exactly zero; **long code names on a phone** |
+| 5 | Budget page | a budget with no cost codes; one with only parents; the amber Unassigned row |
+| 6 | Cost grid | nine columns on a phone (scrolls in its own container — check it does not scroll the page); a code 300% over budget; every figure zero |
+| 7 | Cost code drill-down | a code with nothing behind it; the unassigned page; a parent with children; a code carrying all six sections at once |
+| 8 | Expense create / edit | the locked (PO / paid-installment) variant; an expense with no items; history with 20 entries |
+| 9 | Project + job site budget pages | rolled-up figures against the individual budgets |
+| 10 | Project + job site financial reports, screen **and** PDF | a project with no budget at all; several job-site budgets; a change order with no cost breakdown |
+| 11 | Cost grid PDF | a budget with 200 codes (page breaks); landscape on A4 as well as letter |
+| 12 | Expense report → By Cost Code | the drill-down links when several projects are in range |
+
+### 14.3 The backlog to work
+
+Every item is in [`review-and-improvements.md`](./review-and-improvements.md), in five sections
+(one per phase). Grouped here by what it costs:
+
+**Correctness — do these first**
+
+- `change_orders.co_number` is not unique; two people can take the same number. Copy the
+  quotation chain's unique index + retry-on-collision.
+- Approval has no permission guard. `permissions-notes.md` §4b holds four questions for the
+  owner; the new permissions module plan may answer them.
+- Deleting an approved change order silently revises budgets down with no warning.
+- A contract can be paid beyond what its schedule allocates (pre-existing; the ledger reports it
+  faithfully, the contract module should flag it).
+
+**Dead code and contradictions**
+
+- The legacy expense modal in `JobSiteShow` and `ProjectShow`: create and edit branches are
+  unreachable, but the same modal still serves *view* mode, so it cannot simply be deleted.
+  `saveExpense()`, `openExpenseCreateModal()`, `openExpenseEditModal()` are dead.
+- `Expense::isEditableBy()` now says something different from `ExpenseEdit`'s guards. Retire it
+  with the modal or bring the two into line.
+- `BudgetShow::toggleDefaultItem()` clears the flag by hand; setting goes through
+  `Budget::setDefaultItem()`. Give the model a clear method too.
+- The legacy tabbed `/projects/{id}/show` duplicates the split pages. Decide whether it retires.
+
+**Performance**
+
+- `ProjectBudget` and `ProjectFinancialReport` build one ledger per budget on the page, each
+  walking its contracts through `Contract::costCodeSchedule()`.
+- Two `BudgetItem::find()` N+1s remain in `purchase-order-create.blade.php:173` and
+  `purchase-order-edit.blade.php:184`.
+
+**Shape of the code**
+
+- Every financial report is built twice — Livewire component and PDF controller — with the
+  arithmetic copy-pasted. One shared builder would have made this module's phase 6 a single edit
+  instead of four.
+
+**Presentation**
+
+- The cost grid needs `min-w-[1100px]`; a stacked card view would read better on a phone.
+- The cost grid PDF is landscape while every other PDF is portrait.
+
+### 14.4 Say what the code does
+
+Per the standard: wording that promises something the code does not enforce is a bug. Check at
+least these claims —
+
+- "Only an approved change order revises the budget." (true; verify on screen)
+- "The client contract value counts it either way." (true; verify against the reports)
+- "Cost codes can still be corrected." on a locked expense (true; verify the save path)
+- "Lifetime figures, whatever the report dates say elsewhere." on the report section
+- The three cost grid footnotes about Changes, Committed and Projected
+
+### 14.5 Finish with
+
+- pt_BR read end to end for this module — roughly 130 strings were added.
+- `docs/budget-costcode-system.md` still describes the original 7-phase design; phases 4, 6 and 7
+  of that document are superseded by this one. Bring it level or point it here.
+- Update [`open-items.md`](./open-items.md) when the review closes.

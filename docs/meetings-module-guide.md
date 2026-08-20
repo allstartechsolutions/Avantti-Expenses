@@ -126,6 +126,11 @@ carry forward like everything else.
 > work. It does not appear in your minutes unless you put it there. The drawer exists so you can
 > *see* that it exists without it filling up the record.
 
+One thing to watch when you add one: a task raised on a project page **does not have to have a due
+date**, but an action item on a minute does. A task added from the drawer without one is marked
+**no date** on the agenda. Open it and give it a date — until you do, the line cannot be saved at
+all, and the minute cannot be published.
+
 ### c. Raise an item — something new
 
 **Raise an Item** adds a line: *Information*, *Decision* or *Action Item*.
@@ -272,6 +277,9 @@ entry, the project tabs and the overview cards all disappear with it.
 |---|---|
 | An open item did not appear on the new agenda | It has never been discussed in a meeting of *this* series. Add its location, then use the "not on the agenda" drawer. |
 | "Publish" is greyed out or refuses | An action item has no owner or no date — the dialog names it. |
+| An agenda line will not save | It is an action item with no owner or no date — the reason is shown at the top of the form. Fill both in and it saves. |
+| An agenda line shows **no date** | It came from a task raised outside meetings, where the date is optional. Give it one. |
+| Editing a line does nothing | Its task is closed. Title, owner and date belong to the task, so reopen it first — the form now says so. |
 | The minute shows an old percentage | That is deliberate. It shows what was true at that meeting. |
 | An item cannot be marked ready | It has open sub-tasks, or you are not its owner. The screen says which. |
 | A published minute cannot be edited | Use **Correct the Record** (admin). |

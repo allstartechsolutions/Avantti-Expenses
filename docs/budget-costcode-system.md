@@ -1,5 +1,13 @@
 # Budget & Cost Code System - Technical Specification
 
+> **Partly superseded, 2026-08-20.** Phases 1-3 of this document (templates, project/job site
+> cost codes, the budget) are as built. Phase 4 (expenses), phase 6 (change orders) and phase 7
+> (reports) were re-specified and built differently — see
+> **[`expense-changeorder-costcode-plan.md`](./expense-changeorder-costcode-plan.md)**, which is
+> the current design: change orders carry a cost side per code, `CostCodeLedger` replaced
+> `Budget::costCodeGrid()`, and the budget screens report Original → Changes → Revised →
+> Committed → Actual → Remaining. Read that document first; this one for the original intent.
+
 ## Overview
 
 This document outlines the implementation of a comprehensive Budget and Cost Code system for tracking project finances. The system will be built in phases, with each phase being a standalone deliverable.

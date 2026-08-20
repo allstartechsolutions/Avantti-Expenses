@@ -1,245 +1,273 @@
 # Open Items — handoff for the next session
 
-Rewritten 2026-08-18 after the income distribution work shipped, the quotation module was
-planned, and **phase 1 of that module (the purchase requisition) was built**. Read this
-first; every finished piece of work has its own file (index at the bottom).
+Rewritten **2026-08-20**, after the meetings / minutes / tasks module was built through phase 7
+and the in-app documentation library shipped. Read this first; every finished piece of work has
+its own file (index at the bottom).
 
 ---
 
 ## 1. State of the repo
 
-- `main` at `985089c`; **the requisition module (phase 1) and the quotation round (phase 2)
-  proposal entry (phase 3), the comparison map (phase 4), negotiation rounds (phase 5) and
-  the award (phase 6) and conversion (phase 7) are uncommitted in the working tree**, along
-  with the contract `draft` status that touches the contract module and the money reports —
-  thirteen migrations, nine
-  models, a service, a mailable, two PDF controllers, four Livewire pages, shared traits and
-  partials, routes, nav, module entry, pt_BR strings and docs. The shared `x-ui.modal`
-  component also gained modal stacking, which touches every modal in the app.
-- **2026-08-19:** the header search rewrite (projects + job sites) is **committed** in
-  `fe5d7df`. The cost code add/edit dialogs on budgets and templates are **uncommitted** in
-  the working tree. Both are view + component work only — **no migrations** — plus 14
-  translation keys across both locales. See `docs/changelog-2026-08-19.md`.
-- Nothing is half-built.
-- **Deploy needs:** `php artisan migrate` (phase-4 audit enum, the incomes status/due-date
-  migration, `income_distributions`, the three `purchase_requisition*` tables and the four
-  `quotation*` tables, including `quotation_rfq_emails`, `quotation_vendor_items` and
-  `quotation_negotiations`) and `php artisan view:clear`.
-- **Process rules (user-set):** never commit, never merge, never push — the user does all
-  three. Leave finished work in the working tree and report it.
+- **`main` is at `5d05f97` and the working tree is clean.** Everything described in this file is
+  committed. The quotation chain, the document repository, the meetings module, the documentation
+  library and the cost code / change order work are all in.
+- **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
+  outstanding at the *phase* level — every screen that exists, works.
+- **Deploy needs:** `php artisan migrate` (47 additive migrations since `985089c`, listed by
+  `git diff --name-only --diff-filter=A 985089c..HEAD -- database/migrations`) then
+  `php artisan view:clear`. No migration drops or rewrites a column; the two that touch existing
+  tables (`allow_file_uploads_without_an_owner`, `make_meeting_attendance_unmarked_by_default`)
+  only relax a NOT NULL.
+- **The scheduler must be running in production** for the task e-mails, and it is worth checking:
+  `routes/console.php` now schedules `tasks:notify-overdue` daily at 07:00 and
+  `tasks:send-weekly-digest` hourly (the command itself decides whether this is the configured
+  day and hour, so moving the digest in System Settings needs no deploy). Both are idempotent —
+  the notification log stops anyone being mailed twice.
+- **Process rules (user-set):** never commit, never merge, never push — the user does all three.
+  Leave finished work in the working tree and report it.
 
-## 2. Next up — phase 9, Review and Improvements
+---
+
+## 2. Next up
+
+Three modules are each sitting on their standing final phase, plus one feature phase.
+
+### 2a. Cost codes on expenses and change orders — phase 7 (the review)
+
+**Phases 1–6 are done and committed** (2026-08-19/20). A project or job-site change order used
+to move only the money billed to the client; it now carries a cost side per cost code with an
+approval that gates it, `CostCodeLedger` answers Original → Changes → Revised → Committed →
+Actual → Remaining for every budget screen, a drill-down opens the records behind any figure,
+**expenses can finally be edited** (so a wrong cost code can be corrected) with the change
+written to history, and the financial reports and their PDFs report against the revised budget.
+
+- **Deploy:** `php artisan migrate` (3 additive migrations, `2026_08_19_180000/1/2_*` — the change
+  order ones, not the meeting ones with the same timestamps) then `php artisan view:clear`.
+  **No live figure moves on deploy** — existing change orders default to `approved` with no cost
+  lines, and the client contract value still counts every change order as it always did.
+- **Read:** `docs/changelog-2026-08-20-costcodes-changeorders.md` for the deploy-facing summary,
+  `docs/expense-changeorder-costcode-plan.md` for the design (§8–§13 are the per-phase build logs).
+- **Phase 7 is written out as a checklist in §14 of the plan**: what exists, the twelve screens to
+  walk, the backlog grouped by cost, the wording claims to verify. Nothing in it has been done —
+  in particular **the screen walk has never happened** for any of these screens.
+- **Highest-value items in that backlog:** `change_orders.co_number` is not unique, approval has no
+  permission guard (`permissions-notes.md` §4b), and the legacy expense modal in `JobSiteShow` /
+  `ProjectShow` is now dead for create and edit but still serves view mode.
+
+### 2b. Meetings — phase 8, then phase 9
+
+**Phases 0–7 are done** (`docs/meetings-module-plan.md` §12 is the build log). Tasks can be
+raised anywhere, meetings can be created, agendas built with carry-forward, minutes run,
+published, corrected, filed as a PDF into the project repository, e-mailed to attendees, and the
+four notification triggers all work.
+
+**Phase 8 — what is left to build:** the dashboard widget, the All Tasks page (filters + CSV),
+and the two reports (open items by owner, aging). §5.6 and §5.8 of the plan describe them.
+Note **M6** below: `MyTasks::stats()` runs five counting queries, and the All Tasks page is where
+that shape must become one grouped query rather than being copied.
+
+**Phase 9 — the standing review**, per `CLAUDE.md`. Four backlog rows are still open (M4, M6, M7,
+M10, in `docs/review-and-improvements.md`), and **the screen walk has never been done** — both
+themes, both locales, a phone, with empty / partial / error states and long names. Seven other
+rows (M1, M2, M3, M5, M8, M9, M11) were worked on 2026-08-20; M12 is the owner's *won't fix*.
+
+### 2c. Quotations — phase 9
 
 **Phases 1–8 are done** — the whole chain from the requisition to the purchase orders and
-contracts that get paid, with the awarded prices taught back to the catalog
-(`docs/requisition-module.md`, `docs/quotation-module.md`), both levels.
+contracts that get paid, with awarded prices taught back to the catalog
+(`docs/requisition-module.md`, `docs/quotation-module.md`).
 
-**Phase 9 is the standing final phase** from `CLAUDE.md`: work the backlog in
-`docs/review-and-improvements.md` — 22 improvement rows, plus the seven defects already
-found and fixed across two review passes — and whatever the owner's own end-to-end testing
-turns up. The owner intends to run the chain themselves first; those findings come in here.
+Phase 9 works the 22 improvement rows in `docs/review-and-improvements.md` plus whatever the
+owner's own end-to-end run turns up. The owner intends to run the chain themselves first; those
+findings come in here.
 
-**The plan is `docs/quotation-module-plan.md`. Read it before writing anything.**
+### 2d. The decision that is blocking neither but shadows both
 
-The buy side: ask several vendors what they would charge, compare, negotiate, award one.
-Not the client-facing quote — that is the existing Estimate module, which is unchanged.
+**Permissions.** `docs/permissions-notes.md` is the running list and **nothing has been built**.
+The trigger: a requisition must be approved before it can be quoted, but that control only holds
+if a lesser user cannot go around it — today a round can be raised standalone with no requisition,
+anyone can submit or cancel someone else's draft, a manager can approve their own requisition, and
+nobody is confined to their own projects. Seven decisions are waiting on the owner. The meetings
+module added nothing to this file: its guards are on the models and were built as it went.
 
-Researched against Brazilian practice (Sienge and others). The chain is
-`solicitação de compra → cotação → mapa comparativo → negociação → escolha justificada →
-pedido de compra (material) | contrato + medições (serviço)`. The client's
-"service becomes a contract, item becomes an expense" **is** standard BR practice, with one
-correction: materials go **quote → PO → expense**, because `PurchaseOrder::createExpenseFromPO()`
-already makes the expense when a PO is approved.
+---
 
-**Decisions already taken with the owner — do not re-litigate:**
+## 3. Shipped 2026-08-20
 
-| Question | Decision |
-|---|---|
-| Who approves a requisition | **Admin or manager** — built |
-| Who awards a quotation | **Admin or manager**, no value thresholds |
-| Vendor prices | **Procurement keys them in** — no vendor portal; BR vendors reply by e-mail |
-| RFQ delivery | **Sent from the system by e-mail**; the app already sends mail |
-| Material path | Quote → **Purchase Order** → Expense (never straight to an expense) |
-| Service path | Quote → **Contract** (payment schedule, medições, retention already exist) |
-| Split award | **Supported**, but awarding the whole quote to one vendor is the default |
-| Minimum proposals | **Block below 2, warn below 3** (3 is the BR norm) |
-| Requisition (solicitação de compra) | **Included** — the chain starts with a site requisition |
-| BR terminology | **Cotação** — *orçamento* is already taken by Budget and Estimate |
+- **Cost codes on expenses and change orders — phases 1 to 6.** Change orders gained a cost side
+  (`change_order_items`, signed per code) and an approval that gates it, while the revenue side
+  they always had is untouched, so no live total moves on deploy. `CostCodeLedger` became the
+  single source for budget-versus-actual and `Budget::costCodeGrid()` was deleted. Three copies
+  of the change order form and three of the expense form collapsed into one each
+  (`ManagesChangeOrders`, `ManagesExpenseForm`). New: the cost code drill-down, `ExpenseEdit`
+  (the app had no real expense editor), a landscape cost-grid PDF, and a Budget by Cost Code
+  section in both financial reports and their PDFs. 3 additive migrations. Phase 7, the review,
+  has not been started — see §2a. Full write-up:
+  `docs/changelog-2026-08-20-costcodes-changeorders.md`.
 
-**Build order is 8 phases** (see the plan). One page at a time, tested before the next —
-CLAUDE.md rule 7.
+- **Meetings, minutes and tasks — phases 0 to 7.** A meeting-minutes module (*ata de reunião*)
+  with a real task system behind it. Minutes are frozen records, tasks are living work, and a
+  `meeting_items` row is the join between them — which is what makes "open items from the last
+  meeting show up on the next agenda" work without copying anything. Tasks raised outside a
+  meeting (project, job site, standalone) never appear on an agenda on their own; somebody has to
+  put them there. 20 migrations, 12 models, 8 services, the R2 uploader shared with the document
+  repository, a dompdf minute, four mailables and two scheduled commands.
+  **`docs/meetings-module-plan.md`** is the plan and the build log; **`docs/meetings-module-guide.md`**
+  is the user guide, with nine screenshots served from R2.
+- **The in-app documentation library.** Shipped markdown guides *and* database articles
+  (`doc_articles`), readable by everyone signed in, images on R2, a `SyncDocumentationImages`
+  command that migrated the existing screenshots. Last item in the menu, by the owner's request.
+  See `docs/documentation-module.md`.
+- **The M sweep** — seven backlog rows worked in one pass on 2026-08-20: task-specific status
+  words (M1), the N+1s on task lists (M2), the progress roll-up as a model event (M3), attendance
+  starting blank (M5), task deletion for admins and never for anything in a published minute (M8),
+  drag-to-reorder on the agenda (M9), and the `strip_tags` / stored-XSS sweep across ten echo
+  sites (M11). Each is written up at the bottom of `docs/review-and-improvements.md`.
+- **Two defects in editing an agenda line** (phase 5e in the build log). A task raised outside a
+  meeting has an optional due date; adding it to an agenda turned it into an action item with no
+  date, which then failed validation on *every* subsequent save — so renaming it silently did
+  nothing. The agenda now flags such a line, the form says why it refused and keeps what was
+  typed, and the rule stands. Found alongside it: editing a line whose task is **closed** renamed
+  the agenda item and silently dropped the task changes; that now refuses by name.
 
-Three smaller questions remain in §6 of the plan (equalization depth, budget enforcement,
-module coverage), each with a stated assumption; none blocks phase 2.
+## 4. Shipped 2026-08-19
 
-## 2b. Also planned, not started — Meetings / Minutes / Tasks
+- **Quotation module phases 2–8** — rounds and the RFQ e-mail, proposal entry, the comparison map,
+  negotiation rounds, the award, conversion to draft POs and contracts, and the catalog/budget
+  feedback. See `docs/quotation-module.md`.
+- **Contracts gained a `draft` status.** Contracts raised from an award start as drafts and are
+  activated deliberately. `Contract::scopeCommitted()` is now the single definition of "counts as
+  money" and was applied to the payment schedule, accounts payable, both financial reports, the
+  job-site overview, the budget cost-code grid, the dashboard, the contract payments dashboard and
+  CSV, and the payment batch screen. Hand-created contracts are unchanged.
+- **The document repository (file module)** and **modal stacking in `x-ui.modal`** — a modal opened
+  from inside another used to render behind it, Escape closed every open modal at once, and a child
+  closing unlocked the page scroll under its parent. Touches every modal in the app.
+- **Header search** (projects + job sites) and the **cost code add/edit dialogs** on budgets and
+  templates. See `docs/changelog-2026-08-19.md`.
+- **Four bugs found in a quotation review pass** — a blank price stored as R$ 0.00, stale line
+  totals when a scope quantity changed, a round stuck in `comparing` after its last proposal was
+  removed, and vendor actions still accepted on cancelled rounds.
 
-Planned with the owner 2026-08-19: a meeting-minutes module (ata de reunião) with a real task
-system behind it. Minutes are frozen records; tasks are living work; an agenda item is the join,
-which is what makes "open items from the last meeting show up on the next agenda" work. Nine
-decisions were taken with the owner and must not be re-litigated. **The plan is
-`docs/meetings-module-plan.md` — read it before writing anything.** Build order puts the task
-system first (phases 0–2), meetings after (3–6), then notifications, reports and the standing
-review phase. Nothing built.
+## 5. Shipped 2026-08-18
 
-## 3. Shipped 2026-08-19
+- **Income distribution across job sites** + the **job site income page** — `a2c8639`, reviewed in
+  `c9bf382` with five defects fixed. See `docs/income-module.md`.
+- **Purchase requisitions — quotation phase 1.** See `docs/requisition-module.md`.
+- **`CLAUDE.md` gained the Design Standard section** — full-page modals for real work, detail views
+  that show every field, visible totals, bulk actions, designed empty states, both themes and
+  locales, project/job-site parity. **It applies to everything from now on.**
 
-- **Contracts gained a `draft` status** (uncommitted, owner's call 2026-08-19). Contracts
-  raised from an award now start as drafts and are activated deliberately.
-  `Contract::scopeCommitted()` is the single definition of "counts as money" and was applied
-  to the payment schedule, accounts payable, both financial reports, the job-site overview,
-  the budget cost-code grid, the dashboard, the contract payments dashboard and CSV, and the
-  payment batch screen. Hand-created contracts are unchanged. See `docs/contract-module.md`.
-- **Catalog and budget — quotation module phase 8** (uncommitted). Awarding writes the
-  agreed prices into `catalog_item_price_history` (the catalog's own `current_cost` is left
-  alone so estimates are unaffected); the last real price is shown in the scope picker and
-  on the proposal screen; the award screen states the budget position and warns, never
-  blocks, when it goes over. See `docs/quotation-module.md`.
-- **Conversion — quotation module phase 7** (uncommitted). An awarded round becomes one
-  **draft** purchase order per winning vendor (material, with the awarded lines, budget
-  items and the vendor's own freight/taxes/discount) or one contract per winning vendor
-  (service, with the scope in the notes); vendor supplier/subcontractor flags set; links
-  written both ways; `converted` terminal. See `docs/quotation-module.md`.
-- **The award — quotation module phase 6** (uncommitted). Whole-round or split-by-line,
-  a required justification, the 2-proposal block and the 3-proposal warning with an explicit
-  acknowledgement, a separate acknowledgement for awarding an expired proposal, losing
-  proposals marked not selected, prices frozen, and a revoke path. See
-  `docs/quotation-module.md`.
-- **Modal stacking fixed in `x-ui.modal`** — a modal opened from inside another used to
-  render behind it (all modals shared `z-50`); Escape closed every open modal at once; and
-  a child closing unlocked the page scroll under its still-open parent. New `layer` prop,
-  DOM-derived topmost and scroll lock. Touches every modal in the app.
-- **Negotiation rounds — quotation module phase 5** (uncommitted). `quotation_negotiations`
-  keeps each round's before and after totals with the reason; the price screen doubles as
-  the negotiation screen (note required, live movement against the standing offer); the
-  detail view, the map and the PDF all show what the haggling won. See
-  `docs/quotation-module.md`.
-- **Comparison map — quotation module phase 4** (uncommitted). Scope lines as rows,
-  proposals as columns, best price per row highlighted, cannot-supply / not-quoted /
-  substitute cells marked, footers equalizing lines → freight → taxes → discount → total,
-  the benchmark restricted to complete unexpired offers, saving measured inside the
-  comparable set, split-award and budget comparisons, designed empty state, and a landscape
-  PDF. `App\Services\QuotationComparisonService` builds the one shape the screen and the PDF
-  share. See `docs/quotation-module.md`.
-- **Four bugs found and fixed in a review pass** (see the changelog section of
-  `docs/quotation-module.md`): a blank price stored as R$ 0.00, stale line totals when a
-  scope quantity changed, a round stuck in `comparing` after its last proposal was removed,
-  and vendor actions still accepted on cancelled rounds. Plus `getLocationDisplay()` reading
-  a column that does not exist (`jobSite->name`).
-- **Proposal entry — quotation module phase 3** (uncommitted). A full-page screen per
-  vendor: price per line with server-computed line totals, cannot-supply and substitute
-  handling, terms (freight CIF/FOB, taxes, discount, lead time, payment terms, validity),
-  how the proposal arrived, the vendor's PDF on their own row, and the equalized total live
-  on screen. The round moves to `comparing` on the first proposal. See
-  `docs/quotation-module.md`.
+---
 
-## 4. Shipped 2026-08-18
+## 6. Every module ends with a Review and Improvements phase
 
-- **Quotation rounds + the RFQ e-mail — quotation module phase 2** (uncommitted). Project
-  and job-site pages, full-page form and detail, the shared scope, invited vendors with
-  how-they-were-asked tracking, the 2/3-proposal rule shown from the start, **Quote it**
-  from an approved requisition, and the **request e-mailed from the app** — one message and
-  one priceable scope PDF per vendor, per-vendor failure logging, PDF fallback when the
-  install has no mail server. See `docs/quotation-module.md`.
-- **Purchase requisitions — quotation module phase 1** (uncommitted). Project and job-site
-  pages, full-page form and detail modals, approve/reject by admin **or manager**, status
-  history, attachments, catalog and budget-item pickers, a `quotations` module switch, and
-  the pt_BR strings. See `docs/requisition-module.md`.
+Owner's standing rule, in `CLAUDE.md` since 2026-08-19: a module is not finished when its features
+are. The extra final phase reviews the whole module, walks every screen in both themes and locales
+and on a phone, closes the gap between what the screens promise and what the code enforces, and
+works the backlog collected while building.
 
-### Committed earlier the same day
+**The backlog is `docs/review-and-improvements.md`** — it is where mid-build observations go
+instead of derailing the feature in hand, and it is worked, not archived. It currently holds the
+22 quotation rows, the 12 meetings rows (M1–M12, seven of them now done), and **five sections
+from the cost code / change order work** (one per phase, plus two corrections to earlier
+findings) — those are the ones phase 7 of that module has to work, grouped by cost in §14.3 of
+`docs/expense-changeorder-costcode-plan.md`.
 
-- **Income distribution across job sites** + the **job site income page** — `a2c8639`.
-  Project-level income splits across the project's lots inside the income form itself;
-  full-page form and detail views. See `docs/income-module.md` and
-  `docs/changelog-2026-08-18-income-distribution.md`.
-- **Code review of that work** — `c9bf382`, five defects fixed. See
-  `docs/code-review-2026-08-18-income-distribution.md`.
-- **`CLAUDE.md` gained a Design Standard section** (a2c8639) — full-page modals for real
-  work, detail views that show every field, visible totals, bulk actions, designed empty
-  states, both themes and locales, project/job-site parity. **It applies to everything from
-  now on**; the user asked for it explicitly after rejecting a cramped dialog.
-
-## 5. Every module now ends with a Review and Improvements phase
-
-Owner's standing rule, added to `CLAUDE.md` on 2026-08-19: a module is not finished when its
-features are. The extra final phase reviews the whole module, walks every screen in both
-themes and locales, closes the gap between what the screens promise and what the code
-enforces, and works the backlog collected while building.
-
-**The backlog lives in `docs/review-and-improvements.md`** — sixteen items are already on it
-for the quotation chain, and it is where mid-build observations go instead of derailing the
-feature in hand. For the quotation module this is **phase 9**.
-
-## 6. Permissions — a decision the owner has to take before much more is built
-
-`docs/permissions-notes.md` is the running list. The trigger: a requisition must be approved
-before it can be quoted, but that control only holds if a lesser user cannot go around it —
-and today a round can be raised standalone with no requisition at all, anyone can submit or
-cancel someone else's draft, a manager can approve their own requisition, and nobody is
-confined to their own projects.
-
-The owner has already said a lesser employee should be able to **duplicate a requisition**
-rather than bypass the approval step. **Nothing has been changed** — the file lists the
-observations, the options and the seven decisions needed.
+---
 
 ## 7. Engineering items still open
 
-- **Code review of contract phases 6 and 7** — the boletim/cronograma PDFs and the
-  translation sweep never went through one. The sweep touched
-  `ContractPayment::getPaymentMethodLabel()`, which the invoice and sales-tax views also
-  render.
+- **Meetings M4, M6, M7, M10** — query shapes on `Meeting::openActionCount()`,
+  `MyTasks::stats()` and `MeetingAgenda::scopeCandidates()`, all acceptable today and all wrong at
+  scale; plus `TaskNote::canEdit()`'s 30-minute edit window, which no screen offers even though the
+  timeline renders an "edited" marker. Either wire the control or drop the marker.
+- **Code review of contract phases 6 and 7** — the boletim/cronograma PDFs and the translation
+  sweep never went through one. That sweep touched `ContractPayment::getPaymentMethodLabel()`,
+  which the invoice and sales-tax views also render.
 - **`fputcsv()` PHP 8.4 deprecation** — every report CSV export omits the explicit `$escape`
   argument. One line per call site; four call sites.
-- **Stale medição baseline** — cancelling an approved medição *after* a later draft was
-  created leaves that draft's `previous_percent` on the cancelled baseline. Recreating the
-  draft is the workaround.
-- **One batch row per contract** — `payment_batch_items` is unique per (batch, contract), so
-  a batch settles at most one parcela or medição per contract. Lifting it means dropping that
-  unique index.
-- **`income_distributions.amount` is a signed bigint** — negatives are unreachable through
-  the app but the column would accept one. Needs a second migration if it matters.
+- **Stale medição baseline** — cancelling an approved medição *after* a later draft was created
+  leaves that draft's `previous_percent` on the cancelled baseline. Recreating the draft is the
+  workaround.
+- **One batch row per contract** — `payment_batch_items` is unique per (batch, contract), so a
+  batch settles at most one parcela or medição per contract. Lifting it means dropping that index.
+- **`income_distributions.amount` is a signed bigint** — negatives are unreachable through the app
+  but the column would accept one. Needs a second migration if it matters.
+- **The legacy tabbed `ProjectShow` / `JobSiteShow` modals** are largely dead code but still serve
+  *view* mode, so they cannot simply be deleted. Worth a dedicated cleanup pass. As of
+  2026-08-20 this is precise for expenses: both entry points now go to `expenses.edit`, so
+  `saveExpense()`, `openExpenseCreateModal()` and `openExpenseEditModal()` are dead in both
+  components, and `Expense::isEditableBy()` contradicts `ExpenseEdit`'s guards.
+- **`change_orders.co_number` is not unique** — the form pre-fills the next number in the
+  project's series, so two people creating one at the same moment collide. The quotation chain's
+  unique-index-plus-retry is the fix.
+- **Every financial report is built twice**, once in its Livewire component and once in its PDF
+  controller, with the arithmetic copy-pasted. Adding one figure means four edits.
+
+---
 
 ## 8. Things worth knowing when picking this up
 
 - **Local data:** MariaDB `test_despesas` via Herd; `mysql` CLI is **not on PATH** — use a
-  bootstrap script (below) or `php artisan tinker`. The app runs in **English** locally with
-  a terminology remap (Project displays as "Job Site", Job Sites as "Lots"); pt_BR is the
-  other install, where income is **"Entrada"**, never "Receita".
+  bootstrap script (below) or `php artisan tinker`. The app runs in **English** locally with a
+  terminology remap (Project displays as "Job Site", Job Sites as "Lots"); pt_BR is the other
+  install, where income is **"Entrada"**, never "Receita". **The owner has ruled the EN translation
+  file off limits** (2026-08-20) — see M12; write around it, do not "fix" it.
 - **Verification pattern that works here.** `php artisan tinker --execute` mangles `use`
-  statements; instead write a script and bootstrap Laravel by hand:
+  statements; instead write a script in the scratchpad and bootstrap Laravel by hand:
   ```php
   $base = "/Users/jr/Lerd/Despesas";
   require $base."/vendor/autoload.php";
   $app = require $base."/bootstrap/app.php";
   $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
   ```
-  Then exercise components with `Livewire::test(...)` inside
-  `DB::beginTransaction()` / `DB::rollBack()` so live data is never touched, and render pages
-  through the HTTP kernel to catch view errors. Note `->get('x')` reads a **property**;
-  view data needs `->viewData('x')`. Flash messages set inside `Livewire::test` are not
-  visible via `session()` — assert on state instead.
-- **Livewire public arrays are client-controlled.** A row index the server never built can
-  arrive, and Livewire writes it **before** the `updated` hook runs. Guard every path that
-  walks such an array, including the one feeding the view. See the code review doc.
-- **Every translation sweep ends with a full-view compile check** — `Blade::compileString()`
-  over all of `resources/views`, then `php -l` on the output. See `docs/translation-system.md`.
-  A sweep once wrapped a PHP property and 500'd three pages.
+  Then exercise components with `Livewire::test(...)` inside `DB::beginTransaction()` /
+  `DB::rollBack()` so live data is never touched, and render pages through the HTTP kernel to catch
+  view errors. `->get('x')` reads a **property**; view data needs `->viewData('x')`. Flash messages
+  set inside `Livewire::test` are not visible via `session()` — assert on state instead.
+- **The Livewire test harness swallows `abort()`.** A guard that looks like it did not fire under
+  `Livewire::test` may be firing perfectly well; verify those over real HTTP, or by reading the
+  database state afterwards. Several "NOT REFUSED" readings during the meetings build were
+  artifacts of this.
+- **Livewire public arrays are client-controlled.** A row index the server never built can arrive,
+  and Livewire writes it **before** the `updated` hook runs. Guard every path that walks such an
+  array, including the one feeding the view.
+- **Every translation sweep ends with a full-view compile check** — `Blade::compileString()` over
+  all of `resources/views`, then `php -l` on the output. A sweep once wrapped a PHP property and
+  500'd three pages. See `docs/translation-system.md`.
+- **R2 is billed for what is on it.** Incomplete multipart uploads and trashed documents are swept
+  by scheduled commands; anything new that writes to R2 needs to be known to
+  `FileUploadService::pruneStaleUploads()` and the orphan sweep, or it will either leak storage or
+  — worse — get swept while still in use.
+- **Never list-and-delete R2 objects in one command.** List first, read the list, then delete only
+  what you have identified. Six orphans were deleted this way once when only one was actually an
+  orphan.
+- **dompdf stamps a creation date**, so re-rendering the same document produces different bytes.
+  Checksums cannot be used to answer "did this change?" for a PDF — `MeetingMinuteDistributor`
+  keys off whether a correction was recorded since the filed version instead.
 - **Reports must agree.** The out side of `CompanyFinancialService` is cross-checked against
-  `PaymentScheduleService`; `Contract::openPayableItems()` and
-  `Contract::getUnscheduledRemaining()` are shared on purpose so the rules cannot drift.
+  `PaymentScheduleService`; `Contract::openPayableItems()` and `Contract::getUnscheduledRemaining()`
+  are shared on purpose so the rules cannot drift.
+
+---
 
 ## 9. Documentation index
 
 | Topic | File |
 |---|---|
+| **Cost codes on expenses + change orders — design, build log (phases 1–6), phase 7 checklist** | `docs/expense-changeorder-costcode-plan.md` |
+| **That work's deploy-facing changelog** | `docs/changelog-2026-08-20-costcodes-changeorders.md` |
+| **Meetings / minutes / tasks — plan + build log (phases 0–7 done)** | `docs/meetings-module-plan.md` |
+| **Meetings — the user guide, also published in-app** | `docs/meetings-module-guide.md` |
 | **Documentation module (the in-app library)** | `docs/documentation-module.md` |
-| **Meetings — how to use it (the first shipped guide)** | `docs/meetings-module-guide.md` |
-| **Meetings / minutes / tasks plan + build log** | `docs/meetings-module-plan.md` |
-| **Quotation module plan (phases 2–8 next)** | `docs/quotation-module-plan.md` |
-| **Requisitions — phase 1, as built** | `docs/requisition-module.md` |
-| **Quotation rounds — phases 2-5, as built** | `docs/quotation-module.md` |
+| **Review and Improvements — the standing final phase + the whole backlog** | `docs/review-and-improvements.md` |
 | **Permissions — running notations (nothing built)** | `docs/permissions-notes.md` |
-| **Review and Improvements — the standing final phase + backlog** | `docs/review-and-improvements.md` |
+| Quotation module plan (phase 9 next) | `docs/quotation-module-plan.md` |
+| Requisitions — phase 1, as built | `docs/requisition-module.md` |
+| Quotation rounds — phases 2–8, as built | `docs/quotation-module.md` |
+| File repository (documents module) — plan + build log | `docs/file-repository-plan.md` |
+| Cloudflare R2 setup (bucket, token, CORS) | `docs/deployment-cloudflare-r2.md` |
 | Income module, incl. received/expected and distribution | `docs/income-module.md` |
 | Income distribution + job site income page changelog | `docs/changelog-2026-08-18-income-distribution.md` |
 | Code review of that work | `docs/code-review-2026-08-18-income-distribution.md` |
@@ -250,8 +278,6 @@ observations, the options and the seven decisions needed.
 | Contract module (quote → contract target) | `docs/contract-module.md` |
 | Translation system + sweep safety rule | `docs/translation-system.md` |
 | Project / job site parity rule | `docs/project-jobsite-parity-rule.md` |
-| What shipped 2026-08-17/18 | `docs/changelog-2026-08-18.md` |
-| What shipped 2026-08-19 (header search, cost code dialogs) | `docs/changelog-2026-08-19.md` |
 | Header search, as built | `docs/header-search.md` |
-| **File repository (documents module) — plan + build log, as built** | `docs/file-repository-plan.md` |
-| Cloudflare R2 setup the repository needs (bucket, token, CORS) | `docs/deployment-cloudflare-r2.md` |
+| What shipped 2026-08-17/18 | `docs/changelog-2026-08-18.md` |
+| What shipped 2026-08-19 | `docs/changelog-2026-08-19.md` |
