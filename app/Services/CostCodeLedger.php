@@ -206,6 +206,57 @@ class CostCodeLedger
     }
 
     /**
+     * The same grid with the cost codes nothing has happened to left out — no
+     * budget, no approved change, nothing committed and nothing spent. A
+     * parent code is kept whenever any of its lines survive, so a section is
+     * never left headerless, and the totals row is untouched: the foot of the
+     * grid still adds up to the whole budget, listed or not.
+     *
+     * Adds 'hidden_count' — how many rows were dropped — so the screen can say
+     * what it is not showing.
+     */
+    public static function withActivityOnly(array $grid): array
+    {
+        $sections = [];
+        $hidden = 0;
+
+        foreach ($grid['sections'] as $section) {
+            $parent = $section['rows'][0];
+            $children = array_slice($section['rows'], 1);
+            $kept = array_values(array_filter($children, fn ($row) => self::rowHasActivity($row)));
+            $hidden += count($children) - count($kept);
+
+            if (! $kept && ! self::rowHasActivity($parent)) {
+                $hidden++;
+
+                continue;
+            }
+
+            $section['rows'] = array_merge([$parent], $kept);
+            $sections[] = $section;
+        }
+
+        $grid['sections'] = $sections;
+        $grid['hidden_count'] = $hidden;
+
+        return $grid;
+    }
+
+    /**
+     * A cost code is worth listing once money has touched it in any way —
+     * budgeted, moved by a change order, committed or spent. Note that a code
+     * budgeted and then changed back to nothing still counts: the row tells a
+     * story even though its revised figure is zero.
+     */
+    public static function rowHasActivity(array $row): bool
+    {
+        return (float) $row['original'] != 0.0
+            || (float) $row['changes'] != 0.0
+            || (float) $row['committed'] != 0.0
+            || (float) $row['actual'] != 0.0;
+    }
+
+    /**
      * Budget-wide totals.
      */
     public function totals(): array

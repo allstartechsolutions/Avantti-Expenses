@@ -10,8 +10,12 @@ class BudgetCostGrid extends Component
 {
     public Budget $budget;
 
-    /** Hide cost codes with nothing budgeted and nothing spent. */
-    public bool $hideEmpty = false;
+    /**
+     * Cost codes with nothing budgeted, committed or spent are noise on a long
+     * template, so they stay out of the way until the user asks for them. The
+     * totals are unaffected either way.
+     */
+    public bool $showEmpty = false;
 
     public function mount(Budget $budget)
     {
@@ -20,8 +24,10 @@ class BudgetCostGrid extends Component
 
     public function render()
     {
+        $grid = CostCodeLedger::for($this->budget)->grid();
+
         return view('livewire.budget.budget-cost-grid', [
-            'grid' => CostCodeLedger::for($this->budget)->grid(),
+            'grid' => $this->showEmpty ? $grid : CostCodeLedger::withActivityOnly($grid),
         ])->layout('components.layouts.app');
     }
 }

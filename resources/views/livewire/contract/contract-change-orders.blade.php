@@ -131,7 +131,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Amount *') }} <span class="text-xs font-normal text-slate-400">(use negative for deductions)</span></label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Amount *') }} <span class="text-xs font-normal text-slate-400">{{ __('(use negative for deductions)') }}</span></label>
                             <div class="relative">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <span class="text-slate-500 sm:text-sm">$</span>

@@ -133,7 +133,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('End Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->end_date?->format('M d, Y') ?? 'Not set' }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->end_date?->format('M d, Y') ?? __('Not set') }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -458,7 +458,7 @@
                                                             {{ $statusLabels[$history->new_status] ?? ucfirst($history->new_status) }}
                                                         </p>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                            by {{ $history->changedBy?->name ?? 'System' }}
+                                                            {{ __('by') }} {{ $history->changedBy?->name ?? __('System') }}
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -510,7 +510,7 @@
                                         @endif
                                         @if($payment->reference_number)
                                             <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                Ref: {{ $payment->reference_number }}
+                                                {{ __('Ref:') }} {{ $payment->reference_number }}
                                             </p>
                                         @endif
                                         @if($payment->notes)

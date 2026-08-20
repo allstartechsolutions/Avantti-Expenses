@@ -3588,5 +3588,20 @@
     "Moving the owner or the date here is how a meeting reassigns work — the change is logged on the task.": "Trocar o responsável ou o prazo aqui é como a reunião redistribui o trabalho — a alteração fica registrada na tarefa.",
     "Item and task :code updated.": "Item e tarefa :code atualizados.",
     "Item updated.": "Item atualizado.",
-    "owner": "responsável"
+    "owner": "responsável",
+
+    "_contracts_translation_sweep_2026_08": "========== Contratos — varredura de traduções ==========",
+    "Not set": "Não definida",
+    "Ref:": "Ref.:",
+    "(use negative for deductions)": "(use negativo para deduções)",
+    "Payment amount cannot exceed the balance due of :balance.": "O valor do pagamento não pode exceder o saldo devedor de :balance.",
+
+    "_cost_grid_empty_toggle": "========== Grade de Códigos de Custo — códigos vazios ==========",
+    "Show empty cost codes": "Mostrar códigos de custo vazios",
+    "Every cost code on this budget, including the ones nothing has been budgeted or spent on.": "Todos os códigos de custo deste orçamento, inclusive aqueles em que nada foi orçado nem gasto.",
+    "Every cost code on this budget has figures against it.": "Todos os códigos de custo deste orçamento têm valores lançados.",
+    "{1} :count cost code with no budget and no activity is hidden.|[2,*] :count cost codes with no budget and no activity are hidden.": "{1} :count código de custo sem orçamento e sem movimentação está oculto.|[2,*] :count códigos de custo sem orçamento e sem movimentação estão ocultos.",
+    "{1} :count cost code with no budget and no activity is not listed. The totals include it.|[2,*] :count cost codes with no budget and no activity are not listed. The totals include them.": "{1} :count código de custo sem orçamento e sem movimentação não está listado. Os totais o incluem.|[2,*] :count códigos de custo sem orçamento e sem movimentação não estão listados. Os totais os incluem.",
+    "Nothing has been budgeted or spent yet.": "Nada foi orçado nem gasto ainda.",
+    "{1} The one cost code on this budget is empty, so it is hidden.|[2,*] All :count cost codes on this budget are empty, so they are hidden.": "{1} O único código de custo deste orçamento está vazio, por isso está oculto.|[2,*] Todos os :count códigos de custo deste orçamento estão vazios, por isso estão ocultos."
 }

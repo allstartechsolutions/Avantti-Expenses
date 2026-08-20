@@ -63,7 +63,7 @@
 
                         @forelse($grid['sections'] as $section)
                             @foreach($section['rows'] as $row)
-                                @continue((float) $row['revised'] == 0.0 && (float) $row['projected'] == 0.0)
+                                @continue(! \App\Services\CostCodeLedger::rowHasActivity($row))
                                 <tr class="border-t border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white {{ $row['is_parent'] ? 'font-medium' : 'pl-8' }}">
                                         <a href="{{ route('budgets.cost-code', [$entry['budget']->id, $row['budget_item_id']]) }}" class="hover:underline">

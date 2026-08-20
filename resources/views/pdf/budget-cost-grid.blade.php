@@ -165,6 +165,9 @@
 </table>
 
 <div style="margin-top: 8px; font-size: 6.5pt; color: #888; line-height: 1.5;">
+    @if(($grid['hidden_count'] ?? 0) > 0)
+        <div>{{ trans_choice('{1} :count cost code with no budget and no activity is not listed. The totals include it.|[2,*] :count cost codes with no budget and no activity are not listed. The totals include them.', $grid['hidden_count'], ['count' => $grid['hidden_count']]) }}</div>
+    @endif
     <div><strong>{{ __('Changes') }}</strong> — {{ __('approved change orders only. A change order still in draft, pending or rejected does not move the budget.') }}</div>
     <div><strong>{{ __('Committed') }}</strong> — {{ __('subcontracts and their change orders, plus purchase orders awaiting approval. An approved purchase order has already become an expense, so it is counted as actual instead.') }}</div>
     <div><strong>{{ __('Projected') }}</strong> — {{ __('committed plus expenses. Contract payments are left out of this sum because they are already inside the contract value.') }}</div>

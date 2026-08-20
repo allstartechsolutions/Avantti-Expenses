@@ -4,6 +4,8 @@
         $signed = fn ($v) => ((float) $v > 0 ? '+' : '') . Number::currency((float) $v, config('app.currency'), config('app.locale'));
         $totals = $grid['totals'];
         $overBudget = $totals['over_budget'];
+        $hiddenCount = $grid['hidden_count'] ?? 0;
+        $pdfParams = $showEmpty ? ['all' => 1] : [];
     @endphp
 
     <!-- Page Header -->
@@ -20,10 +22,10 @@
                 <x-ui.button variant="secondary" href="{{ route('budgets.show', $budget->id) }}" icon="arrow-left">
                     {{ __('Back to Budget') }}
                 </x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('budgets.cost-grid.pdf.view', $budget->id) }}" target="_blank" icon="eye">
+                <x-ui.button variant="secondary" href="{{ route('budgets.cost-grid.pdf.view', ['budget' => $budget->id] + $pdfParams) }}" target="_blank" icon="eye">
                     {{ __('View PDF') }}
                 </x-ui.button>
-                <x-ui.button variant="primary" href="{{ route('budgets.cost-grid.pdf.download', $budget->id) }}" icon="download">
+                <x-ui.button variant="primary" href="{{ route('budgets.cost-grid.pdf.download', ['budget' => $budget->id] + $pdfParams) }}" icon="download">
                     {{ __('Download PDF') }}
                 </x-ui.button>
             </div>
@@ -80,6 +82,19 @@
 
     <!-- Grid -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                @if($showEmpty)
+                    {{ __('Every cost code on this budget, including the ones nothing has been budgeted or spent on.') }}
+                @elseif($hiddenCount > 0)
+                    {{ trans_choice('{1} :count cost code with no budget and no activity is hidden.|[2,*] :count cost codes with no budget and no activity are hidden.', $hiddenCount, ['count' => $hiddenCount]) }}
+                @else
+                    {{ __('Every cost code on this budget has figures against it.') }}
+                @endif
+            </p>
+            <x-ui.toggle wire:model.live="showEmpty" :checked="$showEmpty" label="{{ __('Show empty cost codes') }}" />
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1100px]">
                 <thead class="bg-slate-50 dark:bg-slate-900/50">
@@ -144,13 +159,23 @@
                     @empty
                         <tr>
                             <td colspan="9" class="px-4 py-12 text-center">
-                                <p class="text-sm font-medium text-slate-900 dark:text-white">{{ __('This budget has no cost codes yet.') }}</p>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Add cost codes on the budget page, or apply a template, and every expense, contract and change order will report against them here.') }}</p>
-                                <div class="mt-4">
-                                    <x-ui.button variant="primary" size="sm" href="{{ route('budgets.show', $budget->id) }}" icon="plus">
-                                        {{ __('Add Cost Codes') }}
-                                    </x-ui.button>
-                                </div>
+                                @if($hiddenCount > 0)
+                                    <p class="text-sm font-medium text-slate-900 dark:text-white">{{ __('Nothing has been budgeted or spent yet.') }}</p>
+                                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ trans_choice('{1} The one cost code on this budget is empty, so it is hidden.|[2,*] All :count cost codes on this budget are empty, so they are hidden.', $hiddenCount, ['count' => $hiddenCount]) }}</p>
+                                    <div class="mt-4">
+                                        <x-ui.button variant="secondary" size="sm" wire:click="$set('showEmpty', true)" icon="eye">
+                                            {{ __('Show empty cost codes') }}
+                                        </x-ui.button>
+                                    </div>
+                                @else
+                                    <p class="text-sm font-medium text-slate-900 dark:text-white">{{ __('This budget has no cost codes yet.') }}</p>
+                                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Add cost codes on the budget page, or apply a template, and every expense, contract and change order will report against them here.') }}</p>
+                                    <div class="mt-4">
+                                        <x-ui.button variant="primary" size="sm" href="{{ route('budgets.show', $budget->id) }}" icon="plus">
+                                            {{ __('Add Cost Codes') }}
+                                        </x-ui.button>
+                                    </div>
+                                @endif
                             </td>
                         </tr>
                     @endforelse

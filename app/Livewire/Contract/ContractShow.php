@@ -96,10 +96,10 @@ class ContractShow extends Component
     public function getAvailableStatusesProperty(): array
     {
         return match ($this->contract->status) {
-            'draft' => ['active' => 'Active', 'cancelled' => 'Cancelled'],
-            'active' => ['completed' => 'Completed', 'cancelled' => 'Cancelled'],
-            'completed' => ['paid' => 'Paid', 'partially_paid' => 'Partially Paid'],
-            'partially_paid' => ['paid' => 'Paid'],
+            'draft' => ['active' => __('Active'), 'cancelled' => __('Cancelled')],
+            'active' => ['completed' => __('Completed'), 'cancelled' => __('Cancelled')],
+            'completed' => ['paid' => __('Paid'), 'partially_paid' => __('Partially Paid')],
+            'partially_paid' => ['paid' => __('Paid')],
             default => [],
         };
     }
@@ -561,7 +561,9 @@ class ContractShow extends Component
             'paymentItems.*.amount' => ['nullable', 'numeric', 'min:0'],
             'paymentItems.*.percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ], [
-            'paymentAmount.max' => 'Payment amount cannot exceed the balance due of '.Number::currency($balanceDue, config('app.currency'), config('app.locale')).'.',
+            'paymentAmount.max' => __('Payment amount cannot exceed the balance due of :balance.', [
+                'balance' => Number::currency($balanceDue, config('app.currency'), config('app.locale')),
+            ]),
             'paymentItems.*.percent.max' => __('% complete cannot exceed 100.'),
             'paymentScheduleItemId.required' => __('Select the installment this payment settles.'),
         ]);
