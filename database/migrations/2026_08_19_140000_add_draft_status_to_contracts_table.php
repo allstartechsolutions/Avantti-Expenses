@@ -18,11 +18,23 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Enum widening is a MySQL concern; on other drivers (sqlite, used by
+        // the test suite) these columns are plain text and need no change.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft', 'active', 'completed', 'partially_paid', 'paid', 'cancelled') NOT NULL DEFAULT 'active'");
     }
 
     public function down(): void
     {
+        // Enum widening is a MySQL concern; on other drivers (sqlite, used by
+        // the test suite) these columns are plain text and need no change.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Anything left in draft becomes active again, otherwise the column
         // would refuse to narrow.
         DB::table('contracts')->where('status', 'draft')->update(['status' => 'active']);

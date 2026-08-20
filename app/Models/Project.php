@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Contracts\PermissionScope;
 use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\ProjectAmountSource;
 use App\Enums\ProjectStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Project extends Model
+class Project extends Model implements PermissionScope
 {
     use HasFormattedPhone, HasFactory;
 
@@ -108,6 +111,67 @@ class Project extends Model
     /**
      * Get the job sites for this project
      */
+    /**
+     * Only the projects this person may see.
+     *
+     * Somebody company-wide sees every project — that is what company-wide
+     * means. Somebody confined sees a project when they hold a membership on
+     * it, or on any of its job sites: being put on one site is being told
+     * about that project, and its breadcrumbs would be nonsense otherwise.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->is_admin || ! $user->isConfined()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($user) {
+            $query
+                ->whereIn('id', Membership::query()
+                    ->select('scopeable_id')
+                    ->where('user_id', $user->id)
+                    ->active()
+                    ->where('scopeable_type', static::class))
+                ->orWhereIn('id', JobSite::query()
+                    ->select('project_id')
+                    ->whereIn('id', Membership::query()
+                        ->select('scopeable_id')
+                        ->where('user_id', $user->id)
+                        ->active()
+                        ->where('scopeable_type', JobSite::class)));
+        });
+    }
+
+    /** Top of the tree: a project sits inside nothing. */
+    public function parentScope(): ?Model
+    {
+        return null;
+    }
+
+    public function scopeLevel(): string
+    {
+        return 'project';
+    }
+
+    public function scopeLabel(): string
+    {
+        return (string) $this->project_name;
+    }
+
+    /**
+     * The people added to this project, with what each of them may do here.
+     * A project membership cascades to every job site under it unless that
+     * site has a membership of its own for the same person.
+     */
+    public function memberships(): MorphMany
+    {
+        return $this->morphMany(Membership::class, 'scopeable');
+    }
+
     public function jobSites(): HasMany
     {
         return $this->hasMany(JobSite::class);

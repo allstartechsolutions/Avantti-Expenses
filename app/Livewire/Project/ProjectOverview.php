@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
@@ -15,6 +16,8 @@ use Livewire\Component;
 
 class ProjectOverview extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     // Delete Project modal
@@ -28,6 +31,8 @@ class ProjectOverview extends Component
 
     public function confirmDeleteProject()
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $project = Project::withCount([
             'jobSites',
             'expenses',
@@ -54,6 +59,8 @@ class ProjectOverview extends Component
 
     public function deleteProject()
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         DB::transaction(function () {
             $this->cleanupProjectFiles($this->project->id);
             $this->project->delete();

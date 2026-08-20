@@ -2,6 +2,7 @@
 
 namespace App\Livewire\SystemSettings;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\TaxRate;
 use App\Models\TaxRateHistory;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,13 @@ use Livewire\Component;
 
 class TaxRateSettings extends Component
 {
+    use AuthorizesAbility;
+
+    public function mount(): void
+    {
+        $this->authorizeAbility('settings.view');
+    }
+
     // Form fields
     public string $state = '';
     public string $rate = '';
@@ -62,6 +70,8 @@ class TaxRateSettings extends Component
 
     public function save(): void
     {
+        $this->authorizeAbility('settings.edit');
+
         $this->validate();
 
         $rateDecimal = $this->rate / 100;
@@ -132,6 +142,8 @@ class TaxRateSettings extends Component
 
     public function delete(): void
     {
+        $this->authorizeAbility('settings.edit');
+
         $taxRate = TaxRate::findOrFail($this->deletingTaxRateId);
 
         TaxRate::logHistory($taxRate->id, 'deleted', null, $taxRate->state . ' - ' . $taxRate->formatted_rate, null);

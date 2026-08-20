@@ -264,9 +264,12 @@ $user->can('expenses.approve', $project);   // or $jobSite, or null for company-
 
 Rules of the model, chosen deliberately:
 
-- **Grants only, no denies.** A membership can only *add* to what a Company-wide user's role
-  already gives — except `can_see_money`, which is a deliberate subtraction and the single
-  exception, so it stays easy to reason about.
+- **Specific beats general, all the way up** *(revised 2026-08-20, from the owner)*. A
+  membership **replaces** the role on the scope it covers rather than adding to it: being
+  given a job on a project means being that on that project. A job-site membership beats the
+  project's, a project membership beats the role, and where there is no membership the role
+  applies untouched. Confinement applies only to scoped areas — a confined person keeps
+  every company-wide screen their role gives them.
 - **A job-site membership overrides its project membership** for that site rather than
   adding to it. "Specific beats general" is the rule people expect.
 - **A job-site-only member sees the project's name and breadcrumb and nothing else** — the
@@ -361,10 +364,10 @@ the bridge itself, is the definition of done** (F2).
 
 | # | Step | Deliverable | Done when |
 |---|---|---|---|
-| E1 | **Catalogue & schema** | `config/permissions.php` with the area/action declarations (nav metadata included); all migrations from §5; models; the three seeded roles written out as ability rows checked line by line against today's behaviour | `php artisan migrate` on production changes **nothing** anyone can see |
-| E2 | **Resolver & bridge** | `PermissionResolver`, `Gate` wiring, base policies, per-request memoisation, the legacy bridge above, the `AuthorizesAbility` trait and the `ability` middleware — all in place, **used by nothing yet** | A feature test proves every persona's answer is identical before and after, on every existing screen |
-| E3 | **Navigation service** | `Navigation::sidebar()`, `::projectTabs()`, `::jobSiteTabs()` built from the catalogue; the three nav views re-rendered from them, reproducing today's menu exactly (including the header gear, which stops being shown to people who cannot open it) | Every user sees the same menu as before, minus the 403 gear |
-| E4 | **Roles screen** | Settings → Roles & Access, the company-wide matrix over the catalogue, custom roles, `permission_audits` | An admin can create "Procurement"; it has no effect yet because no module is swept, and that is correct |
+| E1 ✅ | **Catalogue & schema** *(built 2026-08-20 — see `docs/permissions-module.md`)* | `config/permissions.php` with the area/action declarations (nav metadata included); all migrations from §5; models; the three seeded roles written out as ability rows checked line by line against today's behaviour | `php artisan migrate` on production changes **nothing** anyone can see |
+| E2 ✅ | **Resolver & bridge** *(built 2026-08-20)* | `PermissionResolver`, `Gate` wiring, base policies, per-request memoisation, the legacy bridge above, the `AuthorizesAbility` trait and the `ability` middleware — all in place, **used by nothing yet** | A feature test proves every persona's answer is identical before and after, on every existing screen |
+| E3 ✅ | **Navigation service** *(built 2026-08-20)* | `Navigation::sidebar()`, `::projectTabs()`, `::jobSiteTabs()` built from the catalogue; the three nav views re-rendered from them, reproducing today's menu exactly (including the header gear, which stops being shown to people who cannot open it) | Every user sees the same menu as before, minus the 403 gear |
+| E4 ✅ | **Roles screen** *(built 2026-08-20)* | Settings → Roles & Access, the company-wide matrix over the catalogue, custom roles, `permission_audits` | An admin can create "Procurement"; it has no effect yet because no module is swept, and that is correct |
 
 Data migration in E1 also turns the two reporting labels into real access:
 `projects.project_manager_id` → a *Project Manager* membership, `job_sites.supervisor_id` →
@@ -401,9 +404,9 @@ scoped module hangs off it; then modules in order of how much money they move.
 
 | # | Module | Why here / what is special |
 |---|---|---|
-| M1 | **Access & Users** | Templates, memberships, the Team tab on both levels, invitations, guests, the guest shell. The module that grants all the others, so it is converted first and tested hardest |
-| M2 | **Project & Job Site shell** | `project.view/edit/archive`, the overview screens, the indexes, the breadcrumb rule for job-site-only members. Every later pass depends on this scope existing |
-| M3 | **Company & Settings** | Small, currently wide open (any user can edit the company record), and quick to prove the pattern on a non-scoped module |
+| M1 ✅ | **Access & Users** *(built 2026-08-20)* | Templates, memberships, the Team tab on both levels, invitations, guests, the guest shell. The module that grants all the others, so it is converted first and tested hardest |
+| M2 ✅ | **Project & Job Site shell** *(built 2026-08-20)* | `project.view/edit/archive`, the overview screens, the indexes, the breadcrumb rule for job-site-only members. Every later pass depends on this scope existing |
+| M3 ✅ | **Company & Settings** *(built 2026-08-20)* | Small, currently wide open (any user can edit the company record), and quick to prove the pattern on a non-scoped module |
 | M4 | **Expenses** | The daily module, the most users, `pay` and `edit_paid`, the first real money masking |
 | M5 | **Income** | Mirrors expenses, including the cross-job-site distribution |
 | M6 | **Budget & Cost Codes** | `budget.lock`, and the templates screen that is admin-only today |
@@ -423,6 +426,8 @@ scoped module hangs off it; then modules in order of how much money they move.
 Each pass is a day-to-a-few-days of work, ships on its own, and can be deployed on its own.
 If the order needs to change because a customer needs a module confined sooner, it can —
 the passes do not depend on each other beyond M1 and M2.
+
+**Progress (2026-08-20): M1, M2 and M3 are done — 7 of 30 areas enforced. M4 is next.**
 
 ### 9.5 Stage 3 — closing up
 

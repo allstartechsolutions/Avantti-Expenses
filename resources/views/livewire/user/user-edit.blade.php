@@ -130,6 +130,39 @@
                                 @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
                         </div>
+
+                        {{-- Which projects this person can reach. Normally it
+                             follows the role; this is the override for one
+                             person, and it says what the role currently says
+                             so the choice is not made blind. --}}
+                        <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                            <label for="accessScope" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                {{ __('Which projects and job sites can they see?') }}
+                            </label>
+
+                            @if($user->is_guest)
+                                <div class="px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-800 text-sm dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300">
+                                    {{ __('This is a guest: they only ever see the projects they were added to, and that cannot be changed here.') }}
+                                </div>
+                            @else
+                                <select id="accessScope" wire:model.live="accessScope"
+                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <option value="">{{ __('Follow their role (:scope)', ['scope' => __($user->role?->access_scope?->label() ?? 'Every project and job site')]) }}</option>
+                                    <option value="company">{{ __('Every project and job site') }}</option>
+                                    <option value="assigned">{{ __('Only the ones they are added to') }}</option>
+                                </select>
+                                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                    {{ __('Leave it following the role unless this one person needs to differ from everybody else holding it.') }}
+                                </p>
+
+                                @unless(\App\Services\AbilityCatalog::isSwept('project'))
+                                    <p class="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                                        {{ __('Recorded but not enforced yet: the project screens have not been converted, so every project is still listed to everybody.') }}
+                                    </p>
+                                @endunless
+                                @error('accessScope') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            @endif
+                        </div>
                     </div>
                 </div>
 

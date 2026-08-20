@@ -27,6 +27,14 @@ return new class extends Migration
 
     public function up(): void
     {
+        // MySQL-only by construction: it reads information_schema, rewrites
+        // foreign keys and uses multi-table UPDATE ... JOIN. On any other
+        // driver (sqlite, used by the test suite) there are no legacy rows to
+        // move, so there is nothing for it to do.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Step 1: drop the FK constraints pointing at the legacy tables so the
         // id values can be rewritten. (DDL — runs outside the transaction.)
         foreach (self::SUPPLIER_FKS as $table) {

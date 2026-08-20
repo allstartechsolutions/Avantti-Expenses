@@ -1,0 +1,166 @@
+<?php
+
+namespace Tests\Feature\Permissions;
+
+use App\Services\AbilityCatalog;
+use Tests\TestCase;
+
+/**
+ * The catalogue is the contract every other part of the permission module is
+ * written against, so it is checked for shape rather than for content: a typo
+ * in config/permissions.php should fail here and not three modules later.
+ */
+class AbilityCatalogTest extends TestCase
+{
+    public function test_every_area_declares_a_module_that_exists(): void
+    {
+        $modules = array_keys(config('modules'));
+
+        foreach (AbilityCatalog::areas() as $key => $area) {
+            $this->assertNotNull($area['module'], "Area '{$key}' declares no module.");
+            $this->assertContains(
+                $area['module'],
+                $modules,
+                "Area '{$key}' names module '{$area['module']}', which is not in config/modules.php.",
+            );
+        }
+    }
+
+    public function test_every_area_declares_valid_levels_and_at_least_one_action(): void
+    {
+        foreach (AbilityCatalog::areas() as $key => $area) {
+            $this->assertNotEmpty($area['levels'], "Area '{$key}' declares no levels.");
+            $this->assertNotEmpty($area['actions'], "Area '{$key}' declares no actions.");
+
+            foreach ($area['levels'] as $level) {
+                $this->assertContains(
+                    $level,
+                    ['global', 'project', 'job_site'],
+                    "Area '{$key}' declares unknown level '{$level}'.",
+                );
+            }
+        }
+    }
+
+    public function test_every_action_normalises_to_a_labelled_ability(): void
+    {
+        foreach (AbilityCatalog::areas() as $key => $area) {
+            foreach ($area['actions'] as $action) {
+                $this->assertSame("{$key}.{$action['key']}", $action['ability']);
+                $this->assertNotEmpty($action['name'], "Ability '{$action['ability']}' has no label.");
+                $this->assertTrue(AbilityCatalog::has($action['ability']));
+            }
+        }
+    }
+
+    public function test_every_menu_entry_is_wired_to_something_real(): void
+    {
+        $groups = config('permissions.groups');
+        $keys = [];
+
+        foreach (config('permissions.menu') as $entry) {
+            $key = $entry['key'];
+
+            $this->assertNotContains($key, $keys, "Menu entry '{$key}' is declared twice.");
+            $keys[] = $key;
+
+            $this->assertTrue(
+                AbilityCatalog::has($entry['ability']),
+                "Menu entry '{$key}' names ability '{$entry['ability']}', which is not in the catalogue.",
+            );
+
+            $this->assertNotNull(
+                app('router')->getRoutes()->getByName($entry['route']),
+                "Menu entry '{$key}' points at route '{$entry['route']}', which does not exist.",
+            );
+
+            $this->assertNotEmpty($entry['icon'], "Menu entry '{$key}' has no icon.");
+
+            if ($entry['group'] !== null) {
+                $this->assertArrayHasKey(
+                    $entry['group'],
+                    $groups,
+                    "Menu entry '{$key}' is in group '{$entry['group']}', which is not declared.",
+                );
+            }
+        }
+    }
+
+    public function test_every_tab_is_wired_to_something_real(): void
+    {
+        foreach (config('permissions.tabs') as $tab) {
+            $key = $tab['key'];
+
+            $this->assertTrue(
+                AbilityCatalog::has($tab['ability']),
+                "Tab '{$key}' names ability '{$tab['ability']}', which is not in the catalogue.",
+            );
+
+            foreach (['project_route' => 'project', 'job_site_route' => 'job_site'] as $routeKey => $level) {
+                if (! $tab[$routeKey]) {
+                    continue;
+                }
+
+                $this->assertNotNull(
+                    app('router')->getRoutes()->getByName($tab[$routeKey]),
+                    "Tab '{$key}' points at route '{$tab[$routeKey]}', which does not exist.",
+                );
+
+                $this->assertTrue(
+                    AbilityCatalog::isGrantableAt($tab['ability'], $level),
+                    "Tab '{$key}' is shown at {$level} level, but '{$tab['ability']}' cannot be granted there.",
+                );
+            }
+        }
+    }
+
+    public function test_groups_and_top_level_items_share_one_ordering_space(): void
+    {
+        // Otherwise a group and an item can claim the same slot and the menu
+        // order becomes whatever usort felt like.
+        $orders = array_column(config('permissions.groups'), 'order');
+
+        foreach (config('permissions.menu') as $entry) {
+            if (($entry['group'] ?? null) === null && ! ($entry['header'] ?? false)) {
+                $orders[] = $entry['order'];
+            }
+        }
+
+        $this->assertSame(count($orders), count(array_unique($orders)), 'Two menu entries claim the same order.');
+    }
+
+    public function test_abilities_are_unique(): void
+    {
+        $abilities = AbilityCatalog::abilities();
+
+        $this->assertSame(
+            count($abilities),
+            count(array_unique($abilities)),
+            'The catalogue declares the same ability twice.',
+        );
+    }
+
+    public function test_filter_drops_unknown_abilities_and_wrong_levels(): void
+    {
+        $this->assertSame(
+            ['expenses.view'],
+            AbilityCatalog::filter(['expenses.view', 'nonsense.action', '']),
+        );
+
+        // budget is project / job_site only, so it cannot be granted globally.
+        $this->assertSame(
+            ['clients.view'],
+            AbilityCatalog::filter(['clients.view', 'budget.lock'], 'global'),
+        );
+    }
+
+    public function test_the_legacy_bridge_reports_which_areas_are_still_unswept(): void
+    {
+        $unswept = AbilityCatalog::unsweptAreas();
+
+        foreach ($unswept as $key) {
+            $this->assertFalse(AbilityCatalog::isSwept($key));
+            $this->assertFalse(AbilityCatalog::isSwept("{$key}.view"));
+        }
+    }
+}

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\SystemSettings;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\DocumentMessage;
 use App\Models\DocumentMessageHistory;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,13 @@ use Livewire\Component;
 
 class DocumentMessageSettings extends Component
 {
+    use AuthorizesAbility;
+
+    public function mount(): void
+    {
+        $this->authorizeAbility('settings.view');
+    }
+
     // Form fields
     public string $title = '';
     public string $body = '';
@@ -71,6 +79,8 @@ class DocumentMessageSettings extends Component
 
     public function save(): void
     {
+        $this->authorizeAbility('settings.edit');
+
         $this->validate();
 
         DB::transaction(function () {
@@ -162,6 +172,8 @@ class DocumentMessageSettings extends Component
 
     public function delete(): void
     {
+        $this->authorizeAbility('settings.edit');
+
         $message = DocumentMessage::findOrFail($this->deletingMessageId);
 
         DocumentMessage::logHistory($message->id, 'deleted', null, $message->title . ' (' . $message->type . ')', null);

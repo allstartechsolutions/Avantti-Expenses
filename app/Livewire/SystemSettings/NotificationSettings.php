@@ -2,6 +2,7 @@
 
 namespace App\Livewire\SystemSettings;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\NotificationSetting;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -15,12 +16,14 @@ use Livewire\Component;
  */
 class NotificationSettings extends Component
 {
+    use AuthorizesAbility;
+
     public int $digestDay = 1;
     public int $digestHour = 7;
 
     public function mount(): void
     {
-        abort_unless(auth()->user()?->is_admin, 403, 'Administrator access required.');
+        $this->authorizeAbility('settings.view');
 
         $this->digestDay = NotificationSetting::digestDay();
         $this->digestHour = NotificationSetting::digestHour();
@@ -34,7 +37,7 @@ class NotificationSettings extends Component
 
     public function toggle(string $key): void
     {
-        abort_unless(auth()->user()?->is_admin, 403);
+        $this->authorizeAbility('settings.edit');
 
         $setting = NotificationSetting::firstOrCreate(['key' => $key]);
 
@@ -52,7 +55,7 @@ class NotificationSettings extends Component
 
     public function saveDigestSchedule(): void
     {
-        abort_unless(auth()->user()?->is_admin, 403);
+        $this->authorizeAbility('settings.edit');
 
         $this->validate([
             'digestDay' => ['required', 'integer', 'min:1', 'max:7'],

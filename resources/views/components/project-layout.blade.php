@@ -26,12 +26,14 @@
                     icon="arrow-left">
                     {{ __('Back to Projects') }}
                 </x-ui.button>
-                <x-ui.button
-                    variant="primary"
-                    href="{{ route('projects.edit', $project->id) }}"
-                    icon="edit">
-                    {{ __('Edit Project') }}
-                </x-ui.button>
+                @can('project.edit', $project)
+                    <x-ui.button
+                        variant="primary"
+                        href="{{ route('projects.edit', $project->id) }}"
+                        icon="edit">
+                        {{ __('Edit Project') }}
+                    </x-ui.button>
+                @endcan
                 @if(isset($actions))
                     {{ $actions }}
                 @endif

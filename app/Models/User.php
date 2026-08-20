@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasFormattedPhone;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\AccessScope;
 use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,8 @@ class User extends Authenticatable
         'role_id',
         'notification_preferences',
         'status',
+        'access_scope',
+        'is_guest',
     ];
 
     /**
@@ -61,6 +64,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'access_scope' => AccessScope::class,
+            'is_guest' => 'boolean',
         ];
     }
 
@@ -126,6 +131,60 @@ class User extends Authenticatable
     public function canSeeInternalDocuments(): bool
     {
         return $this->is_admin || $this->is_manager;
+    }
+
+    /**
+     * Every project and job site this user has been added to, with their
+     * ability list for it.
+     */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
+    }
+
+    /** Only the memberships that actually grant something today. */
+    public function activeMemberships(): HasMany
+    {
+        return $this->memberships()->active();
+    }
+
+    /**
+     * How much of the system this person can reach, resolved.
+     *
+     * A guest is always confined. Otherwise their own column wins if it is
+     * set, and null — the normal case — means "whatever the role says". That
+     * is what makes "this role only sees the projects it is added to" a single
+     * setting rather than a chore repeated for every employee.
+     */
+    public function effectiveAccessScope(): AccessScope
+    {
+        if ($this->is_guest) {
+            return AccessScope::ASSIGNED;
+        }
+
+        return $this->access_scope
+            ?? $this->role?->access_scope
+            ?? AccessScope::COMPANY;
+    }
+
+    /** True when this person's scope comes from their role rather than themselves. */
+    public function followsRoleScope(): bool
+    {
+        return ! $this->is_guest && $this->access_scope === null;
+    }
+
+    /**
+     * Whether this user is confined to what they have been assigned.
+     */
+    public function isConfined(): bool
+    {
+        return $this->effectiveAccessScope() === AccessScope::ASSIGNED;
+    }
+
+    /** The opposite of isConfined(): sees every project, as everybody does today. */
+    public function isCompanyWide(): bool
+    {
+        return ! $this->isConfined();
     }
 
     public function managedProjects(): HasMany

@@ -13,7 +13,10 @@ return new class extends Migration
     public function up(): void
     {
         // Allow a payment to be partially refunded (one or more times).
-        DB::statement("ALTER TABLE invoice_payments MODIFY COLUMN status ENUM('pending', 'completed', 'failed', 'refunded', 'voided', 'partially_refunded') NOT NULL DEFAULT 'completed'");
+        // Enum widening is a MySQL concern; on sqlite the column is plain text.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE invoice_payments MODIFY COLUMN status ENUM('pending', 'completed', 'failed', 'refunded', 'voided', 'partially_refunded') NOT NULL DEFAULT 'completed'");
+        }
 
         // Log table: one row per void/refund issued against a payment.
         Schema::create('payment_refunds', function (Blueprint $table) {
@@ -46,6 +49,8 @@ return new class extends Migration
         // Collapse any partially refunded payments back to a supported status.
         DB::table('invoice_payments')->where('status', 'partially_refunded')->update(['status' => 'completed']);
 
-        DB::statement("ALTER TABLE invoice_payments MODIFY COLUMN status ENUM('pending', 'completed', 'failed', 'refunded', 'voided') NOT NULL DEFAULT 'completed'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE invoice_payments MODIFY COLUMN status ENUM('pending', 'completed', 'failed', 'refunded', 'voided') NOT NULL DEFAULT 'completed'");
+        }
     }
 };

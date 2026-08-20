@@ -2,6 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 class JobSiteOverview extends Component
 {
+    use AuthorizesAbility;
+
     public JobSite $jobSite;
 
     // Delete Job Site modal
@@ -34,6 +37,8 @@ class JobSiteOverview extends Component
 
     public function confirmDeleteJobSite()
     {
+        $this->authorizeAbility('projects.delete', $this->jobSite);
+
         $jobSite = JobSite::withCount([
             'expenses',
             'changeOrders',
@@ -56,6 +61,8 @@ class JobSiteOverview extends Component
 
     public function deleteJobSite()
     {
+        $this->authorizeAbility('projects.delete', $this->jobSite);
+
         $projectId = $this->jobSite->project_id;
 
         DB::transaction(function () {

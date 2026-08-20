@@ -7,6 +7,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // No users yet — a fresh install before the setup wizard, or the test
+        // suite. module_access.created_by is a non-nullable foreign key, and a
+        // missing row already reads as enabled, so there is nothing to do here.
+        if (DB::table('users')->doesntExist()) {
+            return;
+        }
+
         $firstUserId = DB::table('users')->orderBy('id')->value('id') ?? 1;
         $now = now();
 

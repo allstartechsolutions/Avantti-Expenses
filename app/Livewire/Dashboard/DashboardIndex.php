@@ -104,7 +104,7 @@ class DashboardIndex extends Component
             }
         }
 
-        $activeProjects = Project::where('status', ProjectStatus::IN_PROGRESS)->count();
+        $activeProjects = Project::visibleTo(auth()->user())->where('status', ProjectStatus::IN_PROGRESS)->count();
 
         $atRiskFromInvoices = $modules['invoices']
             ? Invoice::whereIn('status', ['sent', 'pending', 'partial'])
@@ -126,7 +126,7 @@ class DashboardIndex extends Component
             ->unique()
             ->count();
 
-        $projectsOverBudget = Project::where('status', ProjectStatus::IN_PROGRESS)
+        $projectsOverBudget = Project::visibleTo(auth()->user())->where('status', ProjectStatus::IN_PROGRESS)
             ->withSum('expenses as expenses_total', 'total_amount')
             ->get()
             ->filter(function ($p) {
@@ -179,7 +179,7 @@ class DashboardIndex extends Component
 
     public function getOverBudgetProjectsProperty()
     {
-        return Project::where('status', ProjectStatus::IN_PROGRESS)
+        return Project::visibleTo(auth()->user())->where('status', ProjectStatus::IN_PROGRESS)
             ->withSum('expenses as expenses_total', 'total_amount')
             ->get()
             ->filter(function ($p) {

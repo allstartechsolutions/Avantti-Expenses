@@ -10,6 +10,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Enum widening is a MySQL concern; on other drivers (sqlite, used by
+        // the test suite) these columns are plain text and need no change.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE invoice_status_histories MODIFY COLUMN old_status ENUM('draft', 'sent', 'pending', 'partial', 'paid') NULL");
         DB::statement("ALTER TABLE invoice_status_histories MODIFY COLUMN new_status ENUM('draft', 'sent', 'pending', 'partial', 'paid') NOT NULL");
     }
@@ -19,6 +25,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Enum widening is a MySQL concern; on other drivers (sqlite, used by
+        // the test suite) these columns are plain text and need no change.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE invoice_status_histories MODIFY COLUMN old_status ENUM('draft', 'sent', 'pending', 'paid') NULL");
         DB::statement("ALTER TABLE invoice_status_histories MODIFY COLUMN new_status ENUM('draft', 'sent', 'pending', 'paid') NOT NULL");
     }

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\JobSiteStatus;
 use App\Enums\UserStatus;
 use App\Models\ChangeOrder;
@@ -19,6 +20,8 @@ use Livewire\Component;
 
 class ProjectJobSites extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     // Search
@@ -89,6 +92,8 @@ class ProjectJobSites extends Component
 
     public function openJobSiteForm(): void
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $this->reset([
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
@@ -115,6 +120,8 @@ class ProjectJobSites extends Component
 
     public function editJobSite(int $jobSiteId): void
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $jobSite = JobSite::findOrFail($jobSiteId);
 
         $this->editingJobSite = $jobSite->id;
@@ -140,6 +147,8 @@ class ProjectJobSites extends Component
 
     public function saveJobSite()
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $this->validate();
 
         $supervisorId = $this->supervisor_id ?: null;
@@ -226,6 +235,8 @@ class ProjectJobSites extends Component
 
     public function confirmDeleteJobSite(int $jobSiteId): void
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $jobSite = JobSite::withCount([
             'expenses',
             'changeOrders',
@@ -249,6 +260,8 @@ class ProjectJobSites extends Component
 
     public function deleteJobSite(): void
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
 
         DB::transaction(function () use ($jobSite) {

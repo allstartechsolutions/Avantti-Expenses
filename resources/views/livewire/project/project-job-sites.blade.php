@@ -18,12 +18,14 @@
                         </svg>
                     </div>
                 </div>
-                <x-ui.button
-                    variant="primary"
-                    wire:click="openJobSiteForm"
-                    icon="plus">
-                    {{ __('Add Job Site') }}
-                </x-ui.button>
+                @can('project.edit', $project)
+                    <x-ui.button
+                        variant="primary"
+                        wire:click="openJobSiteForm"
+                        icon="plus">
+                        {{ __('Add Job Site') }}
+                    </x-ui.button>
+                @endcan
             </div>
         @endif
 
@@ -404,20 +406,24 @@
                                                     icon="eye">
                                                     {{ __('View') }}
                                                 </x-ui.button>
-                                                <x-ui.button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    wire:click="editJobSite({{ $jobSite->id }})"
-                                                    icon="edit">
-                                                    {{ __('Edit') }}
-                                                </x-ui.button>
-                                                <x-ui.button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    wire:click="confirmDeleteJobSite({{ $jobSite->id }})"
-                                                    icon="trash">
-                                                    {{ __('Delete') }}
-                                                </x-ui.button>
+                                                @can('project.edit', $project)
+                                                    <x-ui.button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        wire:click="editJobSite({{ $jobSite->id }})"
+                                                        icon="edit">
+                                                        {{ __('Edit') }}
+                                                    </x-ui.button>
+                                                @endcan
+                                                @can('projects.delete', $project)
+                                                    <x-ui.button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        wire:click="confirmDeleteJobSite({{ $jobSite->id }})"
+                                                        icon="trash">
+                                                        {{ __('Delete') }}
+                                                    </x-ui.button>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>
@@ -435,14 +441,16 @@
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
                         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
-                        <div class="mt-6">
-                            <x-ui.button
-                                variant="primary"
-                                wire:click="openJobSiteForm"
-                                icon="plus">
-                                {{ __('Add Job Site') }}
-                            </x-ui.button>
-                        </div>
+                        @can('project.edit', $project)
+                            <div class="mt-6">
+                                <x-ui.button
+                                    variant="primary"
+                                    wire:click="openJobSiteForm"
+                                    icon="plus">
+                                    {{ __('Add Job Site') }}
+                                </x-ui.button>
+                            </div>
+                        @endcan
                     </div>
                 </div>
             @endif

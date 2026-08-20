@@ -2,12 +2,20 @@
 
 namespace App\Livewire\User;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class UserIndex extends Component
 {
+    use AuthorizesAbility;
+
+    public function mount(): void
+    {
+        $this->authorizeAbility('users.view');
+    }
+
     use WithPagination;
 
     public $search = '';

@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
+use App\Livewire\Access\AccessIndex;
+use App\Livewire\Auth\AcceptInvitation;
+use App\Livewire\JobSite\JobSiteTeam;
+use App\Livewire\Project\ProjectTeam;
 use App\Livewire\Company\CompanyInfo;
 use App\Livewire\User\UserCreate;
 use App\Livewire\User\UserEdit;
@@ -162,6 +166,12 @@ Route::get('s/{token}/download/{document?}', [SharedDocumentController::class, '
     ->name('documents.share.download')
     ->middleware('throttle:30,1');
 
+// Accepting an invitation. Public by necessity — the person has no login yet —
+// so the token is the only credential and the route is throttled.
+Route::get('invitations/{token}', AcceptInvitation::class)
+    ->name('invitations.accept')
+    ->middleware('throttle:20,1');
+
 Route::get('dashboard', DashboardIndex::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -171,15 +181,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profile', UserProfile::class)->name('profile');
 
     // Company info
-    Route::get('company/info', CompanyInfo::class)->name('company.info');
+    // Company info. It was reachable — and editable — by anybody signed in
+    // until M3; the abilities now say who.
+    Route::get('company/info', CompanyInfo::class)
+        ->middleware('ability:company.view')
+        ->name('company.info');
 
-    // User routes (admin only)
-    Route::middleware('admin')->group(function () {
-        Route::get('users', UserIndex::class)->name('users.index');
-        Route::get('users/create', UserCreate::class)->name('users.create');
-        Route::get('users/{user}', UserShow::class)->name('users.show');
-        Route::get('users/{user}/edit', UserEdit::class)->name('users.edit');
-    });
+    // Roles & Access. Guarded by the ability rather than the admin middleware:
+    // this screen is part of the permission module and is written against it
+    // from the start (docs/permissions-module.md).
+    Route::get('access', AccessIndex::class)
+        ->middleware('ability:access.view')
+        ->name('access.index');
+
+    // Users. Converted from the `admin` middleware to the abilities in
+    // config/permissions.php (M1) — an administrator still holds all of them,
+    // and nobody else does until somebody grants them.
+    Route::get('users', UserIndex::class)->middleware('ability:users.view')->name('users.index');
+    Route::get('users/create', UserCreate::class)->middleware('ability:users.create')->name('users.create');
+    Route::get('users/{user}', UserShow::class)->middleware('ability:users.view')->name('users.show');
+    Route::get('users/{user}/edit', UserEdit::class)->middleware('ability:users.edit')->name('users.edit');
 
     // Client routes
     Route::get('clients', ClientIndex::class)->name('clients.index');
@@ -197,9 +218,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)->name('vendors.duplicates');
 
     // Project routes
-    Route::get('projects', ProjectIndex::class)->name('projects.index');
-    Route::get('projects/create', ProjectCreate::class)->name('projects.create');
-    Route::get('projects/{project}/edit', ProjectEdit::class)->name('projects.edit');
+    // The project list and its own record. The per-project screens are guarded
+    // by EnsureScopeIsVisible, which covers every route carrying a project.
+    Route::get('projects', ProjectIndex::class)->middleware('ability:projects.view')->name('projects.index');
+    Route::get('projects/create', ProjectCreate::class)->middleware('ability:projects.create')->name('projects.create');
+    Route::get('projects/{project}/edit', ProjectEdit::class)->middleware('ability:project.edit,project')->name('projects.edit');
 
     // Project section routes (new navigation structure)
     Route::get('projects/{project}', ProjectOverview::class)->name('projects.overview');
@@ -332,9 +355,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('reports/payment-details/pdf/view', [PaymentDetailReportPdfController::class, 'stream'])->name('reports.payment-details.pdf.view');
     });
 
-    // System Settings + Cost Code Templates (admin only)
+    // System Settings moved off the `admin` middleware onto its ability (M3);
+    // the cost code templates below stay admin-only until M6.
+    Route::get('system-settings', SettingsIndex::class)
+        ->middleware('ability:settings.view')
+        ->name('system-settings.index');
+
     Route::middleware('admin')->group(function () {
-        Route::get('system-settings', SettingsIndex::class)->name('system-settings.index');
 
         Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');
         Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
@@ -395,6 +422,15 @@ Route::middleware(['auth'])->group(function () {
     // Document repository (file repository for projects and job sites)
     Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');
     Route::get('job-sites/{jobSite}/documents', JobSiteDocuments::class)->name('jobsites.documents');
+
+    // Who is on a project or a job site, and what they may do there. Guarded
+    // by the ability on that record rather than a role (docs/permissions-module.md).
+    Route::get('projects/{project}/team', ProjectTeam::class)
+        ->middleware('ability:team.view,project')
+        ->name('projects.team');
+    Route::get('job-sites/{jobSite}/team', JobSiteTeam::class)
+        ->middleware('ability:team.view,jobSite')
+        ->name('jobsites.team');
     Route::get('documents/{document}/download', [DocumentFileController::class, 'download'])->name('documents.download');
     Route::get('documents/{document}/preview', [DocumentFileController::class, 'preview'])->name('documents.preview');
     Route::get('documents/{document}/versions/{version}/download', [DocumentFileController::class, 'downloadVersion'])

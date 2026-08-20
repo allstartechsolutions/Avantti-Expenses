@@ -2,18 +2,28 @@
 
 namespace App\Livewire\SystemSettings;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\ModuleAccess;
 use App\Models\ModuleAccessHistory;
 use Livewire\Component;
 
 class ModuleAccessSettings extends Component
 {
+    use AuthorizesAbility;
+
+    public function mount(): void
+    {
+        $this->authorizeAbility('settings.view');
+    }
+
     public bool $showHistoryModal = false;
     public ?int $historyModuleId = null;
     public array $historyEntries = [];
 
     public function toggle(int $id): void
     {
+        $this->authorizeAbility('settings.manage_modules');
+
         $module = ModuleAccess::findOrFail($id);
 
         if ($module->is_core) {

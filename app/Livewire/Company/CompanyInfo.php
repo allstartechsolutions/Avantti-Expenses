@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Company;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Company;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class CompanyInfo extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads;
 
     public ?Company $company = null;
@@ -51,6 +54,8 @@ class CompanyInfo extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('company.view');
+
         // Load existing company if it exists (should only be one)
         $this->company = Company::first();
 
@@ -91,6 +96,8 @@ class CompanyInfo extends Component
 
     public function removeExistingLogo()
     {
+        $this->authorizeAbility('company.edit');
+
         if ($this->company && $this->company->logo) {
             Storage::disk('public')->delete($this->company->logo);
             $this->company->logo = null;
@@ -102,6 +109,8 @@ class CompanyInfo extends Component
 
     public function saveCompany()
     {
+        $this->authorizeAbility('company.edit');
+
         $this->validate();
 
         if ($this->company) {

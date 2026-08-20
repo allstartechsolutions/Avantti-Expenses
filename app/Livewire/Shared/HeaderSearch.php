@@ -52,6 +52,9 @@ class HeaderSearch extends Component
         $like = $this->likeTerm($term);
 
         return Project::query()
+            // N9: the search was the easiest way to enumerate records somebody
+            // was never meant to see.
+            ->visibleTo(auth()->user())
             ->with('client:id,company_name')
             ->select('id', 'client_id', 'project_name', 'street', 'city', 'state', 'status')
             ->where(function ($query) use ($like) {
@@ -76,6 +79,7 @@ class HeaderSearch extends Component
         $like = $this->likeTerm($term);
 
         return JobSite::query()
+            ->visibleTo(auth()->user())
             ->with('project:id,project_name')
             ->select('id', 'project_id', 'job_site_name', 'street', 'city', 'state', 'status')
             ->where(function ($query) use ($like) {

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\ProjectStatus;
 use App\Models\ChangeOrder;
 use App\Models\Client;
@@ -16,6 +17,8 @@ use Livewire\WithPagination;
 
 class ProjectIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -57,6 +60,8 @@ class ProjectIndex extends Component
 
     public function confirmDeleteProject($projectId)
     {
+        $this->authorizeAbility('projects.delete');
+
         $project = Project::withCount([
             'jobSites',
             'expenses',
@@ -169,6 +174,8 @@ class ProjectIndex extends Component
     public function render()
     {
         $projects = Project::query()
+            // Confined people see only the projects they are on.
+            ->visibleTo(auth()->user())
             ->with(['client', 'createdBy', 'jobSites'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {

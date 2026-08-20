@@ -7,7 +7,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $firstUserId = DB::table('users')->orderBy('id')->value('id') ?? 1;
+        // module_access.created_by is a non-nullable foreign key, so there is
+        // nobody to attribute these rows to on a database with no users yet —
+        // a fresh install before the setup wizard, or the test suite. Skipping
+        // is safe: ModuleAccess::isEnabled() treats a missing row as enabled,
+        // and the settings screen writes the row when a module is first toggled.
+        $firstUserId = DB::table('users')->orderBy('id')->value('id');
+
+        if ($firstUserId === null) {
+            return;
+        }
+
         $now = now();
 
         $modules = config('modules');

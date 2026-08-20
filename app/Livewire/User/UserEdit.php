@@ -2,7 +2,10 @@
 
 namespace App\Livewire\User;
 
+use App\Enums\AccessScope;
 use App\Enums\UserStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\PermissionAudit;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Password;
@@ -11,12 +14,21 @@ use Livewire\Component;
 
 class UserEdit extends Component
 {
+    use AuthorizesAbility;
+
     public User $user;
     public $name = '';
     public $email = '';
     public $phone = '';
     public $role_id = '';
     public $status = '';
+
+    /**
+     * Which projects this person can reach: '' means follow their role, which
+     * is the normal case and what everybody was migrated to. The other two are
+     * a deliberate override on this one person.
+     */
+    public string $accessScope = '';
 
     protected function rules()
     {
@@ -26,6 +38,7 @@ class UserEdit extends Component
             'phone' => 'nullable|string|max:20',
             'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:active,inactive,suspended',
+            'accessScope' => 'nullable|in:,company,assigned',
         ];
     }
 
@@ -37,12 +50,16 @@ class UserEdit extends Component
             'phone' => __('phone number'),
             'role_id' => __('role'),
             'status' => __('status'),
+            'accessScope' => __('project access'),
         ];
     }
 
     public function mount(User $user)
     {
+        $this->authorizeAbility('users.edit');
+
         $this->user = $user;
+        $this->accessScope = $user->access_scope?->value ?? '';
         $this->name = $user->name;
         $this->email = $user->email;
         $this->phone = $user->phone;
@@ -57,7 +74,17 @@ class UserEdit extends Component
 
     public function updateUser()
     {
+        $this->authorizeAbility('users.edit');
+
+        // Suspending or reactivating somebody is held apart from editing them:
+        // it is what stops a person working, not a change of details.
+        if ($this->status !== $this->user->status->value) {
+            $this->authorizeAbility('users.suspend');
+        }
+
         $this->validate();
+
+        $wasScope = $this->user->effectiveAccessScope();
 
         $this->user->update([
             'name' => $this->name,
@@ -65,7 +92,30 @@ class UserEdit extends Component
             'phone' => $this->phone,
             'role_id' => $this->role_id,
             'status' => $this->status,
+            // A guest is confined by definition and has no say in the matter.
+            'access_scope' => $this->user->is_guest
+                ? AccessScope::ASSIGNED
+                : ($this->accessScope === '' ? null : $this->accessScope),
         ]);
+
+        $this->user->refresh();
+
+        if ($wasScope !== $this->user->effectiveAccessScope()) {
+            PermissionAudit::record(
+                subjectType: 'user',
+                subjectId: $this->user->id,
+                action: 'scope-changed',
+                summary: __(':name — project access changed to :scope', [
+                    'name' => $this->user->name,
+                    'scope' => __($this->user->effectiveAccessScope()->label()),
+                ]),
+                subjectUserId: $this->user->id,
+                before: ['scope' => $wasScope->value],
+                after: ['scope' => $this->user->effectiveAccessScope()->value],
+            );
+        }
+
+        app(\App\Services\PermissionResolver::class)->flush();
 
         session()->flash('message', __('User updated successfully!'));
 

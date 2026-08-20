@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AccessScope;
+use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -32,6 +34,15 @@ class UserFactory extends Factory
             'two_factor_secret' => Str::random(10),
             'two_factor_recovery_codes' => Str::random(10),
             'two_factor_confirmed_at' => now(),
+
+            // The columns have database defaults, but a factory model is never
+            // reloaded, so without these a fresh user is inactive in memory.
+            'status' => UserStatus::ACTIVE,
+            'is_guest' => false,
+
+            // Null on purpose: a user follows their role's scope unless
+            // somebody deliberately overrides it on the user record.
+            'access_scope' => null,
         ];
     }
 

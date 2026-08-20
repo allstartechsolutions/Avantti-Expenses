@@ -304,21 +304,31 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="flex items-center justify-end space-x-4 py-6">
-                <x-ui.button
-                    variant="secondary"
-                    href="{{ route('dashboard') }}">
-                    {{ __('Cancel') }}
-                </x-ui.button>
-                <x-ui.button
-                    type="submit"
-                    variant="primary"
-                    icon="save"
-                    wire:loading.attr="disabled"
-                    wire:loading.class="opacity-50">
-                    <span wire:loading.remove>{{ $company ? __('Update Company') : __('Save Company') }}</span>
-                    <span wire:loading>{{ $company ? __('Updating...') : __('Saving...') }}</span>
-                </x-ui.button>
+            <div class="flex flex-wrap items-center justify-between gap-4 py-6">
+                @cannot('company.edit')
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                        {{ __('You can see the company details but not change them.') }}
+                    </p>
+                @endcannot
+
+                <div class="flex items-center justify-end space-x-4 ml-auto">
+                    <x-ui.button
+                        variant="secondary"
+                        href="{{ route('dashboard') }}">
+                        {{ __('Cancel') }}
+                    </x-ui.button>
+                    @can('company.edit')
+                        <x-ui.button
+                            type="submit"
+                            variant="primary"
+                            icon="save"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50">
+                            <span wire:loading.remove>{{ $company ? __('Update Company') : __('Save Company') }}</span>
+                            <span wire:loading>{{ $company ? __('Updating...') : __('Saving...') }}</span>
+                        </x-ui.button>
+                    @endcan
+                </div>
             </div>
         </form>
 </div>

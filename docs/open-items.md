@@ -8,8 +8,9 @@ its own file (index at the bottom).
 
 ## 1. State of the repo
 
-- **`main` is at `5d05f97` and the working tree is clean.** Everything described in this file is
-  committed. The quotation chain, the document repository, the meetings module, the documentation
+- **The working tree is NOT clean.** The permissions module (engine + three module passes) is
+  built and uncommitted — see §1a below and `docs/permissions-module.md`. Everything else
+  described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
   library and the cost code / change order work are all in.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
   outstanding at the *phase* level — every screen that exists, works.
@@ -25,6 +26,30 @@ its own file (index at the bottom).
   the notification log stops anyone being mailed twice.
 - **Process rules (user-set):** never commit, never merge, never push — the user does all three.
   Leave finished work in the working tree and report it.
+
+### 1a. Permissions module — in progress, uncommitted (2026-08-20)
+
+The whole of it is in the working tree and nothing is committed. It is safe to deploy as it
+stands: every module that has not had its pass keeps its old rules exactly.
+
+- **Where it is:** engine complete (E1–E4); passes **M1** Access & Users, **M2** Project &
+  Job Site shell, **M3** Company & Settings done. **7 of 30 areas enforced.**
+- **What to read:** `docs/permissions-module-plan.md` for the design and the remaining pass
+  order; `docs/permissions-module.md` for what is actually built, step by step.
+- **Deploy:** `php artisan migrate --force` then **`php artisan permissions:sync`** — the
+  second one matters, it seeds templates and hands new areas to existing roles.
+- **New migrations:** 10 (`2026_08_20_140000` … `2026_08_20_150001`), all additive.
+- **Tests:** 211 in `tests/Feature/Permissions/`. Three failures elsewhere in the suite are
+  stale Laravel scaffold tests that predate this work (`RegistrationTest` ×2 — the public
+  `register` route was removed from this app — and `ExampleTest`, which expects `/` to
+  return 200 where it redirects to login).
+- **Next:** **M4 — Expenses**, the first pass that changes what a confined member sees
+  *inside* a project.
+- **Two standing rules the owner set during this work:**
+  1. Every report says what to expect **and what still will not work** — they test straight
+     after reading.
+  2. A control whose action would be refused is not rendered; and every destructive action
+     needs a guard, including ones that never had an admin check.
 
 ---
 

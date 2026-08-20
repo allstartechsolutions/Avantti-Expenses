@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\JobSiteStatus;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Livewire\Concerns\ManagesChangeOrders;
@@ -25,6 +26,8 @@ use Livewire\WithFileUploads;
 
 class ProjectShow extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads, AuthorizesAdmin, ManagesChangeOrders;
 
     public Project $project;
@@ -160,6 +163,8 @@ class ProjectShow extends Component
 
     public function openJobSiteForm()
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'status', 'editingJobSite']);
 
         // Pre-populate with project data
@@ -181,6 +186,8 @@ class ProjectShow extends Component
 
     public function editJobSite($jobSiteId)
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $jobSite = JobSite::findOrFail($jobSiteId);
 
         $this->editingJobSite = $jobSite->id;
@@ -204,6 +211,8 @@ class ProjectShow extends Component
 
     public function saveJobSite()
     {
+        $this->authorizeAbility('project.edit', $this->project);
+
         $this->validate();
 
         if ($this->editingJobSite) {
@@ -1090,6 +1099,8 @@ class ProjectShow extends Component
 
     public function confirmDeleteProject()
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $project = Project::withCount([
             'jobSites',
             'expenses',
@@ -1195,6 +1206,8 @@ class ProjectShow extends Component
 
     public function confirmDeleteJobSite($jobSiteId)
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $jobSite = JobSite::withCount([
             'expenses',
             'changeOrders',
@@ -1218,6 +1231,8 @@ class ProjectShow extends Component
 
     public function deleteJobSite()
     {
+        $this->authorizeAbility('projects.delete', $this->project);
+
         $this->authorizeAdmin();
         $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
 

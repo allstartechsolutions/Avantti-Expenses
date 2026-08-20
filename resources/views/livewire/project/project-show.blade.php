@@ -13,20 +13,22 @@
                     icon="arrow-left">
                     {{ __('Back to Projects') }}
                 </x-ui.button>
+                @can('project.edit', $project)
                 <x-ui.button
                     variant="primary"
                     href="{{ route('projects.edit', $project->id) }}"
                     icon="edit">
                     {{ __('Edit Project') }}
                 </x-ui.button>
-                @admin
+                @endcan
+                @can('projects.delete')
                 <x-ui.button
                     variant="danger"
                     wire:click="confirmDeleteProject"
                     icon="trash">
                     {{ __('Delete') }}
                 </x-ui.button>
-                @endadmin
+                @endcan
             </div>
         </div>
     </div>
@@ -302,13 +304,15 @@
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Quick Actions') }}</h3>
                         </div>
                         <div class="p-6 space-y-3">
-                            <x-ui.button
-                                variant="secondary"
-                                class="w-full justify-center"
-                                href="{{ route('projects.edit', $project->id) }}"
-                                icon="edit">
-                                {{ __('Edit Project') }}
-                            </x-ui.button>
+                            @can('project.edit', $project)
+                                <x-ui.button
+                                    variant="secondary"
+                                    class="w-full justify-center"
+                                    href="{{ route('projects.edit', $project->id) }}"
+                                    icon="edit">
+                                    {{ __('Edit Project') }}
+                                </x-ui.button>
+                            @endcan
 
                             @if($project->email)
                                 <a href="mailto:{{ $project->email }}" class="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-500/50 border border-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-600">
@@ -377,12 +381,14 @@
                                 </svg>
                             </div>
                         </div>
-                        <x-ui.button
-                            variant="primary"
-                            wire:click="openJobSiteForm"
-                            icon="plus">
-                            {{ __('Add Job Site') }}
-                        </x-ui.button>
+                        @can('project.edit', $project)
+                            <x-ui.button
+                                variant="primary"
+                                wire:click="openJobSiteForm"
+                                icon="plus">
+                                {{ __('Add Job Site') }}
+                            </x-ui.button>
+                        @endcan
                     </div>
                 @endif
 
@@ -747,14 +753,16 @@
                                 </svg>
                                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
                                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
-                                <div class="mt-6">
-                                    <x-ui.button
-                                        variant="primary"
-                                        wire:click="openJobSiteForm"
-                                        icon="plus">
-                                        {{ __('Add Job Site') }}
-                                    </x-ui.button>
-                                </div>
+                                @can('project.edit', $project)
+                                    <div class="mt-6">
+                                        <x-ui.button
+                                            variant="primary"
+                                            wire:click="openJobSiteForm"
+                                            icon="plus">
+                                            {{ __('Add Job Site') }}
+                                        </x-ui.button>
+                                    </div>
+                                @endcan
                             </div>
                         </div>
                     @endif

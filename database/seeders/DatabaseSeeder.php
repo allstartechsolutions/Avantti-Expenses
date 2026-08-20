@@ -32,5 +32,10 @@ class DatabaseSeeder extends Seeder
                 'role_id' => $adminRole?->id,
             ]
         );
+
+        // Runs last: the permission templates and role abilities are seeded
+        // from config/permissions.php, and the backfill needs the roles and
+        // any projects to exist first. Same code as `php artisan permissions:sync`.
+        $this->call(PermissionSeeder::class);
     }
 }

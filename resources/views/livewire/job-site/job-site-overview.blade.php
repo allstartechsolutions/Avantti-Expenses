@@ -1,11 +1,13 @@
 <x-jobsite-layout :jobSite="$jobSite" active="overview" :title="__('Job Site Details')">
     <x-slot:actions>
-        <x-ui.button
-            variant="danger"
-            wire:click="confirmDeleteJobSite"
-            icon="trash">
-            {{ __('Delete') }}
-        </x-ui.button>
+        @can('projects.delete', $jobSite)
+            <x-ui.button
+                variant="danger"
+                wire:click="confirmDeleteJobSite"
+                icon="trash">
+                {{ __('Delete') }}
+            </x-ui.button>
+        @endcan
     </x-slot:actions>
 
     <!-- Summary Cards -->

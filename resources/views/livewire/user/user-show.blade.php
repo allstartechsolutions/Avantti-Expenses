@@ -122,6 +122,9 @@
                 </div>
             </div>
 
+            <!-- Access: what this person can actually reach -->
+            @include('livewire.user.partials.access-panel')
+
             <!-- Account Details -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">

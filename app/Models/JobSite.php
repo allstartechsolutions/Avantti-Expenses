@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\PermissionScope;
 use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\JobSiteStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class JobSite extends Model
+class JobSite extends Model implements PermissionScope
 {
     use HasFormattedPhone, HasFactory;
 
@@ -56,6 +59,60 @@ class JobSite extends Model
     /**
      * Get the project that owns this job site
      */
+    /**
+     * Only the job sites this person may see: the ones they are on, and every
+     * site of a project they are on — a project membership cascades down.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->is_admin || ! $user->isConfined()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($user) {
+            $query
+                ->whereIn('id', Membership::query()
+                    ->select('scopeable_id')
+                    ->where('user_id', $user->id)
+                    ->active()
+                    ->where('scopeable_type', static::class))
+                ->orWhereIn('project_id', Membership::query()
+                    ->select('scopeable_id')
+                    ->where('user_id', $user->id)
+                    ->active()
+                    ->where('scopeable_type', Project::class));
+        });
+    }
+
+    /** A job site sits inside its project, whose members reach it too. */
+    public function parentScope(): ?Model
+    {
+        return $this->relationLoaded('project') ? $this->project : Project::find($this->project_id);
+    }
+
+    public function scopeLevel(): string
+    {
+        return 'job_site';
+    }
+
+    public function scopeLabel(): string
+    {
+        return (string) $this->job_site_name;
+    }
+
+    /**
+     * The people added to this job site specifically. A membership here
+     * overrides the parent project's for this site — specific beats general.
+     */
+    public function memberships(): MorphMany
+    {
+        return $this->morphMany(Membership::class, 'scopeable');
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

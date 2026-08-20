@@ -6,14 +6,16 @@
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Projects') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your projects') }}</p>
             </div>
-            <div>
-                <x-ui.button
-                    variant="primary"
-                    href="{{ route('projects.create') }}"
-                    icon="plus">
-                    {{ __('Add Project') }}
-                </x-ui.button>
-            </div>
+            @can('projects.create')
+                <div>
+                    <x-ui.button
+                        variant="primary"
+                        href="{{ route('projects.create') }}"
+                        icon="plus">
+                        {{ __('Add Project') }}
+                    </x-ui.button>
+                </div>
+            @endcan
         </div>
     </div>
 
@@ -211,18 +213,22 @@
                                             href="{{ route('projects.overview', $project->id) }}"
                                             icon="eye"
                                             title="{{ __('View') }}" />
-                                        <x-ui.icon-button
-                                            variant="secondary"
-                                            size="sm"
-                                            href="{{ route('projects.edit', $project->id) }}"
-                                            icon="edit"
-                                            title="{{ __('Edit') }}" />
-                                        <x-ui.icon-button
-                                            variant="danger"
-                                            size="sm"
-                                            wire:click="confirmDeleteProject({{ $project->id }})"
-                                            icon="trash"
-                                            title="{{ __('Delete') }}" />
+                                        @can('project.edit', $project)
+                                            <x-ui.icon-button
+                                                variant="secondary"
+                                                size="sm"
+                                                href="{{ route('projects.edit', $project->id) }}"
+                                                icon="edit"
+                                                title="{{ __('Edit') }}" />
+                                        @endcan
+                                        @can('projects.delete')
+                                            <x-ui.icon-button
+                                                variant="danger"
+                                                size="sm"
+                                                wire:click="confirmDeleteProject({{ $project->id }})"
+                                                icon="trash"
+                                                title="{{ __('Delete') }}" />
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -256,14 +262,16 @@
                     @endif
                 </p>
                 @if(!$search && !$statusFilter && !$clientFilter)
-                    <div class="mt-6">
-                        <x-ui.button
-                            variant="primary"
-                            href="{{ route('projects.create') }}"
-                            icon="plus">
-                            {{ __('Add Project') }}
-                        </x-ui.button>
-                    </div>
+                    @can('projects.create')
+                        <div class="mt-6">
+                            <x-ui.button
+                                variant="primary"
+                                href="{{ route('projects.create') }}"
+                                icon="plus">
+                                {{ __('Add Project') }}
+                            </x-ui.button>
+                        </div>
+                    @endcan
                 @endif
             </div>
         @endif

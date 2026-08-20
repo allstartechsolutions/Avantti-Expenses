@@ -4,12 +4,20 @@ namespace App\Livewire\User;
 
 use App\Enums\UserStatus;
 use App\Models\Role;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 
 class UserCreate extends Component
 {
+    use AuthorizesAbility;
+
+    public function mount(): void
+    {
+        $this->authorizeAbility('users.create');
+    }
+
     public $name = '';
     public $email = '';
     public $phone = '';
