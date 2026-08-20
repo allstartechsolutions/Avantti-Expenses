@@ -208,6 +208,43 @@ class MeetingAgendaService
         });
     }
 
+    /**
+     * Put a set of siblings in the order given.
+     *
+     * Only ids that really are siblings on this meeting are honoured, and the
+     * order is rewritten from what the server finds rather than trusted from
+     * the browser — a dropped row must not be able to move somebody else's
+     * agenda.
+     *
+     * @param  array<int, int|string>  $orderedIds
+     */
+    public function reorder(Meeting $meeting, array $orderedIds, ?int $parentId = null): void
+    {
+        $this->assertBuildable($meeting);
+
+        $siblings = MeetingItem::where('meeting_id', $meeting->id)
+            ->where('parent_id', $parentId)
+            ->pluck('id')
+            ->all();
+
+        $ordered = collect($orderedIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => in_array($id, $siblings, true))
+            ->unique()
+            ->values();
+
+        // Anything the browser left out keeps its place at the end, so a stale
+        // page cannot silently drop a line off the agenda.
+        $missing = collect($siblings)->reject(fn (int $id) => $ordered->contains($id));
+        $final = $ordered->concat($missing);
+
+        DB::transaction(function () use ($final) {
+            foreach ($final as $position => $id) {
+                MeetingItem::whereKey($id)->update(['position' => $position]);
+            }
+        });
+    }
+
     // =========================================================================
     // INTERNALS
     // =========================================================================

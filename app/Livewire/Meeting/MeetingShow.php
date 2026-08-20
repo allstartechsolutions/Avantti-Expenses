@@ -168,9 +168,12 @@ class MeetingShow extends Component
 
     public function setAttendance(int $attendeeId, string $attendance): void
     {
-        abort_unless($this->isEditable() && in_array($attendance, ['present', 'absent', 'excused'], true), 403);
+        abort_unless($this->isEditable() && in_array($attendance, ['present', 'absent', 'excused', ''], true), 403);
 
-        $this->meeting->attendees()->findOrFail($attendeeId)->update(['attendance' => $attendance]);
+        // Pressing the marked one again clears it, so a mis-click can be undone
+        // rather than leaving the record asserting something.
+        $this->meeting->attendees()->findOrFail($attendeeId)
+            ->update(['attendance' => $attendance ?: null]);
 
         $this->meeting->load('attendees.user');
         unset($this->counters);

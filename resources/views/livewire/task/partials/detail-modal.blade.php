@@ -106,6 +106,22 @@
                                 {{ __('Cancel Task') }}
                             </x-ui.button>
                         @endif
+
+                        @if($me?->is_admin)
+                            @if($task->canDelete($me))
+                                <x-ui.button variant="ghost" size="sm" icon="trash"
+                                             wire:click="deleteTask({{ $task->id }})"
+                                             wire:confirm="{{ __('Delete :code for good? Its notes, files and sub-tasks go with it, and its lines come off any agenda still being prepared. Cancelling is usually the better answer.', ['code' => $task->code()]) }}"
+                                             class="!text-red-600 dark:!text-red-400">
+                                    {{ __('Delete') }}
+                                </x-ui.button>
+                            @else
+                                <span class="rounded-lg bg-slate-50 dark:bg-slate-700/40 px-3 py-1.5 text-xs text-slate-500 dark:text-slate-400"
+                                      title="{{ $task->publishedMinutes()->pluck('number')->implode(', ') }}">
+                                    {{ __('In a published minute — cancel it rather than delete it.') }}
+                                </span>
+                            @endif
+                        @endif
                     </div>
                 </div>
             </div>

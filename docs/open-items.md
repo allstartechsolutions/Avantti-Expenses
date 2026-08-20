@@ -253,3 +253,5 @@ observations, the options and the seven decisions needed.
 | What shipped 2026-08-17/18 | `docs/changelog-2026-08-18.md` |
 | What shipped 2026-08-19 (header search, cost code dialogs) | `docs/changelog-2026-08-19.md` |
 | Header search, as built | `docs/header-search.md` |
+| **File repository (documents module) — plan + build log, as built** | `docs/file-repository-plan.md` |
+| Cloudflare R2 setup the repository needs (bucket, token, CORS) | `docs/deployment-cloudflare-r2.md` |

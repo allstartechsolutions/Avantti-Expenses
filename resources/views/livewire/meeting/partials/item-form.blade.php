@@ -21,6 +21,16 @@
         </p>
     @endif
 
+    @if($errors->any())
+        <div class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-800 dark:bg-red-900/20">
+            <ul class="space-y-0.5 text-sm text-red-700 dark:text-red-400">
+                @foreach($errors->all() as $message)
+                    <li>{{ $message }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
         <div class="md:col-span-1">
             <label class="{{ $label }}">{{ __('Type') }}</label>
@@ -75,7 +85,13 @@
 
             <div class="md:col-span-2">
                 <label class="{{ $label }}">{{ __('Due Date') }} <span class="text-red-500">*</span></label>
-                <input type="date" wire:model="item_task_due_date" class="{{ $field }}">
+                <input type="date" wire:model="item_task_due_date"
+                       class="{{ $field }} {{ $errors->has('item_task_due_date') ? 'border-red-400 dark:border-red-500' : '' }}">
+                @if($editingLine?->task && ! $editingLine->task->due_date)
+                    <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        {{ __('This one has never had a date. Give it one — the minute cannot be published without it.') }}
+                    </p>
+                @endif
                 @error('item_task_due_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
             </div>
 

@@ -1123,3 +1123,34 @@ by a command would have notified nobody — and the tests saw nothing sent. The 
 inline when running in console and defers only for real requests.
 
 **Deploy:** `php artisan migrate` (two additive migrations), and the scheduler must be running.
+
+### Phase 5e — two defects in editing an agenda line (2026-08-20)
+
+Reported by the owner: *"it should not allow a pendência to be saved without a date but it allows,
+and when we go back and try to edit it does not save."* Both halves were real, and they were the
+same story from two ends.
+
+**How a dated-less action item gets onto an agenda.** Not through the form — that has always
+required a date. Through **adding an existing task**: a task raised on a project page or in My
+Tasks has an *optional* due date, and carrying it forward or adding it to a location turns it into
+an action line that has never had one. That is the "it allows" half.
+
+**Why it then could not be edited.** The edit form requires a date for an action item, so *every*
+save of that line was refused — renaming it, changing its scope, anything. The error was rendered
+under the date field, well down the form, so it read as "it does not save".
+
+Fixed at three points:
+
+- **The agenda flags it.** A line whose task has no date carries a **no date** badge, so the hole
+  is visible while the agenda is being built rather than at publication.
+- **The form says why.** A summary of every refusal sits at the top of the form, the date field is
+  outlined in red, and when the task never had a date it says so in as many words. The form stays
+  open with what was typed still in it, so nothing is lost.
+- **The rule stays.** The date is still required — that is what the owner asked for, and the
+  publish gate depends on it. Giving it a date saves the whole edit and clears the flag.
+
+**A second defect found while reproducing it.** Editing a line whose task is **closed** renamed the
+agenda line and silently dropped the task changes: the item said "Renamed", the task did not, and
+nothing told the user. Title, owner, date and location all belong to the task, so that edit now
+refuses with *"Task #6 is completed, so its title, owner and date cannot be changed. Reopen it
+first."* rather than half-saving.

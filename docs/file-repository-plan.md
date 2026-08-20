@@ -1,6 +1,7 @@
 # File Repository (Documents Module) — Plan
 
-**Status: phases 0–4 built (2026-08-19), not yet committed.** See §13 for the build log.
+**Status: complete — phases 0–8 built and reviewed (2026-08-19), with the preview stage added
+2026-08-20.** See §13 for the build log.
 
 > **2026-08-19 — the storage layer is now shared.** `DocumentStorageService` works on the
 > `App\Contracts\StoredFile` contract rather than on `DocumentVersion`, and the presign /
@@ -74,10 +75,11 @@ Consequences to plan for:
   ordinary Livewire chunked upload, capped by PHP limits (default 100 MB), and the upload panel
   says so plainly instead of failing at 90 %.
 
-Downloads are the mirror image: a **presigned GET URL valid ~5 minutes**
-(`Storage::temporaryUrl()`), with `response-content-disposition` set for download vs inline
-preview. Bytes never pass through PHP, and R2 charges **no egress**, which is the main reason R2
-beats S3 here.
+Downloads are the mirror image: a **presigned GET URL** (`Storage::temporaryUrl()`) with
+`response-content-disposition` set for download vs inline preview. The window was planned at ~5
+minutes and shipped at **60 seconds** at the owner's choice — see the bearer-access note in §13.
+Bytes never pass through PHP, and R2 charges **no egress**, which is the main reason R2 beats S3
+here.
 
 ---
 
@@ -103,20 +105,29 @@ directly, only `config('documents.disk')`.
 ],
 ```
 
-`config/documents.php` (new):
+**As built**, `config/documents.php`:
 
 | Key | Env | Default | Meaning |
 |---|---|---|---|
 | `disk` | `DOCUMENTS_DISK` | `local` | `r2` in production installs |
 | `max_upload_bytes` | `DOCUMENTS_MAX_UPLOAD` | 5 GB (R2) / PHP limit (local) | Server-enforced cap |
 | `part_size` | — | 64 MB | Multipart part size |
-| `allowed_mimes` | — | see §3.2 | Extension + mime allowlist |
-| `presign_ttl` | — | 300 s | Download/preview URL lifetime |
-| `share_default_days` | — | 14 | Default share-link expiry |
-| `storage_quota_bytes` | `DOCUMENTS_QUOTA` | null | Optional per-install cap, surfaced in the UI |
+| `multipart_threshold` | — | 100 MB | Below it, one presigned `PUT` |
+| `presign_ttl` | `DOCUMENTS_PRESIGN_TTL` | **60 s** | Download/preview URL lifetime |
+| `retention_days` | `DOCUMENTS_RETENTION_DAYS` | 30 | How long the trash is kept before purge |
+| `stale_upload_hours` | — | 24 | When the prune command aborts an unfinished upload |
+| `share_default_days` | `DOCUMENTS_SHARE_DAYS` | 14 | Default share-link expiry |
+| `storage_quota_bytes` | `DOCUMENTS_QUOTA` | null | Optional per-install cap, enforced and surfaced in the UI |
+| `allowed_extensions` | — | see §3.2 | Extension ⇒ accepted mime types |
+| `blocked_extensions` | — | see §3.2 | Refused whatever the mime says |
 
-A `Documents::isCloudConfigured()` helper decides which upload path the UI offers. Bucket
-credentials are per install — each customer uses their own R2 bucket, documented in
+Everything is read through `App\Services\DocumentSettings`, never from `config()` directly:
+`disk()`, `isCloudConfigured()` (which upload path the UI offers), `maxUploadBytes()` (resolves
+PHP's `upload_max_filesize` / `post_max_size` on the local disk), `needsMultipart()`,
+`isAllowedFile()`, `acceptAttribute()`, `sanitizeFileName()`, `objectKey()`, `presignTtl()`,
+`storageQuotaBytes()` / `installUsedBytes()` / `wouldExceedQuota()`, and `formatBytes()`.
+
+Bucket credentials are per install — each customer uses their own R2 bucket, documented in
 `docs/deployment-cloudflare-r2.md` (written in phase 0).
 
 ### 3.2 Allowed types
@@ -179,11 +190,12 @@ Tags are global to the install (like cost codes), assigned per document.
 `allow_download` (bool), `max_downloads` (nullable), `download_count`, `revoked_at` (nullable),
 `created_by`, timestamps.
 
-### `document_activity`
+### `document_activities`
 `id`, `document_id`/`folder_id`/`share_id` (all nullable), `user_id` (nullable — public share
 access has no user), `action` (`uploaded`, `version_added`, `renamed`, `moved`, `recategorised`,
 `downloaded`, `previewed`, `deleted`, `restored`, `shared`, `share_revoked`, `share_accessed`),
-`ip_address`, `user_agent`, `context` (json, nullable), `created_at`.
+`ip_address`, `user_agent`, `context` (json, nullable), timestamps.
+Indexes `(document_id, created_at)` and `(action)`.
 This is what the detail view's History panel reads.
 
 Model deletion behaviour: **soft delete only.** Objects stay in R2 until an admin purges from a
@@ -256,15 +268,22 @@ else:
 ### Routes (`routes/web.php`)
 
 ```
-projects/{project}/documents              → Project\ProjectDocuments      projects.documents
-job-sites/{jobSite}/documents             → JobSite\JobSiteDocuments      jobsites.documents
-documents/{document}/download             → DocumentFileController@download
-documents/{document}/preview              → DocumentFileController@preview
-documents/{document}/versions/{v}/download→ DocumentFileController@downloadVersion
+projects/{project}/documents               → Project\ProjectDocuments      projects.documents
+job-sites/{jobSite}/documents              → JobSite\JobSiteDocuments      jobsites.documents
+documents/{document}/download              → DocumentFileController@download
+documents/{document}/preview               → DocumentFileController@preview
+documents/{document}/versions/{v}/download → DocumentFileController@downloadVersion
 documents/uploads/init|parts|complete|abort (POST) → DocumentUploadController
-s/{token}                                 → Share\SharedDocument (public, no auth)
-s/{token}/download                        → SharedDocumentController@download (public)
+
+Public, no auth, each one throttled and re-checking the link:
+s/{token}                                  → Share\SharedDocument            30/min
+s/{token}/view/{document?}                 → SharedDocumentController@view    60/min
+s/{token}/download/{document?}             → SharedDocumentController@download 30/min
 ```
+
+`view` is the inline route the public preview stage points at — the same file, served with an
+`inline` disposition, so a shared PDF can be read without downloading it. The optional
+`{document}` is for folder links, where one token covers many files.
 
 ### Module registration (`config/modules.php`)
 
@@ -280,7 +299,13 @@ already documented for `quotations`. Prefixes: `projects.documents`, `jobsites.d
 - `App\Livewire\Concerns\ManagesDocuments` — the shared trait carrying folder navigation, upload
   state, filters, rename/move/delete and the guards, so the two pages stay identical by
   construction (the pattern used by `ManagesQuotations` / `ManagesRequisitions`).
-- `App\Livewire\Shared\DocumentDetail` — the full-page detail modal.
+
+The detail view is **not** a component of its own: `ManagesDocuments` holds `viewingDocumentId`,
+`openDetail()` / `closeDetail()` and the `viewingDocument()` computed property, and every screen
+of the module is a partial under `resources/views/livewire/documents/partials/` — `browser`,
+`table`, `grid`, `toolbar`, `summary`, `empty-state`, `detail-modal`, `edit-modal`,
+`folder-modal`, `share-modal`, `upload-modal`. Both pages include the same partials, which is
+what keeps the two levels identical.
 
 ### Services / support
 
@@ -295,10 +320,22 @@ already documented for `quotations`. Prefixes: `projects.documents`, `jobsites.d
 
 ### Front end
 
-One Alpine component (`resources/js/document-uploader.js`) does the direct upload: drag-and-drop
-zone, per-file progress from `XMLHttpRequest.upload.onprogress`, parallel parts (3 at a time),
-per-part retry with backoff, cancel (fires `abort`), and a queue that survives navigating between
-folders on the same page. No new npm package.
+One Alpine component does the direct upload: drag-and-drop zone, per-file progress from
+`XMLHttpRequest.upload.onprogress`, parallel parts (3 at a time), per-part retry with backoff,
+cancel (fires `abort`), and a queue that survives navigating between folders on the same page.
+No new npm package.
+
+It lives in `resources/js/app.js` as the `createUploader` factory, registered twice —
+`documentUploader` for this module and `fileUploader` for anything else that stores a file
+(tasks, task notes, meetings). The transport is identical; what differs is only what `init()` is
+told to create and who is told when a file lands, and both come from the config object.
+
+Blade components of the module:
+
+- `<x-document-icon>` — the type icon.
+- `<x-document-category-badge>` — the coloured category chip.
+- `<x-document-preview>` — the preview stage and its controls (below), shared by the detail
+  modal and the public share page.
 
 ---
 
@@ -359,7 +396,10 @@ public page after expiry says the link expired rather than 404-ing.
 
 **Public share page** — the company logo, the file name, size and type, a preview where possible,
 one Download button, expiry shown. No app chrome, no navigation, no other document reachable
-from it. Rate-limited, `noindex`, and every access written to `document_activity`.
+from it. Rate-limited, `noindex`, and every access written to `document_activities`. It uses the
+same preview stage as the detail view, with full screen and open-in-new-tab but no hide-details
+control: there is no details column on that page to step aside. The recipient is usually opening
+this on a phone or a laptop with one browser tab, which is exactly the case full screen is for.
 
 All of it in both themes, every string through `__()` with the pt_BR added in the same change,
 and no horizontal scroll on a phone.
@@ -377,7 +417,7 @@ Built one page at a time; nothing starts before the previous piece is tested (pr
 | 2 | **Storage service & upload endpoints** | `DocumentStorageService`, `DocumentUploadController` (init/parts/complete/abort), local fallback, `PruneDocumentUploads`. Verified with a real multi-GB upload before any UI work. |
 | 3 | **Project page** | `ProjectDocuments` + `ManagesDocuments`: folders, list, filters, upload, download, preview, rename/move/delete. Tested end to end. |
 | 4 | **Job site page** | `JobSiteDocuments` — parity, same trait, same partials. |
-| 5 | **Detail modal & versions** | `DocumentDetail` with preview, full field dump, version history, restore, activity log. |
+| 5 | **Detail modal & versions** | The `detail-modal` partial with preview, full field dump, version history, restore, activity log. |
 | 6 | **Categories & tags** | Category chips, tag CRUD, filters, search across name/description/tags. |
 | 7 | **Share links** | Create/revoke, public page and download route, password, expiry, max downloads, rate limiting, activity. |
 | 8 | **Review & Improvements** | Mandatory (`CLAUDE.md`): full-module code review, N+1 sweep on the list query, both themes, both locales, phone, empty/partial/error states, long names, many rows, big files, expired shares; docs and pt_BR brought level; backlog in `docs/review-and-improvements.md` worked. |
@@ -446,6 +486,7 @@ Defaults taken while building; say the word and any of them changes.
 | 6 — Categories & tags | Mostly delivered with phase 3 (chips, filters, tag CRUD by typing); the remainder rides with phase 5. |
 | 7 — Share links | **Done.** Expiring public links for a document or a folder, with optional password, download limit, view-only mode, revocation and full logging. Folder links exclude internal documents. |
 | 8 — Review & Improvements | **Done.** Full-diff code review; six document-module findings fixed and re-verified; query counts, long names, dark mode and both locales checked; notations N7/N8 recorded. See `docs/review-and-improvements.md`. |
+| — Preview stage (2026-08-20) | **Done.** `<x-document-preview>` extracted from the detail modal and reused by the public share page: hide-details, native full screen and open-in-new-tab, with the three stage heights as class bindings. Esc in a full-screen preview no longer closes the modal behind it (`components/ui/modal.blade.php`). Ten strings added to both locales. |
 
 **Verified so far:** both pages render 200 in English and pt_BR at both levels; folder create / duplicate refusal / rename / delete (contents move up, including trashed documents); local upload of several files; blocked file types refused; new version keeps the old one; rename, move, recategorise, tag; delete → trash → restore → purge; the full activity trail; employee blocked from every write; internal documents hidden from employees; ids from another project or another location refused at every entry point; module toggle hides the nav and 403s the route.
 
@@ -473,5 +514,8 @@ settings — CORS and lifecycle rules have to be set in the dashboard or with an
 
 ## 14. Still to decide
 
-Nothing blocking. Raise before phase 7 if a share link should be admin-only rather than
-admin-or-manager, since it hands out access to someone with no login at all.
+Nothing blocking. Two things left open on purpose:
+
+- **Who may create a share link.** It is admin-or-manager today. It hands out access to someone
+  with no login at all, so it may want to be admin-only — the owner's call, not a bug.
+- **The deferred absorption of `attachments`** (§10), which is waiting on nothing in this module.

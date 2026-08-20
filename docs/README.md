@@ -67,6 +67,7 @@
 13. **[Contract Payments Dashboard](./contract-payments-dashboard.md)** - Batch payment processing with filters, change orders column with expandable details, CSV export with change order detail rows, PDF export (summary and detailed with payment history)
 14. **[Payment Batch Module](./payment-batch-module.md)** - Pre-payment staging system with draft/approve lifecycle, saved contract filters per batch, individual and bulk approval, automatic ContractPayment creation on approval
 15. **[Income Module](./income-module.md)** - Money coming in at project and job site level, received vs expected receivables, and distribution of one project-level income across several job sites
+16. **[File Repository (Documents)](./file-repository-plan.md)** - The document repository at project and job site level: folders, categories and tags, versioning with full history, a preview stage with full screen for PDFs, images and video, soft delete with a trash and a purge command, an activity trail on every action, and expiring public share links for clients and vendors. Files go straight from the browser to Cloudflare R2 (multi-gigabyte uploads, multipart with progress and retry), with a local-disk fallback for installs that have no bucket. Setup: **[Cloudflare R2 deployment](./deployment-cloudflare-r2.md)**
 
 ### Planned
 

@@ -3726,5 +3726,21 @@
     "Task priority: urgent": "Urgente",
     "Meeting status: draft": "Rascunho",
     "Meeting status: published": "Publicada",
-    "Meeting status: cancelled": "Cancelada"
+    "Meeting status: cancelled": "Cancelada",
+
+    "_meetings_m5_m8_m9": "---------- Blank attendance, deleting, drag to reorder ----------",
+    "Not recorded": "Não registrado",
+    ":count not marked|:count not marked": ":count sem marcação|:count sem marcação",
+    ":count person on the register is not marked present, absent or excused. The minute will record them as not recorded.|:count people on the register are not marked present, absent or excused. The minute will record them as not recorded.": ":count pessoa da lista não está marcada como presente, ausente ou justificada. A ata registrará como não registrado.|:count pessoas da lista não estão marcadas como presentes, ausentes ou justificadas. A ata registrará como não registrado.",
+    "Only an administrator can delete a task.": "Somente um administrador pode excluir uma tarefa.",
+    "This task appears in a published minute (:minutes), so it cannot be deleted. Cancel it instead — that keeps the record and stops it counting as open.": "Esta tarefa aparece em uma ata publicada (:minutes), então não pode ser excluída. Cancele-a — assim o registro é mantido e ela deixa de contar como em aberto.",
+    "Task :code deleted.": "Tarefa :code excluída.",
+    "Delete :code for good? Its notes, files and sub-tasks go with it, and its lines come off any agenda still being prepared. Cancelling is usually the better answer.": "Excluir :code definitivamente? As notas, os arquivos e as subtarefas vão junto, e as linhas dela saem de qualquer pauta ainda em preparação. Cancelar costuma ser a melhor opção.",
+    "In a published minute — cancel it rather than delete it.": "Está em uma ata publicada — cancele em vez de excluir.",
+    "Drag to reorder": "Arraste para reordenar",
+    "Task :code is :status, so its title, owner and date cannot be changed. Reopen it first.": "A tarefa :code está :status, então o título, o responsável e o prazo não podem ser alterados. Reabra-a primeiro.",
+    "You may not edit task :code.": "Você não pode editar a tarefa :code.",
+    "This one has never had a date. Give it one — the minute cannot be published without it.": "Esta nunca teve prazo. Defina um — a ata não pode ser publicada sem ele.",
+    "The minute cannot be published until this has a date.": "A ata não pode ser publicada enquanto isto não tiver prazo.",
+    "no date": "sem prazo"
 }

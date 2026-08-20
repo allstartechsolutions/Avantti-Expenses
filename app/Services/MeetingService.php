@@ -149,7 +149,8 @@ class MeetingService
                     'company' => $attendee->company,
                     'email' => $attendee->email,
                     'role' => $attendee->role,
-                    'attendance' => 'present',
+                    // The register comes across; who turned up does not.
+                    'attendance' => null,
                 ]);
             }
 
@@ -256,6 +257,7 @@ class MeetingService
             'awaiting' => $actions->filter(fn (MeetingItem $i) => $i->task?->status === 'ready')->count(),
             'present' => $meeting->attendees->where('attendance', 'present')->count(),
             'invited' => $meeting->attendees->count(),
+            'unmarked' => $meeting->attendees->whereNull('attendance')->count(),
         ];
     }
 }

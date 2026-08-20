@@ -184,9 +184,9 @@
                                     <div class="inline-flex rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden">
                                         @foreach(['present' => __('Present'), 'absent' => __('Absent'), 'excused' => __('Excused')] as $value => $text)
                                             <button type="button"
-                                                    wire:click="$set('attendees.{{ $index }}.attendance', '{{ $value }}')"
+                                                    wire:click="$set('attendees.{{ $index }}.attendance', '{{ ($attendee['attendance'] ?? '') === $value ? '' : $value }}')"
                                                     class="px-3 py-2 text-xs font-medium transition-colors
-                                                        {{ ($attendee['attendance'] ?? 'present') === $value
+                                                        {{ ($attendee['attendance'] ?? '') === $value
                                                             ? 'bg-[#3F5189] text-white'
                                                             : 'bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600' }}">
                                                 {{ $text }}

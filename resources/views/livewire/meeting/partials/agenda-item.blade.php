@@ -9,9 +9,33 @@
     ];
 @endphp
 
-<div class="flex items-start gap-3 px-6 py-3 {{ $depth > 0 ? 'pl-14 bg-slate-50/60 dark:bg-slate-700/20' : '' }}"
-     wire:key="item-{{ $item->id }}">
-    <span class="mt-0.5 w-10 shrink-0 font-mono text-sm text-slate-400 dark:text-slate-500">{{ $item->number() }}</span>
+<div class="flex items-start gap-3 px-6 py-3 transition-colors {{ $depth > 0 ? 'pl-14 bg-slate-50/60 dark:bg-slate-700/20' : '' }}"
+     wire:key="item-{{ $item->id }}"
+     @if($depth === 0)
+         data-agenda-row="{{ $item->id }}"
+         draggable="true"
+         x-on:dragstart="start({{ $item->id }})"
+         x-on:dragend="end()"
+         x-on:dragover.prevent="enter({{ $item->id }})"
+         x-on:dragleave="over === {{ $item->id }} && (over = null)"
+         x-on:drop.prevent="drop({{ $item->id }})"
+         :class="{
+             'opacity-40': dragging === {{ $item->id }},
+             'border-t-2 border-[#3F5189]': over === {{ $item->id }},
+         }"
+     @endif>
+    @if($depth === 0)
+        <span class="mt-1 shrink-0 cursor-grab text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400"
+              title="{{ __('Drag to reorder') }}">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <circle cx="7" cy="5" r="1.5"/><circle cx="13" cy="5" r="1.5"/>
+                <circle cx="7" cy="10" r="1.5"/><circle cx="13" cy="10" r="1.5"/>
+                <circle cx="7" cy="15" r="1.5"/><circle cx="13" cy="15" r="1.5"/>
+            </svg>
+        </span>
+    @endif
+
+    <span class="mt-0.5 {{ $depth === 0 ? 'w-8' : 'w-10' }} shrink-0 font-mono text-sm text-slate-400 dark:text-slate-500">{{ $item->number() }}</span>
 
     <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-2">
@@ -31,6 +55,13 @@
             @if($task)
                 <x-task-status-badge :task="$task" />
                 <x-task-priority-badge :task="$task" />
+            @endif
+
+            @if($item->type === 'action' && $task && ! $task->due_date)
+                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                      title="{{ __('The minute cannot be published until this has a date.') }}">
+                    {{ __('no date') }}
+                </span>
             @endif
 
             @if($item->isCarriedForward())

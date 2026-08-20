@@ -285,6 +285,20 @@ class MeetingAgenda extends Component
     // ORDERING AND REMOVING
     // =========================================================================
 
+    /**
+     * A row was dragged to a new place.
+     *
+     * The browser sends the order it now shows; the server keeps only the ids
+     * that belong to this agenda at that level.
+     *
+     * @param  array<int, int|string>  $orderedIds
+     */
+    public function reorderItems(array $orderedIds, ?int $parentId = null): void
+    {
+        $this->agenda()->reorder($this->meeting, $orderedIds, $parentId);
+        $this->refreshAgenda();
+    }
+
     public function moveItem(int $itemId, string $direction): void
     {
         $this->agenda()->move(MeetingItem::findOrFail($itemId), $direction);

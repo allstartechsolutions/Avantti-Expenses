@@ -178,16 +178,16 @@ Improvements** (see `docs/meetings-module-plan.md`).
 |---|---|---|
 | M1 | ~~Shared status words carry the wrong gender for tasks~~ | **done** 2026-08-20 — task and meeting screens have their own keys. See below. |
 | M2 | ~~`Task::isMeetingTracked()` and `hasSubtasks()` each run a query~~ | **done** 2026-08-20 — they use eager-loaded counts. See below. |
-| M3 | **Progress roll-up is only recalculated when something calls `refreshProgressFromSubtasks()`.** Phase 1 must call it from every path that moves a sub-task (progress, status, cancel, delete, re-parent), and the review has to prove no path was missed — a stale parent percentage on a screen the owner reads is worse than no percentage. | open |
+| M3 | ~~Progress roll-up is only recalculated when something calls it~~ | **done** 2026-08-20 — it is a model event now. See below. |
 | M4 | **`Meeting::openActionCount()` runs two queries and cannot be eager-loaded.** Acceptable on a detail page, wrong on the meetings index. Give the index a single grouped count during phase 3. | open |
 | M6 | **`MyTasks::stats()` runs four counting queries on every render**, and `groups()` a fifth. Fine for one person's list; when the All Tasks page (phase 8) reuses the shape it needs one grouped query instead. | open |
 | M7 | **A note can be edited for 30 minutes** (`TaskNote::canEdit()`) but no screen offers it yet — the timeline shows an "edited" marker that nothing can currently set. Either wire the edit control in phase 2 or drop the marker. | open |
-| M8 | **Deleting a task is not implemented.** The model has soft deletes and the plan gives admins a delete, but nothing calls it; cancel covers the real case. Decide in the review whether delete is wanted at all, and if so what happens to the meeting items that point at it. | open |
-| M9 | **The agenda reorders with up/down buttons, not drag-and-drop** as §5.2 of the plan describes. Buttons are keyboard-reachable, unambiguous on a phone (where dragging inside a scrolling list fights the scroll), and need no library. Decide in the review whether drag is worth adding on top — if so, keep the buttons as the accessible path. | open |
+| M8 | ~~Deleting a task is not implemented~~ | **done** 2026-08-20 — admin-only, refused for anything in a published minute. See below. |
+| M9 | ~~The agenda reorders with up/down buttons, not drag-and-drop~~ | **done** 2026-08-20 — drag added, buttons kept. See below. |
 | M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
 | M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
 | M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
-| M5 | **Attendance defaults to `present`.** Convenient when the list is seeded from the series and most people turn up, but it means an untouched attendance list records everyone as present, including people who were never there. Decide in phase 3 whether the default should be blank until the secretary marks the register. | open |
+| M5 | ~~Attendance defaults to `present`~~ | **done** 2026-08-20 — it starts blank. See below. |
 
 ### Noticed during phase 2 (change order editor)
 
@@ -328,3 +328,77 @@ Because the guard now reads three different ways, all three were tested against 
 parent with an open sub-task refuses **Ready** whether it was loaded plain, with counts, or with the
 relation; after the sub-task closes, all three allow it; and a task with no sub-tasks at all is
 allowed through the count shortcut.
+
+## M3 — the roll-up cannot be missed now (done 2026-08-20)
+
+**The worry was not today's code**, which called `refreshProgressFromSubtasks()` from every path
+that existed; it was that a path added later — an import, a command, a screen nobody has written —
+would forget, and a parent would show a stale percentage on a screen somebody trusts.
+
+So the roll-up moved out of `TaskService` and onto the model, as `saved`, `deleted` and `restored`
+events. The three explicit calls in the service were removed: they are the model's job now, and
+leaving them would have implied the model could not be relied on.
+
+Details worth keeping:
+
+- **Any save of a sub-task recomputes**, not only one that changed `progress` or `status`. Deciding
+  from `wasChanged()` left a parent stale after a save that touched something else — a `touch()`
+  proved it. One count per sub-task save is a fair price.
+- **Re-parenting moves two figures**, the parent it left and the parent it joined, read from
+  `getOriginal('parent_task_id')`.
+- **The parent is re-fetched** rather than used from the relation: one handed in from elsewhere may
+  carry a stale `subtasks` relation, which M2's count-preferring logic would then read.
+- **A recursion guard**, because recomputing saves the parent, which fires `saved` again. Two
+  levels would terminate on their own; the flag says so rather than relying on it.
+- **The last sub-task leaving** stops the percentage being derived and leaves the number where it
+  was, for the owner to set again — rather than silently dropping to zero.
+
+Verified against every way a sub-task can move, including paths that never touch the service:
+`TaskService::setProgress`, a plain Eloquent `update()`, cancelling a child (excluded from the
+average), adding a child, moving a child between parents (**both** parents corrected), deleting,
+restoring, and the last child leaving. One child update costs six queries with no recursion.
+
+**The one hole, stated plainly:** a query-builder mass update (`Task::where(…)->update(…)`) fires no
+model events, so a parent goes stale until the next save of any of its children heals it. Eloquent
+cannot observe those. Nothing in the application does it — checked — and if something ever needs to,
+it must call `refreshProgressFromSubtasks()` itself.
+
+## M5 — attendance starts blank (done 2026-08-20, owner's decision)
+
+`meeting_attendees.attendance` is nullable and defaults to null. A register seeded from the series,
+and a follow-up meeting's copied register, both arrive **unmarked**; the minute shows *"Not
+recorded"* rather than asserting somebody was there. Pressing the marked letter again clears it, so
+a mis-click can be undone instead of leaving the record saying something nobody checked.
+
+Publishing **warns** rather than blocks — *"3 people on the register are not marked…"* — because an
+incomplete register is a judgement call for the chair, not a broken minute. The attendance card
+shows the unmarked count while the meeting runs.
+
+Existing rows were left exactly as they were: they had already been marked, or were part of a
+published minute.
+
+## M8 — deleting a task (done 2026-08-20, owner's decision)
+
+Admin only, and **refused for any task a published minute mentions** — including through its
+sub-tasks. That was the open question, and the answer is that a published minute is a record: a
+reader following its link to "this task no longer exists" is a hole in it. The refusal names the
+minutes and points at **Cancel**, which keeps the history and stops the task counting as open. The
+screen shows that sentence in place of the delete button rather than offering something that will
+fail.
+
+Everywhere else it deletes: sub-tasks go with the parent, notes and assignees with them, **files are
+removed from storage** (they cost money and nothing in the app could reach them again), and lines
+come off any **draft** agenda, which is not a record yet. The task itself is soft-deleted, so an
+admin's mistake is recoverable in the database, and the deletion is written to the activity log
+with its reason.
+
+## M9 — drag to reorder (done 2026-08-20, owner's decision)
+
+Agenda rows are draggable, with a grip handle and a line showing where the row will land. **The
+up/down arrows stay** — they are the path that works with a keyboard and on a phone, where dragging
+inside a scrolling list fights the scroll. Plain HTML5 drag events, no library added.
+
+The browser sends the order it now shows and the server rebuilds from it defensively, which was the
+part worth testing: a **sub-item** id is ignored (not a sibling), an id from **another meeting** is
+ignored and does not move, a **partial list** from a stale page leaves the omitted rows in place
+rather than dropping them, and a **published** agenda refuses the reorder outright.

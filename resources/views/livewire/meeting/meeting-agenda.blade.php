@@ -86,7 +86,37 @@
                         </p>
                     </div>
                 @else
-                    <div class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {{--
+                        Drag to reorder, with the arrows kept as the way that
+                        works with a keyboard and on a phone, where dragging
+                        inside a scrolling list fights the scroll.
+
+                        Plain HTML5 drag events — no library. The browser sends
+                        the order it now shows and the server keeps only the ids
+                        that belong to this agenda.
+                    --}}
+                    <div class="divide-y divide-slate-200 dark:divide-slate-700"
+                         x-data="{
+                             dragging: null,
+                             over: null,
+                             start(id) { this.dragging = id },
+                             enter(id) { if (this.dragging && id !== this.dragging) this.over = id },
+                             end() { this.dragging = null; this.over = null },
+                             drop(targetId) {
+                                 if (! this.dragging || this.dragging === targetId) { this.end(); return }
+
+                                 const rows = [...$el.querySelectorAll('[data-agenda-row]')]
+                                     .map(el => parseInt(el.dataset.agendaRow, 10));
+
+                                 const from = rows.indexOf(this.dragging);
+                                 const to = rows.indexOf(targetId);
+                                 if (from === -1 || to === -1) { this.end(); return }
+
+                                 rows.splice(to, 0, ...rows.splice(from, 1));
+                                 $wire.reorderItems(rows, null);
+                                 this.end();
+                             },
+                         }">
                         @foreach($this->items as $item)
                             @include('livewire.meeting.partials.agenda-item', ['item' => $item, 'depth' => 0])
 

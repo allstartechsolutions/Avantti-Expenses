@@ -2258,5 +2258,21 @@
     "Task priority: urgent": "Urgent",
     "Meeting status: draft": "Draft",
     "Meeting status: published": "Published",
-    "Meeting status: cancelled": "Cancelled"
+    "Meeting status: cancelled": "Cancelled",
+
+    "_meetings_m5_m8_m9": "---------- Blank attendance, deleting, drag to reorder ----------",
+    "Not recorded": "Not recorded",
+    ":count not marked|:count not marked": ":count not marked|:count not marked",
+    ":count person on the register is not marked present, absent or excused. The minute will record them as not recorded.|:count people on the register are not marked present, absent or excused. The minute will record them as not recorded.": ":count person on the register is not marked present, absent or excused. The minute will record them as not recorded.|:count people on the register are not marked present, absent or excused. The minute will record them as not recorded.",
+    "Only an administrator can delete a task.": "Only an administrator can delete a task.",
+    "This task appears in a published minute (:minutes), so it cannot be deleted. Cancel it instead — that keeps the record and stops it counting as open.": "This task appears in a published minute (:minutes), so it cannot be deleted. Cancel it instead — that keeps the record and stops it counting as open.",
+    "Task :code deleted.": "Task :code deleted.",
+    "Delete :code for good? Its notes, files and sub-tasks go with it, and its lines come off any agenda still being prepared. Cancelling is usually the better answer.": "Delete :code for good? Its notes, files and sub-tasks go with it, and its lines come off any agenda still being prepared. Cancelling is usually the better answer.",
+    "In a published minute — cancel it rather than delete it.": "In a published minute — cancel it rather than delete it.",
+    "Drag to reorder": "Drag to reorder",
+    "Task :code is :status, so its title, owner and date cannot be changed. Reopen it first.": "Task :code is :status, so its title, owner and date cannot be changed. Reopen it first.",
+    "You may not edit task :code.": "You may not edit task :code.",
+    "This one has never had a date. Give it one — the minute cannot be published without it.": "This one has never had a date. Give it one — the minute cannot be published without it.",
+    "The minute cannot be published until this has a date.": "The minute cannot be published until this has a date.",
+    "no date": "no date"
 }

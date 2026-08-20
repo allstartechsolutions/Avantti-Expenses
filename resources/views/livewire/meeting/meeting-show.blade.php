@@ -307,6 +307,9 @@
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Attendance') }}</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __(':present of :invited present', ['present' => $counters['present'], 'invited' => $counters['invited']]) }}
+                        @if($counters['unmarked'] > 0)
+                            · <span class="text-amber-600 dark:text-amber-400">{{ trans_choice(':count not marked|:count not marked', $counters['unmarked'], ['count' => $counters['unmarked']]) }}</span>
+                        @endif
                     </p>
                 </div>
 
@@ -327,9 +330,12 @@
                                     </div>
 
                                     @if($editable)
-                                        <div class="inline-flex shrink-0 rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden">
+                                        {{-- Nothing is selected until somebody says; pressing the
+                                             selected one again clears it. --}}
+                                        <div class="inline-flex shrink-0 rounded-lg border {{ $attendee->isUnmarked() ? 'border-amber-300 dark:border-amber-700' : 'border-slate-300 dark:border-slate-600' }} overflow-hidden">
                                             @foreach(['present' => __('P'), 'absent' => __('A'), 'excused' => __('E')] as $value => $letter)
-                                                <button type="button" wire:click="setAttendance({{ $attendee->id }}, '{{ $value }}')"
+                                                <button type="button"
+                                                        wire:click="setAttendance({{ $attendee->id }}, '{{ $attendee->attendance === $value ? '' : $value }}')"
                                                         title="{{ ['present' => __('Present'), 'absent' => __('Absent'), 'excused' => __('Excused')][$value] }}"
                                                         class="px-2 py-1 text-xs font-medium transition-colors
                                                             {{ $attendee->attendance === $value
@@ -342,7 +348,8 @@
                                     @else
                                         <span class="shrink-0 text-xs font-medium
                                             {{ $attendee->attendance === 'present' ? 'text-green-600 dark:text-green-400'
-                                               : ($attendee->attendance === 'absent' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400') }}">
+                                               : ($attendee->attendance === 'absent' ? 'text-red-600 dark:text-red-400'
+                                               : ($attendee->isUnmarked() ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400')) }}">
                                             {{ $attendee->getAttendanceLabel() }}
                                         </span>
                                     @endif

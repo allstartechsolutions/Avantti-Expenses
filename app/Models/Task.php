@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -35,6 +36,9 @@ class Task extends Model
 
     /** Tasks may nest one level: a sub-task cannot have children of its own. */
     public const MAX_DEPTH = 2;
+
+    /** Set while a parent is being recomputed, so the save it does not re-enter. */
+    protected static bool $syncingProgress = false;
 
     protected $fillable = [
         'uuid',
@@ -95,6 +99,66 @@ class Task extends Model
             $task->uuid ??= (string) Str::uuid();
             $task->number ??= static::nextNumber();
         });
+
+        // A parent's percentage is the average of its children, so it has to
+        // move whenever a child does — however the child was moved. Doing this
+        // on the model rather than in the service is deliberate: a path added
+        // later (an import, a command, a screen nobody has written yet) cannot
+        // forget to call it, and a parent showing a stale figure on a screen
+        // somebody reads is worse than showing none.
+        static::saved(fn (self $task) => $task->syncParentProgress());
+        static::deleted(fn (self $task) => $task->syncParentProgress(force: true));
+        static::restored(fn (self $task) => $task->syncParentProgress(force: true));
+    }
+
+    /**
+     * Recompute whichever parents this task's change affects.
+     *
+     * Re-parenting affects two: the one it left and the one it joined.
+     */
+    protected function syncParentProgress(bool $force = false): void
+    {
+        // refreshProgressFromSubtasks() saves the parent, which fires saved()
+        // again. Depth is capped at two so it would terminate anyway, but a
+        // guard says so plainly instead of relying on that.
+        if (static::$syncingProgress) {
+            return;
+        }
+
+        // Any save of a sub-task recomputes its parent, not only one that
+        // changed the obvious fields. Deciding from wasChanged() means a save
+        // that touched something else leaves the parent stale, and the whole
+        // point of doing this on the model is that it cannot be missed. The
+        // cost is one count per sub-task save, which is rare.
+        $hasParent = $this->parent_task_id !== null || $this->wasChanged('parent_task_id');
+
+        if (! $force && ! $hasParent) {
+            return;
+        }
+
+        $parents = [$this->parent_task_id];
+
+        if ($this->wasChanged('parent_task_id')) {
+            $parents[] = $this->getOriginal('parent_task_id');
+        }
+
+        $parents = array_unique(array_filter($parents));
+
+        if (empty($parents)) {
+            return;
+        }
+
+        static::$syncingProgress = true;
+
+        try {
+            // Fetched fresh: a parent handed in from elsewhere may be carrying
+            // a stale sub-task relation, and the count would be read from it.
+            foreach ($parents as $parentId) {
+                static::find($parentId)?->refreshProgressFromSubtasks();
+            }
+        } finally {
+            static::$syncingProgress = false;
+        }
     }
 
     /**
@@ -447,6 +511,42 @@ class Task extends Model
             && ($user->is_admin || $user->is_manager || $this->created_by === $user->id);
     }
 
+    /**
+     * Deleting is admin-only, and refused for anything a published minute
+     * mentions.
+     *
+     * A published minute is a record: a reader following its link to "this
+     * task no longer exists" is a hole in it. Cancelling is the honest action
+     * there — it keeps the history and stops the task counting as open.
+     */
+    public function canDelete(?User $user): bool
+    {
+        return $user !== null
+            && $user->is_admin
+            && ! $this->isInPublishedMinute();
+    }
+
+    /** Does any published minute mention this task, or one of its sub-tasks? */
+    public function isInPublishedMinute(): bool
+    {
+        $ids = collect([$this->id])->concat($this->subtasks()->pluck('id'));
+
+        return MeetingItem::whereIn('task_id', $ids)
+            ->whereHas('meeting', fn (Builder $q) => $q->where('status', 'published'))
+            ->exists();
+    }
+
+    /** Which minutes those are, so the refusal can name them. */
+    public function publishedMinutes(): Collection
+    {
+        $ids = collect([$this->id])->concat($this->subtasks()->pluck('id'));
+
+        return Meeting::where('status', 'published')
+            ->whereHas('allItems', fn (Builder $q) => $q->whereIn('task_id', $ids))
+            ->orderBy('meeting_date')
+            ->get();
+    }
+
     public function hasOpenSubtasks(): bool
     {
         if (isset($this->attributes['open_subtasks_count'])) {
@@ -496,6 +596,9 @@ class Task extends Model
     /** Recompute and store the roll-up. Called whenever a sub-task moves. */
     public function refreshProgressFromSubtasks(): void
     {
+        // Its last sub-task has gone: the percentage stops being derived and
+        // becomes the owner's to set again, keeping whatever it last showed
+        // rather than silently dropping to zero.
         if (! $this->hasSubtasks()) {
             return;
         }

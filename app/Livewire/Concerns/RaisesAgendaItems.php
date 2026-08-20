@@ -179,7 +179,21 @@ trait RaisesAgendaItems
 
         $task = $item->task;
 
-        if ($task && $task->canEdit(auth()->user())) {
+        // Everything on a task line — title, owner, date, location — belongs to
+        // the task. If the task is closed those cannot change, and quietly
+        // saving the line while dropping them would tell the user their edit
+        // worked when it did not.
+        if ($task && ! $task->canEdit(auth()->user())) {
+            $this->addError('item_title', $task->isClosed()
+                ? __('Task :code is :status, so its title, owner and date cannot be changed. Reopen it first.', [
+                    'code' => $task->code(), 'status' => mb_strtolower($task->getStatusLabel()),
+                ])
+                : __('You may not edit task :code.', ['code' => $task->code()]));
+
+            return;
+        }
+
+        if ($task) {
             $tasks->update($task, [
                 'title' => $this->item_title,
                 'project_id' => $this->item_project_id ?: null,

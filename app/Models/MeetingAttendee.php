@@ -26,7 +26,6 @@ class MeetingAttendee extends Model
 
     protected $attributes = [
         'role' => 'participant',
-        'attendance' => 'present',
     ];
 
     protected $casts = [
@@ -68,13 +67,20 @@ class MeetingAttendee extends Model
         };
     }
 
+    /** Nobody has said yet — which a record should show, not guess at. */
+    public function isUnmarked(): bool
+    {
+        return $this->attendance === null;
+    }
+
     public function getAttendanceLabel(): string
     {
         return match ($this->attendance) {
             'present' => __('Present'),
             'absent' => __('Absent'),
             'excused' => __('Excused'),
-            default => ucfirst($this->attendance),
+            null => __('Not recorded'),
+            default => ucfirst((string) $this->attendance),
         };
     }
 
@@ -84,7 +90,7 @@ class MeetingAttendee extends Model
             'present' => 'green',
             'absent' => 'red',
             'excused' => 'yellow',
-            default => 'gray',
+            default => 'gray',   // includes not recorded
         };
     }
 }

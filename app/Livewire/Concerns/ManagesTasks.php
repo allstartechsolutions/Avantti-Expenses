@@ -298,6 +298,20 @@ trait ManagesTasks
         $this->runTaskAction(fn () => $tasks->unblock(Task::findOrFail($taskId), auth()->user()));
     }
 
+    public function deleteTask(int $taskId, TaskService $tasks): void
+    {
+        $task = Task::findOrFail($taskId);
+
+        $done = $this->runTaskAction(
+            fn () => $tasks->delete($task, auth()->user()),
+            __('Task :code deleted.', ['code' => $task->code()])
+        );
+
+        if ($done) {
+            $this->closeTaskDetail();
+        }
+    }
+
     /**
      * Reopen, block and cancel all have to say why, so they go through one
      * prompt rather than three.

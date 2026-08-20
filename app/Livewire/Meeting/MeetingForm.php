@@ -163,7 +163,8 @@ class MeetingForm extends Component
                 'company' => (string) $m->company,
                 'email' => (string) $m->email,
                 'role' => $m->role,
-                'attendance' => 'present',
+                // Blank until somebody says otherwise on the day.
+                'attendance' => '',
             ])->all();
 
             $chair = $series->members->firstWhere('role', 'chair');
@@ -196,7 +197,7 @@ class MeetingForm extends Component
             'company' => '',
             'email' => '',
             'role' => 'participant',
-            'attendance' => 'present',
+            'attendance' => '',
         ];
     }
 
@@ -235,7 +236,7 @@ class MeetingForm extends Component
             'attendees.*.company' => ['nullable', 'string', 'max:255'],
             'attendees.*.email' => ['nullable', 'email', 'max:255'],
             'attendees.*.role' => ['required', 'in:chair,secretary,participant'],
-            'attendees.*.attendance' => ['required', 'in:present,absent,excused'],
+            'attendees.*.attendance' => ['nullable', 'in:present,absent,excused'],
         ], [
             'ended_at.after' => __('The meeting cannot end before it starts.'),
         ]);
@@ -289,7 +290,7 @@ class MeetingForm extends Component
                     'company' => $attendee['user_id'] ? null : ($attendee['company'] ?: null),
                     'email' => $attendee['user_id'] ? null : ($attendee['email'] ?: null),
                     'role' => $attendee['role'],
-                    'attendance' => $attendee['attendance'],
+                    'attendance' => $attendee['attendance'] ?: null,
                 ]);
             }
 

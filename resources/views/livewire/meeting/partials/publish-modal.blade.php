@@ -39,6 +39,16 @@
                 </div>
             </dl>
 
+            @if($this->counters['unmarked'] > 0)
+                <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <p class="text-sm text-amber-800 dark:text-amber-300">
+                        {{ trans_choice(
+                            ':count person on the register is not marked present, absent or excused. The minute will record them as not recorded.|:count people on the register are not marked present, absent or excused. The minute will record them as not recorded.',
+                            $this->counters['unmarked'], ['count' => $this->counters['unmarked']]) }}
+                    </p>
+                </div>
+            @endif
+
             <div class="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-3">
                 <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
                     {{ trans_choice(

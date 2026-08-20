@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Meeting;
+use App\Models\MeetingItem;
 use App\Models\Task;
 use App\Models\TaskActivity;
 use App\Models\TaskNote;
@@ -45,8 +46,6 @@ class TaskService
             $this->log($task, $actor, 'created', null, $task->title);
 
             $this->syncAssignees($task, $assigneeIds, $actor, silent: true);
-
-            $task->parent?->refreshProgressFromSubtasks();
 
             $task = $task->fresh();
 
@@ -221,6 +220,52 @@ class TaskService
         return $task;
     }
 
+    /**
+     * Delete a task for good reason, with everything that hangs off it.
+     *
+     * Soft delete on the task, so an admin mistake is recoverable in the
+     * database, but the files are removed from storage — they are the part
+     * that costs money and the part nobody can find again through the app.
+     *
+     * Draft agendas simply lose the line: a draft is not a record yet. A
+     * published minute is, which is why a task in one cannot be deleted at all.
+     */
+    public function delete(Task $task, User $actor, ?string $reason = null): void
+    {
+        if (! $actor->is_admin) {
+            throw new RuntimeException(__('Only an administrator can delete a task.'));
+        }
+
+        if ($task->isInPublishedMinute()) {
+            throw new RuntimeException(__('This task appears in a published minute (:minutes), so it cannot be deleted. Cancel it instead — that keeps the record and stops it counting as open.', [
+                'minutes' => $task->publishedMinutes()->pluck('number')->implode(', '),
+            ]));
+        }
+
+        DB::transaction(function () use ($task, $actor, $reason) {
+            $tasks = collect([$task])->concat($task->subtasks()->get());
+
+            foreach ($tasks as $one) {
+                // The files go from storage: nothing in the app can reach them
+                // afterwards, and R2 charges for what it holds.
+                foreach ($one->files()->withTrashed()->get() as $file) {
+                    app(FileUploadService::class)->abort($file);
+                }
+
+                // Draft agendas lose the line entirely. Published ones cannot
+                // reach here, so nothing is being rewritten.
+                MeetingItem::where('task_id', $one->id)->delete();
+
+                $one->notes()->forceDelete();
+                $one->assignees()->detach();
+
+                $this->log($one, $actor, 'deleted', $one->title, null, $reason);
+
+                $one->delete();
+            }
+        });
+    }
+
     // =========================================================================
     // PROGRESS
     // =========================================================================
@@ -263,8 +308,6 @@ class TaskService
             $task->save();
 
             $this->log($task, $actor, 'progress_changed', $previous.'%', $progress.'%', null, $meeting);
-
-            $task->parent?->refreshProgressFromSubtasks();
 
             return $task->fresh();
         });
@@ -374,10 +417,6 @@ class TaskService
             $task->save();
 
             $this->log($task, $actor, 'status_changed', $previous, $status, $notes, $meeting);
-
-            // A parent's percentage is the average of its children, so it moves
-            // whenever one of them does.
-            $task->parent?->refreshProgressFromSubtasks();
 
             return $task->fresh();
         });
