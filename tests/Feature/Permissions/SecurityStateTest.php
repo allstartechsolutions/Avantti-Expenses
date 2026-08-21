@@ -137,9 +137,10 @@ class SecurityStateTest extends TestCase
 
     public function test_the_converted_areas_are_the_ones_recorded_here(): void
     {
-        // M1 converted the permission module's own screens; M18 converted the
-        // last one. Every area but the documentation library now decides for
-        // itself, and each pass moved one line of this list.
+        // M1 converted the permission module's own screens and F2 converted
+        // the last one — the documentation library — on its way to deleting
+        // the legacy bridge. Every area decides for itself. Each pass moved
+        // one line of this list; there are no lines left to move.
         $swept = array_values(array_diff(array_keys(AbilityCatalog::areas()), AbilityCatalog::unsweptAreas()));
 
         sort($swept);
@@ -148,7 +149,7 @@ class SecurityStateTest extends TestCase
             [
                 'access', 'budget', 'catalog', 'change-orders', 'clients', 'company',
                 'contracts', 'cost-codes',
-                'daily-reports', 'dashboard', 'documents', 'estimates', 'expenses', 'income', 'invoices',
+                'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
                 'meetings', 'payments', 'project',
                 'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
                 'requisitions', 'settings', 'tasks', 'team', 'users', 'vendors',
@@ -235,14 +236,9 @@ class SecurityStateTest extends TestCase
             $this->actingAs($this->confined)->get(route($route, $this->project))->assertForbidden();
         }
 
-        // One area is left on the bridge, and it does not live inside a
-        // project: the documentation library, which is read-only to everybody
-        // signed in by design. F3 decides whether it is swept as it stands or
-        // stays on the bridge for good.
-        $this->assertSame(
-            ['documentation'],
-            array_values(AbilityCatalog::unsweptAreas()),
-        );
+        // Nothing is left on the bridge, because there is no bridge: F2 swept
+        // the documentation library and deleted the branch.
+        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
     }
 
     public function test_no_unguarded_money_screen_is_left(): void
@@ -309,18 +305,21 @@ class SecurityStateTest extends TestCase
         );
     }
 
-    public function test_the_team_tab_says_plainly_that_it_does_not_restrict_anybody_yet(): void
+    public function test_the_team_tab_no_longer_says_it_restricts_nobody(): void
     {
-        // A screen that lets somebody configure access which is not switched on
-        // has to say so — otherwise it promises something the code does not do.
-        $this->actingAs($this->admin)
-            ->get(route('projects.team', $this->project))
-            ->assertOk()
-            ->assertSee(__('This team list does not restrict anybody yet.'));
-
-        $this->actingAs($this->admin)
-            ->get(route('jobsites.team', $this->jobSite))
-            ->assertOk()
-            ->assertSee(__('This team list does not restrict anybody yet.'));
+        // While modules were still being converted, this screen carried a
+        // notice saying so — a screen that lets somebody configure access which
+        // is not switched on has to admit it, or it promises what the code does
+        // not do. Every module is converted, so the notice has taken itself
+        // down. The case is kept, inverted, because a notice that failed to
+        // disappear would be the same fault the other way round.
+        foreach ([
+            route('projects.team', $this->project),
+            route('jobsites.team', $this->jobSite),
+        ] as $url) {
+            $this->actingAs($this->admin)->get($url)
+                ->assertOk()
+                ->assertDontSee(__('This team list does not restrict anybody yet.'));
+        }
     }
 }

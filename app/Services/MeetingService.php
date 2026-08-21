@@ -113,7 +113,13 @@ class MeetingService
      */
     public function createFollowUp(Meeting $meeting, User $actor, ?string $date = null): Meeting
     {
-        abort_unless($actor->is_admin || $actor->is_manager, 403);
+        // F2: the grant rather than the role. `meetings.create` is seeded to
+        // exactly the people the old check covered.
+        abort_unless(
+            app(PermissionResolver::class)->allows($actor, 'meetings.create'),
+            403,
+            __('You do not have permission to do that.'),
+        );
 
         if ($meeting->next_meeting_id && $existing = Meeting::find($meeting->next_meeting_id)) {
             return $existing;

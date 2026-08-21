@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Documentation;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\DocArticle;
 use App\Services\DocumentationService;
 use Illuminate\Support\Collection;
@@ -17,18 +18,29 @@ use Livewire\Component;
  */
 class DocumentationArticle extends Component
 {
+    use AuthorizesAbility;
+
     public string $slug;
 
     public function mount(string $slug): void
     {
+        $this->authorizeAbility('documentation.view');
+
         $this->slug = $slug;
 
         abort_if($this->entry === null, 404);
     }
 
+    /**
+     * Whether unpublished drafts are listed for this reader.
+     *
+     * A draft is visible to whoever could publish it, which is whoever may
+     * write — the same rule as before, asked of the grants instead of the role.
+     */
     public function canWrite(): bool
     {
-        return (bool) (auth()->user()?->is_admin || auth()->user()?->is_manager);
+        return $this->allowsAbility('documentation.create')
+            || $this->allowsAbility('documentation.edit');
     }
 
     #[Computed]
@@ -59,7 +71,7 @@ class DocumentationArticle extends Component
 
     public function deleteArticle()
     {
-        abort_unless(auth()->user()?->is_admin, 403);
+        $this->authorizeAbility('documentation.delete');
 
         $entry = $this->entry;
 

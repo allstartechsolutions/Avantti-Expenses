@@ -26,9 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // @admin ... @endadmin — render a block only for admin users.
-        // Retired module by module as each pass replaces it with @can.
-        Blade::if('admin', fn () => auth()->check() && auth()->user()->is_admin);
+        // @admin ... @endadmin lived here until F2. Every use of it became a
+        // @can on the ability that actually applies.
 
         // @money($project) ... @endmoney — render monetary figures only where
         // this person is allowed to see them.

@@ -9,6 +9,7 @@ use App\Livewire\JobSite\JobSiteTeam;
 use App\Livewire\Project\ProjectTeam;
 use App\Livewire\Company\CompanyInfo;
 use App\Livewire\User\UserCreate;
+use App\Livewire\User\UserAccess;
 use App\Livewire\User\UserEdit;
 use App\Livewire\User\UserIndex;
 use App\Livewire\User\UserShow;
@@ -201,6 +202,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('users/create', UserCreate::class)->middleware('ability:users.create')->name('users.create');
     Route::get('users/{user}', UserShow::class)->middleware('ability:users.view')->name('users.show');
     Route::get('users/{user}/edit', UserEdit::class)->middleware('ability:users.edit')->name('users.edit');
+    // One person's own company-wide access (F0). Held to `access.view` rather
+    // than `users.edit`: this hands out permissions, which is the Roles &
+    // Access screen's business and the most sensitive grant there is.
+    Route::get('users/{user}/access', UserAccess::class)->middleware('ability:access.view')->name('users.access');
 
     // Client routes
     Route::get('clients', ClientIndex::class)

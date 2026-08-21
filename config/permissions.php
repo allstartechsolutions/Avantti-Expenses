@@ -707,7 +707,10 @@ return [
             'swept' => true,
             'actions' => [
                 'view',
-                'pay' => ['name' => 'Record a payment'],
+                // `limited` since F1: this releases money, the same act as
+                // contracts.pay, and until then it was the one way round the
+                // approval ceiling (P19).
+                'pay' => ['name' => 'Record a payment', 'limited' => true],
                 'batch' => ['name' => 'Build payment batches'],
                 'refund' => ['name' => 'Refund a payment', 'sensitive' => true],
             ],
@@ -765,11 +768,17 @@ return [
             ],
         ],
 
+        // The in-app guide library. Reading it is open to everybody signed in
+        // by design — it is the manual — but `view` is still a real toggle,
+        // because an install that writes its own procedures into it may not
+        // want an outside guest reading them. Writing has always been
+        // manager-or-above and deleting administrator-only; both are grants
+        // now (F2, the last area off the bridge).
         'documentation' => [
             'name' => 'Documentation',
             'module' => 'documentation',
             'levels' => ['global'],
-            'swept' => false,
+            'swept' => true,
             'actions' => ['view', 'create', 'edit', 'delete'],
         ],
 
@@ -994,6 +1003,11 @@ return [
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'close' => ['name' => 'Close a task'],
+                // Added at F2. `edit` is "may you work with tasks here at all"
+                // and everybody who works has it; this is the second layer the
+                // model guards used to spell `is_admin || is_manager`: may you
+                // change a task that is not yours and that you did not raise?
+                'edit_any' => ['name' => "Change somebody else's task"],
             ],
         ],
 
@@ -1005,6 +1019,10 @@ return [
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'freeze' => ['name' => 'Freeze the minutes'],
+                // Added at F2. Correcting a record that has already been signed
+                // off and mailed to every attendee — the narrowest thing in the
+                // module, and it is logged. Was a hard-coded `is_admin`.
+                'revise' => ['name' => 'Correct a published minute', 'sensitive' => true],
                 'manage_series' => ['name' => 'Manage meeting series'],
             ],
         ],

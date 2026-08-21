@@ -35,7 +35,7 @@
         @if($this->canWrite() && $entry['source'] === 'custom')
             <div class="flex items-center gap-2">
                 <x-ui.button variant="secondary" size="sm" icon="edit" href="{{ route('documentation.edit', $entry['model']) }}">{{ __('Edit') }}</x-ui.button>
-                @if(auth()->user()?->is_admin)
+                @if(auth()->user()->can('documentation.delete'))
                     <x-ui.button variant="danger" size="sm" icon="trash" wire:click="deleteArticle"
                                  wire:confirm="{{ __('Delete this guide? It cannot be brought back.') }}">
                         {{ __('Delete') }}

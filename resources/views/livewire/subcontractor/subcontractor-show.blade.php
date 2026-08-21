@@ -19,7 +19,7 @@
                     icon="edit">
                     {{ __('Edit Subcontractor') }}
                 </x-ui.button>
-                @if(auth()->user()->is_admin)
+                @if(auth()->user()->can('vendors.delete'))
                     @if($linkedContracts + $linkedPaymentBatches > 0)
                         <span title="Cannot delete: linked to {{ $linkedContracts }} contract(s) and {{ $linkedPaymentBatches }} payment batch(es)">
                             <x-ui.button variant="danger" icon="trash" disabled>
@@ -724,7 +724,7 @@
                                                     <span class="text-sm text-slate-500 dark:text-slate-400">{{ $employee->notes ? \Illuminate\Support\Str::limit($employee->notes, 50) : '—' }}</span>
                                                 </td>
                                                 <td class="px-4 py-4 text-right">
-                                                    @admin
+                                                    @can('vendors.edit')
                                                     <button
                                                         wire:click="deleteEmployee({{ $employee->id }})"
                                                         wire:confirm="{{ __('Are you sure you want to delete this employee? Any contracts linked to them will be unlinked.') }}"
@@ -734,7 +734,7 @@
                                                         </svg>
                                                         {{ __('Delete') }}
                                                     </button>
-                                                    @endadmin
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach

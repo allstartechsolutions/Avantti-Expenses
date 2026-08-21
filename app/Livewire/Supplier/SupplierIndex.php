@@ -3,7 +3,6 @@
 namespace App\Livewire\Supplier;
 
 use App\Livewire\Concerns\AuthorizesAbility;
-use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Supplier;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,7 +11,7 @@ class SupplierIndex extends Component
 {
     use AuthorizesAbility;
 
-    use AuthorizesAdmin, WithPagination;
+    use WithPagination;
 
     public $search = '';
     public $perPage = 10;

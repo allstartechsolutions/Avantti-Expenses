@@ -13,6 +13,16 @@
                     icon="arrow-left">
                     {{ __('Back to Users') }}
                 </x-ui.button>
+                {{-- Their own permissions (F0). Held to `access.view`, not
+                     `users.edit`: this hands out abilities. --}}
+                @can('access.view')
+                    <x-ui.button
+                        variant="secondary"
+                        href="{{ route('users.access', $user->id) }}"
+                        icon="eye">
+                        {{ __('Access') }}
+                    </x-ui.button>
+                @endcan
                 <x-ui.button
                     variant="primary"
                     href="{{ route('users.edit', $user->id) }}"

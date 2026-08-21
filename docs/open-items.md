@@ -10,7 +10,8 @@ its own file (index at the bottom).
 
 - **The working tree is NOT clean.** The permissions module's **M13 (Tasks & Meetings)**,
   **M14 (Daily Reports)**, **M15 (Estimates & Invoices)**, **M16 (Reference data)** and
-  **M17 (Reports)** and **M18 (Dashboard & search)** passes are uncommitted — see §1a below and `docs/permissions-module.md`. The engine and M1–M3
+  **M17 (Reports)**, **M18 (Dashboard & search)**, **F0 (per-person access)**, **F1
+  (confinement live)** and **F2 (the bridge removed)** are uncommitted — see §1a below and `docs/permissions-module.md`. The engine and M1–M3
   are committed at `f95ead5`, and **M4 (Expenses) through M12 (Documents) at `4700912`**.
   Everything else described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
   library and the cost code / change order work are all in.
@@ -32,7 +33,7 @@ its own file (index at the bottom).
 ### 1a. Permissions module — in progress (2026-08-21)
 
 The engine and M1–M3 are committed (`f95ead5`) and **M4 through M12 at `4700912`**;
-**M13 through M18 are in the working tree and uncommitted.**
+**M13 through M18, plus F0, F1 and F2, are in the working tree and uncommitted.**
 It is safe to deploy as it stands: every module that has not had its pass keeps its old rules
 exactly.
 
@@ -196,7 +197,48 @@ exactly.
 - **M18 replaced "Your dashboard is coming soon"** — what every non-administrator has been
   seeing — with a real welcome screen: their own open tasks and shortcut tiles built from the
   sidebar, so a tile can never offer a screen its owner would be refused on.
-- **Next: F1, F2 and F3.** No module passes remain.
+- **F0 — per-person access — closed P6, P13, P19 and P34**, the four notations that all pointed
+  at one missing piece. The owner chose: exceptions that can **add and take away** (a new
+  `user_abilities` table, one row per ability a person differs from their role on), and the
+  approval ceiling **on the role with a per-person override** (`roles.approval_limit`,
+  `users.approval_limit`, both nullable, null = no ceiling). `PermissionResolver::companyAllows()`
+  is now the only thing that consults a role. The screen is **Users → Access**; it is two-state to
+  edit and three-state in storage, so only real differences are written.
+- **F1 — confinement is live and proved.** `ConfinementTest` walks **every** GET route whose only
+  parameter is a project or a job site — enumerated from the router, not a list — and refuses a
+  confined non-member on all of them while admitting a member to all of them. Plus the lists,
+  the search, the reports and the PDFs.
+- **F1 added the two screens the plan owed:** the **effective-access inspector** (a second tab on
+  Users → Access: every ability with the answer and the reason — *From their role*, *Never allowed
+  — set here*, *Module switched off*) and **"Who can approve what"** (a third tab on Roles &
+  Access: who may approve, up to how much, and where that ceiling comes from).
+- **F1 found the last of P19 while building that report.** `payments.pay` was not marked
+  `limited`, so the payments dashboard was still the one way round a ceiling that bound
+  everywhere else. It is capped now, against the payment's own amount and the project it belongs
+  to. An M11 bookkeeping case had to be **rewritten rather than updated** — the third time in
+  this module, which is the sign those cases were doing their job.
+- **Worth knowing:** taking an ability off a confined person *company-wide* changes nothing on
+  their own projects — their membership grants it, and specific beats general. The place to take
+  it away is that project's Team tab. Pinned by a test so a customer does not discover it.
+- **F2 removed the legacy bridge**, and with it `AuthorizesAdmin`, the `@admin` Blade directive,
+  the `admin` route middleware, `EnsureUserIsAdmin` and four helpers on `User` that asked what
+  role somebody held. **`is_manager`, `@admin` and `authorizeAdmin` now appear nowhere in the
+  application.** `is_admin` survives in nine places, for one reason — an administrator is allowed
+  everything, is never confined and is never capped — and `BridgeRemovedTest` pins the list so a
+  tenth has to be a decision rather than a habit.
+- **The documentation library was swept last.** Reading it is still open to everybody signed in,
+  writing is still manager-and-above and deleting is still administrator-only — but all three are
+  grants now, so an install that writes its own procedures into the library can keep an outsider
+  out of them.
+- **F2 caught a trap and a hole.** The trap: `Task::canDelete()` was a hard-coded `is_admin` and
+  `tasks.delete` was **not** in the seeder's admin-only list, so converting it without noticing
+  would have handed task deletion to everybody. The hole: `Attachments` had **no guard on
+  uploading at all** — the record id came from the browser — so anybody signed in could attach a
+  file to any expense, purchase order, requisition or quotation in the install.
+- **New ability `tasks.edit_any`** ("change somebody else's task"), because the task guards are
+  two layers and reusing `tasks.edit` for the senior half would have collapsed them into one.
+  **New ability `meetings.revise`**, for correcting a minute already signed off and mailed out.
+- **Next: F3 — review and improvements.** The last phase. Everything else is built.
 - **Two things to decide before F1 (confinement going live), both the same root cause:**
   P6, no per-user company-wide grant; and P13, `approval_limit` has no company-wide home, so a
   company-wide user currently has no ceiling at all.

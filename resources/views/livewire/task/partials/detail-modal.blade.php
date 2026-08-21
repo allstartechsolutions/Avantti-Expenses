@@ -107,7 +107,9 @@
                             </x-ui.button>
                         @endif
 
-                        @if($me?->is_admin)
+                        {{-- Task::canDelete() carries the whole rule now (F2): the
+                             grant, and never anything a published minute mentions. --}}
+                        @if($me?->can('tasks.delete'))
                             @if($task->canDelete($me))
                                 <x-ui.button variant="ghost" size="sm" icon="trash"
                                              wire:click="deleteTask({{ $task->id }})"
@@ -377,7 +379,9 @@
                                                 </p>
                                             </div>
 
-                                            @if($file->uploaded_by === $me?->id || $me?->is_admin || $me?->is_manager)
+                                            {{-- Matches ManagesTasks::deleteTaskFile(): your own file, or
+                                                 somebody who may change this task (F2). --}}
+                                            @if($file->uploaded_by === $me?->id || $this->canEditTask($task))
                                                 <button type="button"
                                                         wire:click="deleteTaskFile({{ $file->id }})"
                                                         wire:confirm="{{ __('Remove this file? It is deleted from storage and cannot be brought back.') }}"

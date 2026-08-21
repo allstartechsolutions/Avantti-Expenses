@@ -6,6 +6,7 @@ use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Project;
+use App\Services\PermissionResolver;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -250,9 +251,54 @@ class PaymentDashboard extends Component
         return Project::orderBy('project_name')->get(['id', 'project_name as name']);
     }
 
+    /**
+     * The amount a payment would release, in cents.
+     *
+     * `ExpensePayment::$amount` and `Expense::$total_amount` are accessors that
+     * hand back the app's currency; the ceiling is kept in cents, so the two
+     * have to meet somewhere and it is here.
+     */
+    protected function amountInCents($paymentId, $paymentType): ?int
+    {
+        $record = $paymentType === 'installment'
+            ? ExpensePayment::find($paymentId)
+            : Expense::find($paymentId);
+
+        if (! $record) {
+            return null;
+        }
+
+        $amount = $paymentType === 'installment' ? $record->amount : $record->total_amount;
+
+        return (int) round(((float) $amount) * 100);
+    }
+
+    /**
+     * The scope this payment belongs to, so a membership's ceiling on that
+     * project answers instead of the person's own where there is one.
+     */
+    protected function scopeOfPayment($paymentId, $paymentType): mixed
+    {
+        $record = $paymentType === 'installment'
+            ? ExpensePayment::with('expense')->find($paymentId)
+            : Expense::find($paymentId);
+
+        $expense = $paymentType === 'installment' ? $record?->expense : $record;
+
+        return $expense ? app(PermissionResolver::class)->scopeOf($expense) : null;
+    }
+
     public function openPayModal($paymentId, $paymentType)
     {
-        $this->authorizeAbility('payments.pay');
+        // P19: `contracts.pay` obeyed the approval ceiling and this — the same
+        // act, on the company-wide screen — did not, so somebody stopped inside
+        // a project could release the same money from here. F0 gave the ceiling
+        // a home away from a project; this is what makes it bind.
+        $this->authorizeAbilityWithin(
+            'payments.pay',
+            $this->amountInCents($paymentId, $paymentType),
+            $this->scopeOfPayment($paymentId, $paymentType),
+        );
 
         $this->payingPaymentId = $paymentId;
         $this->payingPaymentType = $paymentType;
@@ -279,7 +325,13 @@ class PaymentDashboard extends Component
 
     public function confirmPayment()
     {
-        $this->authorizeAbility('payments.pay');
+        // Hiding the button is not protection and neither is guarding the modal:
+        // this is the method the wire:click reaches.
+        $this->authorizeAbilityWithin(
+            'payments.pay',
+            $this->amountInCents($this->payingPaymentId, $this->payingPaymentType),
+            $this->scopeOfPayment($this->payingPaymentId, $this->payingPaymentType),
+        );
 
         if ($this->payingPaymentType === 'installment') {
             $payment = ExpensePayment::find($this->payingPaymentId);

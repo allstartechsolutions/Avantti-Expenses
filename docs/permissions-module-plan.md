@@ -429,15 +429,21 @@ the passes do not depend on each other beyond M1 and M2.
 
 **Progress (2026-08-21): M1–M18 are done — 29 of 30 areas enforced, and every module pass is
 complete. Only `documentation` is left on the bridge, and F3 decides whether it moves at all.
-What remains is F1 (confinement live), F2 (delete the bridge) and F3 (review), and
-P6+P13+P19+P34 want deciding together before F1.**
+**F0 (per-person access) and F1 (confinement live) are also built.** F0 closed P6, P13, P19 and
+P34 — exceptions that add and take away, and a ceiling on the role with a per-person override.
+F1 proved the confinement criterion against the router itself, added the effective-access
+inspector and the "who can approve what" report, and closed the last of P19 by capping
+`payments.pay`. **F2 swept the documentation library — the last area — and deleted the legacy
+bridge along with `AuthorizesAdmin`, `@admin`, the `admin` middleware and four role helpers on
+`User`. Only F3 (review and improvements) remains.**
 
 ### 9.5 Stage 3 — closing up
 
 | # | Step | Deliverable | Done when |
 |---|---|---|---|
-| F1 | **Confinement live** | `access_scope = assigned` offered in the UI, guests enabled for real customers, the effective-access inspector, the "who can approve what" report | An Assigned user cannot reach another project's data by any URL, list, search, report or PDF |
-| F2 | **Bridge removed** | The legacy bridge, `AuthorizesAdmin`, the `@admin` directive and the `admin` middleware deleted | `grep -rn "is_admin\|is_manager\|authorizeAdmin\|@admin" app resources` returns nothing but the resolver |
+| F0 ✅ | **Per-person access** *(built 2026-08-21)* | `user_abilities` (add and take away), `roles.approval_limit` + `users.approval_limit`, `companyAllows()` in the resolver, the Users → Access screen | An install that sets nothing answers exactly as before; P6, P13, P19 and P34 closed |
+| F1 ✅ | **Confinement live** *(built 2026-08-21)* | `access_scope = assigned` offered in the UI, guests enabled for real customers, the effective-access inspector, the "who can approve what" report | An Assigned user cannot reach another project's data by any URL, list, search, report or PDF |
+| F2 ✅ | **Bridge removed** *(built 2026-08-21)* | The legacy bridge, `AuthorizesAdmin`, the `@admin` directive, the `admin` middleware and `EnsureUserIsAdmin` deleted; `documentation` swept; `meetings.revise`, `tasks.edit_any` added; `Attachments` guarded | `is_manager`, `@admin`, `authorizeAdmin` appear nowhere. `is_admin` survives in **nine** places — the administrator rule, pinned by `BridgeRemovedTest` |
 | F3 | **Review and improvements** | The module's own review phase per `CLAUDE.md`: full re-read, both themes, both locales, phone, long names, many members; the notations in `docs/permissions-notes.md` closed or scheduled; docs and pt_BR level with what was built | Nothing in the notes file is still `open` without a recorded decision |
 
 Until F1, `access_scope` stays `company` for every real user and is set by hand on one test
@@ -451,7 +457,7 @@ to anybody's staff.
 | N1 | Approval bypassable | M7 + M8 — pending requisition locked, duplicate action added, and a round requires an approved requisition |
 | N2 | Self-approval | M7 — blocked; recorded in history where an install chooses to allow it |
 | N3 | Award / conversion authority | M8 — abilities `quotations.award`, `quotations.convert` + `approval_limit` |
-| N4 | No per-project scoping | The whole module — M1, M2, then every pass, live at F1 |
+| N4 | No per-project scoping | **Closed (F1)** — M1, M2, then every pass; proved end to end in `ConfinementTest` |
 | N5 | Documents reachable by id | Each pass authorizes its own PDFs; M12 and M17 carry the bulk |
 | N6 | Roles are a flat field | E1–E4 — abilities with roles as presets |
 | N7 | Share links | M12 — `documents.share` ability, granted by template rather than role |

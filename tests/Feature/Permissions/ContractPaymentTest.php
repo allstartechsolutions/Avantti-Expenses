@@ -449,11 +449,16 @@ class ContractPaymentTest extends TestCase
         $this->assertFalse($catalog::isLimited('contracts.measure'));
         $this->assertFalse($catalog::isLimited('contracts.unpay'));
 
-        // A limitation rather than a decision: `payments` is a company-wide
-        // area and `approval_limit` lives on a membership or a template, so
-        // there is nothing for a ceiling to read. See P13.
+        // This case recorded a limitation when M11 was built: `payments` is a
+        // company-wide area, `approval_limit` lived only on a membership and a
+        // template, and so the payments dashboard was the one way round a
+        // ceiling that bound everywhere else (P13, P19).
+        //
+        // F0 gave the ceiling a company-wide home and F1 made this act obey it,
+        // so the case now records the opposite. It is the same act as
+        // `contracts.pay` and it answers to the same number.
         $this->assertSame(['global'], $catalog::area('payments')['levels']);
-        $this->assertFalse($catalog::isLimited('payments.pay'));
+        $this->assertTrue($catalog::isLimited('payments.pay'));
     }
 
     public function test_the_seeded_templates_grant_the_expected_contract_actions(): void

@@ -7,7 +7,7 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your suppliers') }}</p>
             </div>
             <div class="flex items-center space-x-3">
-                @admin
+                @can('vendors.merge')
                 @if(\App\Models\ModuleAccess::isEnabled('projects'))
                     <x-ui.button
                         variant="secondary"
@@ -15,7 +15,7 @@
                         {{ __('Merge Duplicates') }}
                     </x-ui.button>
                 @endif
-                @endadmin
+                @endcan
                 <x-ui.button
                     variant="primary"
                     href="{{ route('suppliers.create') }}"
@@ -151,7 +151,7 @@
                                         <x-ui.view-edit-buttons
                                             :viewRoute="route('suppliers.show', $supplier->id)"
                                             :editRoute="route('suppliers.edit', $supplier->id)" />
-                                        @admin
+                                        @can('vendors.delete')
                                         <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
@@ -159,7 +159,7 @@
                                             wire:confirm="{{ $supplier->is_subcontractor ? __('This company is also a subcontractor. Only the supplier classification will be removed — the record is kept. Continue?') : __('Are you sure you want to delete this supplier?') }}"
                                             icon="trash"
                                             title="{{ __('Delete') }}" />
-                                        @endadmin
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

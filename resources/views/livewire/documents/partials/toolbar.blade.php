@@ -91,7 +91,7 @@
                 </button>
             </div>
 
-            @admin
+            @if($this->canDeleteDocuments())
                 <x-ui.button variant="ghost" size="sm" wire:click="toggleTrash">
                     {{ $showTrash ? __('Back to files') : __('Trash') }}
                     @if(! $showTrash && $this->trashCount > 0)
@@ -113,7 +113,7 @@
                         {{ $this->hasFilters() ? __('Delete Listed') : __('Empty Trash') }}@if($binned > 0) ({{ $binned }})@endif
                     </x-ui.button>
                 @endif
-            @endadmin
+            @endif
 
             @if($this->canUploadHere())
                 @unless($this->isFlatMode())

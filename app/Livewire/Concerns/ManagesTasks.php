@@ -476,6 +476,16 @@ trait ManagesTasks
      * The task an attachment belongs to. A file may hang off the task itself
      * or off one of its notes; either way the task is what governs it.
      */
+    /**
+     * For the views: may this person change this task's own things — its
+     * attachments, chiefly? Never a substitute for the guards; the actions all
+     * ask again.
+     */
+    public function canEditTask(?Task $task): bool
+    {
+        return $task !== null && $this->allowsAbility('tasks.edit', $task);
+    }
+
     protected function taskBehind(FileUpload $file): ?Task
     {
         return match (true) {

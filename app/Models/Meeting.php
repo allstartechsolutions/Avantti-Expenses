@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PermissionResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -231,34 +232,45 @@ class Meeting extends Model
     // GUARDS
     // =========================================================================
 
-    public function canEdit(?User $user): bool
+    /**
+     * These read the grants rather than the role (F2). `meetings.edit` and
+     * `meetings.freeze` are seeded to exactly the people the old
+     * `is_admin || is_manager` covered, so nothing moved — but they can now be
+     * given to somebody else, or taken away, which is the whole difference.
+     */
+    protected function allows(?User $user, string $ability): bool
     {
-        if ($user === null) {
-            return false;
-        }
-
-        return $this->isDraft() && ($user->is_admin || $user->is_manager);
+        // Asked without a scope: a meeting belongs to no project — its ITEMS
+        // carry the projects, which is the whole point of the module (M13) —
+        // so `meetings` is a company-wide area.
+        return $user !== null
+            && app(PermissionResolver::class)->allows($user, $ability);
     }
 
-    /** The chair signs off the minute; admins and managers may stand in. */
+    public function canEdit(?User $user): bool
+    {
+        return $this->isDraft() && $this->allows($user, 'meetings.edit');
+    }
+
+    /** The chair signs off the minute; whoever may freeze one can stand in. */
     public function canPublish(?User $user): bool
     {
         if ($user === null || ! $this->isDraft()) {
             return false;
         }
 
-        return $user->is_admin || $user->is_manager || $this->chair_id === $user->id;
+        return $this->allows($user, 'meetings.freeze') || $this->chair_id === $user->id;
     }
 
-    /** Only an admin corrects a published record, and it is logged. */
+    /** Correcting a published record. Seeded to administrators, and it is logged. */
     public function canRevise(?User $user): bool
     {
-        return $user !== null && $this->isPublished() && $user->is_admin;
+        return $this->isPublished() && $this->allows($user, 'meetings.revise');
     }
 
     public function canCancel(?User $user): bool
     {
-        return $user !== null && ! $this->isCancelled() && ($user->is_admin || $user->is_manager);
+        return ! $this->isCancelled() && $this->allows($user, 'meetings.edit');
     }
 
     /**

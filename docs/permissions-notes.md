@@ -207,15 +207,22 @@ Changing any of these is now a change to working code rather than a design decis
 belongs in the module's review phase (`docs/review-and-improvements.md`).
 
 ### N4 — No per-project scoping
-*Opened 2026-08-19 (from the audit). Status: open.*
+*Opened 2026-08-19 (from the audit). **Status: CLOSED — F1, 2026-08-21.***
 
-Every signed-in user can open every project. For a company where a site supervisor should
-only see their own site, there is no way to express that today. `projects.project_manager_id`
-exists but is only used for reporting.
+Every signed-in user could open every project. For a company where a site supervisor should
+only see their own site, there was no way to express that. `projects.project_manager_id`
+existed but was only used for reporting.
 
 **Question for the owner:** do any of the installs need people confined to their own
 projects or job sites? If yes, that is a much larger change than role tweaks, and it should
 be decided before more screens are built on the assumption that everyone sees everything.
+
+**Answered yes, and it became the permission module.** `access_scope` on the role and on the
+person, memberships on projects and job sites, and eighteen module passes converting one screen
+at a time. **Closed at F1**, where `ConfinementTest` proves the criterion the plan set: an
+Assigned user cannot reach another project's data by any URL, list, search, report or PDF. The
+URL half of that sweep enumerates the router rather than a hand-written list, so it stays true
+for routes nobody has written yet.
 
 ### N5 — Documents are reachable by id
 *Opened 2026-08-19 (from the audit). Status: **the repository half is closed (M12, 2026-08-21);

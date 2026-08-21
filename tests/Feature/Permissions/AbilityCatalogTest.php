@@ -154,13 +154,24 @@ class AbilityCatalogTest extends TestCase
         );
     }
 
-    public function test_the_legacy_bridge_reports_which_areas_are_still_unswept(): void
+    public function test_the_catalogue_still_reports_which_areas_are_unswept(): void
     {
-        $unswept = AbilityCatalog::unsweptAreas();
+        // As of F2 that is none of them and the legacy bridge is deleted, so
+        // the loop below has nothing to walk. The reporting stays: a module
+        // added later starts unswept, the permission matrix marks it "not
+        // enforced yet", and this is what tells it so.
+        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
 
-        foreach ($unswept as $key) {
-            $this->assertFalse(AbilityCatalog::isSwept($key));
-            $this->assertFalse(AbilityCatalog::isSwept("{$key}.view"));
+        config()->set('permissions.areas.expenses.swept', false);
+        AbilityCatalog::flush();
+
+        try {
+            $this->assertSame(['expenses'], array_values(AbilityCatalog::unsweptAreas()));
+            $this->assertFalse(AbilityCatalog::isSwept('expenses'));
+            $this->assertFalse(AbilityCatalog::isSwept('expenses.view'));
+        } finally {
+            config()->set('permissions.areas.expenses.swept', true);
+            AbilityCatalog::flush();
         }
     }
 }

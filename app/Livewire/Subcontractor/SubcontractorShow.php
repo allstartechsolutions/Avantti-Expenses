@@ -3,7 +3,6 @@
 namespace App\Livewire\Subcontractor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
-use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\DocumentType;
 use App\Models\Subcontractor;
 use App\Models\SubcontractorDocument;
@@ -18,7 +17,7 @@ class SubcontractorShow extends Component
 {
     use AuthorizesAbility;
 
-    use AuthorizesAdmin, WithFileUploads;
+    use WithFileUploads;
 
     public Subcontractor $subcontractor;
     public string $activeTab = 'overview';

@@ -232,8 +232,11 @@ class TaskService
      */
     public function delete(Task $task, User $actor, ?string $reason = null): void
     {
-        if (! $actor->is_admin) {
-            throw new RuntimeException(__('Only an administrator can delete a task.'));
+        // F2: the grant rather than the role name. `tasks.delete` is seeded to
+        // administrators alone, so the rule is the one it always was — the
+        // message says who holds it today rather than naming a role for ever.
+        if (! $task->canDelete($actor)) {
+            throw new RuntimeException(__('You do not have permission to delete this task.'));
         }
 
         if ($task->isInPublishedMinute()) {

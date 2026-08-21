@@ -119,7 +119,7 @@
                                                 </svg>
                                             </a>
                                             <!-- Edit -->
-                                            @if($report->isEditable() || auth()->user()->is_admin)
+                                            @if($report->isEditable() || auth()->user()->can('daily-reports.edit_locked'))
                                                 @if($report->jobSite)
                                                     <a href="{{ route('dailyreports.edit', ['jobSite' => $report->jobSite, 'dailyReport' => $report]) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="{{ __('Edit') }}">
                                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

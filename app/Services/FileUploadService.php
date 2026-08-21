@@ -68,8 +68,8 @@ class FileUploadService
      *
      * Tasks and their notes are open to any signed-in user — the owner's
      * decision (docs/meetings-module-plan.md §1): anyone raises a task, adds
-     * notes and attaches evidence. Meetings are run by admins and managers, so
-     * their attachments follow the same line.
+     * notes and attaches evidence. A meeting's own attachments follow whoever
+     * may run the meeting, and a guide's follow whoever may write one.
      */
     public function canUploadTo(Model $target, ?User $user): bool
     {
@@ -77,8 +77,14 @@ class FileUploadService
             return false;
         }
 
+        $resolver = app(PermissionResolver::class);
+
+        // F2: each target asks for the grant that owns it, rather than for a
+        // role name. Both are seeded to exactly who could upload before.
         return match (true) {
-            $target instanceof Meeting, $target instanceof DocArticle => $user->is_admin || $user->is_manager,
+            $target instanceof Meeting => $resolver->allows($user, 'meetings.edit'),
+            $target instanceof DocArticle => $resolver->allows($user, 'documentation.create')
+                || $resolver->allows($user, 'documentation.edit'),
             $target instanceof Task, $target instanceof TaskNote => true,
             default => false,
         };

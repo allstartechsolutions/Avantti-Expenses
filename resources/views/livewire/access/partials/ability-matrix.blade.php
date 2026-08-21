@@ -51,6 +51,14 @@
                             @unless($area['enforced'])
                                 <span class="w-2 h-2 rounded-full bg-slate-400" title="{{ __('Not enforced yet — this module has not been converted') }}"></span>
                             @endunless
+                            @if($area['money'])
+                                {{-- The flag was carried into the matrix and then
+                                     ignored, which made it read as a masking
+                                     promise it never kept (P34). It says one
+                                     thing: this area puts money on screen. --}}
+                                <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                      title="{{ __('This area puts monetary figures on screen. Totals are hidden from anybody whose access hides money; amounts on a single record are not.') }}">{{ __('Money') }}</span>
+                            @endif
                         </div>
                         @unless($readOnly)
                             <div class="mt-1 flex items-center gap-2">

@@ -174,7 +174,17 @@ class AbilityCatalog
         return static::area($areaKey)['module'] ?? null;
     }
 
-    /** Whether this area puts money on screen, and so obeys money masking. */
+    /**
+     * Whether this area puts monetary figures on screen.
+     *
+     * It is a label, not a masking rule. What `can_see_money` actually hides is
+     * ROLL-UPS — totals, budgets, margins — and it hides them wherever they are
+     * rendered, through `<x-ui.money rollup>`; the amount on a single record is
+     * not a secret from somebody allowed to open that record (M4). So an area
+     * can be flagged here and have nothing masked on it, which is the case for
+     * the catalog: an item's cost is its own field. Who sees the catalog at all
+     * is `catalog.view`, and since F0 that can be taken off one person.
+     */
     public static function showsMoney(string $areaOrAbility): bool
     {
         [$areaKey] = static::split($areaOrAbility);

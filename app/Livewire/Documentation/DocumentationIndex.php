@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Documentation;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Services\DocumentationService;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -12,13 +13,21 @@ use Livewire\Component;
  */
 class DocumentationIndex extends Component
 {
+    use AuthorizesAbility;
+
     public string $search = '';
 
     protected $queryString = ['search' => ['except' => '']];
 
+    public function mount(): void
+    {
+        $this->authorizeAbility('documentation.view');
+    }
+
     public function canWrite(): bool
     {
-        return (bool) (auth()->user()?->is_admin || auth()->user()?->is_manager);
+        return $this->allowsAbility('documentation.create')
+            || $this->allowsAbility('documentation.edit');
     }
 
     #[Computed]

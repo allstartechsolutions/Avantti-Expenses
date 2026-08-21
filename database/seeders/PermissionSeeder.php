@@ -99,6 +99,15 @@ class PermissionSeeder extends Seeder
         // --- admin-only today: MeetingSeriesIndex::delete() ------------------
         'meetings.delete',
 
+        // --- admin-only today: Task::canDelete() was a hard-coded is_admin.
+        //     Found at F2; without this line the pass would have handed task
+        //     deletion to everybody.
+        'tasks.delete',
+
+        // --- admin-only today: Meeting::canRevise(). Correcting a minute that
+        //     has been signed off and mailed out.
+        'meetings.revise',
+
         // --- admin-only today: `admin` middleware on the routes -------------
         'users.view', 'users.create', 'users.edit', 'users.suspend',
         'cost-codes.view', 'cost-codes.create', 'cost-codes.edit', 'cost-codes.delete',
@@ -156,6 +165,11 @@ class PermissionSeeder extends Seeder
         'meetings.freeze',
         'documentation.create',
         'documentation.edit',
+
+        // New at F2. The second layer of the task guards, which the model
+        // spelled `is_admin || is_manager` until the bridge came out. An
+        // employee keeps every task of their own, and the ones they raised.
+        'tasks.edit_any',
     ];
 
     /**

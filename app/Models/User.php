@@ -37,6 +37,7 @@ class User extends Authenticatable
         'notification_preferences',
         'status',
         'access_scope',
+        'approval_limit',
         'is_guest',
     ];
 
@@ -65,6 +66,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'status' => UserStatus::class,
             'access_scope' => AccessScope::class,
+            'approval_limit' => 'integer',
             'is_guest' => 'boolean',
         ];
     }
@@ -88,50 +90,17 @@ class User extends Authenticatable
         );
     }
 
-    /**
-     * Whether the user holds the manager role.
-     * Exposed as $user->is_manager.
-     */
-    protected function isManager(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->role?->name === 'manager',
-        );
-    }
-
-    /**
-     * Who may approve or reject a purchase requisition: admins and managers.
-     */
-    public function canReviewRequisitions(): bool
-    {
-        return $this->is_admin || $this->is_manager;
-    }
-
-    /**
-     * Who may add, rename, move, tag or share a repository document, and who
-     * may create folders: admins and managers.
-     */
-    public function canManageDocuments(): bool
-    {
-        return $this->is_admin || $this->is_manager;
-    }
-
-    /**
-     * Who may delete a repository document or folder, restore one, or purge
-     * the trash: admins only.
-     */
-    public function canDeleteDocuments(): bool
-    {
-        return $this->is_admin;
-    }
-
-    /**
-     * Documents flagged internal are hidden from ordinary employees.
-     */
-    public function canSeeInternalDocuments(): bool
-    {
-        return $this->is_admin || $this->is_manager;
-    }
+    /*
+    | `is_manager`, `canReviewRequisitions()`, `canManageDocuments()`,
+    | `canDeleteDocuments()` and `canSeeInternalDocuments()` were deleted at F2.
+    | Every one of them answered "what role is this person?" — the question the
+    | permission module exists to stop anybody asking. Their replacements are
+    | `requisitions.approve`, `documents.create` / `.edit` / `.delete` and
+    | `documents.see_internal`, asked of the project in hand.
+    |
+    | `is_admin` stays. It is the resolver's step 3 and the one role name the
+    | model is still allowed to know.
+    */
 
     /**
      * Every project and job site this user has been added to, with their
@@ -185,6 +154,80 @@ class User extends Authenticatable
     public function isCompanyWide(): bool
     {
         return ! $this->isConfined();
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | Per-person company-wide access (F0)
+    |---------------------------------------------------------------------------
+    |
+    | The company-wide half of what somebody may do used to come from their
+    | role and nothing else, so giving one person one extra thing meant
+    | inventing a role for them. These rows are the exceptions: one per ability
+    | this person differs from their role on, and no row at all — the normal
+    | case — means "follow the role".
+    |
+    | Project and job-site permissions are NOT here. Those are memberships.
+    */
+
+    public function abilityOverrides(): HasMany
+    {
+        return $this->hasMany(UserAbility::class);
+    }
+
+    /**
+     * ability => true (always allowed) | false (never allowed).
+     *
+     * @return array<string, bool>
+     */
+    public function abilityOverrideMap(): array
+    {
+        return $this->abilityOverrides()
+            ->pluck('granted', 'ability')
+            ->map(fn ($granted) => (bool) $granted)
+            ->all();
+    }
+
+    /**
+     * Replace this person's exceptions in one go.
+     *
+     * @param  array<string, bool>  $overrides  ability => granted
+     */
+    public function syncAbilityOverrides(array $overrides): void
+    {
+        $this->abilityOverrides()->whereNotIn('ability', array_keys($overrides))->delete();
+
+        foreach ($overrides as $ability => $granted) {
+            $this->abilityOverrides()->updateOrCreate(
+                ['ability' => $ability],
+                ['granted' => (bool) $granted],
+            );
+        }
+
+        $this->unsetRelation('abilityOverrides');
+    }
+
+    /**
+     * The most this person may approve away from a project, in cents.
+     *
+     * Their own column wins if it is set; otherwise the role's; and null at
+     * both levels means **no ceiling**, which is what every install has today.
+     * Administrators are never capped — they are allowed everything before any
+     * of this is read.
+     */
+    public function effectiveApprovalLimit(): ?int
+    {
+        if ($this->is_admin) {
+            return null;
+        }
+
+        return $this->approval_limit ?? $this->role?->approval_limit;
+    }
+
+    /** True when the ceiling comes from the role rather than from this person. */
+    public function followsRoleApprovalLimit(): bool
+    {
+        return $this->approval_limit === null;
     }
 
     public function managedProjects(): HasMany

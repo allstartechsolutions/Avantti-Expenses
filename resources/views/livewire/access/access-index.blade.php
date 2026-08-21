@@ -35,12 +35,20 @@
                         class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'templates' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     {{ __('Templates') }}
                 </button>
+                {{-- F1: approval authority gathered into one place, because it
+                     comes from four (role, person, membership, template). --}}
+                <button wire:click="$set('activeTab', 'approvals')"
+                        class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'approvals' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    {{ __('Who can approve what') }}
+                </button>
             </nav>
         </div>
     </div>
 
     @if($activeTab === 'templates')
         <livewire:access.template-manager />
+    @elseif($activeTab === 'approvals')
+        <livewire:access.approval-authority />
     @else
 
     @if (session()->has('message'))

@@ -3,7 +3,6 @@
 namespace App\Livewire\Subcontractor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
-use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Subcontractor;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -13,7 +12,7 @@ class SubcontractorIndex extends Component
 {
     use AuthorizesAbility;
 
-    use AuthorizesAdmin, WithPagination;
+    use WithPagination;
 
     public $search = '';
     public $perPage = 10;

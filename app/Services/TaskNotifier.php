@@ -167,8 +167,10 @@ class TaskNotifier
                 continue;
             }
 
-            // Admins and managers also get the short company roll-up.
-            $company = ($user->is_admin || $user->is_manager)
+            // The short company roll-up goes to whoever may see tasks across
+            // the company — a count of everybody's work is a company figure.
+            $company = app(PermissionResolver::class)->allows($user, 'tasks.view')
+                && $user->isCompanyWide()
                 ? [
                     'open' => Task::query()->open()->count(),
                     'overdue' => Task::query()->overdue()->count(),

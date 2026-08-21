@@ -82,7 +82,7 @@
                                             {{ $series->is_active ? __('Deactivate') : __('Activate') }}
                                         </x-ui.button>
                                         <x-ui.button variant="secondary" size="sm" icon="edit" wire:click="edit({{ $series->id }})">{{ __('Edit') }}</x-ui.button>
-                                        @if(auth()->user()?->is_admin && $series->meetings_count === 0)
+                                        @if(auth()->user()?->can('meetings.delete') && $series->meetings_count === 0)
                                             <x-ui.button variant="danger" size="sm" icon="trash"
                                                          wire:click="delete({{ $series->id }})"
                                                          wire:confirm="{{ __('Delete this series? It has held no meetings.') }}">

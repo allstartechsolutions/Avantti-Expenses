@@ -2217,6 +2217,323 @@ pass is done.**
 
 ---
 
+## F0 — Per-person access *(built 2026-08-21)*
+
+Not a module pass. An engine change, done between M18 and F1 because four
+notations had been pointing at the same missing piece since M6, and confinement
+going live is when it starts to matter.
+
+**Away from a project there was no way to hold, or withhold, anything for one
+person.** P6: a company-wide ability could only come from a role, so giving one
+supervisor the cost codes meant inventing a role for them, and installs end up
+with roles called "Manager (no deletes)". P13: the approval ceiling lived only on
+a membership and a template, so a company-wide user had **no ceiling at all**.
+P19: which meant the same person could be stopped from releasing R$ 50.000
+against a contract and then release it from the payments dashboard. P34: and the
+money switch could not be taken off one person either.
+
+### What the owner decided
+
+Two questions, asked in plain English and answered:
+
+- **Per-person permissions: add *and* take away.** Not add-only. A person can be
+  given something their role lacks, and can have something taken off them, both
+  without a new role. This is the owner's own standing rule from M6 finally
+  applying to the company-wide half: *no ability should be reachable only
+  through a role.*
+- **The ceiling lives on the role, and a person can override it.** Set once for
+  "supervisors approve up to R$ 10.000", raised or lowered for an individual
+  when they earn it. Least typing for a company with forty staff, and nobody is
+  left uncapped by accident.
+
+### One table, two columns
+
+`user_abilities` — one row per ability a person differs from their role on:
+`granted = true` is always allowed, `granted = false` is never allowed, and **no
+row at all is the normal case** and means follow the role.
+
+`roles.approval_limit` and `users.approval_limit`, both nullable, both in cents,
+and **null keeps its meaning: no ceiling**. So an install that upgrades and sets
+nothing behaves exactly as it did — which is what half of `PerPersonAccessTest`
+exists to prove.
+
+### One method in the resolver
+
+`companyAllows()` is now the only thing in `PermissionResolver` that consults a
+role:
+
+```php
+protected function companyAllows(User $user, string $ability): bool
+{
+    return $this->userOverridesOf($user)[$ability]
+        ?? $this->roleAllows($user, $ability);
+}
+```
+
+Every place the role used to answer directly — the company-wide branch, the
+legacy bridge's company-wide half, the fallback for an unconfined person on a
+project with no membership, and the finance switch — goes through it. That is
+what makes "never allowed" mean it: an exception on `expenses.edit` binds on
+every project too, because a company-wide person answers from their role there.
+
+Three boundaries it deliberately does not cross:
+
+- **An administrator** is answered at step 3, before any of this is read. An
+  exception cannot hobble one, and the screen says so instead of pretending.
+- **A guest** holds no company-wide ability at all, whatever is written.
+- **A membership still wins on its own project.** Specific beats general is the
+  rule the whole engine runs on; being made a member of one project is being
+  that on that project.
+
+`approvalLimit()` now falls through: the membership's ceiling for the project it
+covers, then the person's, then the role's.
+
+### The screen is two-state and the storage is three-state
+
+Settings → Users → **Access**. Whoever is editing sets each ability the way they
+want it; what is saved is only where that differs from the role. So a stored row
+is always a deliberate exception, everything else keeps following the role when
+the role changes later, and the screen never has to explain a tri-state control.
+
+It carries the exception count as you type, a **Follow the role** button that
+puts everything back in one click, the ceiling with the role's own figure as its
+placeholder, and one audit line per save saying what moved. It is held to
+`access.view` / `access.manage`, not `users.edit`: handing out abilities is the
+permission module's own business and the most sensitive grant there is.
+
+### P34 turned out to be the flag's fault, not the catalog's
+
+`can_see_money` hides **roll-ups, not records** — M4, and the owner's own words.
+An item's own cost was therefore never in scope for masking, and the catalog is
+not broken. What was broken was `AbilityCatalog::showsMoney()`, whose docblock
+claimed the flag made an area "obey money masking". It is a label meaning *this
+area puts money on screen*; it now says that, and it finally has a job — a
+**Money** chip on the permission matrix, where before the flag was carried into
+the row data and ignored.
+
+The real question underneath — *should this person be reading the company's
+price list at all?* — is `catalog.view`, and F0 is what makes it answerable for
+one person.
+
+### Reproduced exactly
+
+`PerPersonAccessTest` — 23 cases. The first and the last are the same promise
+from both ends: an install that sets nothing answers exactly as before, and the
+seeded roles carry no ceiling. In between: one person given something their role
+lacks and nobody else moving with them; one person losing something and their
+colleagues keeping it; the administrator, guest and module-switch boundaries; an
+exception reaching a project and a membership still beating it; the money switch
+per person; the ceiling on the role with a person's override, binding on the
+company-wide screens (P19 as a single case) and a membership still answering for
+its own project; and the screen — held to `access`, saving only differences,
+counting them as you type, refusing to pretend for an administrator, saying so
+for a guest, and writing its audit line.
+
+**P6, P13, P19 and P34 are closed. F1 is next.**
+
+---
+
+## F1 — Confinement live *(built 2026-08-21)*
+
+The plan's acceptance criterion for this phase is one sentence: **an Assigned
+user cannot reach another project's data by any URL, list, search, report or
+PDF.** F1 is that sentence made true, and made checkable.
+
+Most of it was already built — every module pass since M2 put it there, one
+screen at a time. What F1 adds is the proof, the two screens the plan owed, and
+the last hole the proof turned up.
+
+### The sweep enumerates the router, not a list
+
+`ConfinementTest` walks every GET route whose only parameter is a project or a
+job site — 49 of them — and hits each one twice: once for a project the person
+is on, once for a project they are not. Every screen refuses the second and
+admits the first.
+
+Two details make it worth having. **The subject is the harshest case available:**
+Sam is confined, is a member of one project, holds *every* project-level ability
+on it, and their role is `manager`. So each refusal is a refusal of somebody the
+application otherwise trusts — if confinement only worked on people who were
+short of grants anyway, it would not be confinement. And **the list comes from
+the router**, so a route added next year has to pass it too. A list somebody has
+to remember to update is a list that goes stale.
+
+Then the other four words of the criterion: the project and job-site lists show
+only theirs, the cross-project task list drops the rest, the header search cannot
+be used to enumerate, and the financial reports and their PDFs stop at the same
+boundary. Plus the two directions of change — a second membership widens them by
+exactly one project and by exactly what it grants, and a suspended membership
+closes the door on the next click rather than the next login.
+
+And the boundary the other way, which matters just as much: **confinement does
+not empty their menu of the things that have no project.** It is about *which
+projects* somebody can reach. Clients, vendors and the catalog are still theirs.
+
+### The effective-access inspector
+
+"Why can't Maria see the budget?" had four possible answers — her role, her own
+exceptions, her project memberships, or the module being switched off — and
+finding out which meant opening four screens.
+
+Users → Access now has a second tab. Four facts at the top (role, which projects,
+ceiling and where each came from, whether she sees money), then the projects she
+is on with what each gives her, then **every ability with the answer and the
+reason next to it**: *From their role*, *Not on their role*, *Always allowed —
+set here*, *Never allowed — set here*, *Module switched off*, *Not enforced yet*.
+
+Every answer is asked of `PermissionResolver`. An inspector that worked the
+answer out itself could disagree with the application it is explaining, which is
+the one thing it must never do.
+
+### Who can approve what
+
+Approval authority comes from four places by design — a role, a person's own
+exceptions, a membership on one project, a template. A finance director should
+not have to visit four screens to find out who can release money.
+
+Roles & Access has a third tab: one row per person, what they may approve, their
+ceiling, and **where that ceiling comes from**, in words — *Set on this person*,
+*From their role, Manager*, *No limit set*, *Administrator — never capped* —
+with any project that sets a different one listed underneath. Same rule: it asks
+the resolver rather than reading the tables, so it cannot drift.
+
+### The hole the report found: P19, for real this time
+
+Writing the report meant listing the actions the catalogue marks `limited`, and
+`payments.pay` was not among them. F0 had given the ceiling a home away from a
+project; **the payments dashboard still was not reading it.** `confirmPayment()`
+called `authorizeAbility`, not `authorizeAbilityWithin`, so the exact hole P19
+described was still open: stopped from releasing R$ 50.000 against a contract,
+and free to release it from the dashboard.
+
+`payments.pay` is now `limited`, and both the modal and the method behind it are
+capped — against the payment's own amount, and against the scope the expense
+belongs to, so a membership's ceiling on that project answers where there is one.
+
+That turned an M11 case from true to false. `ContractPaymentTest` had a case
+recording the limitation as a limitation; it now records the opposite, with the
+history in the comment. **Third time in this module a bookkeeping test had to be
+rewritten rather than updated — which is the sign it was doing its job.**
+
+### One thing worth knowing about a confined person's authority
+
+Taking `quotations.award` off a confined person company-wide changes nothing,
+because their *membership* is what grants it. Specific beats general — the rule
+the whole engine runs on — so the place to take it away is the project's Team
+tab. Surprising enough to be pinned by a test of its own rather than discovered
+by a customer.
+
+### What was already there
+
+`access_scope = assigned` has been offered on the role editor and the user
+record since M1, and guests have been invitable from either Team tab since then
+too, with their own templates. F1 did not need to add either. The "recorded but
+not enforced yet" notices those screens carried are gone on their own: they were
+written as `@unless(AbilityCatalog::isSwept('project'))`, and `project` has been
+swept since M2.
+
+**`ConfinementTest` — 19 cases. Confinement is live.**
+
+---
+
+## F2 — The bridge removed *(built 2026-08-21)*
+
+The legacy bridge is what made this module deployable one screen at a time: an
+area that had not had its pass still answered from the old role checks, and a
+confined person was denied outright rather than half-served. Every area has had
+its pass, so the branch is gone from `decide()` — and with it `AuthorizesAdmin`,
+the `@admin` Blade directive, the `admin` route middleware, `EnsureUserIsAdmin`
+and four helpers on `User` that asked what role somebody held.
+
+### The documentation library, swept last
+
+It was the only area left, and it is the manual — read-only to everybody signed
+in by design. Sweeping it anyway was the right call for two reasons. Keeping the
+bridge alive for one area fails F2's own criterion. And **an install that writes
+its own procedures into the library may not want an outside guest reading them**,
+which the old arrangement could not express at all.
+
+Reading is seeded to everybody, writing stays manager-and-above, deleting stays
+administrator-only. Nothing moved; all three became grants. The editor's image
+upload follows the editor.
+
+### Three role checks that had to become abilities, and one that stayed
+
+`Meeting::canRevise()` was `is_admin` — correcting a minute that has been signed
+off and mailed to every attendee. It is now **`meetings.revise`**, marked
+sensitive, seeded to administrators alone.
+
+`Task::canDelete()` was `is_admin` too, and this one was a trap: **`tasks.delete`
+was not in the seeder's admin-only list**, so converting the check without
+adding it would have handed task deletion to everybody in the company. It is in
+the list now.
+
+`Task::canEdit()` and `canChangeProgress()` were `is_admin || is_manager ||
+owner || creator`, and they are the second of two layers — the components
+already require `tasks.edit` before calling them. Reusing `tasks.edit` for the
+senior half would have collapsed the two layers into one and let anybody who may
+work on tasks edit anybody's. So F2 adds **`tasks.edit_any`** — *"change somebody
+else's task"* — seeded to managers, and an employee keeps every task of their own
+and every one they raised.
+
+`Task::canConfirmCompletion()`, `canReopen()` and `canCancel()` now read
+`tasks.close`, which both seeded roles hold. That is not a widening of what is
+*enforced* — `confirmTaskCompletion()` has required exactly `tasks.close` since
+M13 — but it does mean the button now appears for an employee who could already
+have invoked it. The screen and the guard agree, which they did not before.
+
+### The hole F2 found: attachments
+
+`Attachments` — the files hung off an expense, a purchase order, an income line,
+a requisition or a quotation — had **no guard on uploading at all.** The model
+was fetched by an id that came from the browser, so anybody signed in could
+attach a file to any record in the install. Deleting was the last real
+`authorizeAdmin()`.
+
+Both now answer to the record the file hangs off, through `scopeOf()`: viewing
+needs the record's `view`, uploading is `edit` (it changes the record), and
+deleting is held to the record's own `delete`. For five of the six kinds that
+reproduces administrator-only exactly. On a **purchase order** it becomes
+whoever may delete the purchase order, which is a small widening and is recorded
+as **P39** rather than buried.
+
+### `is_admin` survives, in nine places, pinned
+
+The plan's criterion said the grep should return "nothing but the resolver".
+That turned out to be very slightly too strict, and pretending otherwise would
+be the same dishonesty this module keeps closing.
+
+`is_admin` remains in **nine places, for exactly one reason**: an administrator
+is allowed everything, is never confined and is never capped. That is the
+resolver's own step 3, applied where the resolver cannot be asked — inside
+`Project::visibleTo()`'s query scope, in the dashboard's project filter, in the
+two screens that explain access. `BridgeRemovedTest` pins the list of files, so
+a tenth has to be a decision rather than a habit, and asserts that
+`is_manager`, `@admin`, `authorizeAdmin` and `AuthorizesAdmin` appear **nowhere**
+in `app/`, `resources/views/` or `bootstrap/` — comments excluded, so the
+history left behind does not read as a check that survived.
+
+### Four bookkeeping tests rewritten
+
+The two that proved the bridge worked had nothing left to describe. They are
+replaced by one that proves there is nothing to fall through: every area swept,
+`isSwept` gone from the resolver, and a confined member answered by their
+membership alone.
+
+`SecurityStateTest`'s rollout case is **inverted**: the team tab used to carry a
+notice saying "this team list does not restrict anybody yet", and it has now
+taken itself down. The case is kept the other way round, because a notice that
+failed to disappear would be the same fault in the other direction.
+
+And `AbilityCatalogTest`'s unswept-areas case had become an empty loop passing
+vacuously. It now asserts the list is empty and then un-sweeps one area to prove
+the reporting still works — because a module added next year starts unswept, and
+the permission matrix's "not enforced yet" marker depends on it.
+
+**`BridgeRemovedTest` — 9 cases. The bridge is gone.**
+
+---
+
 ## Not yet built
 
-The three closing steps. See `docs/permissions-module-plan.md` §9.
+F3 (review and improvements). See `docs/permissions-module-plan.md` §9.

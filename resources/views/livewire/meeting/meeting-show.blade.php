@@ -63,7 +63,7 @@
                 </x-ui.button>
             @endif
 
-            @if($meeting->isPublished() && ($me?->is_admin || $me?->is_manager || $meeting->chair_id === $me?->id))
+            @if($meeting->isPublished() && ($meeting->chair_id === $me?->id || $me?->can('meetings.freeze')))
                 <x-ui.button variant="secondary" size="sm" wire:click="resendMinute"
                              wire:confirm="{{ trans_choice(
                                 'Send the minute to :count attendee again?|Send the minute to :count attendees again?',
@@ -81,7 +81,7 @@
                 <x-ui.button variant="primary" size="sm" wire:click="saveRevision">{{ __('Save Correction') }}</x-ui.button>
             @endif
 
-            @if($meeting->isPublished() && $meeting->next_meeting_id === null && ($me?->is_admin || $me?->is_manager))
+            @if($meeting->isPublished() && $meeting->next_meeting_id === null && $me?->can('meetings.create'))
                 <x-ui.button variant="secondary" size="sm" wire:click="createFollowUp">{{ __('Create the Next Meeting') }}</x-ui.button>
             @endif
 

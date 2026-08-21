@@ -135,6 +135,29 @@
                     </label>
                 </div>
 
+                <!-- The approval ceiling -->
+                <div class="{{ $card }} p-5">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Approval limit') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        {{ __('The most anybody with this role may approve, award or pay on the company-wide screens. Leave it blank for no limit.') }}
+                    </p>
+
+                    <div class="mt-4 max-w-xs">
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500 dark:text-slate-400">
+                                {{ config('app.currency') }}
+                            </span>
+                            <input type="number" step="0.01" min="0" wire:model="approvalLimit"
+                                   class="{{ $field }} pl-10" placeholder="{{ __('No limit') }}" @disabled($readOnly)>
+                        </div>
+                        @error('approvalLimit') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                    </div>
+
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                        {{ __('Inside a project, a person\'s own limit on that project\'s team wins instead. One person can also be given a different limit on their user record.') }}
+                    </p>
+                </div>
+
                 @include('livewire.access.partials.ability-matrix', [
                     'sections' => $this->matrix,
                     'readOnly' => $readOnly,

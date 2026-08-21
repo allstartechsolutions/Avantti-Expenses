@@ -24,10 +24,12 @@ class DocumentationUploadController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
+        // The editor's image upload, so it answers to the same grants as the
+        // editor itself (F2 — this was a hard-coded manager-or-above check).
         abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager,
+            auth()->user()?->can('documentation.create') || auth()->user()?->can('documentation.edit'),
             403,
-            'Manager or administrator access required.'
+            __('You do not have permission to do that.'),
         );
 
         $data = $request->validate([

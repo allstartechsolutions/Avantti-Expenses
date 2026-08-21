@@ -13,11 +13,17 @@ class Role extends Model
         'name',
         'description',
         'access_scope',
+        'approval_limit',
         'seeded_areas',
     ];
 
     protected $casts = [
         'access_scope' => AccessScope::class,
+        // The most anybody with this role may approve away from a project, in
+        // cents. Null — every seeded role — means no ceiling, which is exactly
+        // what the application enforced before F0. One person can override it
+        // on themselves; see User::effectiveApprovalLimit().
+        'approval_limit' => 'integer',
         'seeded_areas' => 'array',
     ];
 

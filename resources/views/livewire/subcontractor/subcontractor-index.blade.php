@@ -7,13 +7,13 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage your subcontractors') }}</p>
             </div>
             <div class="flex items-center space-x-3">
-                @admin
+                @can('vendors.merge')
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('vendors.duplicates') }}">
                     {{ __('Merge Duplicates') }}
                 </x-ui.button>
-                @endadmin
+                @endcan
                 <x-ui.button
                     variant="primary"
                     href="{{ route('subcontractors.create') }}"
@@ -163,7 +163,7 @@
                                             icon="edit"
                                             title="{{ __('Edit') }}"
                                             href="{{ route('subcontractors.edit', $subcontractor->id) }}" />
-                                        @if(auth()->user()->is_admin)
+                                        @if(auth()->user()->can('vendors.delete'))
                                             @php $linkedCount = $subcontractor->contracts_count + $subcontractor->payment_batches_count; @endphp
                                             @if($linkedCount > 0)
                                                 <span title="Cannot delete: linked to {{ $subcontractor->contracts_count }} contract(s) and {{ $subcontractor->payment_batches_count }} payment batch(es)">

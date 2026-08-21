@@ -23,9 +23,19 @@ use Illuminate\Database\Eloquent\Model;
  *   1. no user, or a user who is not active            → no
  *   2. the customer has the module switched off        → no, for everybody
  *   3. administrator                                   → yes
- *   4. the area has not had its permission pass yet    → THE LEGACY BRIDGE
- *   5. otherwise: the role for company-wide users, the membership for the
- *      project or job site in hand, and money and approval limits on top
+ *   4. a company-wide screen  → the person's own exceptions over their role
+ *   5-7. otherwise: the membership for the project or job site in hand, and
+ *      the same role-with-exceptions behind it where there is none. Money and
+ *      approval limits sit on top.
+ *
+ * Step 4 used to be followed by the LEGACY BRIDGE, which denied a confined
+ * person anything belonging to an area that had not had its permission pass
+ * yet. Every area has had one, so the bridge was deleted at F2.
+ *
+ * The rule the last of those encodes is worth stating on its own: **a person's
+ * own list beats their role's, and no entry means follow the role.** It holds
+ * wherever the role would otherwise have answered, which is why nothing in
+ * this class consults `roleAllows()` directly any more.
  *
  * Results are memoised for the request. There is deliberately no cross-request
  * cache: a revoked ability has to be gone on the next click.
@@ -37,6 +47,9 @@ class PermissionResolver
 
     /** @var array<int, array<string, Membership>> Active memberships, by user id then "Type:id". */
     protected array $memberships = [];
+
+    /** @var array<int, array<string, bool>> Per-person exceptions, by user id. */
+    protected array $userOverrides = [];
 
     /** @var array<string, bool> Answers already given this request. */
     protected array $answers = [];
@@ -76,7 +89,7 @@ class PermissionResolver
         // The company-wide money switch is not an area, so it is answered
         // straight from the role.
         if ($ability === AbilityCatalog::financeAbility()) {
-            return $user->is_admin || $this->roleAllows($user, $ability);
+            return $user->is_admin || $this->companyAllows($user, $ability);
         }
 
         if (! AbilityCatalog::has($ability)) {
@@ -101,18 +114,16 @@ class PermissionResolver
             // Except for a guest: an outsider has no company-wide anything,
             // whatever role they were given. Belt and braces — invitations
             // give a guest no role at all.
-            return ! $user->is_guest && $this->roleAllows($user, $ability);
+            return ! $user->is_guest && $this->companyAllows($user, $ability);
         }
 
         // 5. Something that belongs to a project or a job site.
+        //
+        // The LEGACY BRIDGE stood here until F2: while an area still ran on its
+        // old role checks it could not honour a membership, so a confined
+        // person was denied rather than half-served. Every area has had its
+        // pass, so there is nothing left for it to bridge and it is gone.
         $membership = $scope !== null ? $this->membershipFor($user, $scope) : null;
-
-        // THE LEGACY BRIDGE (docs/permissions-module-plan.md §9.1): while the
-        // area still runs on its old checks it cannot honour a membership, so
-        // a confined person is denied rather than half-served.
-        if (! AbilityCatalog::isSwept($ability)) {
-            return ! $user->isConfined() && $this->roleAllows($user, $ability);
-        }
 
         // 6. A membership REPLACES the role on the scope it covers. Being made
         //    a Site Supervisor on one job site means being a site supervisor
@@ -140,7 +151,34 @@ class PermissionResolver
             return $scope === null && $this->heldOnAnyScope($user, $ability);
         }
 
-        return $this->roleAllows($user, $ability);
+        return $this->companyAllows($user, $ability);
+    }
+
+    /**
+     * What this person may do away from any project — their role, with their
+     * own exceptions laid over it (F0).
+     *
+     * This replaces every place the role used to be consulted directly, so the
+     * rule holds wherever it applies: **a person's own list beats their
+     * role's, and no entry means follow the role.** Administrators never reach
+     * here — they are allowed everything at step 3 — so an exception cannot be
+     * used to hobble an administrator, which would be a footgun rather than a
+     * feature.
+     */
+    protected function companyAllows(User $user, string $ability): bool
+    {
+        return $this->userOverridesOf($user)[$ability]
+            ?? $this->roleAllows($user, $ability);
+    }
+
+    /**
+     * This person's exceptions: ability => true (always) | false (never).
+     *
+     * @return array<string, bool>
+     */
+    protected function userOverridesOf(User $user): array
+    {
+        return $this->userOverrides[$user->id] ??= $user->abilityOverrideMap();
     }
 
     /** Whether this ability belongs to a project or job site rather than the company. */
@@ -191,13 +229,25 @@ class PermissionResolver
             return $membership->can_see_money;
         }
 
+        // Away from a project, the finance switch follows the same rule as
+        // everything else company-wide: this person's own answer if they have
+        // one, their role's otherwise. That is what lets money be taken away
+        // from one bookkeeper without inventing a role for them.
         return $user->isCompanyWide()
-            && $this->roleAllows($user, AbilityCatalog::financeAbility());
+            && $this->companyAllows($user, AbilityCatalog::financeAbility());
     }
 
     /**
      * The ceiling on this person's `limited` actions here, in cents.
      * Null means no ceiling.
+     *
+     * A membership's ceiling is the answer on the project or job site it
+     * covers — being trusted with R$ 100.000 on the tower does not say
+     * anything about the warehouse. Everywhere else, and where the membership
+     * sets none, the person's own ceiling answers, and their role's behind it
+     * (F0 — before that the ceiling bound inside a project and nowhere else,
+     * so the same person could be stopped on a contract and then pay the same
+     * money from the payments dashboard; P13 and P19).
      */
     public function approvalLimit(?User $user, mixed $scope = null): ?int
     {
@@ -205,7 +255,8 @@ class PermissionResolver
             return null;
         }
 
-        return $this->membershipFor($user, $scope)?->approval_limit;
+        return $this->membershipFor($user, $scope)?->approval_limit
+            ?? $user->effectiveApprovalLimit();
     }
 
     /**
@@ -399,6 +450,7 @@ class PermissionResolver
     public function flush(): void
     {
         $this->roleAbilities = [];
+        $this->userOverrides = [];
         $this->memberships = [];
         $this->answers = [];
     }

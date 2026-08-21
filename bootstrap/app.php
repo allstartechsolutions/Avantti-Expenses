@@ -17,9 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // or a job site, so one added later is guarded the moment it is written.
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureScopeIsVisible::class);
         $middleware->alias([
-            // Retired module by module as each pass moves its routes onto
-            // 'ability' (docs/permissions-module-plan.md §9.3).
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            // The 'admin' alias lived here until F2, retired one pass at a
+            // time as each module moved its routes onto 'ability'.
 
             // ability:expenses.view          — a company-wide screen
             // ability:expenses.view,project  — scoped to a route parameter

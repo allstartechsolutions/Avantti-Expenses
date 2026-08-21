@@ -138,10 +138,14 @@ class LegacyBehaviourTest extends TestCase
      * The areas whose modules have had their permission pass. Each pass adds
      * its own line here, in the same commit that flips the flag.
      */
-    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard'];
+    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard', 'documentation'];
 
     public function test_only_the_converted_areas_are_swept(): void
     {
+        // As of F2 that is all of them, and the legacy bridge is deleted. The
+        // list stays because a module added later starts unswept, and the
+        // permission matrix marks it "not enforced yet" until its pass lands.
+
         $swept = array_values(array_diff(array_keys(AbilityCatalog::areas()), AbilityCatalog::unsweptAreas()));
 
         sort($swept);

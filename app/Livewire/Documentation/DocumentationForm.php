@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Documentation;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\DocArticle;
 use App\Support\RichText;
 use Livewire\Component;
@@ -14,6 +15,8 @@ use Livewire\Component;
  */
 class DocumentationForm extends Component
 {
+    use AuthorizesAbility;
+
     public ?DocArticle $article = null;
 
     public string $title = '';
@@ -25,11 +28,10 @@ class DocumentationForm extends Component
 
     public function mount(?DocArticle $article = null): void
     {
-        abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager,
-            403,
-            'Manager or administrator access required.'
-        );
+        // Was a hard-coded manager-or-above check. Writing a new guide and
+        // editing an existing one are separate grants, seeded to exactly the
+        // people who could do it before.
+        $this->authorizeAbility($article?->exists ? 'documentation.edit' : 'documentation.create');
 
         if ($article?->exists) {
             $this->article = $article;

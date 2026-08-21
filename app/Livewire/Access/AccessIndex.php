@@ -46,6 +46,13 @@ class AccessIndex extends Component
     public bool $seeMoney = false;
 
     /**
+     * The most anybody with this role may approve away from a project, in the
+     * app's currency. Empty means no ceiling — which is what every install has
+     * today, and what every seeded role keeps.
+     */
+    public string $approvalLimit = '';
+
+    /**
      * Which projects and job sites people with this role can reach at all:
      * 'company' (every one) or 'assigned' (only the ones they are added to).
      */
@@ -114,6 +121,14 @@ class AccessIndex extends Component
         return $this->buildMatrix();
     }
 
+    /** The typed ceiling in cents, or null for "no ceiling". */
+    protected function approvalLimitInCents(): ?int
+    {
+        return trim($this->approvalLimit) === ''
+            ? null
+            : (int) round(((float) $this->approvalLimit) * 100);
+    }
+
     public function financeAbility(): string
     {
         return AbilityCatalog::financeAbility();
@@ -129,7 +144,7 @@ class AccessIndex extends Component
     {
         $this->authorizeAbility('access.manage');
 
-        $this->reset(['editingRoleId', 'name', 'description', 'granted', 'seeMoney', 'matrixSearch']);
+        $this->reset(['editingRoleId', 'name', 'description', 'granted', 'seeMoney', 'matrixSearch', 'approvalLimit']);
         $this->accessScope = AccessScope::COMPANY->value;
         $this->resetValidation();
         $this->showRoleModal = true;
@@ -150,6 +165,9 @@ class AccessIndex extends Component
 
         $this->accessScope = ($role->access_scope ?? AccessScope::COMPANY)->value;
         $this->seeMoney = in_array(AbilityCatalog::financeAbility(), $abilities, true);
+        $this->approvalLimit = $role->approval_limit === null
+            ? ''
+            : rtrim(rtrim(number_format($role->approval_limit / 100, 2, '.', ''), '0'), '.');
         $this->loadGrants($abilities);
         $this->matrixSearch = '';
 
@@ -164,7 +182,7 @@ class AccessIndex extends Component
         $this->dispatch('close-modal', 'role-modal');
 
         $this->showRoleModal = false;
-        $this->reset(['editingRoleId', 'name', 'description', 'granted', 'seeMoney', 'matrixSearch', 'accessScope']);
+        $this->reset(['editingRoleId', 'name', 'description', 'granted', 'seeMoney', 'matrixSearch', 'accessScope', 'approvalLimit']);
     }
 
     /** The role in the editor, or null when creating one. */
@@ -202,10 +220,12 @@ class AccessIndex extends Component
             ],
             'description' => ['nullable', 'string', 'max:255'],
             'accessScope' => ['required', 'in:company,assigned'],
+            'approvalLimit' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
         ], [], [
             'name' => __('Name'),
             'description' => __('Description'),
             'accessScope' => __('Which projects they can see'),
+            'approvalLimit' => __('Approval limit'),
         ]);
 
         if ($role?->isSystem() && $this->name !== $role->name) {
@@ -229,6 +249,7 @@ class AccessIndex extends Component
                 'name' => $this->name,
                 'description' => $this->description ?: null,
                 'access_scope' => $this->accessScope,
+                'approval_limit' => $this->approvalLimitInCents(),
             ];
 
             // Administrators are never confined: they are allowed everything

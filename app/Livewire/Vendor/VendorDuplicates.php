@@ -3,7 +3,6 @@
 namespace App\Livewire\Vendor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
-use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -12,7 +11,6 @@ class VendorDuplicates extends Component
 {
     use AuthorizesAbility;
 
-    use AuthorizesAdmin;
 
     // Manual merge selection
     public $keepVendorId = '';

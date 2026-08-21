@@ -4,7 +4,6 @@ namespace App\Livewire\Project;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\JobSiteStatus;
-use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Livewire\Concerns\ManagesChangeOrders;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
@@ -28,7 +27,7 @@ class ProjectShow extends Component
 {
     use AuthorizesAbility;
 
-    use WithFileUploads, AuthorizesAdmin, ManagesChangeOrders;
+    use WithFileUploads, ManagesChangeOrders;
 
     public Project $project;
     public $activeTab = 'overview';
@@ -1213,7 +1212,7 @@ class ProjectShow extends Component
 
     public function deleteProject()
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('projects.delete', $this->project);
         DB::transaction(function () {
             $this->cleanupProjectFiles($this->project->id);
             $this->project->delete();
@@ -1319,7 +1318,6 @@ class ProjectShow extends Component
     {
         $this->authorizeAbility('projects.delete', $this->project);
 
-        $this->authorizeAdmin();
         $jobSite = JobSite::findOrFail($this->deletingJobSiteId);
 
         DB::transaction(function () use ($jobSite) {

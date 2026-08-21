@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PermissionResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -502,15 +503,42 @@ class Task extends Model
             && ! $this->hasOpenSubtasks();
     }
 
-    /** The chair of the meeting it came from, or any admin or manager. */
+    /**
+     * These read the grants rather than the role (F2).
+     *
+     * The shape of every one of them is the same and worth stating once: a
+     * task answers to **whoever is senior enough here, or the person whose task
+     * it is.** The personal half — owner, creator, assignee, meeting chair — is
+     * untouched, because that was never a permission question.
+     *
+     * The senior half is `tasks.edit_any` for changing a task, added at F2 and
+     * seeded to exactly the people the old `is_admin || is_manager` covered.
+     * It is deliberately NOT `tasks.edit`: the components already require that
+     * before calling any of these, so reusing it here would collapse two
+     * layers into one and let anybody who may work on tasks edit anybody's.
+     *
+     * Asked against the task's own scope, so a project membership answers for
+     * a task on that project and a personal task with no project falls back to
+     * the company-wide answer.
+     */
+    protected function allows(?User $user, string $ability): bool
+    {
+        return $user !== null
+            && app(PermissionResolver::class)->allows(
+                $user,
+                $ability,
+                app(PermissionResolver::class)->scopeOf($this),
+            );
+    }
+
+    /** Whoever may close a task here, or the chair of the meeting it came from. */
     public function canConfirmCompletion(?User $user): bool
     {
         if ($user === null || $this->status !== 'ready') {
             return false;
         }
 
-        return $user->is_admin
-            || $user->is_manager
+        return $this->allows($user, 'tasks.close')
             || $this->originMeeting?->chair_id === $user->id;
     }
 
@@ -518,14 +546,14 @@ class Task extends Model
     {
         return $user !== null
             && $this->status === 'completed'
-            && ($user->is_admin || $user->is_manager || $this->originMeeting?->chair_id === $user->id);
+            && ($this->allows($user, 'tasks.close') || $this->originMeeting?->chair_id === $user->id);
     }
 
     public function canEdit(?User $user): bool
     {
         return $user !== null
             && $this->isOpen()
-            && ($user->is_admin || $user->is_manager
+            && ($this->allows($user, 'tasks.edit_any')
                 || $this->owner_id === $user->id
                 || $this->created_by === $user->id);
     }
@@ -537,8 +565,7 @@ class Task extends Model
             return false;
         }
 
-        return $user->is_admin
-            || $user->is_manager
+        return $this->allows($user, 'tasks.edit_any')
             || $this->owner_id === $user->id
             || $this->assignees->contains('id', $user->id);
     }
@@ -547,7 +574,7 @@ class Task extends Model
     {
         return $user !== null
             && $this->isOpen()
-            && ($user->is_admin || $user->is_manager || $this->created_by === $user->id);
+            && ($this->allows($user, 'tasks.close') || $this->created_by === $user->id);
     }
 
     /**
@@ -560,8 +587,11 @@ class Task extends Model
      */
     public function canDelete(?User $user): bool
     {
-        return $user !== null
-            && $user->is_admin
+        // `tasks.delete` is seeded to administrators alone, so this reproduces
+        // the old `is_admin` exactly (F2) — and can now be given to somebody
+        // else. The published-minute rule is not a permission: it is a record
+        // that has been signed off, and nobody deletes what a minute mentions.
+        return $this->allows($user, 'tasks.delete')
             && ! $this->isInPublishedMinute();
     }
 

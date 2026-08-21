@@ -453,17 +453,13 @@ class DashboardTest extends TestCase
     |---------------------------------------------------------------------------
     */
 
-    public function test_the_dashboard_is_the_last_module_to_be_swept(): void
+    public function test_the_dashboard_was_the_last_module_to_be_swept(): void
     {
         $this->assertTrue(AbilityCatalog::isSwept('dashboard.view'));
 
-        // One area is left, and it is the documentation library: read-only to
-        // everybody signed in by design. F3 decides whether it is swept as-is
-        // or stays on the bridge for good.
-        $this->assertSame(
-            ['documentation'],
-            array_values(AbilityCatalog::unsweptAreas()),
-        );
+        // It was the last module pass; F2 then swept the documentation library
+        // and deleted the bridge, so nothing is unswept any more.
+        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
     }
 
     public function test_the_overview_is_held_back_from_both_seeded_roles(): void

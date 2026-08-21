@@ -513,7 +513,7 @@ allowed into. Split into a guarded public action plus an unguarded protected wor
 
 ## Permissions module — parked during M6 (Budget & Cost Codes), 2026-08-21
 
-### P6 — company-wide abilities can only be held through a role *(open — the owner's rule points at it)*
+### P6 — company-wide abilities can only be held through a role *(FIXED in F0, 2026-08-21)*
 
 The owner's standing rule during M6: **no ability should be reachable only through a role.** For
 anything scoped to a project or a job site that already holds — `budget.lock` can be granted on a
@@ -529,9 +529,12 @@ a company-level membership would need no new table — a scope of null, or a `Co
 implementing `PermissionScope`. The resolver's step 4 would consult it before falling back to the
 role.
 
-Not built, because it changes the engine rather than a module and every pass so far has been
-deployable on its own. **Worth deciding before F1**, since confinement going live is when
-per-person company-wide grants start to matter.
+**Built in F0.** The owner chose exceptions that can both add and take away, so a new table —
+`user_abilities` — holds one row per ability a person differs from their role on: `granted = true`
+is always allowed, `granted = false` is never allowed, and no row at all means follow the role.
+`PermissionResolver::companyAllows()` is now the only thing that consults a role, so the rule
+holds everywhere the role would have answered. Settings → Users → **Access** is the screen; it is
+two-state to edit and three-state in storage, so only real differences are written.
 
 ### P7 — `budget.lock` is not a `sensitive` action but arguably should be *(open — cosmetic)*
 
@@ -618,7 +621,7 @@ than pretend the schema was something it was not, and noted that M9 would hit th
 took the better option — a new additive migration rather than editing one that has already run in
 production.)*
 
-### P13 — `approval_limit` has no company-wide home *(open — same shape as P6)*
+### P13 — `approval_limit` has no company-wide home *(FIXED in F0, 2026-08-21)*
 
 The ceiling lives on a permission **template** and on a **membership**. A company-wide user with
 no membership on the project therefore has **no ceiling at all** — `approvalLimit()` returns null
@@ -629,8 +632,11 @@ never enforced before. It stops being fine at F1: the moment "Assigned only" is 
 install will have some people capped and some not, with no way to cap the company-wide ones short
 of giving them a membership on every project.
 
-Same root as P6 — there is no per-user company-wide grant record. Both want the same answer, and
-**both should be decided before F1**.
+**Built in F0.** The owner chose the ceiling on the **role**, with a per-person override —
+`roles.approval_limit` and `users.approval_limit`, both nullable and both in cents. Null at both
+levels still means *no ceiling*, so an install that upgrades and sets nothing is not suddenly
+capped. `approvalLimit()` now reads the membership first (a ceiling on the project it was granted
+for), then the person, then the role.
 
 ### P14 — `User::canReviewRequisitions()` is now dead
 
@@ -700,7 +706,7 @@ deliberate rather than incidental.
 
 ## Permissions module — parked during M11 (Contracts & Payments), 2026-08-21
 
-### P19 — `payments.pay` cannot obey a ceiling, and that is P13 biting for real
+### P19 — `payments.pay` cannot obey a ceiling, and that is P13 biting for real *(FIXED in F0, 2026-08-21)*
 
 `contracts.pay` obeys `approval_limit`. `payments.pay` — the same act, on the company-wide
 dashboard — cannot, because the ceiling lives on a membership or a permission template and these
@@ -710,13 +716,10 @@ So the same person can be stopped from releasing R$ 50.000 against a contract fr
 project, and then release it from the payments dashboard with no ceiling at all. **That is a real
 hole in the ceiling as a control, not a cosmetic gap.**
 
-It is the same root cause as P6 (no per-user company-wide grant) and P13 (no company-wide
-ceiling), and M11 is where it stops being theoretical. All three want the same answer — a
-company-level membership, or a ceiling on the role — and **they should be decided together,
-before F1.**
-
-Until then the honest description is: *the approval ceiling binds inside a project and does not
-bind on the company-wide payment screens.*
+**Fixed in F0**, by P13's fix. `approvalLimit()` falls through to the person's own ceiling and
+then their role's when there is no membership to answer, so the payments dashboard is capped by
+the same number the contract screen uses. The honest description is now simply: *the ceiling
+binds, and a membership can raise or lower it on the project it covers.*
 
 ### P20 — deleting a contract is not blocked when it has payments
 
@@ -922,7 +925,7 @@ the moment somebody has `vendors.view` taken away the directory should follow.
 One line in the map, the same shape as `expenses`. **F3 should close it along with the remaining
 PDFs (P22).**
 
-### P34 — the catalog is a money area with no masking
+### P34 — the catalog is a money area with no masking *(SETTLED in F0, 2026-08-21)*
 
 `catalog` is declared `money => true` because items carry a current cost, and nothing masks it.
 `can_see_money` only reaches project and job-site scopes, and the catalog belongs to no project —
@@ -932,8 +935,17 @@ So a Site Team member with `can_see_money = false` sees no project totals but ca
 item's cost in the catalog. Recorded here because the `money` flag now claims something the
 screen does not do.
 
-The fix is the same one P6, P13 and P19 all want: a company-wide way to hold — or withhold — a
-grant per person. **Four notations now point at the same missing piece.**
+**Settled in F0, and the answer was that the flag was the thing at fault.** `can_see_money`
+hides ROLL-UPS, not records (M4, and the owner's own words) — so an item's own cost was never in
+scope for masking, and the catalog is not broken. What was broken was `showsMoney()`, whose
+docblock claimed the flag made an area "obey money masking"; it is a label meaning *this area puts
+money on screen*, and it now says so and finally has a job — a **Money** chip on the permission
+matrix, where before it was carried into the row data and ignored.
+
+The real question underneath — *should this person be reading the company's price list at all?* —
+is `catalog.view`, and F0 is what makes it answerable for one person. The finance switch itself is
+now per-person too: an exception on `finance.view_amounts` takes money off one bookkeeper without
+inventing a role for them.
 
 
 ---
@@ -1001,3 +1013,23 @@ to a pt_BR user — the only screens in the application that do.
 The names come out of config rather than out of a Blade file, so `__()` has to be applied where
 they are rendered, and the strings then have to be added. Roughly forty of them. **F3**, and it
 is a half-hour job, not a design question.
+
+### P39 — a purchase order's attachments can now be deleted by whoever can delete the order
+
+*Opened 2026-08-21 (F2).*
+
+`Attachments::deleteAttachment()` was a hard-coded `is_admin`. F2 held it to the **parent record's
+own `delete` grant**, which is one coherent rule rather than six special cases.
+
+For an expense, an income line, a requisition and a quotation that reproduces administrator-only
+exactly, because all four are in the seeder's admin-only list. **`purchase-orders.delete` is
+not** — both seeded roles hold it — so on a purchase order the act moves from "administrators
+only" to "whoever may delete the purchase order itself".
+
+That is defensible: somebody who may destroy the whole order may certainly remove a file from it.
+It is recorded because it is a real change in behaviour on deploy, and because the alternative —
+adding `purchase-orders.delete` to the admin-only list — would have been a much larger change
+in the other direction, narrowing who may delete purchase orders at all.
+
+**Decide in F3:** leave it, or give attachments their own grant (`attachments.delete`) so the six
+kinds can differ.
