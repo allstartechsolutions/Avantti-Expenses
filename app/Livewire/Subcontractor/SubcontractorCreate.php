@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ChecksVendorDuplicates;
 use App\Models\Subcontractor;
 use App\Models\Vendor;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class SubcontractorCreate extends Component
 {
+    use AuthorizesAbility;
+
     use ChecksVendorDuplicates;
 
     // Company Information
@@ -62,6 +65,8 @@ class SubcontractorCreate extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('vendors.create');
+
         $this->country = config('app.country', 'US');
     }
 
@@ -80,6 +85,8 @@ class SubcontractorCreate extends Component
      */
     public function markAsSubcontractor(int $vendorId)
     {
+        $this->authorizeAbility('vendors.edit');
+
         $vendor = Vendor::findOrFail($vendorId);
         $vendor->is_subcontractor = true;
         $vendor->save();
@@ -91,6 +98,8 @@ class SubcontractorCreate extends Component
 
     public function createSubcontractor()
     {
+        $this->authorizeAbility('vendors.create');
+
         $this->validate();
 
         $subcontractor = new Subcontractor([

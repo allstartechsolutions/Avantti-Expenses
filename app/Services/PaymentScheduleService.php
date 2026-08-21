@@ -8,6 +8,7 @@ use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Payment Schedule for the project / job site financial reports.
@@ -373,6 +374,23 @@ class PaymentScheduleService
      * The current month's row covers [today, end of month] so items already
      * past due this month land only in the Overdue bucket.
      */
+    /**
+     * `YYYY-MM` for a date column, in whatever dialect this connection speaks.
+     *
+     * This used to be a bare `DATE_FORMAT`, which is MySQL-only — so the
+     * project financial report and the payment schedule 500'd on sqlite and
+     * neither had ever been covered by a test (docs/review-and-improvements.md,
+     * P28). Same class of problem as the `FIELD()` found in M7.
+     */
+    protected function monthBucket(string $expression): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', {$expression})",
+            'pgsql' => "to_char({$expression}, 'YYYY-MM')",
+            default => "DATE_FORMAT({$expression}, '%Y-%m')",
+        };
+    }
+
     public function projection(): array
     {
         $today = $this->today->toDateString();
@@ -401,12 +419,12 @@ class PaymentScheduleService
 
         $instRows = $this->openInstallments()
             ->whereDate('due_date', '>=', $today)
-            ->selectRaw("DATE_FORMAT(due_date, '%Y-%m') as ym, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total")
+            ->selectRaw($this->monthBucket('due_date')." as ym, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total")
             ->groupBy('ym')
             ->get();
         $oneRows = $this->openOneTime()
             ->whereRaw('COALESCE(payment_due_date, expense_date) >= ?', [$today])
-            ->selectRaw("DATE_FORMAT(COALESCE(payment_due_date, expense_date), '%Y-%m') as ym, COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total")
+            ->selectRaw($this->monthBucket('COALESCE(payment_due_date, expense_date)')." as ym, COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total")
             ->groupBy('ym')
             ->get();
 

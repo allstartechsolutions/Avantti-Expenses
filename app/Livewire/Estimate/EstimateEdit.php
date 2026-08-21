@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Estimate;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
@@ -15,6 +16,8 @@ use Livewire\Component;
 
 class EstimateEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Estimate $estimate;
 
     // Header fields
@@ -76,6 +79,8 @@ class EstimateEdit extends Component
 
     public function mount(Estimate $estimate)
     {
+        $this->authorizeAbility('estimates.edit');
+
         if (!$estimate->canBeEdited()) {
             return redirect()->route('estimates.show', $estimate);
         }
@@ -462,6 +467,8 @@ class EstimateEdit extends Component
 
     public function saveEstimate()
     {
+        $this->authorizeAbility('estimates.edit');
+
         $this->validate([
             'client_id' => 'required|exists:clients,id',
             'estimate_date' => 'required|date',

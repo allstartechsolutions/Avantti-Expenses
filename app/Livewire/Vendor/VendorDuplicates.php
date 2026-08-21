@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Vendor;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,8 @@ use Livewire\Component;
 
 class VendorDuplicates extends Component
 {
+    use AuthorizesAbility;
+
     use AuthorizesAdmin;
 
     // Manual merge selection
@@ -17,7 +20,7 @@ class VendorDuplicates extends Component
 
     public function mount(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.merge');
     }
 
     /**
@@ -25,7 +28,7 @@ class VendorDuplicates extends Component
      */
     public function mergeGroup(int $survivorId, array $vendorIds): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.merge');
 
         // find(), not findOrFail: a concurrent merge from another session may
         // have removed records this page still displays.
@@ -71,7 +74,7 @@ class VendorDuplicates extends Component
      */
     public function mergeManual(): void
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.merge');
 
         $this->validate([
             'keepVendorId' => 'required|different:mergeVendorId|exists:vendors,id',

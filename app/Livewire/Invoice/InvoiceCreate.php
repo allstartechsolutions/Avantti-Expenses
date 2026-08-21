@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Invoice;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
@@ -16,6 +17,8 @@ use Livewire\Component;
 
 class InvoiceCreate extends Component
 {
+    use AuthorizesAbility;
+
     // Header fields
     public $client_id = null;
     public $clientSearch = '';
@@ -75,6 +78,8 @@ class InvoiceCreate extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('invoices.create');
+
         $this->invoice_number = Invoice::generateInvoiceNumber();
         $this->invoice_date = now()->format('Y-m-d');
         $this->terms = 'net_30';
@@ -454,6 +459,8 @@ class InvoiceCreate extends Component
 
     public function saveAsDraft()
     {
+        $this->authorizeAbility('invoices.create');
+
         $this->validate([
             'client_id' => 'required|exists:clients,id',
             'invoice_date' => 'required|date',

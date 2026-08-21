@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Estimate;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Estimate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class EstimateIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -37,6 +40,8 @@ class EstimateIndex extends Component
 
     public function deleteEstimate(int $estimateId)
     {
+        $this->authorizeAbility('estimates.delete');
+
         $estimate = Estimate::findOrFail($estimateId);
 
         if (!$estimate->canBeEdited()) {

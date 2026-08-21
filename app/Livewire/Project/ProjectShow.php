@@ -176,6 +176,7 @@ class ProjectShow extends Component
         $abilities = [
             'expenses' => 'expenses.view',
             'change-orders' => 'change-orders.view',
+            'daily-reports' => 'daily-reports.view',
             'budget' => 'budget.view',
         ];
 

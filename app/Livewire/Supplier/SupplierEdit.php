@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Supplier;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Supplier;
 use Livewire\Component;
 
 class SupplierEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Supplier $supplier;
     public $name = '';
     public $also_subcontractor = false;
@@ -45,6 +48,8 @@ class SupplierEdit extends Component
 
     public function mount(Supplier $supplier)
     {
+        $this->authorizeAbility('vendors.edit');
+
         $this->supplier = $supplier;
         $this->name = $supplier->name;
         $this->street = $supplier->street;

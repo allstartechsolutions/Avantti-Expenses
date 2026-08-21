@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Invoice;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Invoice;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class InvoiceIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -37,6 +40,8 @@ class InvoiceIndex extends Component
 
     public function deleteInvoice(int $invoiceId)
     {
+        $this->authorizeAbility('invoices.delete');
+
         $invoice = Invoice::findOrFail($invoiceId);
 
         if (!$invoice->canBeEdited()) {

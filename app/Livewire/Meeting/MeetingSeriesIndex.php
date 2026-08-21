@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Meeting;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\UserStatus;
 use App\Models\JobSite;
 use App\Models\MeetingSeries;
@@ -26,6 +27,8 @@ use Livewire\Component;
  */
 class MeetingSeriesIndex extends Component
 {
+    use AuthorizesAbility;
+
     public bool $showInactive = false;
 
     // The form
@@ -48,13 +51,14 @@ class MeetingSeriesIndex extends Component
         $this->authorizeManage();
     }
 
+    /**
+     * A meeting series is a company-wide thing — a standing weekly across
+     * several projects — so its grant is asked without a scope and answered by
+     * the role, which is what an unscoped ability does.
+     */
     protected function authorizeManage(): void
     {
-        abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager,
-            403,
-            'Manager or administrator access required.'
-        );
+        $this->authorizeAbility('meetings.manage_series');
     }
 
     // =========================================================================
@@ -276,7 +280,9 @@ class MeetingSeriesIndex extends Component
 
     public function delete(int $id): void
     {
-        abort_unless(auth()->user()?->is_admin, 403);
+        // Deleting a series is not the same as running one; it was admin-only
+        // and is now the module's own delete grant.
+        $this->authorizeAbility('meetings.delete');
 
         $series = MeetingSeries::withCount('meetings')->findOrFail($id);
 

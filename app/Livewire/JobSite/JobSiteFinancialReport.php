@@ -2,6 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\JobSite;
 use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
@@ -9,10 +10,14 @@ use Livewire\Component;
 
 class JobSiteFinancialReport extends Component
 {
+    use AuthorizesAbility;
+
     public JobSite $jobSite;
 
     public function mount(JobSite $jobSite): void
     {
+        $this->authorizeAbility('project-report.view', $jobSite);
+
         $this->jobSite = $jobSite->load(['project']);
     }
 

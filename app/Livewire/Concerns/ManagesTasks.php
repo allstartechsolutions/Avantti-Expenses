@@ -29,6 +29,8 @@ use Livewire\Attributes\Computed;
  */
 trait ManagesTasks
 {
+    use AuthorizesAbility;
+
     // The task open in the detail view.
     public ?int $viewingTaskId = null;
 
@@ -74,6 +76,39 @@ trait ManagesTasks
     public function taskScopeIsFixed(): bool
     {
         return $this->taskContextProject() !== null;
+    }
+
+    // =========================================================================
+    // GUARDS (M13)
+    //
+    // Tasks are the first module where the scope is not the screen. My Tasks
+    // is a cross-project list, so every grant is asked about the **task**, and
+    // a task that belongs to no project at all — a personal one — is answered
+    // by the role, which is what an unscoped ability does.
+    // =========================================================================
+
+    /** Where the form is currently pointing, for a create. */
+    protected function taskFormScope(): JobSite|Project|null
+    {
+        if ($this->taskContextProject() !== null) {
+            return $this->taskContextJobSite() ?? $this->taskContextProject();
+        }
+
+        if ($this->task_job_site_id) {
+            return JobSite::find($this->task_job_site_id);
+        }
+
+        return $this->task_project_id ? Project::find($this->task_project_id) : null;
+    }
+
+    /** A task this person may at least see, or a 404. */
+    protected function taskInScope(int $taskId): Task
+    {
+        $task = Task::findOrFail($taskId);
+
+        $this->authorizeAbility('tasks.view', $task);
+
+        return $task;
     }
 
     // =========================================================================
@@ -130,6 +165,8 @@ trait ManagesTasks
 
     public function viewTask(int $taskId): void
     {
+        $this->taskInScope($taskId);
+
         $this->viewingTaskId = $taskId;
         $this->newNoteBody = '';
         $this->resetReason();
@@ -152,6 +189,8 @@ trait ManagesTasks
 
     public function openTaskForm(?int $parentId = null): void
     {
+        $this->authorizeAbility('tasks.create', $this->taskFormScope());
+
         $this->resetTaskForm();
 
         $this->task_parent_id = $parentId;
@@ -171,6 +210,8 @@ trait ManagesTasks
 
     public function editTask(int $taskId): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope($taskId));
+
         $task = Task::with('assignees')->findOrFail($taskId);
 
         abort_unless($task->canEdit(auth()->user()), 403);
@@ -192,6 +233,10 @@ trait ManagesTasks
 
     public function saveTask(TaskService $tasks): void
     {
+        $this->editingTaskId
+            ? $this->authorizeAbility('tasks.edit', $this->taskInScope($this->editingTaskId))
+            : $this->authorizeAbility('tasks.create', $this->taskFormScope());
+
         $this->validate([
             'task_title' => ['required', 'string', 'max:255'],
             'task_description' => ['nullable', 'string', 'max:5000'],
@@ -274,11 +319,15 @@ trait ManagesTasks
 
     public function setTaskProgress(int $taskId, int $progress, TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope($taskId));
+
         $this->runTaskAction(fn () => $tasks->setProgress(Task::findOrFail($taskId), $progress, auth()->user()));
     }
 
     public function markTaskReady(int $taskId, TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope($taskId));
+
         $this->runTaskAction(
             fn () => $tasks->markReady(Task::findOrFail($taskId), auth()->user()),
             __('Marked ready. It now waits for confirmation.')
@@ -287,6 +336,10 @@ trait ManagesTasks
 
     public function confirmTaskCompletion(int $taskId, TaskService $tasks): void
     {
+        // Saying a task is finished is its own grant: the doer marks it ready,
+        // somebody else confirms it.
+        $this->authorizeAbility('tasks.close', $this->taskInScope($taskId));
+
         $this->runTaskAction(
             fn () => $tasks->confirmCompletion(Task::findOrFail($taskId), auth()->user()),
             __('Task completed.')
@@ -295,11 +348,15 @@ trait ManagesTasks
 
     public function unblockTask(int $taskId, TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope($taskId));
+
         $this->runTaskAction(fn () => $tasks->unblock(Task::findOrFail($taskId), auth()->user()));
     }
 
     public function deleteTask(int $taskId, TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.delete', $this->taskInScope($taskId));
+
         $task = Task::findOrFail($taskId);
 
         $done = $this->runTaskAction(
@@ -327,6 +384,8 @@ trait ManagesTasks
 
     public function submitReason(TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope((int) $this->viewingTaskId));
+
         $task = $this->viewingTask;
 
         if (! $task) {
@@ -364,6 +423,8 @@ trait ManagesTasks
 
     public function addTaskNote(TaskService $tasks): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope((int) $this->viewingTaskId));
+
         $task = $this->viewingTask;
 
         if (! $task) {
@@ -384,6 +445,8 @@ trait ManagesTasks
      */
     public function taskFileUploaded(int $fileId): void
     {
+        $this->authorizeAbility('tasks.edit', $this->taskInScope((int) $this->viewingTaskId));
+
         $file = FileUpload::with('attachable')->find($fileId);
 
         if (! $file || ! $file->isAvailable()) {
@@ -409,9 +472,27 @@ trait ManagesTasks
         unset($this->viewingTask);
     }
 
+    /**
+     * The task an attachment belongs to. A file may hang off the task itself
+     * or off one of its notes; either way the task is what governs it.
+     */
+    protected function taskBehind(FileUpload $file): ?Task
+    {
+        return match (true) {
+            $file->attachable instanceof Task => $file->attachable,
+            $file->attachable instanceof TaskNote => $file->attachable->task,
+            default => null,
+        };
+    }
+
     public function downloadTaskFile(int $fileId, FileUploadService $files)
     {
-        $file = FileUpload::findOrFail($fileId);
+        $file = FileUpload::with('attachable')->findOrFail($fileId);
+
+        // Until M13 this had no check of any kind: any signed-in person could
+        // fetch any task's attachment by walking the ids. The file is answered
+        // by the task it hangs on, whether directly or through a note.
+        $this->authorizeAbility('tasks.view', $this->taskBehind($file));
 
         abort_unless($file->isAvailable(), 404);
 
@@ -430,11 +511,16 @@ trait ManagesTasks
 
     public function deleteTaskFile(int $fileId, FileUploadService $files): void
     {
-        $file = FileUpload::findOrFail($fileId);
+        $file = FileUpload::with('attachable')->findOrFail($fileId);
 
+        // Your own attachment, or somebody who may change the task. The second
+        // half used to be "admin or manager", asked about the person and never
+        // about which task it was.
         abort_unless(
-            $file->uploaded_by === auth()->id() || auth()->user()?->is_admin || auth()->user()?->is_manager,
-            403
+            $file->uploaded_by === auth()->id()
+                || $this->allowsAbility('tasks.edit', $this->taskBehind($file)),
+            403,
+            __('You do not have permission to do that.'),
         );
 
         $files->abort($file);

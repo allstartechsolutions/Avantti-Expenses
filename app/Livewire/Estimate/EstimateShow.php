@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Estimate;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\DocumentMessage;
 use App\Models\Estimate;
 use App\Models\Invoice;
@@ -13,15 +14,21 @@ use Livewire\Component;
 
 class EstimateShow extends Component
 {
+    use AuthorizesAbility;
+
     public Estimate $estimate;
 
     public function mount(Estimate $estimate)
     {
+        $this->authorizeAbility('estimates.view');
+
         $this->estimate = $estimate->load(['client', 'project', 'jobSite', 'items', 'createdBy', 'emailsSent.sentBy', 'invoice', 'statusHistories.changedBy']);
     }
 
     public function markAsSent()
     {
+        $this->authorizeAbility('estimates.send');
+
         if (!$this->estimate->isDraft()) {
             session()->flash('error', __('Only draft estimates can be marked as sent.'));
             return;
@@ -40,6 +47,8 @@ class EstimateShow extends Component
 
     public function markAsAccepted()
     {
+        $this->authorizeAbility('estimates.edit');
+
         if (!$this->estimate->isSent()) {
             session()->flash('error', __('Only sent estimates can be accepted.'));
             return;
@@ -58,6 +67,8 @@ class EstimateShow extends Component
 
     public function markAsDeclined()
     {
+        $this->authorizeAbility('estimates.edit');
+
         if (!$this->estimate->isSent()) {
             session()->flash('error', __('Only sent estimates can be declined.'));
             return;
@@ -76,6 +87,8 @@ class EstimateShow extends Component
 
     public function deleteEstimate()
     {
+        $this->authorizeAbility('estimates.delete');
+
         if (!$this->estimate->canBeEdited()) {
             session()->flash('error', __('Only draft or sent estimates can be deleted.'));
             return;
@@ -91,6 +104,8 @@ class EstimateShow extends Component
 
     public function convertToInvoice()
     {
+        $this->authorizeAbility('invoices.create');
+
         if (!$this->estimate->isAccepted()) {
             session()->flash('error', __('Only accepted estimates can be converted to invoices.'));
             return;

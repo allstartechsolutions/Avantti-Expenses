@@ -352,6 +352,45 @@ class Task extends Model
         });
     }
 
+    /**
+     * Narrow a cross-project list to the projects this person may open (M13).
+     *
+     * My Tasks has no project of its own, so there is no route to guard — the
+     * list has to filter. Somebody company-wide is unaffected. Somebody
+     * confined sees the tasks on the projects and job sites they hold, plus
+     * personal ones that belong to no project at all, which are theirs by
+     * definition and have no scope to check.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if (! $user->isConfined()) {
+            return $query;
+        }
+
+        $resolver = app(\App\Services\PermissionResolver::class);
+
+        $projectIds = [];
+        $jobSiteIds = [];
+
+        foreach ($resolver->membershipsOf($user) as $membership) {
+            if ($membership->scopeable_type === Project::class) {
+                $projectIds[] = $membership->scopeable_id;
+            } elseif ($membership->scopeable_type === JobSite::class) {
+                $jobSiteIds[] = $membership->scopeable_id;
+            }
+        }
+
+        return $query->where(function (Builder $q) use ($projectIds, $jobSiteIds) {
+            $q->whereNull('project_id')
+                ->orWhereIn('project_id', $projectIds)
+                ->orWhereIn('job_site_id', $jobSiteIds);
+        });
+    }
+
     // =========================================================================
     // STATE
     // =========================================================================

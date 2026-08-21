@@ -474,9 +474,9 @@ directory — budgets and cost code templates store no files. M7 closed
 `requisitions/`, M8 closed `quotations/` — the first with two owners, the round's own files and
 each vendor's proposal — M9 closed `purchase-orders/`, M10 closed `change_orders/` and M11 closed both
 `contracts/` and `contract-change-orders/`. Four
-directories remain —
-`daily_reports/` and `temp_daily_reports/` (M14), `subcontractor-documents/` (M16) and
-`company-logos/` (already behind `company.view` at the screen; its directory is the only one
+directories remain, after M14 closed `daily_reports/` —
+`temp_daily_reports/` (deliberately open, like `livewire-tmp/`: in-flight uploads that belong to
+no record yet), `subcontractor-documents/` (**still open — see P33**) and `company-logos/` (already behind `company.view` at the screen; its directory is the only one
 that holds nothing project-scoped).
 
 
@@ -757,6 +757,15 @@ The fix is one line per controller — resolve the record, ask the module's `vie
 it — and it is the same shape as `FileController::authorizeFile()`. Either later passes pick up
 their own, or **F3 sweeps the lot**; recorded so it cannot be forgotten either way.
 
+**Progress:** M13 guarded the meeting minute PDFs, M14 the daily report PDFs, M15 the estimate
+and invoice PDFs, and **M17 the largest share** — all six company reports and the project and
+job-site financial reports, each answering to the same grant as its screen.
+
+**Two sets are left, and no pass is coming for them:** the quotation RFQ and comparison-map PDFs
+(M8's) and the contract schedule and measurement PDFs (M11's). Both modules are finished. These
+need picking up deliberately or **F3 sweeps them** — one line each, resolving the record and
+asking the module's `view` ability.
+
 ### P23 — `scopeVisibleTo` resolves internal documents in PHP
 
 `documents.see_internal` is a scoped grant, so the answer differs per project and a single WHERE
@@ -776,3 +785,219 @@ arguably different acts — `documents.purge` would be the fifth grant.
 
 Not split, because nothing in the old behaviour distinguished them and this pass had enough
 genuine changes in it. Recorded as a decision rather than an omission.
+
+
+---
+
+## Permissions module — parked during M13 (Tasks & Meetings), 2026-08-21
+
+### P25 — a meeting's grants cannot be given per project
+
+A meeting spans several projects through its items, so M13 asks its grants **without a scope**.
+For somebody company-wide the role answers; for somebody confined the resolver checks whether any
+of their memberships grants it.
+
+The consequence: you cannot say "this person may run meetings on the Alpha project only". They
+either run meetings or they do not. That is honest — the record genuinely has no single project —
+but it is worth knowing before somebody tries.
+
+If it ever matters, the answer is not a `project_id` on the meeting; it is to check the grant
+against each **item's** scope as the agenda is built, which is a bigger change than a permission
+pass.
+
+### P26 — `Task::visibleTo()` reads memberships, not the resolver's answer
+
+The filter builds a list of the project and job-site ids a confined person holds a membership on,
+and matches `project_id` / `job_site_id` against it. It does **not** ask whether that membership
+grants `tasks.view` specifically — the route guard has already established the person holds the
+ability somewhere, and every per-task action re-checks properly through `taskInScope()`.
+
+So the *list* can show a task on a project where the person holds a membership but not
+`tasks.view`; opening it is refused. That is a cosmetic leak of a title, not of anything the task
+contains, and closing it means resolving the ability per project rather than per membership —
+which is the same shape as P23's problem in documents. Both would be fixed by one helper: "the
+scopes on which this person holds ability X".
+
+### P27 — a personal task belongs to nobody's project
+
+A task with no `project_id` is answered by the role rather than by a scope, and appears in every
+confined person's list. That is right — it is theirs, filed against nothing — but it means a
+personal task is the one record in the application a confined person can always see. Recorded
+because it is a deliberate hole in the confinement, not an oversight.
+
+
+---
+
+## Permissions module — parked during M14 (Daily Reports), 2026-08-21
+
+### P28 — the project financial report is MySQL-only, so it has never been tested *(FIXED in M17, 2026-08-21)*
+
+Closed by `PaymentScheduleService::monthBucket()`, which emits `strftime` on sqlite, `to_char` on
+Postgres and the original `DATE_FORMAT` on MySQL. Both the project financial report and the
+payment schedule report are now rendered by a test. **MySQL output is unchanged.** The original
+note follows.
+
+
+`ProjectFinancialReport` runs `DATE_FORMAT(due_date, '%Y-%m')` in its payment-schedule query.
+That is MySQL-only: the screen 500s on sqlite, which is why nothing in the suite has ever
+rendered it. The same class of problem as the `FIELD(priority, …)` found in M7, and the same
+consequence — **MySQL-only SQL silently means "untested"**.
+
+`strftime('%Y-%m', due_date)` is the sqlite equivalent, and the portable form is a `CASE` or
+letting the application group the rows. It belongs to **M17**, which owns the reports; M14 left
+it alone and rewrote the two bookkeeping tests that used to drive that route so they state the
+fact instead of hitting it.
+
+**Worth a sweep in M17 or F3:** `grep -rn "DATE_FORMAT\|FIELD(\|GROUP_CONCAT\|IFNULL" app/`
+will find the rest.
+
+### P29 — `temp_daily_reports/` stays open on purpose
+
+Half-finished daily report uploads land there before the report exists, so there is no record to
+answer for them — the same situation as `livewire-tmp/`. Both are left open in
+`FileController::authorizeFile()`.
+
+The exposure is real but small: the paths are random, the files are unreferenced, and a completed
+report moves its images into `daily_reports/{id}/`. If it ever matters, the answer is to name the
+uploader in the path and check it, not to try to resolve a record that does not exist yet.
+
+
+---
+
+## Permissions module — parked during M15 (Estimates & Invoices), 2026-08-21
+
+### P30 — a nested component's mount must not require more than its parent's *(rule, learned the hard way)*
+
+M15 guarded `EstimateSendEmail::mount()` with `estimates.send`. That panel is **embedded in the
+estimate detail page**, so the guard took the whole detail page away from anybody who could only
+read it — a 403 on a screen they were entitled to. Fixed by moving the guard to the embed
+(`@can` around the `<livewire:…>` tag) and leaving it on the action.
+
+**The rule: a child component's `mount()` may only ask for something its parent already
+required.** Anything narrower belongs on the embed and on the action.
+
+Every other nested component was checked at the time: the five under Access and System Settings
+(`TemplateManager`, and the four settings panels) each ask for exactly the ability their parent's
+mount already required, so none had the fault. Worth re-running that check in F3:
+
+```
+grep -rho "<livewire:[a-z0-9.-]*" resources/views/ | sort -u
+```
+then compare each child's mount guard against its parent's.
+
+### P31 — `payments.refund` is company-wide, so it cannot be given per client
+
+Refunding is `payments.refund`, which lives in the company-wide `payments` area. There is no way
+to say "may refund this client's invoices but not that one's". Nothing suggests that is wanted —
+refunds are a finance-office act — but it is recorded because `invoices.record_payment` has the
+same property and the pair look like they might be scopeable.
+
+### P32 — a paid invoice can still be deleted
+
+`invoices.delete` refuses nobody once granted, including on an invoice that has been paid through
+the pay link. The payments go with it.
+
+M10 refuses to delete an approved change order and M6 refuses to change a locked budget for
+exactly this reason; the same shape fits here — refuse while the invoice has payments, and say
+so. Not done in M15 because it changes behaviour beyond the permission pass. **The equivalent
+gap on contracts is P20; these two want the same answer.**
+
+
+---
+
+## Permissions module — parked during M16 (Reference data), 2026-08-21
+
+### P33 — `subcontractor-documents/` is still served to anybody signed in
+
+M16 guarded the subcontractor screens, but not the directory their documents live in.
+`FileController::authorizeFile()` still has no branch for `subcontractor-documents/`, so any
+signed-in person can fetch any subcontractor's paperwork — insurance certificates, licences — by
+naming the path.
+
+It was not closed in M16 because the files hang off `subcontractor_documents` rows whose owner is
+a vendor, and vendors are a **company-wide** area: the honest guard is `vendors.view`, which both
+seeded roles hold, so the branch would change nothing today. It is still worth adding, because
+the moment somebody has `vendors.view` taken away the directory should follow.
+
+One line in the map, the same shape as `expenses`. **F3 should close it along with the remaining
+PDFs (P22).**
+
+### P34 — the catalog is a money area with no masking
+
+`catalog` is declared `money => true` because items carry a current cost, and nothing masks it.
+`can_see_money` only reaches project and job-site scopes, and the catalog belongs to no project —
+the same root as P13 and P19.
+
+So a Site Team member with `can_see_money = false` sees no project totals but can read every
+item's cost in the catalog. Recorded here because the `money` flag now claims something the
+screen does not do.
+
+The fix is the same one P6, P13 and P19 all want: a company-wide way to hold — or withhold — a
+grant per person. **Four notations now point at the same missing piece.**
+
+
+---
+
+## Permissions module — parked during M17 (Reports), 2026-08-21
+
+### P35 — the company reports are not scoped, and probably should not be
+
+Every one of the six reads the whole company: every project's expenses, every supplier's
+invoices. They are company-wide areas, so a **confined** person holding, say, `reports.sales_tax`
+would see figures from projects they cannot open.
+
+Today that cannot happen — the six are administrator-only by seed, and administrators see
+everything anyway. It becomes real the moment somebody grants one of them to a confined user,
+which F1 makes possible.
+
+Three options when it matters: leave them company-wide and say so on the screen; filter each
+report by the reader's projects (the heaviest option — six different queries); or refuse the
+grant to a confined user outright, which is the cheapest honest answer.
+
+**Related to P6/P13/P19/P34 but not the same:** those four want a company-wide *grant* record.
+This one is about what a company-wide *report* should show a confined reader.
+
+### P36 — `reports.view` and `reports.export` are declared but unused
+
+The area has eight actions. Six name a report; the other two — `view` ("Open reports") and
+`export` ("Export and print") — are guarded nowhere. The sidebar group's `active` pattern matches
+`reports.*`, so the group appears when any single report grant is held, and each report's PDF
+uses that report's own grant rather than a shared `export`.
+
+They are not harmful, but they are two toggles in the matrix that do nothing, which is the thing
+the honesty rule exists to prevent. Either give them a job — `view` as a prerequisite for the
+group, `export` as a second gate on every PDF — or take them out. **F3 should decide.**
+
+Note that `project-report.export` **is** used, and does gate the project report's PDF; the unused
+pair is on the company-wide `reports` area only.
+
+### P37 — the dashboard's receivables and estimates are not narrowed by project
+
+*Opened 2026-08-21 (M18).*
+
+Every other figure on the dashboard is filtered through `visibleProjectIds()`, so a confined
+person's Cash to Pay, Active Projects, purchase orders and cash-flow bars count their own
+projects and nothing else. **Receivables and Open Estimates are not.**
+
+That is deliberate rather than an oversight. `invoices` and `estimates` are company-wide areas —
+an estimate belongs to a client, not to a project (M15) — and their index screens show every
+record to anybody holding the grant. Narrowing the dashboard's version would make the summary
+disagree with the screen it summarises, which is the worse of the two inconsistencies.
+
+It only matters once F1 makes it possible to grant `invoices.view` to a confined person. **The
+honest fix is the same one P35 wants**: decide whether a company-wide money area may be held by
+a confined user at all. If the answer is no, this resolves itself and the narrowing is never
+needed. Decide with P6/P13/P19/P34/P35, not on its own.
+
+### P38 — a catalogue ability's name has no pt_BR
+
+*Opened 2026-08-21 (M18).*
+
+`config/permissions.php` carries a display name for every area and for the actions that need one
+("Grant and revoke access", "See the company overview", "Suspend or reactivate"). None of them
+are in `lang/pt_BR.json`, so the permission matrix and the template editor show English strings
+to a pt_BR user — the only screens in the application that do.
+
+The names come out of config rather than out of a Blade file, so `__()` has to be applied where
+they are rendered, and the strings then have to be added. Roughly forty of them. **F3**, and it
+is a half-hour job, not a design question.

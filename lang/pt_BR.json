@@ -1153,7 +1153,6 @@
     "Create administrator account": "Criar conta de administrador",
     "_dashboard": "========== Dashboard ==========",
     "Welcome": "Bem-vindo",
-    "Your dashboard is coming soon.": "Seu painel estará disponível em breve.",
     "Financial overview and pending actions": "Visão geral financeira e ações pendentes",
     "Operations overview and pending actions": "Visão geral operacional e ações pendentes",
     "Cash to Pay": "Caixa a Pagar",
@@ -4059,5 +4058,15 @@
     "Approve their own change orders": "Aprovar os próprios aditivos",
     "Undo an approval": "Desfazer uma aprovação",
     "Measure and release instalments": "Medir e liberar parcelas",
-    "Undo a payment": "Desfazer um pagamento"
+    "Undo a payment": "Desfazer um pagamento",
+    "Edit a closed report": "Editar um relatório encerrado",
+    "Cash In (Last 6 Months)": "Entradas (últimos 6 meses)",
+    "Nothing to summarise yet": "Nada a resumir ainda",
+    "You can see the overview, but none of the areas it reports on — expenses, invoices, estimates, projects or purchase orders — are open to you. Ask an administrator to add one.": "Você pode ver o panorama, mas nenhuma das áreas que ele resume — despesas, faturas, orçamentos, projetos ou ordens de compra — está liberada para você. Peça a um administrador para liberar alguma.",
+    "My Open Tasks": "Minhas tarefas abertas",
+    "Personal": "Pessoal",
+    "Nothing assigned to you right now.": "Nada atribuído a você no momento.",
+    "Tasks are not part of your access.": "Tarefas não fazem parte do seu acesso.",
+    "Go to": "Ir para",
+    "Your account has no areas open to it yet. Ask an administrator to give you access.": "Sua conta ainda não tem nenhuma área liberada. Peça acesso a um administrador."
 }

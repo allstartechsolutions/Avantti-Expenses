@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\ChangeOrder;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
+use App\Models\DailyReportImage;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\PurchaseOrder;
@@ -116,6 +117,12 @@ class FileController extends Controller
                 ContractChangeOrder::where('file_path', $path)->first(),
             ],
 
+            // M14 — a daily report's photos, filed under the report's id. The
+            // path is `daily_reports/{id}/...`, so the report is named by the
+            // path itself; the image rows carry the same path and either way
+            // it is the report that governs it.
+            'daily_reports' => ['daily-reports', $this->dailyReportFor($path)],
+
             // M10 — the signed change order, a column on the record itself.
             'change_orders' => ['change-orders', ChangeOrder::where('file_path', $path)->first()],
 
@@ -146,6 +153,18 @@ class FileController extends Controller
             403,
             __('You do not have permission to do that.'),
         );
+    }
+
+    /**
+     * The daily report a photo belongs to.
+     *
+     * `daily_reports/{id}/…` names it in the path, but the id is taken from
+     * the database rather than trusted: the image row is looked up by its
+     * stored path, which is what the application wrote.
+     */
+    private function dailyReportFor(string $path): ?Model
+    {
+        return DailyReportImage::where('file_path', $path)->first()?->owningReport();
     }
 
     /**

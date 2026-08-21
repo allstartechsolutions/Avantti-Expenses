@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\Supplier;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class CatalogItemEdit extends Component
 {
+    use AuthorizesAbility;
+
     public CatalogItem $item;
 
     public $type;
@@ -35,6 +38,8 @@ class CatalogItemEdit extends Component
 
     public function mount(CatalogItem $item)
     {
+        $this->authorizeAbility('catalog.edit');
+
         $this->item = $item;
         $this->type = $item->type;
         $this->name = $item->name;
@@ -106,6 +111,8 @@ class CatalogItemEdit extends Component
 
     public function save()
     {
+        $this->authorizeAbility('catalog.edit');
+
         $this->validate();
 
         // Price history is automatically tracked in the model boot method

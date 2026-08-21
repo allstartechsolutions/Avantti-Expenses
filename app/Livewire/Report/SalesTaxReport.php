@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Report;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use Carbon\Carbon;
@@ -11,6 +12,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SalesTaxReport extends Component
 {
+    use AuthorizesAbility;
+
     public string $fromDate = '';
     public string $toDate = '';
     public string $statusFilter = 'non_draft';
@@ -25,6 +28,8 @@ class SalesTaxReport extends Component
 
     public function mount(): void
     {
+        $this->authorizeAbility('reports.sales_tax');
+
         if ($this->fromDate === '') {
             $this->fromDate = Carbon::now()->startOfMonth()->toDateString();
         }

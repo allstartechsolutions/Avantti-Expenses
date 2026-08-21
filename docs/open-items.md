@@ -8,12 +8,11 @@ its own file (index at the bottom).
 
 ## 1. State of the repo
 
-- **The working tree is NOT clean.** The permissions module's **M4 (Expenses)** and
-  **M5 (Income)**, **M6 (Budget & Cost Codes)**, **M7 (Requisitions)**, **M8 (Quotations)** and
-  **M9 (Purchase Orders)**, **M10 (Change Orders)**, **M11 (Contracts & Payments)** and
-  **M12 (Documents)** passes are built and uncommitted — see §1a below and
-  `docs/permissions-module.md`. The engine and M1–M3 are committed. Everything else
-  described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
+- **The working tree is NOT clean.** The permissions module's **M13 (Tasks & Meetings)**,
+  **M14 (Daily Reports)**, **M15 (Estimates & Invoices)**, **M16 (Reference data)** and
+  **M17 (Reports)** and **M18 (Dashboard & search)** passes are uncommitted — see §1a below and `docs/permissions-module.md`. The engine and M1–M3
+  are committed at `f95ead5`, and **M4 (Expenses) through M12 (Documents) at `4700912`**.
+  Everything else described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
   library and the cost code / change order work are all in.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
   outstanding at the *phase* level — every screen that exists, works.
@@ -32,16 +31,21 @@ its own file (index at the bottom).
 
 ### 1a. Permissions module — in progress (2026-08-21)
 
-The engine and M1–M3 are committed (`f95ead5`); **M4 through M12 are in the working tree and
-uncommitted.**
+The engine and M1–M3 are committed (`f95ead5`) and **M4 through M12 at `4700912`**;
+**M13 through M18 are in the working tree and uncommitted.**
 It is safe to deploy as it stands: every module that has not had its pass keeps its old rules
 exactly.
 
 - **Where it is:** engine complete (E1–E4); passes **M1** Access & Users, **M2** Project &
   Job Site shell, **M3** Company & Settings, **M4** Expenses, **M5** Income,
   **M6** Budget & Cost Codes, **M7** Requisitions, **M8** Quotations, **M9** Purchase Orders,
-  **M10** Change Orders, **M11** Contracts & Payments, **M12** Documents done.
-  **18 of 30 areas enforced.**
+  **M10** Change Orders, **M11** Contracts & Payments, **M12** Documents, **M13** Tasks &
+  Meetings, **M14** Daily Reports, **M15** Estimates & Invoices, **M16** Reference data,
+  **M17** Reports and **M18** Dashboard & search done. **EVERY MODULE PASS IS COMPLETE —
+  29 of 30 areas enforced, and nothing inside a project is open.** The one area left on the
+  bridge is the documentation library, read-only to everybody signed in by design; F3 decides
+  whether it moves at all. What remains is **F1** (confinement live), **F2** (delete the
+  bridge) and **F3** (review).**
 - **What to read:** `docs/permissions-module-plan.md` for the design and the remaining pass
   order; `docs/permissions-module.md` for what is actually built, step by step.
 - **Deploy:** `php artisan migrate --force` then **`php artisan permissions:sync`** — the
@@ -56,7 +60,7 @@ exactly.
   budget is unlocked, every existing proposal carries a null `priced_by`, and every existing
   order line starts at zero received, so none of them changes anything anyone can see until
   somebody uses the feature.
-- **Tests:** 396 in `tests/Feature/Permissions/`, 429 in the suite. Three failures elsewhere
+- **Tests:** 463 in `tests/Feature/Permissions/`, 496 in the suite. Three failures elsewhere
   are stale Laravel scaffold tests that predate this work (`RegistrationTest` ×2 — the public
   `register` route was removed from this app — and `ExampleTest`, which expects `/` to
   return 200 where it redirects to login).
@@ -130,8 +134,69 @@ exactly.
   quotation RFQ/map, the six reports, contract schedule and measurement, daily reports,
   estimates and invoices. **M8 should have guarded the quotation PDFs and did not.** Either the
   remaining passes pick up their own or F3 sweeps the lot.
-- **Next:** **M13 — Tasks & Meetings**. `manage_series` off the inline role check; My Tasks
-  scoped.
+- **M13 was the first pass where the scope is not the screen.** My Tasks is cross-project, so
+  every task grant is asked about the **task** and the list is **filtered** (`Task::visibleTo`)
+  rather than guarded. A meeting has no project at all — it spans several through its items — so
+  its grants are asked unscoped. **Three more unguarded actions closed:** `publish()` (freezes
+  the minute and mails it to every attendee — no guard of any kind), `downloadTaskFile()` (no
+  check at all, any id), and `deleteTaskFile()` (asked about the person, never the task).
+- **P22 progress:** the meeting minute PDFs are guarded. Still `auth` only: quotation RFQ and
+  map, contract schedule and measurement, the project and job-site financial reports, the
+  expense report, the six company reports, daily reports, estimates and invoices.
+- **M14 was the first pass to exercise the Site Supervisor and Client-guest templates** —
+  the diary is their main screen, and both are now proven end to end. A daily report closes
+  seven days after its date or when locked; the `is_admin` override became
+  `daily-reports.edit_locked`, held back from every role and template.
+- **P22 progress:** the daily report PDFs are guarded (they were `auth` only, so anybody could
+  fetch any project's diary by changing the id). Still open: quotation RFQ and map, contract
+  schedule and measurement, the financial reports, the expense report, the six company reports,
+  estimates and invoices.
+- **P28 found in M14:** the project financial report runs a MySQL-only `DATE_FORMAT`, so it
+  500s on sqlite and **has never been covered by a test** — same class as the `FIELD()` found
+  in M7. M17's to fix; worth grepping for the rest of the MySQL-only SQL at the same time.
+- **M15 closed the last two unguarded money screens.** Sending, recording a payment and
+  refunding are each held apart from editing; `payments.refund` — reserved since E1 and unused
+  until now — belongs here, because refunds exist only on invoice payments. Converting an
+  accepted estimate needs `invoices.create`, not an estimate grant.
+- **The public pay link is deliberately NOT guarded** — the client has no account. It is a token
+  boundary like a document share link, and that boundary is now tested: wrong token 404s, a
+  draft's token 404s, one token names one invoice, a visitor with a valid token is still not
+  signed in, and the amount is capped at the balance.
+- **P30 — a rule worth carrying into every later pass:** a nested component's `mount()` must not
+  require more than its parent's. M15 guarded the embedded send-email panel's mount and took the
+  whole detail page away from readers. Every other nested component was checked and is clean.
+- **M16 swept clients, vendors and the catalog.** One area covers three screens: the vendor
+  unification means suppliers, subcontractors and the merge tool all read the same `vendors`
+  table, so all three answer to `vendors.*`. `vendors.merge` stays apart from everything else —
+  somebody who may create, edit *and delete* a vendor still cannot merge two, because a merge
+  rewrites every expense, contract and PO that pointed at the loser.
+- **P34 joins P6, P13 and P19 — four notations now point at the same missing piece:** there is
+  no company-wide way to hold or withhold a grant per person. The newest symptom is that the
+  catalog is declared a money area and nothing masks its costs, because `can_see_money` only
+  reaches project scopes. **Decide this before F1.**
+- **M17 split the six company reports** off the `admin` middleware onto one grant each, so an
+  accountant can have Sales Tax and Accounts Payable without **Company Financials**. Every
+  report's PDF answers to the same grant as its screen. The project's own financial report is
+  scoped like any tab, and **printing it needs `export`, not `view`**.
+- **P28 is fixed.** `PaymentScheduleService` bucketed by month with MySQL-only `DATE_FORMAT`, so
+  the project financial report and the payment schedule report both 500'd on sqlite and **neither
+  had ever been rendered by a test** — which is how the fault survived. Now driver-aware, MySQL
+  output unchanged, both screens covered.
+- **P22 is nearly closed.** Two sets of PDFs are left and **no pass is coming for them**: the
+  quotation RFQ and comparison map (M8's) and the contract schedule and measurement (M11's).
+  Pick them up deliberately or let F3 sweep them.
+- **M18 gave the dashboard two abilities.** `dashboard.view` opens the page — everybody holds
+  it, because the login lands here — and `dashboard.overview` fills it, reproducing exactly the
+  `$role === 'admin'` the view used to carry. Every card then obeys the ability of the module it
+  summarises, and every figure is narrowed to the projects the reader may see. **N9 is closed**
+  (the search was scoped in M2; M18 added the proof).
+- **M18 caught a regression before it shipped:** a guest holds no company-wide ability by
+  design, so guarding the dashboard route would have put a 403 in front of every guest on every
+  sign-in. `mount()` now redirects them to their project instead of refusing.
+- **M18 replaced "Your dashboard is coming soon"** — what every non-administrator has been
+  seeing — with a real welcome screen: their own open tasks and shortcut tiles built from the
+  sidebar, so a tile can never offer a screen its owner would be refused on.
+- **Next: F1, F2 and F3.** No module passes remain.
 - **Two things to decide before F1 (confinement going live), both the same root cause:**
   P6, no per-user company-wide grant; and P13, `approval_limit` has no company-wide home, so a
   company-wide user currently has no ceiling at all.

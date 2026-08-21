@@ -732,7 +732,9 @@
     </div>
 
     <!-- Send Email Modal -->
-    <livewire:invoice.invoice-send-email :invoice="$invoice" />
+    @can('invoices.send')
+        <livewire:invoice.invoice-send-email :invoice="$invoice" />
+    @endcan
 
     <!-- Void / Refund Modal -->
     @if($showRefundModal && $this->refundPayment)

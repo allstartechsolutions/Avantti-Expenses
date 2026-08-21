@@ -294,7 +294,7 @@ byte through the application, which forfeits the reason for using R2 at all.
 should take the same view of the repository's links.
 
 ### N9 — The header search is not scoped
-*Opened 2026-08-19. Status: open.*
+*Opened 2026-08-19. **Status: CLOSED — M18, 2026-08-21.***
 
 The global search in the top header (`app/Livewire/Shared/HeaderSearch.php`) queries every
 project and job site in the install, with no filter beyond the search term. It is a direct
@@ -304,6 +304,13 @@ has to be scoped in the same pass, otherwise it becomes the easiest way to enume
 a user is not meant to see — names, clients and addresses are all shown in the dropdown.
 
 **Question for the owner:** none of its own. It rides on the answer to N4.
+
+**Closed.** `HeaderSearch` was scoped in M2, the moment `Project::visibleTo()`
+and `JobSite::visibleTo()` existed, and it searches nothing but those two
+models. What was missing was the proof; `DashboardTest` now carries it — a
+member of one project searching a term that matches both sees one of them, and
+the same for job sites. If a third model is ever added to the dropdown it must
+arrive with a `visibleTo` of its own.
 
 ---
 
@@ -337,7 +344,7 @@ Recorded when the permission module was designed. The design lives in
 | 6b. Granularity (N6) | **Action matrix**: per area, View / Create / Edit / Approve / Delete plus a few area-specific actions. Roles and templates become presets over the same matrix. |
 | 7. Document access (N5, N8) | **Tightened app-wide** in the enforcement sweep: every PDF and file controller authorizes against the record's scope, and a presigned R2 URL is only minted after the check. |
 | 8. Share links (N7) | Becomes the `documents.share` **ability**, granted by template rather than by role name — so each install decides whether managers hold it, and folder links can be held tighter than single-document ones. |
-| — Global search (N9) | Scoped in the same phase as confinement. |
+| — Global search (N9) | **Done (M18).** Scoped in M2, proved in M18. |
 | — External guests | **Allowed.** A client, engineer or vendor can hold a login confined to one project or job site, with no sidebar, no index of all projects and no global search. |
 | — Change-order approval (§4b) | Same answers as the requisition: its own ability, self-approval blocked, un-approving narrower than approving, and deleting an approved one behind a separate ability. |
 

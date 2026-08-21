@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class CatalogCategoryCreate extends Component
 {
+    use AuthorizesAbility;
+
     public $name = '';
     public $applicable_types = [];
     public $parent_id = '';
@@ -31,6 +34,8 @@ class CatalogCategoryCreate extends Component
 
     public function save()
     {
+        $this->authorizeAbility('catalog.create');
+
         $this->validate();
 
         CatalogCategory::create([

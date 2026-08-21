@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Client;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Exceptions\CardPointeException;
 use App\Models\Client;
 use App\Models\ClientPaymentMethod;
@@ -12,6 +13,8 @@ use Livewire\Component;
 
 class ClientShow extends Component
 {
+    use AuthorizesAbility;
+
     public Client $client;
     public int $projectsCount = 0;
 
@@ -42,6 +45,8 @@ class ClientShow extends Component
 
     public function mount(Client $client)
     {
+        $this->authorizeAbility('clients.view');
+
         $this->client = $client;
         $this->projectsCount = Project::where('client_id', $client->id)->count();
         $this->cardPointeConfigured = app(CardPointeService::class)->isConfigured();

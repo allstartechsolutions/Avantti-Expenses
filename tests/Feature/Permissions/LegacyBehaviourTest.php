@@ -138,7 +138,7 @@ class LegacyBehaviourTest extends TestCase
      * The areas whose modules have had their permission pass. Each pass adds
      * its own line here, in the same commit that flips the flag.
      */
-    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents'];
+    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard'];
 
     public function test_only_the_converted_areas_are_swept(): void
     {

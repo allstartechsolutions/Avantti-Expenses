@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Supplier;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Supplier;
 use Livewire\Component;
@@ -9,6 +10,8 @@ use Livewire\WithPagination;
 
 class SupplierIndex extends Component
 {
+    use AuthorizesAbility;
+
     use AuthorizesAdmin, WithPagination;
 
     public $search = '';
@@ -25,7 +28,7 @@ class SupplierIndex extends Component
 
     public function deleteSupplier($id)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.delete');
 
         $supplier = Supplier::find($id);
 

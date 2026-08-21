@@ -2,15 +2,20 @@
 
 namespace App\Livewire\Supplier;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Supplier;
 use Livewire\Component;
 
 class SupplierShow extends Component
 {
+    use AuthorizesAbility;
+
     public Supplier $supplier;
 
     public function mount(Supplier $supplier)
     {
+        $this->authorizeAbility('vendors.view');
+
         $this->supplier = $supplier->load('createdBy');
     }
 

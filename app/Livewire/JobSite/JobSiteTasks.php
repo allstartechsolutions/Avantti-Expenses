@@ -31,6 +31,8 @@ class JobSiteTasks extends Component
 
     public function mount(JobSite $jobSite): void
     {
+        $this->authorizeAbility('tasks.view', $jobSite);
+
         $this->jobSite = $jobSite->load('project');
     }
 

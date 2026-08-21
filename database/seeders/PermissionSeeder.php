@@ -61,6 +61,10 @@ class PermissionSeeder extends Seeder
         // --- admin-only today: admin-edits-a-paid-expense -------------------
         'expenses.edit_paid',
 
+        // --- Added in M14: editing a daily report after it has closed. Was a
+        //     hard-coded `is_admin` on the form.
+        'daily-reports.edit_locked',
+
         // --- Added in M11: taking a contract payment back out. Undoing is
         //     narrower than doing, the same rule as change-orders.unapprove.
         'contracts.unpay',
@@ -83,8 +87,17 @@ class PermissionSeeder extends Seeder
         // is always somebody's decision.
         'requisitions.approve_own',
 
+        // --- Added in M18: the company overview on the dashboard. Today the
+        //     view renders it on `$role === 'admin'` and shows everybody else
+        //     a placeholder, so this reproduces that exactly. Grant it and the
+        //     person sees only the cards their other abilities already allow.
+        'dashboard.overview',
+
         // --- admin-only today: only an admin deletes a custom article -------
         'documentation.delete',
+
+        // --- admin-only today: MeetingSeriesIndex::delete() ------------------
+        'meetings.delete',
 
         // --- admin-only today: `admin` middleware on the routes -------------
         'users.view', 'users.create', 'users.edit', 'users.suspend',
@@ -134,6 +147,13 @@ class PermissionSeeder extends Seeder
         'documents.share',
         'documents.see_internal',
         'meetings.manage_series',
+        // Manager-or-above today: MeetingForm and MeetingAgenda both required
+        // it to open at all, and MeetingIndex hid the New Meeting button.
+        'meetings.create',
+        'meetings.edit',
+        // Publishing freezes the minute and mails it to every attendee. It had
+        // no guard at all; held to the same people who may run the meeting.
+        'meetings.freeze',
         'documentation.create',
         'documentation.edit',
     ];

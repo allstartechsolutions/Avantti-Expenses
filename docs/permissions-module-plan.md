@@ -416,18 +416,21 @@ scoped module hangs off it; then modules in order of how much money they move.
 | M10 ✅ | **Change Orders** *(built 2026-08-21)* | Approval separated from raising; un-approve and delete-approved held tighter (§4b of the notes) |
 | M11 ✅ | **Contracts & Payments** *(built 2026-08-21)* | Contracts, measurements, the payments dashboard, contract payments, payment batches — four company-wide money screens with no guard today |
 | M12 ✅ | **Documents** *(built 2026-08-21)* | `share` (**N7**), `see_internal`, and the presigned-URL check moved before the mint (**N5/N8**) |
-| M13 | **Tasks & Meetings** | `manage_series` off the inline role check; My Tasks scoped |
-| M14 | **Daily Reports** | Site-level module, the natural home of the guest and the supervisor persona |
-| M15 | **Estimates & Invoices** | Client-facing money, unguarded today; includes the public pay link's boundary |
-| M16 | **Reference data** | Clients, vendors, subcontractors, suppliers, catalog — role-governed, not scoped |
-| M17 | **Reports** | All six, plus their PDF controllers; the heaviest `visibleTo` work |
-| M18 | **Dashboard & search** | The cards obey the abilities of the modules they summarise; the header search scoped (**N9**) |
+| M13 ✅ | **Tasks & Meetings** *(built 2026-08-21)* | `manage_series` off the inline role check; My Tasks scoped |
+| M14 ✅ | **Daily Reports** *(built 2026-08-21)* | Site-level module, the natural home of the guest and the supervisor persona |
+| M15 ✅ | **Estimates & Invoices** *(built 2026-08-21)* | Client-facing money, unguarded today; includes the public pay link's boundary |
+| M16 ✅ | **Reference data** *(built 2026-08-21)* | Clients, vendors, subcontractors, suppliers, catalog — role-governed, not scoped |
+| M17 ✅ | **Reports** *(built 2026-08-21)* | All six, plus their PDF controllers; the heaviest `visibleTo` work |
+| M18 ✅ | **Dashboard & search** *(built 2026-08-21)* | Two abilities — `view` opens the page, `overview` fills it; every card obeys its own module; totals narrowed by project; **N9** closed |
 
 Each pass is a day-to-a-few-days of work, ships on its own, and can be deployed on its own.
 If the order needs to change because a customer needs a module confined sooner, it can —
 the passes do not depend on each other beyond M1 and M2.
 
-**Progress (2026-08-21): M1–M12 are done — 18 of 30 areas enforced. M13 is next.**
+**Progress (2026-08-21): M1–M18 are done — 29 of 30 areas enforced, and every module pass is
+complete. Only `documentation` is left on the bridge, and F3 decides whether it moves at all.
+What remains is F1 (confinement live), F2 (delete the bridge) and F3 (review), and
+P6+P13+P19+P34 want deciding together before F1.**
 
 ### 9.5 Stage 3 — closing up
 
@@ -453,7 +456,7 @@ to anybody's staff.
 | N6 | Roles are a flat field | E1–E4 — abilities with roles as presets |
 | N7 | Share links | M12 — `documents.share` ability, granted by template rather than role |
 | N8 | Presigned URLs are bearer access | Unchanged by design; M12 moves the check *before* the URL is minted |
-| N9 | Header search unscoped | M18 |
+| N9 | Header search unscoped | **Closed (M18)** — scoped in M2, proved in M18 |
 
 ## 11. Still to decide (nothing here blocks the engine)
 

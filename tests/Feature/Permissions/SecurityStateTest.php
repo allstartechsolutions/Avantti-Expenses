@@ -137,17 +137,21 @@ class SecurityStateTest extends TestCase
 
     public function test_the_converted_areas_are_the_ones_recorded_here(): void
     {
-        // M1 converted the permission module's own screens. Everything else is
-        // still on the legacy bridge; each pass moves one line.
+        // M1 converted the permission module's own screens; M18 converted the
+        // last one. Every area but the documentation library now decides for
+        // itself, and each pass moved one line of this list.
         $swept = array_values(array_diff(array_keys(AbilityCatalog::areas()), AbilityCatalog::unsweptAreas()));
 
         sort($swept);
 
         $this->assertSame(
             [
-                'access', 'budget', 'change-orders', 'company', 'contracts', 'cost-codes',
-                'documents', 'expenses', 'income', 'payments', 'project', 'projects',
-                'purchase-orders', 'quotations', 'requisitions', 'settings', 'team', 'users',
+                'access', 'budget', 'catalog', 'change-orders', 'clients', 'company',
+                'contracts', 'cost-codes',
+                'daily-reports', 'dashboard', 'documents', 'estimates', 'expenses', 'income', 'invoices',
+                'meetings', 'payments', 'project',
+                'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
+                'requisitions', 'settings', 'tasks', 'team', 'users', 'vendors',
             ],
             $swept,
             'An area is marked swept. Move its cases in this file from "not enforced" to "enforced".',
@@ -207,11 +211,11 @@ class SecurityStateTest extends TestCase
         }
     }
 
-    public function test_what_is_inside_a_project_is_open_only_where_the_module_has_not_had_its_pass(): void
+    public function test_nothing_inside_a_project_is_open_any_more(): void
     {
-        // M2 decides which projects somebody may open, not what they may do
-        // inside one. A member with a narrow membership still sees every tab
-        // of a module that has not had its pass.
+        // M2 decided which projects somebody may open. What they may do inside
+        // one was each module's own pass, and this case tracked how much was
+        // still open. As of M17, nothing is.
         $membership = Membership::create([
             'user_id' => $this->confined->id,
             'scopeable_type' => Project::class,
@@ -223,56 +227,39 @@ class SecurityStateTest extends TestCase
 
         $this->actingAs($this->confined)->get(route('projects.overview', $this->project))->assertOk();
 
-        // Expenses (M4) and Budget (M6) are swept: the membership says nothing
-        // about either, so no.
-        $this->actingAs($this->confined)->get(route('projects.expenses', $this->project))->assertForbidden();
-        $this->actingAs($this->confined)->get(route('projects.budget', $this->project))->assertForbidden();
-
-        // Change orders no longer either — M10 swept them.
-        $this->actingAs($this->confined)->get(route('projects.change-orders', $this->project))->assertForbidden();
-
-        // Contracts no longer either — M11 swept them.
-        $this->actingAs($this->confined)->get(route('projects.contracts', $this->project))->assertForbidden();
-
-        // Daily reports are still open, and should be refused once M14 lands.
-        $this->actingAs($this->confined)->get(route('projects.daily-reports', $this->project))->assertOk();
-    }
-
-    public function test_the_money_screens_m11_closed_are_now_grants_rather_than_open_doors(): void
-    {
-        // All three were reachable by anybody signed in — what E1 recorded and
-        // what M11 was held back for. The seeded roles still reach them, which
-        // is the pass rule: reproduce today's answer, but make it a grant.
-        foreach (['payments.index', 'contract-payments.index', 'payment-batches.index'] as $name) {
-            $this->actingAs($this->employee)->get(route($name))->assertOk();
+        foreach ([
+            'projects.expenses', 'projects.income', 'projects.budget',
+            'projects.change-orders', 'projects.contracts', 'projects.daily-reports',
+            'projects.documents', 'projects.tasks', 'projects.report',
+        ] as $route) {
+            $this->actingAs($this->confined)->get(route($route, $this->project))->assertForbidden();
         }
 
-        // The difference is that it can now be taken away.
-        $role = Role::create(['name' => 'no-payments-'.uniqid()]);
+        // One area is left on the bridge, and it does not live inside a
+        // project: the documentation library, which is read-only to everybody
+        // signed in by design. F3 decides whether it is swept as it stands or
+        // stays on the bridge for good.
+        $this->assertSame(
+            ['documentation'],
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
+    }
+
+    public function test_no_unguarded_money_screen_is_left(): void
+    {
+        // All six that E1 recorded are closed. The seeded roles still reach
+        // them — the pass rule is reproduce, then make it revocable — but a
+        // role without the grant is refused, which was never true before.
+        $role = Role::create(['name' => 'no-money-'.uniqid()]);
         $role->syncAbilities(['projects.view', 'project.view']);
         $blind = User::factory()->create(['role_id' => $role->id]);
 
-        foreach (['payments.index', 'contract-payments.index', 'payment-batches.index'] as $name) {
-            $this->actingAs($blind)->get(route($name))->assertForbidden();
-        }
-
-        // …and the three grants are separable: the batches need their own.
-        $viewer = Role::create(['name' => 'payments-viewer-'.uniqid()]);
-        $viewer->syncAbilities(['projects.view', 'project.view', 'payments.view']);
-        $reader = User::factory()->create(['role_id' => $viewer->id]);
-
-        $this->actingAs($reader)->get(route('payments.index'))->assertOk();
-        $this->actingAs($reader)->get(route('payment-batches.index'))->assertForbidden();
-    }
-
-    public function test_the_unguarded_money_screens_are_still_unguarded(): void
-    {
-        // M15 (estimates and invoices) — the last two.
         foreach ([
-            route('estimates.index'),
-            route('invoices.index'),
-        ] as $url) {
-            $this->actingAs($this->employee)->get($url)->assertOk();
+            'payments.index', 'contract-payments.index', 'payment-batches.index',
+            'estimates.index', 'invoices.index',
+        ] as $name) {
+            $this->actingAs($this->employee)->get(route($name))->assertOk();
+            $this->actingAs($blind)->get(route($name))->assertForbidden();
         }
     }
 
@@ -297,10 +284,14 @@ class SecurityStateTest extends TestCase
 
         $this->actingAs($this->confined)->get(route('jobsites.expenses', $this->jobSite))->assertOk();
 
-        // …and an unswept area still denies a confined person outright,
-        // whatever the template says. Daily reports close in M14.
-        $this->assertTrue(in_array('daily-reports.view', $template->abilities(), true));
-        $this->assertFalse($resolver->allows($this->confined, 'daily-reports.view', $this->jobSite));
+        // Eighteen passes in, every ability this template holds is live — there
+        // is no unswept area left among them, which is the point of the
+        // exercise. Daily reports were the last.
+        $this->assertTrue($resolver->allows($this->confined, 'daily-reports.view', $this->jobSite));
+
+        // The bridge still stands for what has not been swept, and the
+        // template holds none of it.
+        $this->assertFalse($resolver->allows($this->confined, 'project-report.view', $this->jobSite));
     }
 
     public function test_documents_and_reports_are_still_reachable_by_id(): void

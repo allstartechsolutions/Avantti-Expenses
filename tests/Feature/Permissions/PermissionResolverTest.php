@@ -89,6 +89,24 @@ class PermissionResolverTest extends TestCase
         $this->resolver->flush();
     }
 
+    /**
+     * Put an area back on the legacy bridge for one test.
+     *
+     * Needed since M17: every area that lives on a project is now swept, so
+     * the bridge's confined-denial branch has no real subject left. It is
+     * still engine behaviour and still runs on an install part-way through a
+     * deploy, so it is proved against an area held back on purpose.
+     */
+    protected function unsweep(string ...$areas): void
+    {
+        foreach ($areas as $area) {
+            config()->set("permissions.areas.{$area}.swept", false);
+        }
+
+        AbilityCatalog::flush();
+        $this->resolver->flush();
+    }
+
     protected function member(User $user, Project|JobSite $scope, array $abilities, array $attributes = []): Membership
     {
         $membership = Membership::create(array_merge([
@@ -114,24 +132,32 @@ class PermissionResolverTest extends TestCase
     {
         $employee = $this->user('employee');
 
-        // daily-reports is unswept, and the employee role holds
-        // daily-reports.create today. (expenses was the example until M4 swept
-        // it, income until M5, requisitions until M7, quotations until M8,
-        // documents until M12.)
-        $this->assertFalse(AbilityCatalog::isSwept('daily-reports.create'));
-        $this->assertTrue($this->resolver->allows($employee, 'daily-reports.create', $this->project));
+        // documentation is unswept: the employee role holds documentation.view
+        // today and not documentation.create, which is manager-and-above. Only
+        // two areas are left on the bridge — this one and the dashboard.
+        $this->assertFalse(AbilityCatalog::isSwept('documentation.view'));
+        $this->assertTrue($this->resolver->allows($employee, 'documentation.view', $this->project));
+        $this->assertFalse($this->resolver->allows($employee, 'documentation.create', $this->project));
     }
 
     public function test_an_unswept_area_denies_a_confined_user_outright(): void
     {
         $employee = $this->user('employee', ['access_scope' => AccessScope::ASSIGNED]);
 
-        $this->member($employee, $this->project, ['daily-reports.view', 'daily-reports.create']);
+        $this->member($employee, $this->project, ['expenses.view', 'expenses.create']);
+
+        // Held back on purpose: every scoped area is swept as of M17, so the
+        // bridge is shown against one put back for this test.
+        $this->unsweep('expenses');
 
         // Confined, and the area has not had its pass: denied even though the
         // membership grants it. This is what stops a half-converted module
         // leaking to somebody who is supposed to be confined.
-        $this->assertFalse($this->resolver->allows($employee, 'daily-reports.create', $this->project));
+        $this->assertFalse($this->resolver->allows($employee, 'expenses.create', $this->project));
+
+        // Sweep it and the same membership answers.
+        $this->sweep('expenses');
+        $this->assertTrue($this->resolver->allows($employee, 'expenses.create', $this->project));
     }
 
     public function test_a_guest_is_denied_by_an_unswept_area_whatever_the_column_says(): void

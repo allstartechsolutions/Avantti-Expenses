@@ -406,21 +406,28 @@ class ProjectScopeTest extends TestCase
     |---------------------------------------------------------------------------
     */
 
-    public function test_this_pass_does_not_decide_what_happens_inside_a_project(): void
+    public function test_every_tab_inside_a_project_now_decides_for_itself(): void
     {
-        // Deliberate, and recorded so nobody mistakes M2 for more than it is:
-        // a member with nothing but project.view still reaches every tab of a
-        // module that has not had its pass. M12, M14 and the rest close those.
+        // This case existed to record M2's boundary: a member holding nothing
+        // but project.view still reached every tab of the project they were
+        // on, because none of those modules had had its pass.
+        //
+        // Seventeen passes later that is no longer true of anything. The
+        // member below holds `project.view` and not one thing more, and every
+        // tab refuses them.
         $member = $this->confinedMemberOf($this->theirs, ['project.view']);
 
-        $this->actingAs($member)->get(route('projects.daily-reports', $this->theirs))->assertOk();
+        foreach ([
+            'projects.expenses', 'projects.income', 'projects.budget',
+            'projects.change-orders', 'projects.contracts', 'projects.daily-reports',
+            'projects.requisitions', 'projects.quotations', 'projects.purchase-orders',
+            'projects.documents', 'projects.tasks', 'projects.report',
+        ] as $route) {
+            $this->actingAs($member)->get(route($route, $this->theirs))->assertForbidden();
+        }
 
-        // Expenses (M4), Budget (M6) and Change Orders (M10) no longer —
-        // swept, and this membership grants none of them.
-        $this->actingAs($member)->get(route('projects.expenses', $this->theirs))->assertForbidden();
-        $this->actingAs($member)->get(route('projects.budget', $this->theirs))->assertForbidden();
-        $this->actingAs($member)->get(route('projects.change-orders', $this->theirs))->assertForbidden();
-        $this->actingAs($member)->get(route('projects.contracts', $this->theirs))->assertForbidden();
+        // The project itself stays open — that is what the membership grants.
+        $this->actingAs($member)->get(route('projects.overview', $this->theirs))->assertOk();
     }
 
     public function test_a_guest_reaches_their_project_and_nothing_else(): void

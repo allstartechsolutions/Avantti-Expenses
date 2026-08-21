@@ -18,7 +18,14 @@ class DashboardTest extends TestCase
 
     public function test_authenticated_users_can_visit_the_dashboard(): void
     {
-        $user = User::factory()->create();
+        // A role is what carries `dashboard.view` since M18, and every real
+        // user has one — see tests/Feature/Permissions/DashboardTest.php.
+        $this->seed(\Database\Seeders\RoleSeeder::class);
+        app(\Database\Seeders\PermissionSeeder::class)->run();
+
+        $user = User::factory()->create([
+            'role_id' => \App\Models\Role::where('name', 'employee')->value('id'),
+        ]);
         $this->actingAs($user);
 
         $response = $this->get(route('dashboard'));

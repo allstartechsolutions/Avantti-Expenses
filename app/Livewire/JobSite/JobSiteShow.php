@@ -129,6 +129,7 @@ class JobSiteShow extends Component
             'expenses' => 'expenses.view',
             'purchaseorders' => 'purchase-orders.view',
             'changeorders' => 'change-orders.view',
+            'dailyreports' => 'daily-reports.view',
             'budget' => 'budget.view',
         ];
 

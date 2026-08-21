@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Meeting;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesTasks;
 use App\Livewire\Concerns\RaisesAgendaItems;
 use App\Models\Meeting;
@@ -26,6 +27,8 @@ use Livewire\Component;
  */
 class MeetingShow extends Component
 {
+    use AuthorizesAbility;
+
     use ManagesTasks, RaisesAgendaItems;
 
     public Meeting $meeting;
@@ -56,6 +59,8 @@ class MeetingShow extends Component
 
     public function mount(Meeting $meeting): void
     {
+        $this->authorizeAbility('meetings.view');
+
         $this->meeting = $meeting->load(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy', 'cancelledBy']);
 
         $this->fillEditableText();
@@ -276,6 +281,10 @@ class MeetingShow extends Component
 
     public function publish(): void
     {
+        // Publishing freezes the minute and mails it to every attendee. It had
+        // no guard of any kind.
+        $this->authorizeAbility('meetings.freeze');
+
         try {
             $this->meetings()->publish($this->meeting, auth()->user());
         } catch (\RuntimeException $e) {
@@ -315,9 +324,13 @@ class MeetingShow extends Component
     public function resendMinute(MeetingMinuteDistributor $distributor): void
     {
         abort_unless($this->meeting->isPublished(), 403);
+        // The chair may always resend their own minute; anybody else needs
+        // the grant that publishes one.
         abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager || $this->meeting->chair_id === auth()->id(),
-            403
+            $this->meeting->chair_id === auth()->id()
+                || $this->allowsAbility('meetings.freeze'),
+            403,
+            __('You do not have permission to do that.'),
         );
 
         $result = $distributor->distribute($this->meeting, auth()->user());

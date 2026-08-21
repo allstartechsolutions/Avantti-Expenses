@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Project;
 use Livewire\Component;
 
 class ProjectDailyReports extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     // Filters
@@ -15,6 +18,8 @@ class ProjectDailyReports extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('daily-reports.view', $project);
+
         $this->project = $project;
     }
 

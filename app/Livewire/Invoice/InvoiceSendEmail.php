@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Invoice;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Mail\InvoiceMail;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 class InvoiceSendEmail extends Component
 {
+    use AuthorizesAbility;
+
     public Invoice $invoice;
 
     public string $emailTo = '';
@@ -64,6 +67,8 @@ class InvoiceSendEmail extends Component
 
     public function sendEmail(): void
     {
+        $this->authorizeAbility('invoices.send');
+
         $this->validate([
             'subject' => 'required|string|max:255',
             'body' => 'required|string',

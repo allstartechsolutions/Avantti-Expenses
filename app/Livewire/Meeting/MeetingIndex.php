@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Meeting;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Meeting;
 use App\Models\MeetingSeries;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +21,8 @@ use Livewire\WithPagination;
  */
 class MeetingIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public string $search = '';
@@ -72,7 +75,7 @@ class MeetingIndex extends Component
 
     public function canManage(): bool
     {
-        return (bool) (auth()->user()?->is_admin || auth()->user()?->is_manager);
+        return $this->allowsAbility('meetings.create');
     }
 
     // =========================================================================

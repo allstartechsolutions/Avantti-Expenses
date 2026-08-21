@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Report;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class CompanyFinancialReport extends Component
 {
+    use AuthorizesAbility;
+
     public string $clientFilter = '';
 
     public string $projectFilter = '';

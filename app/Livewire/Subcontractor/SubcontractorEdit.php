@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Subcontractor;
 use Livewire\Component;
 
 class SubcontractorEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Subcontractor $subcontractor;
 
     // Company Information
@@ -62,6 +65,8 @@ class SubcontractorEdit extends Component
 
     public function mount(Subcontractor $subcontractor)
     {
+        $this->authorizeAbility('vendors.edit');
+
         $this->subcontractor = $subcontractor;
         $this->company_name = $subcontractor->company_name;
         $this->website = $subcontractor->website;

@@ -580,13 +580,27 @@ return [
         | -- Company-wide areas: the left menu and everything behind it --------
         */
 
+        // The dashboard is the only screen in the application that is entirely
+        // a roll-up: every card and every panel on it summarises another
+        // module. So its permissions come in two parts. `view` opens the page
+        // — everybody has it, because it is where a login lands — and
+        // `overview` is what turns the page into the company overview.
+        // Everything ON the overview is then gated by the ability of the
+        // module it summarises, so the overview shows a person their own
+        // slice and never more (see docs/permissions-module.md, M18).
         'dashboard' => [
             'name' => 'Dashboard',
             'module' => 'dashboard',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
-            'actions' => ['view'],
+            'swept' => true,
+            'actions' => [
+                'view' => ['name' => 'Open the dashboard'],
+                'overview' => [
+                    'name' => 'See the company overview',
+                    'sensitive' => true,
+                ],
+            ],
         ],
 
         'company' => [
@@ -651,7 +665,7 @@ return [
             'name' => 'Clients',
             'module' => 'projects',
             'levels' => ['global'],
-            'swept' => false,
+            'swept' => true,
             'actions' => ['view', 'create', 'edit', 'delete'],
         ],
 
@@ -661,7 +675,7 @@ return [
             'name' => 'Vendors',
             'module' => 'projects',
             'levels' => ['global'],
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'merge' => ['name' => 'Merge duplicates', 'sensitive' => true],
@@ -704,7 +718,7 @@ return [
             'module' => 'catalog',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => ['view', 'create', 'edit', 'delete'],
         ],
 
@@ -713,7 +727,7 @@ return [
             'module' => 'estimates',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'send' => ['name' => 'Send to the client'],
@@ -725,7 +739,7 @@ return [
             'module' => 'invoices',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'send' => ['name' => 'Send to the client'],
@@ -738,7 +752,7 @@ return [
             'module' => 'reports',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view' => ['name' => 'Open reports'],
                 'export' => ['name' => 'Export and print'],
@@ -976,7 +990,7 @@ return [
             'name' => 'Tasks',
             'module' => 'meetings',
             'levels' => ['global', 'project', 'job_site'],
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'close' => ['name' => 'Close a task'],
@@ -987,7 +1001,7 @@ return [
             'name' => 'Meetings',
             'module' => 'meetings',
             'levels' => ['global', 'project', 'job_site'],
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'freeze' => ['name' => 'Freeze the minutes'],
@@ -995,12 +1009,24 @@ return [
             ],
         ],
 
+        // The site's diary, and the main screen of the two templates that hold
+        // almost nothing else: Site Supervisor and the read-only Client guest.
+        //
+        // A report closes seven days after its date, or when it is locked. The
+        // override used to be a hard-coded `is_admin`; it is a grant now, the
+        // same shape as `expenses.edit_paid`.
         'daily-reports' => [
             'name' => 'Daily Reports',
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
-            'swept' => false,
-            'actions' => ['view', 'create', 'edit', 'delete'],
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit', 'delete',
+                'edit_locked' => [
+                    'name' => 'Edit a closed report',
+                    'sensitive' => true,
+                ],
+            ],
         ],
 
         'budget' => [
@@ -1020,7 +1046,7 @@ return [
             'module' => 'projects',
             'levels' => ['project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view',
                 'export' => ['name' => 'Export and print'],

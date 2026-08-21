@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Report;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentDetailReport extends Component
 {
+    use AuthorizesAbility;
+
     public string $fromDate = '';
     public string $toDate = '';
     public string $clientFilter = '';
@@ -45,6 +48,8 @@ class PaymentDetailReport extends Component
 
     public function mount(): void
     {
+        $this->authorizeAbility('reports.payment_details');
+
         if ($this->fromDate === '') {
             $this->fromDate = Carbon::now()->startOfMonth()->toDateString();
         }

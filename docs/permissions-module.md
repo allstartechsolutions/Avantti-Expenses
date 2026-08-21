@@ -1734,6 +1734,489 @@ Meetings — is next.**
 
 ---
 
+## M13 — Tasks & Meetings *(built 2026-08-21)*
+
+Twenty of thirty areas converted. Two things make this pass different from the
+twelve before it, and both are about **where the scope comes from**.
+
+### A task's scope is the task's, not the screen's
+
+Every pass so far guarded a screen that belonged to one project. **My Tasks
+belongs to none** — it is a cross-project list of what is assigned to you — so
+there is no route to hang a scope on.
+
+So `ManagesTasks` asks every grant about the **task**: `taskInScope()` loads it
+and checks `tasks.view` before anything else happens, and the create guard asks
+about wherever the form is currently pointing. A task that belongs to no
+project at all — a personal one — has no scope to check and is answered by the
+role, which is what an unscoped ability does.
+
+The list itself is **filtered rather than guarded**: `Task::visibleTo()` leaves
+a company-wide person untouched and narrows a confined one to the projects and
+job sites they hold, plus the personal tasks that belong to nobody's project.
+All three counters on the dashboard and the project filter go through it.
+
+### A meeting has no project at all
+
+A meeting spans several through its `meeting_items`, and the series carries its
+own scopes. There is no `project_id` on the record. So the meeting grants are
+asked **without a scope** — for a company-wide person the role answers, and for
+a confined one the resolver answers from their memberships taken together,
+which is exactly what a cross-project screen needs.
+
+| Ability | What it opens |
+|---|---|
+| `meetings.view` | The list, a meeting, its minute PDF |
+| `meetings.create` | Raising a meeting |
+| `meetings.edit` | The meeting's record and its agenda |
+| `meetings.freeze` | **Publishing** — freezing the minute and mailing it |
+| `meetings.manage_series` | The meeting series screen |
+| `meetings.delete` | Deleting a series |
+| `tasks.view/create/edit/close/delete` | The task half |
+
+### Holes closed
+
+1. **`publish()` had no guard of any kind.** It freezes the minute and mails it
+   to every attendee. It is `meetings.freeze` now, seeded to the same people
+   who could already open the meeting form.
+2. **`downloadTaskFile()` had no check at all** — any signed-in person could
+   fetch any task's attachment by walking the ids, the same class of hole as
+   N5. It answers from the task the file hangs on, whether directly or through
+   a note.
+3. **`deleteTaskFile()`** allowed "your own file, or an admin or manager" —
+   asked about the person, never about which task. Now: your own, or somebody
+   who may edit that task.
+4. **The minute PDF is guarded** — the first instalment of P22, which records
+   that every PDF controller in the application is still `auth` only.
+
+### Reproduced exactly
+
+Reading a meeting was open to any signed-in user; running one was manager and
+above. Both are reproduced, which meant seeding `meetings.create`, `edit` and
+`freeze` to manager rather than leaving them on both roles — the old guards were
+tighter than the abilities would have been. Deleting a series stays
+administrator-only.
+
+`TaskMeetingTest` — 16 cases, including one that greps the seven converted
+files for `is_admin` and `is_manager` and fails if either comes back.
+
+**`tasks` and `meetings` are swept. Twenty of thirty areas converted. M14 —
+Daily Reports — is next.**
+
+---
+
+## M14 — Daily Reports *(built 2026-08-21)*
+
+Twenty-one of thirty areas converted, and **every tab inside a project is now
+swept except the financial report**.
+
+The site's diary is the simplest module left — four screens, no money, no
+approval. What makes this pass worth its own entry is that it is the first one
+whose screen matters to the two seeded templates every earlier pass barely
+touched.
+
+### The two personas, finally exercised
+
+**Site Supervisor** and the read-only **Client** guest have shipped since E1 and
+hold almost nothing outside this module. Every pass so far has been about money
+and buying. This is the first where their own screen is converted, so it is the
+first real proof that the templates behave.
+
+Both are now tested end to end:
+
+- A **Site Supervisor** on one job site reads and files the diary there, is
+  refused the project above it and every other site, and cannot reopen a closed
+  report.
+- A **Client guest** follows the project's diary, cannot file or correct
+  anything, cannot reach another project's diary, and finds the expenses and
+  budget screens shut — which is the whole point of a guest.
+
+### A report closes after seven days
+
+`isEditable()` returns false seven days after the report's date, or as soon as
+it is locked. The override was a hard-coded `is_admin` on the form; it is
+`daily-reports.edit_locked` now — sensitive, held back from both seeded roles
+and every template, the same shape as `expenses.edit_paid` and
+`contracts.unpay`.
+
+### P22's second instalment, and the last two file directories
+
+**The daily report PDF was `auth` only**, so anybody signed in could fetch any
+project's diary by changing the number in the URL. Both routes are guarded
+against the report's own project now.
+
+`daily_reports/` joins the file controller's map. A photo hangs off a task or a
+manpower log rather than off the report, so the walk goes one step further:
+the image row is looked up by its stored path — never by trusting the id in the
+path — and answers from the report behind it. `temp_daily_reports/` is
+deliberately left open, like `livewire-tmp/`: it holds in-flight uploads that
+belong to no record yet.
+
+### Found on the way
+
+**The project financial report runs a MySQL-only `DATE_FORMAT`**, so its screen
+500s on sqlite and has never been covered by a test — the same class as the
+`FIELD()` found in M7. It belongs to M17; recorded as P28, and the two
+bookkeeping tests that used to drive that route now state the fact instead.
+
+`DailyReportTest` — 13 cases: the three roles unchanged; the diary as a grant;
+filing and correcting separate; a closed report needing `edit_locked` and a
+locked one closed however recent; no role or template holding it; the Site
+Supervisor and the Client guest each proven end to end; the PDF refused by id
+and refused across projects; and the templates pinned.
+
+**`daily-reports` is swept. Twenty-one of thirty areas converted. Nine remain:
+dashboard, clients, vendors, catalog, estimates, invoices, reports,
+documentation and project-report. M15 — Estimates & Invoices — is next.**
+
+---
+
+## M15 — Estimates & Invoices *(built 2026-08-21)*
+
+Twenty-three of thirty areas converted, and **the last two of the six unguarded
+money screens E1 recorded are closed**. Every one of them is now a grant.
+
+Both areas are **company-wide**: an estimate belongs to a client, not to a
+project, so they are held by role and appear in neither project editor.
+
+| Ability | What it opens |
+|---|---|
+| `estimates.view` / `invoices.view` | The lists, a record, its PDF |
+| `estimates.create` / `invoices.create` | Raising one |
+| `estimates.edit` / `invoices.edit` | The record, and marking an estimate accepted or declined |
+| `estimates.send` / `invoices.send` | Sending it to the client, and the send-email panel |
+| `invoices.record_payment` | Taking money in — the modal and both payment paths |
+| `payments.refund` | Giving it back |
+| `estimates.delete` / `invoices.delete` | Deleting |
+
+Three things are deliberately held apart. **Sending** is not editing: it is what
+puts a document in front of a client. **Recording a payment** is not editing the
+invoice. And **refunding** is `payments.refund` — the ability E1 reserved and
+no pass had used, because refunds exist only on invoice payments and never on
+contract or expense ones.
+
+**Converting an accepted estimate into an invoice needs `invoices.create`**, not
+an estimate grant. Holding every estimate ability there is does not let somebody
+raise an invoice.
+
+### The public pay link is a token boundary, not a permissions question
+
+An invoice carries a `payment_token`, and `/pay/{token}` lets an
+**unauthenticated** visitor settle it through CardPointe. That is the same shape
+as a document share link: the token is the whole credential, the route sits
+outside `auth`, and it is throttled.
+
+It is deliberately **not guarded** — the client has no account — but "not a
+permissions question" is a claim worth proving, so the boundary is tested: a
+wrong token 404s, a **draft** invoice's token 404s (it has been sent to nobody),
+one token names one invoice and no other, a visitor holding a valid token is
+still not signed in, and the amount is capped at the balance due with the
+invoice refreshed immediately before the charge.
+
+### A bug this pass introduced, and the rule that came out of it
+
+The send-email panel is **embedded in the detail page**. Guarding its `mount()`
+with `estimates.send` took the whole detail page away from anybody who could
+only read — a 403 on a screen they were entitled to.
+
+**A nested component's `mount()` must not require more than its parent's.** The
+guard belongs on the embed (`@can` around the `<livewire:…>` tag) and on the
+action, not on the child's mount. Every other nested component in the
+application was checked: the five under Access and System Settings each ask for
+exactly the ability their parent already required, so none of them had the same
+fault.
+
+### P22
+
+The estimate and invoice PDFs are guarded in their controllers. Both were `auth`
+only, so anybody signed in could fetch any client's quotation or bill by
+changing the number in the URL.
+
+`EstimateInvoiceTest` — 14 cases: the three roles unchanged; both areas
+revocable and separable from each other; sending, recording a payment,
+refunding and deleting each refused on their own; conversion needing the invoice
+grant; the PDFs refused by id; and five on the pay link's boundary.
+
+**`estimates` and `invoices` are swept. Twenty-three of thirty areas converted.
+Seven remain: dashboard, clients, vendors, catalog, reports, documentation and
+project-report. M16 — Reference data — is next.**
+
+---
+
+## M16 — Reference data *(built 2026-08-21)*
+
+Twenty-six of thirty areas converted. Clients, vendors and the catalog: the
+lists the rest of the application points at.
+
+All three are **company-wide** — they belong to no project — so they are held by
+role and appear in neither project editor. That is the point of them: one client
+list, one vendor list, one catalog, used everywhere.
+
+### One area, three screens
+
+The vendor unification merged suppliers and subcontractors into a single
+`vendors` table. So the **Suppliers** screen, the **Subcontractors** screen and
+the **merge tool** all read and write the same rows, and all three answer to
+`vendors.*` rather than pretending to be separate modules.
+
+`vendors.merge` stays apart from everything else: somebody who may create, edit
+*and delete* a vendor still cannot merge two of them, because a merge rewrites
+every expense, contract and purchase order that pointed at the loser.
+
+| Ability | What it opens |
+|---|---|
+| `clients.view/create/edit/delete` | The client list, a client, the quick-create panel on the estimate and invoice forms |
+| `vendors.view/create/edit/delete` | Suppliers, subcontractors, their employees and documents |
+| `vendors.merge` | The duplicate-merge tool — administrator-only by seed, as before |
+| `catalog.view/create/edit/delete` | Items and categories |
+
+### Reproduced exactly
+
+Reading and writing reference data was open to anybody signed in, and only three
+things were administrator-only: deleting a supplier, deleting a subcontractor
+(and its employees), and the merge tool. All of that is reproduced —
+`vendors.delete` and `vendors.merge` are held back from both seeded roles, and
+everything else stays on both.
+
+Nine index and form routes carry `ability:` middleware because their components
+have no `mount()` to guard — the same shape as the payment batches in M11 and
+the estimate and invoice lists in M15.
+
+`ReferenceDataTest` — 12 cases: the three roles unchanged across six screens;
+the merge tool still administrator-only; each of the three lists revocable on
+its own; suppliers and subcontractors proven to answer to one grant; create and
+edit separate from reading; deleting separate again; merging held apart from
+every other vendor grant; the client quick-create panel needing `clients.create`
+even though it is embedded in another module's form; and the catalogue's own
+claims pinned, including that the catalog is a money area and the other two are
+not.
+
+**`clients`, `vendors` and `catalog` are swept. Twenty-six of thirty areas
+converted. Four remain: dashboard, reports, documentation and project-report.
+M17 — Reports — is next, and carries P28's MySQL-only SQL with it.**
+
+---
+
+## M17 — Reports *(built 2026-08-21)*
+
+Twenty-eight of thirty areas converted, and **nothing inside a project is open
+any more.** Two areas remain, and neither lives on a project: the dashboard
+(M18) and the documentation library.
+
+Two different shapes under one pass.
+
+### The six company reports
+
+They were behind the `admin` middleware — one door for all of them. Each now has
+its own grant, so an accountant can be given Sales Tax, Accounts Payable and
+Payment Details without being given **Company Financials**, which is the one
+that shows what the business is worth and the one marked sensitive.
+
+The seeds keep all six with the administrator, reproducing exactly what the
+middleware did. The difference is that they can now be handed out one at a time.
+
+**Every report's PDF answers to the same grant as its screen.** A PDF of a
+report somebody may not open is the same disclosure by another door — that is
+P22 closed for this module, and the largest share of it.
+
+### The project's own financial report
+
+`project-report` is scoped like every other tab: a member of one project cannot
+open another's, and a job-site membership opens the site's report and not the
+project's.
+
+**Printing it needs `export`, not `view`.** Reading a project's finances on
+screen and sending the PDF on are different acts, and the catalogue already
+declared them as two actions — this is the first pass to make the distinction
+mean something.
+
+Holding every other grant on the project — expenses, income, budget, contracts —
+still does not open the financial report. It is the one screen that puts all of
+them on one page.
+
+### P28 fixed: two screens that had never been rendered by a test
+
+`PaymentScheduleService` bucketed rows by month with a bare
+`DATE_FORMAT(due_date, '%Y-%m')`. That is MySQL-only, so the **project financial
+report** and the **payment schedule report** both 500'd on sqlite — and neither
+had ever been rendered in the test suite, which is how the fault survived.
+
+`monthBucket()` now emits the right expression per driver (`strftime` on sqlite,
+`to_char` on Postgres, `DATE_FORMAT` on MySQL), and both screens are covered by
+a test that renders them. The MySQL output is byte-for-byte what it was.
+
+That is the third instance of the same lesson — after the `FIELD()` in M7 and
+this one found in M14. **MySQL-only SQL silently means "untested".**
+
+### A test that had to be rewritten rather than updated
+
+`ProjectScopeTest` carried a case from M2 recording its own boundary: a member
+holding nothing but `project.view` still reached every tab of their project,
+because none of those modules had had its pass. That is no longer true of
+anything, so the case now asserts the opposite — twelve tabs, all refused.
+
+`SecurityStateTest`'s equivalent does the same and pins the remaining unswept
+list at exactly `['dashboard', 'documentation']`.
+
+And the resolver's proof that the bridge denies a confined user outright had no
+subject left: every scoped area is swept. It now un-sweeps `expenses` for one
+test, proves the denial, sweeps it back and proves the membership answers. The
+bridge is still engine behaviour and still runs on an install part-way through a
+deploy, so it is still worth a test.
+
+`ReportTest` — 13 cases: the two never-rendered screens rendering; the six
+reports still administrator-only; each one its own grant and holding one giving
+none of the others; the tax reports separable from the company accounts; the
+PDFs following their screens; the project report scoped, separate from every
+other project grant, and its export separate from its view; the job-site report
+following its own membership; the menu following the grants; and the seeds and
+templates pinned.
+
+**`reports` and `project-report` are swept. Twenty-eight of thirty areas
+converted. M18 — Dashboard & search — is the last one.**
+
+---
+
+## M18 — Dashboard & search *(built 2026-08-21)*
+
+The last module pass. **Twenty-nine of thirty areas converted.** The one that
+is left is the documentation library, which is read-only to everybody signed in
+by design; F3 decides whether it is swept as it stands or stays on the bridge
+for good.
+
+The dashboard is unlike every other screen in this module, because **nothing on
+it belongs to it.** Every card and every panel is a summary of some other
+module. Guarding the page was never the interesting question; guarding what is
+drawn on it was.
+
+### Two abilities, because there are two questions
+
+`dashboard.view` opens the page. **Everybody holds it**, because `config/fortify.php`
+lands every login here and a 403 at the front door is no way to greet anybody.
+It is still a real toggle — it can be taken away — but that is a deliberate act,
+not a default.
+
+`dashboard.overview` is what fills the page. It reproduces exactly the
+`@if ($role === 'admin')` the view used to carry: seeded to administrators and
+held back from both seeded roles. The difference is that it can now be handed
+to somebody who is not an administrator — a finance manager, an owner's
+assistant — without making them one.
+
+### Holding the overview is not holding its contents
+
+Each block asks for the ability of the module it summarises, and a block that is
+off is **never queried for** — the work disappears with the panel, not just the
+markup.
+
+| Block | Grant |
+|---|---|
+| Cash to Pay, Overdue Payments, the AP bars | `expenses.view` |
+| Receivables, Past-Due Invoices, the AR bars | `invoices.view` |
+| Open Estimates | `estimates.view` |
+| Active Projects, at-risk badge | `projects.view` |
+| Open Purchase Orders, the PO half of Pending Approvals | `purchase-orders.view` |
+| The batch half of Pending Approvals | `payments.view` |
+| Over Budget — card and list | `projects.view` **and** `expenses.view` |
+
+Over budget is the one that needs two: it compares a project's spend against its
+contract value, so it discloses both, and either grant alone is not enough.
+
+The two layout substitutions the view has always made — Over Budget standing in
+for Receivables, Open Purchase Orders standing in for Open Estimates — are kept
+exactly, with the ability standing in for the module switch. An administrator's
+dashboard is unchanged by this pass, to the pixel.
+
+There is deliberately **no separate module-switch check** in the component: the
+resolver already answers `false` for every ability of a module the customer has
+switched off, and asking twice could only ever disagree with itself.
+
+### A leak by aggregate is still a leak
+
+A card that counts money across projects somebody cannot open tells them
+something the project list would not. Every figure is narrowed through
+`visibleProjectIds()`, which returns **null — meaning "no filter" — for anybody
+who is not confined**. Null is not an empty array: listing every project in the
+install inside a `whereIn` would be an expensive way of writing `1 = 1`, so
+today's SQL and today's numbers are untouched, and F1 turns the narrowing on for
+everybody it applies to without a further change here.
+
+Two figures are deliberately **not** narrowed: receivables and open estimates.
+Invoices and estimates are company-wide areas — an estimate belongs to a client,
+not to a project (M15) — so narrowing them here would make the dashboard
+disagree with the index screens behind it. Recorded as **P37** rather than
+decided silently.
+
+### Money: the one screen whose roll-up belongs to no scope
+
+Every figure here is a roll-up, which is exactly what `can_see_money` hides
+(M4). But `canSeeMoney($user, null)` means "company-wide", and for a confined
+person that is always no — the wrong answer here, because their figures have
+already been narrowed to the projects they are a member of.
+
+So the component decides once, in `canSeeDashboardMoney()`: company-wide people
+get the role's finance ability as before, and a confined person's answer is
+their memberships — **one project that hides its totals hides the totals here**,
+because a sum cannot show half of itself.
+
+`x-ui.money` gained an optional `visible` prop for this, and only this: a
+caller-supplied answer for the rare roll-up that points at no single scope.
+Leave it unset and the resolver decides, as everywhere else. The cash-flow chart
+is nothing but money, so it is removed rather than masked.
+
+### A regression this pass would have shipped, and the fix
+
+A **guest** — an outsider invited to one project — holds no company-wide ability
+at all. The resolver refuses them every one by design, so `dashboard.view` is
+not something a guest can even be given. Guarding the route would therefore have
+put a 403 in front of every guest on every sign-in, because Fortify lands them
+here.
+
+`mount()` redirects rather than refuses: somebody without the dashboard is sent
+to `InvitationService::landingFor()` — their first project or job site — and is
+refused only if there is nowhere to send them. **The front door is the one place
+where "no" has to mean "not here, there".**
+
+### The welcome panel
+
+What everybody who is not an administrator has been seeing since this
+application was written is a white box reading *"Your dashboard is coming
+soon."* It is now a real screen: the person's own open tasks, soonest first,
+overdue in red, and shortcut tiles to the areas they may reach.
+
+Neither half is a new permission. The tasks are M13's `Task::visibleTo()`, and
+the tiles are **the sidebar's own entries**, so a tile can never offer a screen
+its owner would be refused on. Both empty states say which of the two things is
+missing — no tasks, or no access — because those need different answers from
+whoever reads the screen over their shoulder.
+
+The overview has a designed empty state too, for somebody granted it while
+holding none of the modules it reports on.
+
+### N9 closed — the header search
+
+The search was scoped back in M2, when `Project::visibleTo()` and
+`JobSite::visibleTo()` landed, and it searches nothing else. What was missing
+was the proof, which this pass adds: a member of one project searching a term
+that matches both projects sees one of them, and the same for job sites. The
+note rode on N4 and is now closed with it.
+
+### Reproduced exactly
+
+`DashboardTest` — 21 cases: the admin's overview and everybody else's panel
+unchanged; the overview grantable to a non-administrator and revocable; each
+block arriving with its own grant and the overview alone showing nothing; the
+purchase-order substitution; totals narrowed to a member's own project and
+unnarrowed for everybody else; a block that is off costing no query; money
+masked by a membership and shown when it is not; the guest redirect; the
+welcome panel's tiles and its honest empty state; the search scoped on both
+models and silent under two characters; and the catalogue pinned at one
+unswept area.
+
+**`dashboard` is swept. Twenty-nine of thirty areas converted. Every module
+pass is done.**
+
+---
+
 ## Not yet built
 
-M13–M18, then the three closing steps. See `docs/permissions-module-plan.md` §9.
+The three closing steps. See `docs/permissions-module-plan.md` §9.

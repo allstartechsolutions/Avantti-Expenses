@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Client;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class ClientEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Client $client;
     public $company_name = '';
     public $contact_name = '';
@@ -47,6 +50,8 @@ class ClientEdit extends Component
 
     public function mount(Client $client)
     {
+        $this->authorizeAbility('clients.edit');
+
         $this->client = $client;
         $this->company_name = $client->company_name;
         $this->contact_name = $client->contact_name;

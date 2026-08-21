@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Meeting;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesTasks;
 use App\Livewire\Concerns\RaisesAgendaItems;
 use App\Models\JobSite;
@@ -29,6 +30,8 @@ use Livewire\Component;
  */
 class MeetingAgenda extends Component
 {
+    use AuthorizesAbility;
+
     use ManagesTasks, RaisesAgendaItems;
 
     public Meeting $meeting;
@@ -45,11 +48,7 @@ class MeetingAgenda extends Component
 
     public function mount(Meeting $meeting): void
     {
-        abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager,
-            403,
-            'Manager or administrator access required.'
-        );
+        $this->authorizeAbility('meetings.edit');
 
         abort_unless($meeting->isDraft(), 403, 'This minute is published and its agenda can no longer be changed.');
 

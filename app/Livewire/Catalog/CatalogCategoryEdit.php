@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use Livewire\Component;
 
 class CatalogCategoryEdit extends Component
 {
+    use AuthorizesAbility;
+
     public CatalogCategory $category;
 
     public $name = '';
@@ -17,6 +20,8 @@ class CatalogCategoryEdit extends Component
 
     public function mount(CatalogCategory $category)
     {
+        $this->authorizeAbility('catalog.edit');
+
         $this->category = $category;
         $this->name = $category->name;
         $this->applicable_types = $category->applicable_types ?? [];
@@ -45,6 +50,8 @@ class CatalogCategoryEdit extends Component
 
     public function save()
     {
+        $this->authorizeAbility('catalog.edit');
+
         $this->validate();
 
         // Prevent setting self as parent

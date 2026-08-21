@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use Livewire\Component;
@@ -9,6 +10,8 @@ use Livewire\WithPagination;
 
 class CatalogItemIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';

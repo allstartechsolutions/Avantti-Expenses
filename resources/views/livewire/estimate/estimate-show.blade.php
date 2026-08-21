@@ -509,5 +509,7 @@
     </div>
 
     <!-- Send Email Modal -->
-    <livewire:estimate.estimate-send-email :estimate="$estimate" />
+    @can('estimates.send')
+        <livewire:estimate.estimate-send-email :estimate="$estimate" />
+    @endcan
 </div>

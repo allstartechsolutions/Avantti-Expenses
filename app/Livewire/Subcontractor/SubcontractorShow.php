@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\DocumentType;
 use App\Models\Subcontractor;
@@ -15,6 +16,8 @@ use Livewire\WithFileUploads;
 
 class SubcontractorShow extends Component
 {
+    use AuthorizesAbility;
+
     use AuthorizesAdmin, WithFileUploads;
 
     public Subcontractor $subcontractor;
@@ -73,6 +76,8 @@ class SubcontractorShow extends Component
 
     public function mount(Subcontractor $subcontractor)
     {
+        $this->authorizeAbility('vendors.view');
+
         $this->subcontractor = $subcontractor->load('createdBy');
     }
 
@@ -185,7 +190,7 @@ class SubcontractorShow extends Component
 
     public function deleteEmployee(int $employeeId)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.edit');
 
         $employee = SubcontractorEmployee::where('id', $employeeId)
             ->where('subcontractor_id', $this->subcontractor->id)
@@ -209,7 +214,7 @@ class SubcontractorShow extends Component
 
     public function confirmDeleteSubcontractor()
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.delete');
 
         if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {
             return;
@@ -221,7 +226,7 @@ class SubcontractorShow extends Component
 
     public function deleteSubcontractor()
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.delete');
 
         // Re-check as a safety guard
         if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Client;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
@@ -9,6 +10,8 @@ use Livewire\Component;
 
 class ClientQuickCreate extends Component
 {
+    use AuthorizesAbility;
+
     public $showModal = false;
 
     public $company_name = '';
@@ -46,6 +49,8 @@ class ClientQuickCreate extends Component
     #[On('open-quick-add-client')]
     public function openModal($companyName = '')
     {
+        $this->authorizeAbility('clients.create');
+
         $this->resetForm();
         $this->company_name = $companyName;
         $this->showModal = true;
@@ -73,6 +78,8 @@ class ClientQuickCreate extends Component
 
     public function saveClient()
     {
+        $this->authorizeAbility('clients.create');
+
         $this->validate();
 
         $client = Client::create([

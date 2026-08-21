@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\Supplier;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class CatalogItemCreate extends Component
 {
+    use AuthorizesAbility;
+
     public $type = 'product';
     public $name = '';
     public $sku = '';
@@ -86,6 +89,8 @@ class CatalogItemCreate extends Component
 
     public function save()
     {
+        $this->authorizeAbility('catalog.create');
+
         $this->validate();
 
         CatalogItem::create([

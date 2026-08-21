@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Client;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class ClientCreate extends Component
 {
+    use AuthorizesAbility;
+
     public $company_name = '';
     public $contact_name = '';
     public $title = '';
@@ -48,6 +51,8 @@ class ClientCreate extends Component
 
     public function createClient()
     {
+        $this->authorizeAbility('clients.create');
+
         $this->validate();
 
         $client = Client::create([

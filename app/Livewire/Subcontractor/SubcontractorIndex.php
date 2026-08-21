@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Subcontractor;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\AuthorizesAdmin;
 use App\Models\Subcontractor;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,8 @@ use Livewire\WithPagination;
 
 class SubcontractorIndex extends Component
 {
+    use AuthorizesAbility;
+
     use AuthorizesAdmin, WithPagination;
 
     public $search = '';
@@ -31,7 +34,7 @@ class SubcontractorIndex extends Component
 
     public function confirmDeleteSubcontractor($subcontractorId)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.delete');
 
         $subcontractor = Subcontractor::findOrFail($subcontractorId);
 
@@ -53,7 +56,7 @@ class SubcontractorIndex extends Component
 
     public function deleteSubcontractor()
     {
-        $this->authorizeAdmin();
+        $this->authorizeAbility('vendors.delete');
 
         $subcontractor = Subcontractor::findOrFail($this->deletingSubcontractorId);
 

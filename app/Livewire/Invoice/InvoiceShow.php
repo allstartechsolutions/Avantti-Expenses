@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Invoice;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Exceptions\CardPointeException;
 use App\Models\ClientPaymentMethod;
 use App\Models\Invoice;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 class InvoiceShow extends Component
 {
+    use AuthorizesAbility;
+
     public Invoice $invoice;
 
     // Payment modal
@@ -44,12 +47,16 @@ class InvoiceShow extends Component
 
     public function mount(Invoice $invoice)
     {
+        $this->authorizeAbility('invoices.view');
+
         $this->invoice = $invoice->load(['client', 'project', 'jobSite', 'items', 'createdBy', 'emailsSent.sentBy', 'estimate', 'statusHistories.changedBy', 'payments.createdBy']);
         $this->cardPointegConfigured = app(CardPointeService::class)->isConfigured();
     }
 
     public function markAsSent()
     {
+        $this->authorizeAbility('invoices.send');
+
         if (!$this->invoice->isDraft()) {
             session()->flash('error', __('Only draft invoices can be marked as sent.'));
             return;
@@ -68,6 +75,8 @@ class InvoiceShow extends Component
 
     public function markAsPending()
     {
+        $this->authorizeAbility('invoices.edit');
+
         if (!$this->invoice->isSent()) {
             session()->flash('error', __('Only sent invoices can be marked as pending.'));
             return;
@@ -87,6 +96,8 @@ class InvoiceShow extends Component
 
     public function openPaymentModal()
     {
+        $this->authorizeAbility('invoices.record_payment');
+
         $this->paymentAmount = number_format($this->invoice->getBalanceDue(), 2, '.', '');
         $this->paymentMethod = 'check';
         $this->paymentDate = now()->format('Y-m-d');
@@ -114,6 +125,8 @@ class InvoiceShow extends Component
 
     public function recordPayment()
     {
+        $this->authorizeAbility('invoices.record_payment');
+
         $balanceDue = $this->invoice->getBalanceDue();
 
         $this->validate([
@@ -170,6 +183,8 @@ class InvoiceShow extends Component
 
     public function processCardPayment()
     {
+        $this->authorizeAbility('invoices.record_payment');
+
         $balanceDue = $this->invoice->getBalanceDue();
         $usingSavedCard = !empty($this->selectedPaymentMethodId);
 
@@ -322,6 +337,8 @@ class InvoiceShow extends Component
 
     public function openRefundModal(int $paymentId)
     {
+        $this->authorizeAbility('payments.refund');
+
         $payment = $this->invoice->payments()->where('id', $paymentId)->first();
 
         if (!$payment || !$payment->isRefundable()) {
@@ -348,6 +365,8 @@ class InvoiceShow extends Component
 
     public function processRefund()
     {
+        $this->authorizeAbility('payments.refund');
+
         $payment = $this->invoice->payments()->where('id', $this->refundPaymentId)->first();
 
         if (!$payment || !$payment->isRefundable()) {
@@ -465,6 +484,8 @@ class InvoiceShow extends Component
 
     public function deleteInvoice()
     {
+        $this->authorizeAbility('invoices.delete');
+
         if (!$this->invoice->canBeEdited()) {
             session()->flash('error', __('Only draft or sent invoices can be deleted.'));
             return;
@@ -490,6 +511,8 @@ class InvoiceShow extends Component
     #[Computed]
     public function refundPayment()
     {
+        $this->authorizeAbility('payments.refund');
+
         if (!$this->refundPaymentId) {
             return null;
         }

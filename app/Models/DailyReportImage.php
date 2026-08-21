@@ -27,6 +27,25 @@ class DailyReportImage extends Model
         return $this->morphTo();
     }
 
+    /**
+     * The daily report this photo ultimately belongs to.
+     *
+     * An image hangs off a task or a manpower log, never off the report
+     * directly, so the walk goes one step further than usual. Used by
+     * `FileController` to answer who may fetch the file (M14).
+     */
+    public function owningReport(): ?DailyReport
+    {
+        $owner = $this->imageable;
+
+        return match (true) {
+            $owner instanceof DailyReportTask => $owner->dailyReport,
+            $owner instanceof DailyReportManpower => $owner->dailyReport,
+            $owner instanceof DailyReport => $owner,
+            default => null,
+        };
+    }
+
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');

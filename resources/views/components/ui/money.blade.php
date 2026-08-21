@@ -5,6 +5,14 @@
     'scope' => null,
     /** Set on roll-ups — totals, budgets, margins — which `can_see_money` hides. */
     'rollup' => false,
+    /**
+     * An answer worked out by the caller, for the rare roll-up that belongs to
+     * no single scope. The dashboard is the case it exists for: its figures are
+     * sums over every project somebody is a member of, so "may they see money
+     * HERE?" has no one place to point at and the component cannot work it out
+     * from a scope. Leave it null and the resolver decides, as everywhere else.
+     */
+    'visible' => null,
 ])
 
 {{--
@@ -18,7 +26,13 @@
 
     See docs/permissions-module.md, M4.
 --}}
-@if($rollup && ! app(\App\Services\PermissionResolver::class)->canSeeMoney(auth()->user(), $scope))
+@php
+    $maySee = $visible !== null
+        ? (bool) $visible
+        : app(\App\Services\PermissionResolver::class)->canSeeMoney(auth()->user(), $scope);
+@endphp
+
+@if($rollup && ! $maySee)
     <span {{ $attributes }} title="{{ __('Totals are hidden for your access on this project.') }}">
         <span aria-hidden="true">&mdash;&mdash;</span>
         <span class="sr-only">{{ __('Hidden') }}</span>

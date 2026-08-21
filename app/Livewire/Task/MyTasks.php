@@ -168,7 +168,7 @@ class MyTasks extends Component
     public function stats(): array
     {
         $userId = auth()->id();
-        $mine = fn () => Task::query()->forUser($userId);
+        $mine = fn () => Task::query()->visibleTo(auth()->user())->forUser($userId);
 
         return [
             'open' => (clone $mine())->open()->count(),
@@ -179,9 +179,11 @@ class MyTasks extends Component
                 ->count(),
             // Admins and managers may confirm anything; everyone else only
             // what they chaired the meeting for.
-            'awaiting_me' => Task::query()->where('status', 'ready')
+            // Whoever may close a task may confirm anything they can see;
+            // everyone else only what they chaired the meeting for.
+            'awaiting_me' => Task::query()->visibleTo(auth()->user())->where('status', 'ready')
                 ->unless(
-                    auth()->user()?->is_admin || auth()->user()?->is_manager,
+                    $this->allowsAbility('tasks.close'),
                     fn (Builder $q) => $q->whereHas('originMeeting', fn (Builder $m) => $m->where('chair_id', $userId))
                 )
                 ->count(),
@@ -193,7 +195,8 @@ class MyTasks extends Component
     {
         return Project::whereIn(
             'id',
-            Task::query()->forUser(auth()->id())->whereNotNull('project_id')->distinct()->pluck('project_id')
+            Task::query()->visibleTo(auth()->user())->forUser(auth()->id())
+                ->whereNotNull('project_id')->distinct()->pluck('project_id')
         )
             ->orderBy('project_name')
             ->get(['id', 'project_name']);

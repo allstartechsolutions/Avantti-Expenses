@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Estimate;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
@@ -17,6 +18,8 @@ use Livewire\Component;
 
 class EstimateCreate extends Component
 {
+    use AuthorizesAbility;
+
     // Header fields
     public $client_id = null;
     public $clientSearch = '';
@@ -76,6 +79,8 @@ class EstimateCreate extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('estimates.create');
+
         $this->estimate_number = Estimate::generateEstimateNumber();
         $this->estimate_date = now()->format('Y-m-d');
         $this->terms = 'net_30';
@@ -456,6 +461,8 @@ class EstimateCreate extends Component
 
     public function saveAsDraft()
     {
+        $this->authorizeAbility('estimates.create');
+
         $this->validate([
             'client_id' => 'required|exists:clients,id',
             'estimate_date' => 'required|date',

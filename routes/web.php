@@ -203,19 +203,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('users/{user}/edit', UserEdit::class)->middleware('ability:users.edit')->name('users.edit');
 
     // Client routes
-    Route::get('clients', ClientIndex::class)->name('clients.index');
-    Route::get('clients/create', ClientCreate::class)->name('clients.create');
+    Route::get('clients', ClientIndex::class)
+        ->middleware('ability:clients.view')->name('clients.index');
+    Route::get('clients/create', ClientCreate::class)
+        ->middleware('ability:clients.create')->name('clients.create');
     Route::get('clients/{client}', ClientShow::class)->name('clients.show');
-    Route::get('clients/{client}/edit', ClientEdit::class)->name('clients.edit');
+    Route::get('clients/{client}/edit', ClientEdit::class)
+        ->middleware('ability:clients.edit')->name('clients.edit');
 
     // Subcontractor routes
-    Route::get('subcontractors', SubcontractorIndex::class)->name('subcontractors.index');
-    Route::get('subcontractors/create', SubcontractorCreate::class)->name('subcontractors.create');
+    Route::get('subcontractors', SubcontractorIndex::class)
+        ->middleware('ability:vendors.view')->name('subcontractors.index');
+    Route::get('subcontractors/create', SubcontractorCreate::class)
+        ->middleware('ability:vendors.create')->name('subcontractors.create');
     Route::get('subcontractors/{subcontractor}', SubcontractorShow::class)->name('subcontractors.show');
-    Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)->name('subcontractors.edit');
+    Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)
+        ->middleware('ability:vendors.edit')->name('subcontractors.edit');
 
     // Vendor merge tool (suppliers + subcontractors share the vendors table)
-    Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)->name('vendors.duplicates');
+    Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)
+        ->middleware('ability:vendors.merge')->name('vendors.duplicates');
 
     // Project routes
     // The project list and its own record. The per-project screens are guarded
@@ -233,9 +240,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/contracts', ProjectContracts::class)->name('projects.contracts');
     Route::get('projects/{project}/daily-reports', ProjectDailyReports::class)->name('projects.daily-reports');
     Route::get('projects/{project}/budget', ProjectBudget::class)->name('projects.budget');
-    Route::get('projects/{project}/report', ProjectFinancialReport::class)->name('projects.report');
-    Route::get('projects/{project}/report/pdf', [ProjectFinancialReportPdfController::class, 'download'])->name('projects.report.pdf.download');
-    Route::get('projects/{project}/report/pdf/view', [ProjectFinancialReportPdfController::class, 'stream'])->name('projects.report.pdf.view');
+    Route::get('projects/{project}/report', ProjectFinancialReport::class)
+        ->middleware('ability:project-report.view,project')->name('projects.report');
+    Route::get('projects/{project}/report/pdf', [ProjectFinancialReportPdfController::class, 'download'])
+        ->middleware('ability:project-report.export,project')->name('projects.report.pdf.download');
+    Route::get('projects/{project}/report/pdf/view', [ProjectFinancialReportPdfController::class, 'stream'])
+        ->middleware('ability:project-report.export,project')->name('projects.report.pdf.view');
 
     // Legacy route alias (for backward compatibility during migration)
     Route::get('projects/{project}/show', ProjectShow::class)->name('projects.show');
@@ -251,9 +261,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('job-sites/{jobSite}/quotations', JobSiteQuotations::class)->name('jobsites.quotations');
     Route::get('job-sites/{jobSite}/daily-reports', JobSiteShow::class)->name('jobsites.daily-reports');
     Route::get('job-sites/{jobSite}/budget', JobSiteShow::class)->name('jobsites.budget');
-    Route::get('job-sites/{jobSite}/report', JobSiteFinancialReport::class)->name('jobsites.report');
-    Route::get('job-sites/{jobSite}/report/pdf', [JobSiteFinancialReportPdfController::class, 'download'])->name('jobsites.report.pdf.download');
-    Route::get('job-sites/{jobSite}/report/pdf/view', [JobSiteFinancialReportPdfController::class, 'stream'])->name('jobsites.report.pdf.view');
+    Route::get('job-sites/{jobSite}/report', JobSiteFinancialReport::class)
+        ->middleware('ability:project-report.view,jobSite')->name('jobsites.report');
+    Route::get('job-sites/{jobSite}/report/pdf', [JobSiteFinancialReportPdfController::class, 'download'])
+        ->middleware('ability:project-report.export,jobSite')->name('jobsites.report.pdf.download');
+    Route::get('job-sites/{jobSite}/report/pdf/view', [JobSiteFinancialReportPdfController::class, 'stream'])
+        ->middleware('ability:project-report.export,jobSite')->name('jobsites.report.pdf.view');
 
     // Legacy route alias (for backward compatibility during migration)
     Route::get('job-sites/{jobSite}/show', JobSiteShow::class)->name('jobsites.show');
@@ -290,20 +303,27 @@ Route::middleware(['auth'])->group(function () {
     Route::get('daily-reports/{dailyReport}/pdf/view', [DailyReportPdfController::class, 'stream'])->name('dailyreports.pdf.view');
 
     // Catalog routes
-    Route::get('catalog', CatalogItemIndex::class)->name('catalog.index');
-    Route::get('catalog/create', CatalogItemCreate::class)->name('catalog.create');
+    Route::get('catalog', CatalogItemIndex::class)
+        ->middleware('ability:catalog.view')->name('catalog.index');
+    Route::get('catalog/create', CatalogItemCreate::class)
+        ->middleware('ability:catalog.create')->name('catalog.create');
     Route::get('catalog/{item}/edit', CatalogItemEdit::class)->name('catalog.edit');
 
     // Catalog Category routes
-    Route::get('catalog/categories', CatalogCategoryIndex::class)->name('catalog.categories.index');
-    Route::get('catalog/categories/create', CatalogCategoryCreate::class)->name('catalog.categories.create');
+    Route::get('catalog/categories', CatalogCategoryIndex::class)
+        ->middleware('ability:catalog.view')->name('catalog.categories.index');
+    Route::get('catalog/categories/create', CatalogCategoryCreate::class)
+        ->middleware('ability:catalog.create')->name('catalog.categories.create');
     Route::get('catalog/categories/{category}/edit', CatalogCategoryEdit::class)->name('catalog.categories.edit');
 
     // Supplier routes
-    Route::get('suppliers', SupplierIndex::class)->name('suppliers.index');
-    Route::get('suppliers/create', SupplierCreate::class)->name('suppliers.create');
+    Route::get('suppliers', SupplierIndex::class)
+        ->middleware('ability:vendors.view')->name('suppliers.index');
+    Route::get('suppliers/create', SupplierCreate::class)
+        ->middleware('ability:vendors.create')->name('suppliers.create');
     Route::get('suppliers/{supplier}', SupplierShow::class)->name('suppliers.show');
-    Route::get('suppliers/{supplier}/edit', SupplierEdit::class)->name('suppliers.edit');
+    Route::get('suppliers/{supplier}/edit', SupplierEdit::class)
+        ->middleware('ability:vendors.edit')->name('suppliers.edit');
 
     // Payment routes — the company-wide money screens. Guarded on the route as
     // well as in the component, because two of them (the batch index and the
@@ -328,7 +348,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:payments.batch')->name('payment-batches.edit');
 
     // Estimate routes
-    Route::get('estimates', EstimateIndex::class)->name('estimates.index');
+    // The index screens have no mount() to guard, so the grant is asked on the
+    // route; the rest of the module guards its own actions (M15).
+    Route::get('estimates', EstimateIndex::class)
+        ->middleware('ability:estimates.view')->name('estimates.index');
     Route::get('estimates/create', EstimateCreate::class)->name('estimates.create');
     Route::get('estimates/{estimate}', EstimateShow::class)->name('estimates.show');
     Route::get('estimates/{estimate}/edit', EstimateEdit::class)->name('estimates.edit');
@@ -336,7 +359,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('estimates/{estimate}/pdf/view', [EstimatePdfController::class, 'stream'])->name('estimates.pdf.view');
 
     // Invoice routes
-    Route::get('invoices', InvoiceIndex::class)->name('invoices.index');
+    Route::get('invoices', InvoiceIndex::class)
+        ->middleware('ability:invoices.view')->name('invoices.index');
     Route::get('invoices/create', InvoiceCreate::class)->name('invoices.create');
     Route::get('invoices/{invoice}', InvoiceShow::class)->name('invoices.show');
     Route::get('invoices/{invoice}/edit', InvoiceEdit::class)->name('invoices.edit');
@@ -345,25 +369,51 @@ Route::middleware(['auth'])->group(function () {
     Route::get('invoices/{invoice}/pdf', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
     Route::get('invoices/{invoice}/pdf/view', [InvoicePdfController::class, 'stream'])->name('invoices.pdf.view');
 
-    // Report routes (admin only)
-    Route::middleware('admin')->group(function () {
-        Route::get('reports/company-financials', CompanyFinancialReport::class)->name('reports.company-financials');
-        Route::get('reports/company-financials/pdf', [CompanyFinancialReportPdfController::class, 'download'])->name('reports.company-financials.pdf.download');
-        Route::get('reports/company-financials/pdf/view', [CompanyFinancialReportPdfController::class, 'stream'])->name('reports.company-financials.pdf.view');
-        Route::get('reports/sales-tax', SalesTaxReport::class)->name('reports.sales-tax');
-        Route::get('reports/expenses', ExpenseReport::class)->name('reports.expenses');
-        Route::get('reports/expenses/pdf', [ExpenseReportPdfController::class, 'download'])->name('reports.expenses.pdf.download');
-        Route::get('reports/expenses/pdf/view', [ExpenseReportPdfController::class, 'stream'])->name('reports.expenses.pdf.view');
-        Route::get('reports/payment-schedule', PaymentScheduleReport::class)->name('reports.payment-schedule');
-        Route::get('reports/payment-schedule/pdf', [PaymentScheduleReportPdfController::class, 'download'])->name('reports.payment-schedule.pdf.download');
-        Route::get('reports/payment-schedule/pdf/view', [PaymentScheduleReportPdfController::class, 'stream'])->name('reports.payment-schedule.pdf.view');
-        Route::get('reports/accounts-payable', AccountsPayableReport::class)->name('reports.accounts-payable');
-        Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])->name('reports.accounts-payable.pdf.download');
-        Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])->name('reports.accounts-payable.pdf.view');
-        Route::get('reports/payment-details', PaymentDetailReport::class)->name('reports.payment-details');
-        Route::get('reports/payment-details/pdf', [PaymentDetailReportPdfController::class, 'download'])->name('reports.payment-details.pdf.download');
-        Route::get('reports/payment-details/pdf/view', [PaymentDetailReportPdfController::class, 'stream'])->name('reports.payment-details.pdf.view');
-    });
+    // Report routes — off the `admin` middleware onto one ability per report
+    // (M17). Every report and its PDF answer to the same grant, because a PDF
+    // of a report somebody may not open is the same disclosure by another
+    // door; the six were reachable only by an administrator before, and the
+    // seeds keep them that way.
+    //
+    // `reports.view` is the umbrella the sidebar group asks for; each report
+    // then asks for its own.
+    Route::get('reports/company-financials', CompanyFinancialReport::class)
+        ->middleware('ability:reports.company_financials')->name('reports.company-financials');
+    Route::get('reports/company-financials/pdf', [CompanyFinancialReportPdfController::class, 'download'])
+        ->middleware('ability:reports.company_financials')->name('reports.company-financials.pdf.download');
+    Route::get('reports/company-financials/pdf/view', [CompanyFinancialReportPdfController::class, 'stream'])
+        ->middleware('ability:reports.company_financials')->name('reports.company-financials.pdf.view');
+
+    Route::get('reports/sales-tax', SalesTaxReport::class)
+        ->middleware('ability:reports.sales_tax')->name('reports.sales-tax');
+
+    Route::get('reports/expenses', ExpenseReport::class)
+        ->middleware('ability:reports.expenses')->name('reports.expenses');
+    Route::get('reports/expenses/pdf', [ExpenseReportPdfController::class, 'download'])
+        ->middleware('ability:reports.expenses')->name('reports.expenses.pdf.download');
+    Route::get('reports/expenses/pdf/view', [ExpenseReportPdfController::class, 'stream'])
+        ->middleware('ability:reports.expenses')->name('reports.expenses.pdf.view');
+
+    Route::get('reports/payment-schedule', PaymentScheduleReport::class)
+        ->middleware('ability:reports.payment_schedule')->name('reports.payment-schedule');
+    Route::get('reports/payment-schedule/pdf', [PaymentScheduleReportPdfController::class, 'download'])
+        ->middleware('ability:reports.payment_schedule')->name('reports.payment-schedule.pdf.download');
+    Route::get('reports/payment-schedule/pdf/view', [PaymentScheduleReportPdfController::class, 'stream'])
+        ->middleware('ability:reports.payment_schedule')->name('reports.payment-schedule.pdf.view');
+
+    Route::get('reports/accounts-payable', AccountsPayableReport::class)
+        ->middleware('ability:reports.accounts_payable')->name('reports.accounts-payable');
+    Route::get('reports/accounts-payable/pdf', [AccountsPayableReportPdfController::class, 'download'])
+        ->middleware('ability:reports.accounts_payable')->name('reports.accounts-payable.pdf.download');
+    Route::get('reports/accounts-payable/pdf/view', [AccountsPayableReportPdfController::class, 'stream'])
+        ->middleware('ability:reports.accounts_payable')->name('reports.accounts-payable.pdf.view');
+
+    Route::get('reports/payment-details', PaymentDetailReport::class)
+        ->middleware('ability:reports.payment_details')->name('reports.payment-details');
+    Route::get('reports/payment-details/pdf', [PaymentDetailReportPdfController::class, 'download'])
+        ->middleware('ability:reports.payment_details')->name('reports.payment-details.pdf.download');
+    Route::get('reports/payment-details/pdf/view', [PaymentDetailReportPdfController::class, 'stream'])
+        ->middleware('ability:reports.payment_details')->name('reports.payment-details.pdf.view');
 
     // System Settings moved off the `admin` middleware onto its ability (M3);
     // the cost code templates below stay admin-only until M6.
@@ -426,17 +476,31 @@ Route::middleware(['auth'])->group(function () {
     Route::get('documentation/{slug}', DocumentationArticle::class)->name('documentation.show');
 
     // Meetings, minutes and tasks (docs/meetings-module-plan.md)
-    Route::get('tasks/mine', MyTasks::class)->name('tasks.mine');
+    // My Tasks is a cross-project list, so it is filtered rather than guarded
+    // by a scope — see Task::visibleTo(). The grant still has to be held.
+    Route::get('tasks/mine', MyTasks::class)
+        ->middleware('ability:tasks.view')->name('tasks.mine');
     Route::get('projects/{project}/tasks', ProjectTasks::class)->name('projects.tasks');
     Route::get('job-sites/{jobSite}/tasks', JobSiteTasks::class)->name('jobsites.tasks');
-    Route::get('meeting-series', MeetingSeriesIndex::class)->name('meeting-series.index');
-    Route::get('meetings', MeetingIndex::class)->name('meetings.index');
-    Route::get('meetings/create', MeetingForm::class)->name('meetings.create');
-    Route::get('meetings/{meeting}', MeetingShow::class)->name('meetings.show');
-    Route::get('meetings/{meeting}/edit', MeetingForm::class)->name('meetings.edit');
-    Route::get('meetings/{meeting}/agenda', MeetingAgenda::class)->name('meetings.agenda');
-    Route::get('meetings/{meeting}/minute/pdf', [MeetingMinutePdfController::class, 'download'])->name('meetings.minute.pdf.download');
-    Route::get('meetings/{meeting}/minute/pdf/view', [MeetingMinutePdfController::class, 'stream'])->name('meetings.minute.pdf.view');
+
+    // A meeting spans several projects through its items, so these are asked
+    // without a scope; the components guard their own actions.
+    Route::get('meeting-series', MeetingSeriesIndex::class)
+        ->middleware('ability:meetings.manage_series')->name('meeting-series.index');
+    Route::get('meetings', MeetingIndex::class)
+        ->middleware('ability:meetings.view')->name('meetings.index');
+    Route::get('meetings/create', MeetingForm::class)
+        ->middleware('ability:meetings.create')->name('meetings.create');
+    Route::get('meetings/{meeting}', MeetingShow::class)
+        ->middleware('ability:meetings.view')->name('meetings.show');
+    Route::get('meetings/{meeting}/edit', MeetingForm::class)
+        ->middleware('ability:meetings.edit')->name('meetings.edit');
+    Route::get('meetings/{meeting}/agenda', MeetingAgenda::class)
+        ->middleware('ability:meetings.edit')->name('meetings.agenda');
+    Route::get('meetings/{meeting}/minute/pdf', [MeetingMinutePdfController::class, 'download'])
+        ->middleware('ability:meetings.view')->name('meetings.minute.pdf.download');
+    Route::get('meetings/{meeting}/minute/pdf/view', [MeetingMinutePdfController::class, 'stream'])
+        ->middleware('ability:meetings.view')->name('meetings.minute.pdf.view');
 
     // Document repository (file repository for projects and job sites)
     Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');

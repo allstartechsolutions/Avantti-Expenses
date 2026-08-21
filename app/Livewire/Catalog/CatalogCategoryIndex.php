@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CatalogCategoryIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -37,6 +40,8 @@ class CatalogCategoryIndex extends Component
 
     public function deleteCategory($id)
     {
+        $this->authorizeAbility('catalog.delete');
+
         $category = CatalogCategory::findOrFail($id);
 
         // Check if category has items

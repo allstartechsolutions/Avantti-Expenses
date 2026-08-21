@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Project;
 use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
@@ -9,10 +10,14 @@ use Livewire\Component;
 
 class ProjectFinancialReport extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('project-report.view', $project);
+
         $this->project = $project->load([
             'client',
             'projectManager',

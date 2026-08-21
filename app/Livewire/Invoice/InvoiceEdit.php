@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Invoice;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\DocumentMessage;
@@ -15,6 +16,8 @@ use Livewire\Component;
 
 class InvoiceEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Invoice $invoice;
 
     // Header fields
@@ -76,6 +79,8 @@ class InvoiceEdit extends Component
 
     public function mount(Invoice $invoice)
     {
+        $this->authorizeAbility('invoices.edit');
+
         if (!$invoice->canBeEdited()) {
             return redirect()->route('invoices.show', $invoice);
         }
@@ -461,6 +466,8 @@ class InvoiceEdit extends Component
 
     public function saveInvoice()
     {
+        $this->authorizeAbility('invoices.edit');
+
         $this->validate([
             'client_id' => 'required|exists:clients,id',
             'invoice_date' => 'required|date',

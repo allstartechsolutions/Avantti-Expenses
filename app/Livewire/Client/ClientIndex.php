@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Client;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\Project;
 use Livewire\Component;
@@ -9,6 +10,8 @@ use Livewire\WithPagination;
 
 class ClientIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -30,6 +33,8 @@ class ClientIndex extends Component
 
     public function confirmDeleteClient($clientId)
     {
+        $this->authorizeAbility('clients.delete');
+
         $client = Client::findOrFail($clientId);
         $projectsCount = Project::where('client_id', $clientId)->count();
 
@@ -48,6 +53,8 @@ class ClientIndex extends Component
 
     public function deleteClient()
     {
+        $this->authorizeAbility('clients.delete');
+
         $client = Client::findOrFail($this->deletingClientId);
 
         // Re-check as a safety guard

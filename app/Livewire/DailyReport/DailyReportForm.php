@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DailyReport;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
@@ -18,6 +19,8 @@ use Livewire\WithFileUploads;
 
 class DailyReportForm extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads;
 
     public ?Project $project = null;
@@ -99,6 +102,13 @@ class DailyReportForm extends Component
             $this->jobSite = null;
             $this->context = 'project';
         }
+
+        // The scope is settled above: the job site where there is one, the
+        // project otherwise, and an existing report brings its own.
+        $this->authorizeAbility(
+            $dailyReport?->exists ? 'daily-reports.edit' : 'daily-reports.create',
+            $dailyReport?->exists ? $dailyReport : $this->reportScope(),
+        );
 
         if ($dailyReport && $dailyReport->exists) {
             $this->dailyReport = $dailyReport->load(['tasks.images', 'preparedBy', 'weather', 'weatherObservations', 'manpowerLogs.images', 'jobSite', 'project']);
@@ -559,8 +569,19 @@ class DailyReportForm extends Component
         return DailyReportWeatherObservation::PRECIPITATION_TYPES;
     }
 
+    /** The record this report is being filed against. */
+    protected function reportScope(): JobSite|Project|null
+    {
+        return $this->jobSite ?? $this->project ?? null;
+    }
+
     public function save()
     {
+        $this->authorizeAbility(
+            $this->mode === 'edit' ? 'daily-reports.edit' : 'daily-reports.create',
+            $this->dailyReport ?? $this->reportScope(),
+        );
+
         $this->validate([
             'report_date' => 'required|date',
         ]);
@@ -571,9 +592,11 @@ class DailyReportForm extends Component
         }
 
         if ($this->mode === 'edit' && $this->dailyReport) {
-            if (!$this->dailyReport->isEditable() && !Auth::user()->is_admin) {
-                session()->flash('error', __('This report is no longer editable.'));
-                return $this->redirectBack();
+            // A report closes seven days after its date, or when it is
+            // locked. Reopening one is its own grant rather than a hard-coded
+            // administrator check.
+            if (! $this->dailyReport->isEditable()) {
+                $this->authorizeAbility('daily-reports.edit_locked', $this->dailyReport);
             }
 
             $this->dailyReport->update([

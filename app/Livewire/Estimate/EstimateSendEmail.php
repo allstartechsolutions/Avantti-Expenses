@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Estimate;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Mail\EstimateMail;
 use App\Models\Company;
 use App\Models\Estimate;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 class EstimateSendEmail extends Component
 {
+    use AuthorizesAbility;
+
     public Estimate $estimate;
 
     public string $emailTo = '';
@@ -43,6 +46,8 @@ class EstimateSendEmail extends Component
 
     public function sendEmail(): void
     {
+        $this->authorizeAbility('estimates.send');
+
         $this->validate([
             'subject' => 'required|string|max:255',
             'body' => 'required|string',

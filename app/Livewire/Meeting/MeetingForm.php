@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Meeting;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\UserStatus;
 use App\Models\Meeting;
 use App\Models\MeetingSeries;
@@ -24,6 +25,8 @@ use Livewire\Component;
  */
 class MeetingForm extends Component
 {
+    use AuthorizesAbility;
+
     public ?Meeting $meeting = null;
 
     public string $meeting_series_id = '';
@@ -44,11 +47,12 @@ class MeetingForm extends Component
 
     public function mount(?Meeting $meeting = null): void
     {
-        abort_unless(
-            auth()->user()?->is_admin || auth()->user()?->is_manager,
-            403,
-            'Manager or administrator access required.'
-        );
+        // A meeting has no project of its own — it spans several through its
+        // items — so its grants are asked without a scope. For somebody
+        // confined to particular projects the resolver answers from their
+        // memberships taken together, which is what a cross-project screen
+        // needs.
+        $this->authorizeAbility($meeting?->exists ? 'meetings.edit' : 'meetings.create');
 
         if ($meeting?->exists) {
             abort_unless($meeting->isDraft(), 403, 'A published minute is corrected through a revision, not the form.');

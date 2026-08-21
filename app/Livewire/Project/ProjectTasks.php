@@ -35,6 +35,8 @@ class ProjectTasks extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('tasks.view', $project);
+
         $this->project = $project;
     }
 

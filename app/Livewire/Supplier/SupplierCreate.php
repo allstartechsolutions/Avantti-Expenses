@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Supplier;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ChecksVendorDuplicates;
 use App\Models\Supplier;
 use App\Models\Vendor;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class SupplierCreate extends Component
 {
+    use AuthorizesAbility;
+
     use ChecksVendorDuplicates;
 
     public $name = '';
@@ -27,6 +30,8 @@ class SupplierCreate extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('vendors.create');
+
         $this->country = config('app.country', 'US');
     }
 
@@ -67,6 +72,8 @@ class SupplierCreate extends Component
      */
     public function markAsSupplier(int $vendorId)
     {
+        $this->authorizeAbility('vendors.edit');
+
         $vendor = Vendor::findOrFail($vendorId);
         $vendor->is_supplier = true;
         $vendor->save();
@@ -78,6 +85,8 @@ class SupplierCreate extends Component
 
     public function createSupplier()
     {
+        $this->authorizeAbility('vendors.create');
+
         $this->validate();
 
         $supplier = new Supplier([

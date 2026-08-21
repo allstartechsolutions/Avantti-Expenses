@@ -4,12 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Estimate;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class EstimatePdfController extends Controller
 {
+
+    /**
+     * P22: this was behind `auth` and nothing else, so anybody signed in could
+     * fetch any client's document by changing the number in the URL.
+     */
+    private function authorizeRecord(): void
+    {
+        abort_unless(
+            app(PermissionResolver::class)->allows(auth()->user(), 'estimates.view'),
+            403,
+            __('You do not have permission to do that.'),
+        );
+    }
     public function download(Estimate $estimate)
     {
+        $this->authorizeRecord();
+
         $estimate->load(['client', 'project', 'jobSite', 'items', 'createdBy']);
 
         $company = Company::first();
@@ -30,6 +46,8 @@ class EstimatePdfController extends Controller
 
     public function stream(Estimate $estimate)
     {
+        $this->authorizeRecord();
+
         $estimate->load(['client', 'project', 'jobSite', 'items', 'createdBy']);
 
         $company = Company::first();
