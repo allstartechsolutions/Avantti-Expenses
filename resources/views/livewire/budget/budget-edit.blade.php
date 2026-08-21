@@ -99,32 +99,42 @@
                     <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
                         {{ __('Import cost codes from a template. You can merge with existing codes or replace them entirely.') }}
                     </p>
-                    <x-ui.button
-                        variant="secondary"
-                        wire:click="openImportModal"
-                        icon="upload">
-                        {{ __('Import from Template') }}
-                    </x-ui.button>
+                    @can('cost-codes.view')
+                        <x-ui.button
+                            variant="secondary"
+                            wire:click="openImportModal"
+                            icon="upload">
+                            {{ __('Import from Template') }}
+                        </x-ui.button>
+                    @else
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            {{ __('You do not have access to the cost code templates.') }}
+                        </p>
+                    @endcan
                 </div>
             </div>
 
             <!-- Danger Zone -->
-            <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-800">
-                <div class="px-6 py-4 border-b border-red-200 dark:border-red-800">
-                    <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">{{ __('Danger Zone') }}</h3>
+            @can('budget.delete', $budget)
+                @unless($budget->isLocked())
+                <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-red-200 dark:border-red-800">
+                    <div class="px-6 py-4 border-b border-red-200 dark:border-red-800">
+                        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">{{ __('Danger Zone') }}</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                            {{ __('Deleting this budget will remove all associated cost codes. This action cannot be undone.') }}
+                        </p>
+                        <x-ui.button
+                            variant="danger"
+                            wire:click="confirmDelete"
+                            icon="trash">
+                            {{ __('Delete Budget') }}
+                        </x-ui.button>
+                    </div>
                 </div>
-                <div class="p-6">
-                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        {{ __('Deleting this budget will remove all associated cost codes. This action cannot be undone.') }}
-                    </p>
-                    <x-ui.button
-                        variant="danger"
-                        wire:click="confirmDelete"
-                        icon="trash">
-                        {{ __('Delete Budget') }}
-                    </x-ui.button>
-                </div>
-            </div>
+                @endunless
+            @endcan
         </div>
 
         <!-- Sidebar -->

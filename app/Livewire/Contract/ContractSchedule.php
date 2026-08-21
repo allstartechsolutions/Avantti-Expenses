@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ResolvesContractBudget;
 use App\Models\Contract;
 use App\Models\ContractScheduleItem;
@@ -12,6 +13,8 @@ use Livewire\Component;
 
 class ContractSchedule extends Component
 {
+    use AuthorizesAbility;
+
     use ResolvesContractBudget;
 
     public Contract $contract;
@@ -53,6 +56,8 @@ class ContractSchedule extends Component
 
     public function openGrid()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $this->rows = $this->contract->scheduleItems()
             ->withCount(['payments', 'measurements'])
             ->orderBy('sort_order')
@@ -91,6 +96,8 @@ class ContractSchedule extends Component
 
     public function addRow()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $this->rows[] = [
             'id' => null,
             'description' => '',
@@ -107,6 +114,8 @@ class ContractSchedule extends Component
 
     public function removeRow(int $index)
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         if (! isset($this->rows[$index])) {
             return;
         }
@@ -125,6 +134,8 @@ class ContractSchedule extends Component
 
     public function moveRow(int $index, string $direction)
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $target = $direction === 'up' ? $index - 1 : $index + 1;
 
         if (! isset($this->rows[$index], $this->rows[$target])) {
@@ -168,6 +179,8 @@ class ContractSchedule extends Component
 
     public function saveGrid()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $budget = $this->locationBudget();
 
         $this->validate([
@@ -317,6 +330,8 @@ class ContractSchedule extends Component
 
     public function openReleaseModal($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $item = ContractScheduleItem::where('contract_id', $this->contract->id)->find($id);
 
         // Deleted in another tab between render and click: the sibling
@@ -349,6 +364,8 @@ class ContractSchedule extends Component
 
     public function release()
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $this->validate(['releaseNotes' => ['nullable', 'string']]);
 
         $item = $this->releasingId
@@ -395,6 +412,8 @@ class ContractSchedule extends Component
      */
     public function revertRelease($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $item = ContractScheduleItem::where('contract_id', $this->contract->id)->find($id);
 
         if (! $item || ! $item->isReleased()) {

@@ -347,7 +347,7 @@
                             : __('The award carries a written reason, so a choice other than the cheapest can be defended later.') }}
                     </p>
                     <div class="flex items-center gap-3">
-                        @if((auth()->user()?->canReviewRequisitions() ?? false) && $quotation->canBeAwarded())
+                        @if(auth()->user()->can('quotations.award', $quotation) && $quotation->canBeAwarded())
                             <x-ui.button variant="success" icon="check" wire:click="openAwardModal({{ $quotation->id }})">
                                 {{ __('Award the Round') }}
                             </x-ui.button>

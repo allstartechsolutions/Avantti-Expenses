@@ -35,14 +35,17 @@
                 </select>
             </div>
 
-            <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
+            @can('change-orders.create', $project)
+                    <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
                 {{ __('Add Change Order') }}
             </x-ui.button>
+                    @endcan
         </div>
 
         @include('livewire.change-order.partials.summary-cards', ['summary' => $summary])
 
         @include('livewire.change-order.partials.list', [
+                    'scope' => $project,
             'changeOrders' => $changeOrders,
             'showLocationColumn' => true,
             'hasFilters' => $changeOrderSearch || $changeOrderStatusFilter !== 'all' || $changeOrderLocationFilter !== 'all',

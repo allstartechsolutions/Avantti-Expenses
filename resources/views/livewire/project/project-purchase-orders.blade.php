@@ -36,12 +36,14 @@
                     <option value="cancelled">{{ __('Cancelled') }}</option>
                 </select>
             </div>
-            <x-ui.button
-                variant="primary"
-                icon="plus"
-                href="{{ route('purchase-orders.project.create', $project) }}">
-                {{ __('Add Purchase Order') }}
-            </x-ui.button>
+            @can('purchase-orders.create', $project)
+                <x-ui.button
+                    variant="primary"
+                    icon="plus"
+                    href="{{ route('purchase-orders.project.create', $project) }}">
+                    {{ __('Add Purchase Order') }}
+                </x-ui.button>
+            @endcan
         </div>
 
         <!-- Summary Cards -->
@@ -51,7 +53,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-white/80">{{ __('Total Amount') }}</p>
-                        <p class="text-2xl font-bold mt-1">{{ Number::currency($stats['total_amount'], config('app.currency'), config('app.locale')) }}</p>
+                        <x-ui.money class="block text-2xl font-bold mt-1" :amount="$stats['total_amount']" :scope="$project" rollup />
                     </div>
                     <div class="bg-white/10 rounded-full p-3">
                         <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +82,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved') }}</p>
-                        <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($stats['approved_amount'], config('app.currency'), config('app.locale')) }}</p>
+                        <x-ui.money class="block text-2xl font-bold mt-1 text-green-600 dark:text-green-400" :amount="$stats['approved_amount']" :scope="$project" rollup />
                     </div>
                     <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
                         <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +158,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <x-ui.view-edit-buttons
                                             :viewRoute="route('purchase-orders.show', $po->id)"
-                                            :editRoute="$po->canBeEdited() ? route('purchase-orders.edit', $po->id) : null" />
+                                            :editRoute="$po->canBeEdited() && auth()->user()->can('purchase-orders.edit', $po)
+                                                ? route('purchase-orders.edit', $po->id)
+                                                : null" />
                                     </td>
                                 </tr>
                             @endforeach
@@ -186,14 +190,16 @@
                         @endif
                     </p>
                     @if(!$search && !$statusFilter && !$locationFilter)
-                        <div class="mt-6">
-                            <x-ui.button
-                                variant="primary"
-                                icon="plus"
-                                href="{{ route('purchase-orders.project.create', $project) }}">
-                                {{ __('Add Purchase Order') }}
-                            </x-ui.button>
-                        </div>
+                        @can('purchase-orders.create', $project)
+                            <div class="mt-6">
+                                <x-ui.button
+                                    variant="primary"
+                                    icon="plus"
+                                    href="{{ route('purchase-orders.project.create', $project) }}">
+                                    {{ __('Add Purchase Order') }}
+                                </x-ui.button>
+                            </div>
+                        @endcan
                     @endif
                 </div>
             </div>

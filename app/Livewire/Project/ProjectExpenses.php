@@ -2,17 +2,18 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Models\Expense;
+use App\Models\ExpensePayment;
 use App\Models\Project;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
 class ProjectExpenses extends Component
 {
-    use AuthorizesAdmin;
+    use AuthorizesAbility;
 
     public Project $project;
 
@@ -58,13 +59,37 @@ class ProjectExpenses extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('expenses.view', $project);
+
         $this->project = $project;
+    }
+
+    /**
+     * Every expense on this screen belongs to the project or to one of its job
+     * sites, and the answer has to be given against the record rather than the
+     * screen: a job site can carry a membership of its own that overrides the
+     * project's.
+     */
+    protected function expenseInScope(int $expenseId): Expense
+    {
+        return Expense::where('project_id', $this->project->id)->findOrFail($expenseId);
+    }
+
+    protected function paymentInScope(int $paymentId): ExpensePayment
+    {
+        return ExpensePayment::whereHas(
+            'expense',
+            fn ($q) => $q->where('project_id', $this->project->id)
+        )->findOrFail($paymentId);
     }
 
     public function openExpenseViewModal(int $expenseId): void
     {
         $expense = Expense::with(['payments.paidBy', 'paidBy', 'items.budgetItem', 'items.catalogItem', 'supplier', 'jobSite'])
+            ->where('project_id', $this->project->id)
             ->findOrFail($expenseId);
+
+        $this->authorizeAbility('expenses.view', $expense);
 
         $this->viewingExpense = $expense;
         $this->expense_job_site_id = $expense->job_site_id;
@@ -133,6 +158,10 @@ class ProjectExpenses extends Component
 
     public function startMarkPaid(string $type, int $id): void
     {
+        $this->authorizeAbility('expenses.pay', $type === 'payment'
+            ? $this->paymentInScope($id)
+            : $this->expenseInScope($id));
+
         $this->markPaidType = $type;
         $this->markPaidId = $id;
         $this->markPaidDate = now()->format('Y-m-d');
@@ -150,11 +179,13 @@ class ProjectExpenses extends Component
         $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
 
         if ($this->markPaidType === 'payment') {
-            $payment = \App\Models\ExpensePayment::findOrFail($this->markPaidId);
+            $payment = $this->paymentInScope((int) $this->markPaidId);
+            $this->authorizeAbility('expenses.pay', $payment);
             $payment->markAsPaid(null, $paidDate);
             session()->flash('message', __('Payment marked as paid.'));
         } else {
-            $expense = Expense::findOrFail($this->markPaidId);
+            $expense = $this->expenseInScope((int) $this->markPaidId);
+            $this->authorizeAbility('expenses.pay', $expense);
             if ($expense->isOneTime() && $expense->status !== 'paid') {
                 $expense->markAsPaid(null, $paidDate);
             }
@@ -172,7 +203,8 @@ class ProjectExpenses extends Component
 
     public function startEditDueDate(int $paymentId): void
     {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope($paymentId);
+        $this->authorizeAbility('expenses.edit', $payment);
         $this->editDueDateId = $payment->id;
         $this->editDueDate = $payment->due_date->format('Y-m-d');
     }
@@ -186,7 +218,8 @@ class ProjectExpenses extends Component
     {
         $this->validate(['editDueDate' => 'required|date']);
 
-        $payment = \App\Models\ExpensePayment::findOrFail($this->editDueDateId);
+        $payment = $this->paymentInScope((int) $this->editDueDateId);
+        $this->authorizeAbility('expenses.edit', $payment);
 
         if (!$payment->isPaid()) {
             $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
@@ -204,9 +237,9 @@ class ProjectExpenses extends Component
 
     public function unmarkExpensePaid(int $expenseId): void
     {
-        $this->authorizeAdmin();
+        $expense = $this->expenseInScope($expenseId);
+        $this->authorizeAbility('expenses.edit_paid', $expense);
 
-        $expense = Expense::findOrFail($expenseId);
         $expense->unmarkAsPaid();
 
         session()->flash('message', __('Expense payment reverted to unpaid.'));
@@ -214,9 +247,8 @@ class ProjectExpenses extends Component
 
     public function unmarkPaymentPaid(int $paymentId): void
     {
-        $this->authorizeAdmin();
-
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope($paymentId);
+        $this->authorizeAbility('expenses.edit_paid', $payment);
 
         if ($payment->isPaid()) {
             $payment->markAsPending();
@@ -232,7 +264,9 @@ class ProjectExpenses extends Component
 
     public function markPaymentAsOverdue(int $paymentId): void
     {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope($paymentId);
+        $this->authorizeAbility('expenses.pay', $payment);
+
         $payment->markAsOverdue();
 
         // Refresh the viewing expense
@@ -244,9 +278,8 @@ class ProjectExpenses extends Component
 
     public function deleteExpense(int $expenseId): void
     {
-        $this->authorizeAdmin();
-
-        $expense = Expense::findOrFail($expenseId);
+        $expense = $this->expenseInScope($expenseId);
+        $this->authorizeAbility('expenses.delete', $expense);
 
         // Delete receipt file if exists
         if ($expense->receipt_path) {

@@ -47,9 +47,11 @@
                     </button>
                 @endif
             </div>
+            @can('quotations.create_standalone', $jobSite)
             <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
                 {{ __('New Quotation') }}
             </x-ui.button>
+            @endcan
         </div>
 
         <!-- Approved requisitions waiting to be quoted -->
@@ -131,7 +133,7 @@
             </div>
         </div>
 
-        <x-quotation-table :quotations="$quotations" :showLocation="false" :hasFilters="$this->hasFilters()" />
+        <x-quotation-table :quotations="$quotations" :scope="$jobSite" :showLocation="false" :hasFilters="$this->hasFilters()" />
     </div>
 
     @include('livewire.quotation.partials.form-modal', [
@@ -149,6 +151,22 @@
     @include('livewire.quotation.partials.award-modal')
 
     @include('livewire.quotation.partials.view-modal', [
-        'canReview' => auth()->user()?->canReviewRequisitions() ?? false,
+        'canReview' => auth()->user()->can('quotations.edit', $jobSite),
+        'canAward' => $viewingQuotation
+            && auth()->user()->can('quotations.award', $viewingQuotation),
+        'canConvert' => $viewingQuotation
+            && auth()->user()->can(
+                $viewingQuotation->convertsToContract() ? 'quotations.convert_contract' : 'quotations.convert',
+                $viewingQuotation,
+            )
+            && app(\App\Services\PermissionResolver::class)->withinApprovalLimit(
+                auth()->user(), $viewingQuotation->awardedTotalInCents(), $viewingQuotation,
+            ),
+        'awardCeiling' => $viewingQuotation
+            && ! app(\App\Services\PermissionResolver::class)->withinApprovalLimit(
+                auth()->user(), $viewingQuotation->awardedTotalInCents(), $viewingQuotation,
+            )
+            ? app(\App\Services\PermissionResolver::class)->approvalLimit(auth()->user(), $viewingQuotation)
+            : null,
     ])
 </x-jobsite-layout>

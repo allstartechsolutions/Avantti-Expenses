@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PurchaseOrder;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\BudgetItem;
 use App\Models\CatalogItem;
 use App\Models\JobSite;
@@ -16,6 +17,8 @@ use Livewire\WithFileUploads;
 
 class PurchaseOrderCreate extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads;
 
     // Context
@@ -62,19 +65,29 @@ class PurchaseOrderCreate extends Component
 
     public function mount(?Project $project = null, ?JobSite $jobSite = null)
     {
-        // If coming from job site route, get project from job site
-        if ($jobSite) {
+        // If coming from job site route, get project from job site.
+        // `exists` and not truthiness: an unfilled route parameter can arrive
+        // as a blank model, which is truthy and has no project behind it.
+        if ($jobSite?->exists) {
             $this->jobSite = $jobSite;
             $this->project = $jobSite->project;
             $this->po_job_site_id = $jobSite->id;
-        } elseif ($project) {
+        } elseif ($project?->exists) {
             $this->project = $project;
         } else {
             abort(404, 'Project or Job Site required');
         }
 
+        $this->authorizeAbility('purchase-orders.create', $this->purchaseOrderScope());
+
         $this->po_date = now()->format('Y-m-d');
         $this->po_payment_due_date = now()->format('Y-m-d');
+    }
+
+    /** The record this order is being raised against. */
+    protected function purchaseOrderScope(): JobSite|Project
+    {
+        return $this->jobSite ?? $this->project;
     }
 
     // Supplier methods
@@ -272,6 +285,8 @@ class PurchaseOrderCreate extends Component
      */
     public function saveAsDraft()
     {
+        $this->authorizeAbility('purchase-orders.create', $this->purchaseOrderScope());
+
         return $this->save('draft');
     }
 
@@ -280,6 +295,8 @@ class PurchaseOrderCreate extends Component
      */
     public function saveAndSubmit()
     {
+        $this->authorizeAbility('purchase-orders.create', $this->purchaseOrderScope());
+
         return $this->save('pending');
     }
 

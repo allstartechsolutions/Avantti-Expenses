@@ -61,6 +61,28 @@ class PermissionSeeder extends Seeder
         // --- admin-only today: admin-edits-a-paid-expense -------------------
         'expenses.edit_paid',
 
+        // --- Added in M11: taking a contract payment back out. Undoing is
+        //     narrower than doing, the same rule as change-orders.unapprove.
+        'contracts.unpay',
+
+        // --- §4b, added in M10: approving your own change order, and
+        //     undoing an approval. Both held back from both seeded roles:
+        //     the first is the same rule as the two above, the second pulls
+        //     money back out of a live budget.
+        'change-orders.approve_own',
+        'change-orders.unapprove',
+
+        // --- N3, added in M8: awarding proposals you keyed in yourself ------
+        // Blocked for everybody by default, exactly like approve_own.
+        'quotations.award_own',
+
+        // --- N2, added in M7: approving your own requisition ----------------
+        // Blocked for everybody by default. This is the tick that lifts it,
+        // for a company small enough that the raiser and the reviewer are the
+        // same person. Held back from BOTH seeded roles so that turning it on
+        // is always somebody's decision.
+        'requisitions.approve_own',
+
         // --- admin-only today: only an admin deletes a custom article -------
         'documentation.delete',
 
@@ -94,6 +116,19 @@ class PermissionSeeder extends Seeder
         'requisitions.approve',
         'quotations.award',
         'quotations.convert',
+        // New in M8. `convert_contract` reproduces today's behaviour, where
+        // whoever could convert could convert to either target. Standalone
+        // rounds are a TIGHTENING: an employee can raise one today, and after
+        // M8 cannot — that is the point of N1. A manager keeps it, because a
+        // manager can approve the requisition they would otherwise have
+        // needed, so nothing is being walked around.
+        'quotations.convert_contract',
+        'quotations.create_standalone',
+        // New in M10. A TIGHTENING: today anybody who can reach the change
+        // orders screen can approve one, which is what moves the cost budget
+        // (docs/permissions-notes.md §4b). A manager keeps it; an employee
+        // raises the change and somebody else decides on it.
+        'change-orders.approve',
         'documents.create',
         'documents.edit',
         'documents.share',
@@ -109,8 +144,11 @@ class PermissionSeeder extends Seeder
      * this seed. Listed here so the looseness is on the record and not an
      * oversight — see docs/permissions-notes.md §4b.
      *
-     *   change-orders.delete, change-orders.unapprove   → decided in M10
-     *   contracts.delete, budget.delete                 → M11, M6
+     *   (change-orders.delete stays on both roles; approve, approve_own and
+     *    unapprove were decided in M10 and are held back above)
+     *   contracts.delete, budget.delete                 → left on both roles
+     *                                                      (M11 and M6 decided
+     *                                                      to reproduce)
      *   clients.delete, catalog.delete                  → M16
      *   estimates.delete, invoices.delete               → M15
      *   payments.pay, payments.batch                    → M11
@@ -244,7 +282,8 @@ class PermissionSeeder extends Seeder
                     'requisitions.view', 'requisitions.create', 'requisitions.edit',
                     'requisitions.submit', 'requisitions.approve', 'requisitions.duplicate',
                     'quotations.view', 'quotations.create', 'quotations.edit',
-                    'quotations.award', 'quotations.convert',
+                    'quotations.create_standalone',
+                    'quotations.award', 'quotations.convert', 'quotations.convert_contract',
                     'purchase-orders.view', 'purchase-orders.create', 'purchase-orders.edit',
                     'purchase-orders.approve', 'purchase-orders.receive',
                     'change-orders.view', 'change-orders.create', 'change-orders.edit',

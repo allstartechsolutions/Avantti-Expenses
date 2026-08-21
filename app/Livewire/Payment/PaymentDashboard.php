@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Payment;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Project;
@@ -11,6 +12,8 @@ use Livewire\WithPagination;
 
 class PaymentDashboard extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     // Filters
@@ -34,6 +37,8 @@ class PaymentDashboard extends Component
 
     public function mount()
     {
+        $this->authorizeAbility('payments.view');
+
         $this->paidDate = now()->format('Y-m-d');
         $this->dateFrom = now()->startOfMonth()->format('Y-m-d');
         $this->dateTo = now()->endOfMonth()->format('Y-m-d');
@@ -247,6 +252,8 @@ class PaymentDashboard extends Component
 
     public function openPayModal($paymentId, $paymentType)
     {
+        $this->authorizeAbility('payments.pay');
+
         $this->payingPaymentId = $paymentId;
         $this->payingPaymentType = $paymentType;
         $this->paidDate = now()->format('Y-m-d');
@@ -272,6 +279,8 @@ class PaymentDashboard extends Component
 
     public function confirmPayment()
     {
+        $this->authorizeAbility('payments.pay');
+
         if ($this->payingPaymentType === 'installment') {
             $payment = ExpensePayment::find($this->payingPaymentId);
             if ($payment) {
@@ -299,6 +308,8 @@ class PaymentDashboard extends Component
 
     public function markAsOverdue($paymentId, $paymentType)
     {
+        $this->authorizeAbility('payments.pay');
+
         if ($paymentType === 'installment') {
             $payment = ExpensePayment::find($paymentId);
             if ($payment) {

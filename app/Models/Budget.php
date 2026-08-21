@@ -27,6 +27,13 @@ class Budget extends Model
         'created_by',
     ];
 
+    protected $casts = [
+        'locked_at' => 'datetime',
+    ];
+
+    // Deliberately not fillable: locking goes through lock()/unlock() so that
+    // it can never happen without a history line beside it.
+
     /**
      * Get the project that owns this budget.
      */
@@ -65,6 +72,73 @@ class Budget extends Model
     public function items(): HasMany
     {
         return $this->hasMany(BudgetItem::class);
+    }
+
+    // =========================================================================
+    // LOCKING
+    //
+    // A locked budget's PLAN is fixed: no adding, editing or deleting cost
+    // codes, no changing planned amounts, and the budget itself cannot be
+    // deleted. Everything that reports against it carries on untouched —
+    // expenses, purchase orders and change orders still code to it and the
+    // variance keeps updating. Freezing the plan is not closing the job.
+    //
+    // Who may do it is `budget.lock`, grantable on a role, a template, a
+    // project or job-site membership, or one person on one project.
+    // =========================================================================
+
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'locked_by');
+    }
+
+    public function lockHistories(): HasMany
+    {
+        return $this->hasMany(BudgetLockHistory::class)->latest('created_at');
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    /** Freeze the plan. Locking an already-locked budget is a no-op. */
+    public function lock(?User $user = null, ?string $reason = null): void
+    {
+        if ($this->isLocked()) {
+            return;
+        }
+
+        $this->forceFill([
+            'locked_at' => now(),
+            'locked_by' => $user?->id,
+        ])->save();
+
+        $this->recordLockChange('locked', $user, $reason);
+    }
+
+    /** Reopen the plan. Unlocking an unlocked budget is a no-op. */
+    public function unlock(?User $user = null, ?string $reason = null): void
+    {
+        if (! $this->isLocked()) {
+            return;
+        }
+
+        $this->forceFill([
+            'locked_at' => null,
+            'locked_by' => null,
+        ])->save();
+
+        $this->recordLockChange('unlocked', $user, $reason);
+    }
+
+    protected function recordLockChange(string $action, ?User $user, ?string $reason): void
+    {
+        $this->lockHistories()->create([
+            'action' => $action,
+            'user_id' => $user?->id,
+            'reason' => $reason ?: null,
+        ]);
     }
 
     /**

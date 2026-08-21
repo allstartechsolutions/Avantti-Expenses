@@ -409,12 +409,18 @@ class ProjectScopeTest extends TestCase
     public function test_this_pass_does_not_decide_what_happens_inside_a_project(): void
     {
         // Deliberate, and recorded so nobody mistakes M2 for more than it is:
-        // a member with nothing but project.view still reaches every tab of
-        // the project they are on. M4, M6, M12 and the rest close those.
+        // a member with nothing but project.view still reaches every tab of a
+        // module that has not had its pass. M12, M14 and the rest close those.
         $member = $this->confinedMemberOf($this->theirs, ['project.view']);
 
-        $this->actingAs($member)->get(route('projects.expenses', $this->theirs))->assertOk();
-        $this->actingAs($member)->get(route('projects.budget', $this->theirs))->assertOk();
+        $this->actingAs($member)->get(route('projects.daily-reports', $this->theirs))->assertOk();
+
+        // Expenses (M4), Budget (M6) and Change Orders (M10) no longer —
+        // swept, and this membership grants none of them.
+        $this->actingAs($member)->get(route('projects.expenses', $this->theirs))->assertForbidden();
+        $this->actingAs($member)->get(route('projects.budget', $this->theirs))->assertForbidden();
+        $this->actingAs($member)->get(route('projects.change-orders', $this->theirs))->assertForbidden();
+        $this->actingAs($member)->get(route('projects.contracts', $this->theirs))->assertForbidden();
     }
 
     public function test_a_guest_reaches_their_project_and_nothing_else(): void

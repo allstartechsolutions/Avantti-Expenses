@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\PermissionScope;
+use App\Models\JobSite;
 use App\Models\Membership;
 use App\Models\ModuleAccess;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -269,7 +271,9 @@ class PermissionResolver
      */
     public function membershipFor(User $user, mixed $scope): ?Membership
     {
-        if (! $scope instanceof Model) {
+        $scope = $this->scopeOf($scope);
+
+        if ($scope === null) {
             return null;
         }
 
@@ -311,16 +315,79 @@ class PermissionResolver
         return $membership->abilityRows->pluck('ability')->all();
     }
 
+    /**
+     * The project or job site a subject belongs to.
+     *
+     * A scope is its own answer. Anything else — an expense, a requisition, a
+     * purchase order — is asked for its job site first and its project second,
+     * so that `@can('expenses.pay', $expense)` reads the same way in a view as
+     * `@can('expenses.pay', $project)` does, and the more specific membership
+     * is the one that wins. A record that belongs to neither has no scope, and
+     * the caller is answered by role alone.
+     *
+     * This lives here rather than in the policies because every consumer needs
+     * it — the Gate, the Blade directives, canSeeMoney() and approvalLimit().
+     */
+    public function scopeOf(mixed $subject): ?PermissionScope
+    {
+        $guard = 0;
+
+        while ($subject instanceof Model && $guard++ < 10) {
+            if ($subject instanceof PermissionScope) {
+                return $subject;
+            }
+
+            $subject = $this->scopeParentOf($subject);
+        }
+
+        return null;
+    }
+
+    /**
+     * One step up from a record towards its project.
+     *
+     * `job_site_id` and `project_id` cover almost everything. A record that
+     * carries neither — an expense installment, a quotation line — says where
+     * to look next by declaring `permissionScope()`, and the walk continues
+     * from whatever that returns.
+     */
+    protected function scopeParentOf(Model $model): ?Model
+    {
+        if (method_exists($model, 'permissionScope')) {
+            return $model->permissionScope();
+        }
+
+        if (! empty($model->job_site_id)) {
+            return $model->relationLoaded('jobSite')
+                ? $model->jobSite
+                : JobSite::find($model->job_site_id);
+        }
+
+        if (! empty($model->project_id)) {
+            return $model->relationLoaded('project')
+                ? $model->project
+                : Project::find($model->project_id);
+        }
+
+        return null;
+    }
+
     protected function scopeKey(string $type, int|string|null $id): string
     {
         return $type.':'.$id;
     }
 
+    /**
+     * Two expenses on the same job site are the same question, so the key is
+     * built from the *derived* scope rather than the record handed in.
+     */
     protected function cacheKey(User $user, string $ability, mixed $scope): string
     {
-        $scopeKey = $scope instanceof Model
-            ? $this->scopeKey($scope::class, $scope->getKey())
-            : 'none';
+        $resolved = $this->scopeOf($scope);
+
+        $scopeKey = $resolved instanceof Model
+            ? $this->scopeKey($resolved::class, $resolved->getKey())
+            : ($scope === null ? 'none' : 'unscoped');
 
         return $user->id.'|'.$ability.'|'.$scopeKey;
     }

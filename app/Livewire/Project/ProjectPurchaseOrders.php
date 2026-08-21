@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
 use Livewire\Component;
@@ -9,7 +10,7 @@ use Livewire\WithPagination;
 
 class ProjectPurchaseOrders extends Component
 {
-    use WithPagination;
+    use AuthorizesAbility, WithPagination;
 
     public Project $project;
 
@@ -26,6 +27,8 @@ class ProjectPurchaseOrders extends Component
 
     public function mount(Project $project)
     {
+        $this->authorizeAbility('purchase-orders.view', $project);
+
         $this->project = $project;
     }
 

@@ -145,13 +145,55 @@ class Document extends Model
     /**
      * Hide internal documents from users who may not see them.
      */
+    /**
+     * Narrow a list to what this person may actually see.
+     *
+     * Two separate questions, and until M12 only the second was asked:
+     *
+     *   1. May they open documents on this project at all? A list is always
+     *      built inside one location, so the caller has already been guarded
+     *      by `documents.view` on that scope — this clause exists for the
+     *      cross-project lists, which have none.
+     *   2. May they see the ones flagged internal? That is
+     *      `documents.see_internal`, which used to be "admin or manager".
+     */
     public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
-        if ($user && ($user->is_admin || $user->is_manager)) {
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->is_admin) {
             return $query;
         }
 
-        return $query->where('is_internal', false);
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('is_internal', false)
+                ->orWhere(fn (Builder $internal) => $internal
+                    ->where('is_internal', true)
+                    ->whereIn('id', static::idsWithInternalAccess($user)));
+        });
+    }
+
+    /**
+     * The internal documents this person may see, by id.
+     *
+     * `documents.see_internal` is a scoped grant, so the answer differs per
+     * project — which a single WHERE cannot express. The set is small (internal
+     * documents are the exception), so it is resolved in PHP and fed back in.
+     *
+     * @return array<int, int>
+     */
+    protected static function idsWithInternalAccess(User $user): array
+    {
+        $resolver = app(\App\Services\PermissionResolver::class);
+
+        return static::query()
+            ->where('is_internal', true)
+            ->get(['id', 'project_id', 'job_site_id'])
+            ->filter(fn (self $document) => $resolver->allows($user, 'documents.see_internal', $document))
+            ->pluck('id')
+            ->all();
     }
 
     /**
@@ -222,13 +264,27 @@ class Document extends Model
 
     /**
      * May this user see the document at all?
+     *
+     * N5 (docs/permissions-notes.md): this used to return **true for every
+     * non-internal document, to anybody** — so any signed-in person could
+     * fetch any project's files by guessing an id, and the download route was
+     * behind `auth` and nothing else. Two questions now: may they open
+     * documents on the project this one belongs to, and — if it is flagged
+     * internal — may they see those.
      */
     public function isVisibleTo(?User $user): bool
     {
-        if (! $this->is_internal) {
-            return true;
+        if (! $user) {
+            return false;
         }
 
-        return (bool) ($user?->is_admin || $user?->is_manager);
+        $resolver = app(\App\Services\PermissionResolver::class);
+
+        if (! $resolver->allows($user, 'documents.view', $this)) {
+            return false;
+        }
+
+        return ! $this->is_internal
+            || $resolver->allows($user, 'documents.see_internal', $this);
     }
 }

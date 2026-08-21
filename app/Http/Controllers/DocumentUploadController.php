@@ -9,6 +9,7 @@ use App\Models\DocumentVersion;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Services\DocumentSettings;
+use App\Services\PermissionResolver;
 use App\Services\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,8 +36,6 @@ class DocumentUploadController extends Controller
      */
     public function init(Request $request): JsonResponse
     {
-        $this->authorizeWrite();
-
         $data = $request->validate([
             'project_id' => ['required', 'integer', 'exists:projects,id'],
             'job_site_id' => ['nullable', 'integer', 'exists:job_sites,id'],
@@ -49,6 +48,10 @@ class DocumentUploadController extends Controller
             'is_internal' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        // Guarded against the location the request names, which is only known
+        // once the payload has been read.
+        $this->authorizeWrite($this->scopeFromRequest($request));
 
         if (! DocumentSettings::isAllowedFile($data['file_name'], $data['mime_type'] ?? null)) {
             return response()->json([
@@ -104,15 +107,17 @@ class DocumentUploadController extends Controller
      */
     public function parts(Request $request): JsonResponse
     {
-        $this->authorizeWrite();
-
         $data = $request->validate([
             'version_id' => ['required', 'integer', 'exists:document_versions,id'],
             'part_numbers' => ['required', 'array', 'min:1', 'max:100'],
             'part_numbers.*' => ['integer', 'min:1', 'max:10000'],
         ]);
 
-        $version = DocumentVersion::findOrFail($data['version_id']);
+        $version = DocumentVersion::with('document')->findOrFail($data['version_id']);
+
+        // The later calls carry only an upload id, so the scope comes from the
+        // document the version belongs to.
+        $this->authorizeWrite($version->document);
 
         abort_unless($version->isPending() && $version->isMultipart(), 409, 'This upload is no longer open.');
 
@@ -130,8 +135,6 @@ class DocumentUploadController extends Controller
      */
     public function complete(Request $request): JsonResponse
     {
-        $this->authorizeWrite();
-
         $data = $request->validate([
             'version_id' => ['required', 'integer', 'exists:document_versions,id'],
             'parts' => ['nullable', 'array'],
@@ -140,6 +143,8 @@ class DocumentUploadController extends Controller
         ]);
 
         $version = DocumentVersion::with('document')->findOrFail($data['version_id']);
+
+        $this->authorizeWrite($version->document);
 
         abort_unless($version->isPending(), 409, 'This upload has already been completed.');
 
@@ -193,13 +198,13 @@ class DocumentUploadController extends Controller
      */
     public function abort(Request $request): JsonResponse
     {
-        $this->authorizeWrite();
-
         $data = $request->validate([
             'version_id' => ['required', 'integer', 'exists:document_versions,id'],
         ]);
 
         $version = DocumentVersion::with('document')->findOrFail($data['version_id']);
+
+        $this->authorizeWrite($version->document);
 
         abort_unless($version->isPending(), 409, 'This upload has already been completed.');
 
@@ -219,13 +224,33 @@ class DocumentUploadController extends Controller
     // INTERNALS
     // =========================================================================
 
-    private function authorizeWrite(): void
+    /**
+     * Uploading is `documents.create` on the project or job site the file is
+     * being filed into (M12).
+     *
+     * Until this pass it was "manager or administrator", asked about the
+     * person and never about the location — so somebody who could upload
+     * anywhere could upload everywhere. The scope comes from the request on
+     * the first call and from the version's own document afterwards, because
+     * the later calls only carry an upload id.
+     */
+    private function authorizeWrite(mixed $scope = null): void
     {
         abort_unless(
-            auth()->user()?->canManageDocuments(),
+            app(PermissionResolver::class)->allows(auth()->user(), 'documents.create', $scope),
             403,
-            'Manager or administrator access required.'
+            __('You do not have permission to do that.'),
         );
+    }
+
+    /** The project or job site a request is filing into. */
+    private function scopeFromRequest(Request $request): JobSite|Project|null
+    {
+        if ($jobSiteId = $request->input('job_site_id')) {
+            return JobSite::find($jobSiteId);
+        }
+
+        return Project::find($request->input('project_id'));
     }
 
     /**

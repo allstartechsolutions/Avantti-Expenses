@@ -2,8 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\JobSite;
-use App\Models\Project;
+use App\Contracts\PermissionScope;
 use App\Models\User;
 use App\Services\PermissionResolver;
 use Illuminate\Database\Eloquent\Model;
@@ -72,37 +71,14 @@ abstract class ModulePolicy
     }
 
     /**
-     * The project or job site a subject belongs to. A Project or JobSite is
-     * its own scope; anything else is asked for its job site first, since the
-     * more specific membership is the one that should win.
+     * The project or job site a subject belongs to.
+     *
+     * The walk itself belongs to the resolver, which every other consumer uses
+     * too; a policy overrides this only when the route from its record to a
+     * project is longer than a `job_site_id` / `project_id` column.
      */
-    protected function scopeOf(mixed $subject): Project|JobSite|null
+    protected function scopeOf(mixed $subject): ?PermissionScope
     {
-        if ($subject instanceof Project || $subject instanceof JobSite) {
-            return $subject;
-        }
-
-        if ($subject instanceof Model) {
-            return $this->scopeFor($subject);
-        }
-
-        return null;
-    }
-
-    protected function scopeFor(Model $model): Project|JobSite|null
-    {
-        if (isset($model->job_site_id) && $model->job_site_id) {
-            return $model->relationLoaded('jobSite')
-                ? $model->jobSite
-                : JobSite::find($model->job_site_id);
-        }
-
-        if (isset($model->project_id) && $model->project_id) {
-            return $model->relationLoaded('project')
-                ? $model->project
-                : Project::find($model->project_id);
-        }
-
-        return null;
+        return $this->resolver->scopeOf($subject);
     }
 }

@@ -55,13 +55,15 @@
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Project Budget') }}</h3>
                 @if(!$projectBudget)
-                    <x-ui.button
-                        variant="primary"
-                        size="sm"
-                        href="{{ route('projects.budgets.create', $project->id) }}"
-                        icon="plus">
-                        {{ __('Create Budget') }}
-                    </x-ui.button>
+                    @can('budget.create', $project)
+                        <x-ui.button
+                            variant="primary"
+                            size="sm"
+                            href="{{ route('projects.budgets.create', $project->id) }}"
+                            icon="plus">
+                            {{ __('Create Budget') }}
+                        </x-ui.button>
+                    @endcan
                 @endif
             </div>
 
@@ -89,13 +91,22 @@
                                     icon="eye">
                                     {{ __('View') }}
                                 </x-ui.button>
-                                <x-ui.button
-                                    variant="ghost"
-                                    size="sm"
-                                    href="{{ route('budgets.edit', $projectBudget->id) }}"
-                                    icon="edit">
-                                    {{ __('Edit') }}
-                                </x-ui.button>
+                                @if(! $projectBudget->isLocked())
+                                    @can('budget.edit', $projectBudget)
+                                        <x-ui.button
+                                            variant="ghost"
+                                            size="sm"
+                                            href="{{ route('budgets.edit', $projectBudget->id) }}"
+                                            icon="edit">
+                                            {{ __('Edit') }}
+                                        </x-ui.button>
+                                    @endcan
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" title="{{ __('This budget is locked.') }}">
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                        {{ __('Locked') }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -156,13 +167,15 @@
                                         icon="eye">
                                     </x-ui.button>
                                 @else
-                                    <x-ui.button
-                                        variant="secondary"
-                                        size="sm"
-                                        href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
-                                        icon="plus">
-                                        {{ __('Create') }}
-                                    </x-ui.button>
+                                    @can('budget.create', $jobSite)
+                                        <x-ui.button
+                                            variant="secondary"
+                                            size="sm"
+                                            href="{{ route('job-sites.budgets.create', $jobSite->id) }}"
+                                            icon="plus">
+                                            {{ __('Create') }}
+                                        </x-ui.button>
+                                    @endcan
                                 @endif
                             </div>
                         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PaymentBatch;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\PaymentBatch;
 use App\Models\Project;
@@ -13,6 +14,8 @@ use Livewire\Component;
 
 class PaymentBatchCreate extends Component
 {
+    use AuthorizesAbility;
+
     public string $name = '';
     public string $payment_date = '';
     public string $notes = '';
@@ -26,6 +29,8 @@ class PaymentBatchCreate extends Component
 
     public function mount(): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $this->payment_date = now()->format('Y-m-d');
     }
 
@@ -74,6 +79,8 @@ class PaymentBatchCreate extends Component
 
     public function save(): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $this->validate([
             'name' => 'required|string|max:255',
             'payment_date' => 'required|date',

@@ -2,8 +2,9 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Income;
+use App\Models\JobSite;
 use App\Models\Project;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -12,7 +13,7 @@ use Livewire\WithFileUploads;
 
 class ProjectIncome extends Component
 {
-    use AuthorizesAdmin, WithFileUploads;
+    use AuthorizesAbility, WithFileUploads;
 
     public Project $project;
 
@@ -41,11 +42,39 @@ class ProjectIncome extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('income.view', $project);
+
         $this->project = $project;
+    }
+
+    /**
+     * Where the form is currently pointing.
+     *
+     * A split belongs to the project by definition — the shares say where the
+     * money went — so only a single-location form has a job site destination.
+     * The permission has to be asked about that destination and not only about
+     * the screen: the Location picker can move the record.
+     */
+    protected function incomeDestination(): JobSite|Project|null
+    {
+        if ($this->income_location_mode !== 'split' && $this->income_job_site_id) {
+            return JobSite::where('project_id', $this->project->id)
+                ->find($this->income_job_site_id);
+        }
+
+        return $this->project;
+    }
+
+    /** Whichever grant this save needs: correcting a record, or adding one. */
+    protected function saveAbility(): string
+    {
+        return $this->editingIncomeId ? 'income.edit' : 'income.create';
     }
 
     public function openAddModal(): void
     {
+        $this->authorizeAbility('income.create', $this->project);
+
         $this->resetForm();
         $this->income_status = 'received';
         $this->income_date = now()->format('Y-m-d');
@@ -67,6 +96,8 @@ class ProjectIncome extends Component
         $this->resetForm();
 
         $income = $this->project->income()->with('distributions')->findOrFail($incomeId);
+
+        $this->authorizeAbility('income.edit', $income);
 
         $this->editingIncomeId = $income->id;
         $this->income_date = $income->income_date->format('Y-m-d');
@@ -90,6 +121,8 @@ class ProjectIncome extends Component
 
     public function saveIncome(): void
     {
+        $this->authorizeAbility($this->saveAbility(), $this->project);
+
         // The split is checked first: over-allocating is the mistake the user
         // actually made, and saying so beats a per-row error on a derived
         // percent. Only then do the field rules run — but not when the amount
@@ -137,6 +170,14 @@ class ProjectIncome extends Component
         if ($jobSiteId && ! $this->project->jobSites()->whereKey($jobSiteId)->exists()) {
             $this->addError('income_job_site_id', __('The selected location is invalid.'));
             return;
+        }
+
+        // Both ends of the move: the screen, checked above, and wherever the
+        // Location picker now points. Splitting is its own grant.
+        $this->authorizeAbility($this->saveAbility(), $this->incomeDestination());
+
+        if ($isSplit) {
+            $this->authorizeAbility('income.distribute', $this->project);
         }
 
         $shares = $isSplit ? $this->collectShares() : [];
@@ -246,9 +287,11 @@ class ProjectIncome extends Component
     public function updatedIncomeLocationMode($value): void
     {
         if ($value === 'split') {
+            $this->authorizeAbility('income.distribute', $this->project);
+
             $this->income_job_site_id = '';
         } else {
-            $this->clearAllShares();
+            $this->resetShares();
         }
 
         $this->resetErrorBag('distributionRows');
@@ -277,6 +320,8 @@ class ProjectIncome extends Component
      */
     public function updatedDistributionRows($value, string $key): void
     {
+        $this->authorizeAbility('income.distribute', $this->project);
+
         [$index, $field] = array_pad(explode('.', $key), 2, null);
 
         // The rows are a public property, so the client can bind to an index
@@ -314,6 +359,8 @@ class ProjectIncome extends Component
     /** Divide the whole amount across the ticked sites, cents-exact. */
     public function splitEvenly(): void
     {
+        $this->authorizeAbility('income.distribute', $this->project);
+
         $total = $this->distributionBase();
         $selected = collect($this->distributionRows)
             ->filter(fn ($row, $index) => $this->isBuiltRow($index) && ($row['selected'] ?? false))
@@ -338,6 +385,8 @@ class ProjectIncome extends Component
     /** Give this site everything not yet assigned to another one. */
     public function assignRemainder(int $index): void
     {
+        $this->authorizeAbility('income.distribute', $this->project);
+
         if (! $this->isBuiltRow($index)) {
             return;
         }
@@ -359,6 +408,18 @@ class ProjectIncome extends Component
 
     public function clearAllShares(): void
     {
+        $this->authorizeAbility('income.distribute', $this->project);
+
+        $this->resetShares();
+    }
+
+    /**
+     * Empty every share without asking permission — the same work as
+     * clearAllShares, minus the guard, so that leaving split mode is never
+     * refused to somebody who was never allowed into it.
+     */
+    protected function resetShares(): void
+    {
         foreach (array_keys($this->distributionRows) as $index) {
             if (! $this->isBuiltRow($index)) {
                 continue;
@@ -372,6 +433,8 @@ class ProjectIncome extends Component
 
     public function toggleAllSites(): void
     {
+        $this->authorizeAbility('income.distribute', $this->project);
+
         $selectAll = collect($this->distributionRows)
             ->filter(fn ($row, $index) => $this->isBuiltRow($index))
             ->contains(fn ($row) => ! ($row['selected'] ?? false));
@@ -475,9 +538,13 @@ class ProjectIncome extends Component
 
     public function openViewModal(int $incomeId): void
     {
-        $this->viewingIncome = $this->project->income()
+        $income = $this->project->income()
             ->with(['project', 'jobSite', 'createdBy', 'attachments', 'distributions.jobSite'])
             ->findOrFail($incomeId);
+
+        $this->authorizeAbility('income.view', $income);
+
+        $this->viewingIncome = $income;
 
         $this->dispatch('open-modal', 'income-view-modal');
     }
@@ -490,9 +557,10 @@ class ProjectIncome extends Component
 
     public function deleteIncome(int $incomeId): void
     {
-        $this->authorizeAdmin();
-
         $income = $this->project->income()->findOrFail($incomeId);
+
+        $this->authorizeAbility('income.delete', $income);
+
         $income->delete();
 
         if ($this->viewingIncome && $this->viewingIncome->id === $incomeId) {
@@ -509,6 +577,9 @@ class ProjectIncome extends Component
     public function markReceived(int $incomeId): void
     {
         $income = $this->project->income()->findOrFail($incomeId);
+
+        // Booking expected money as cash is a correction to the record.
+        $this->authorizeAbility('income.edit', $income);
 
         if ($income->isReceived()) {
             return;

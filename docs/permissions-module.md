@@ -903,7 +903,837 @@ having both.
 
 ---
 
+## M4 — Expenses *(built 2026-08-20)*
+
+The first pass that changes what somebody sees **inside** a project, the first
+with `pay` and `edit_paid`, and the first with money masking. Eight of thirty
+areas converted.
+
+### What the six grants mean
+
+| Ability | What it opens |
+|---|---|
+| `expenses.view` | The Expenses tab on a project and on a job site, the detail modal, and the receipt behind it |
+| `expenses.create` | *Add Expense* on both levels, and the job-site modal's create mode |
+| `expenses.edit` | The Edit screen, the job-site modal's edit mode, and changing an installment's due date |
+| `expenses.pay` | *Mark Paid* and *Overdue*, on the expense and on each installment |
+| `expenses.edit_paid` | Correcting an expense whose money has moved, reverting a paid expense or installment, and reading the change history |
+| `expenses.delete` | Deleting an expense and its items, installments and receipt |
+
+`pay` is separate from `edit` because settling money is not correcting a typo,
+and `edit_paid` is separate from `edit` because the first is a correction and
+the second is an amendment to a closed record. Both are ordinary toggles in
+Roles & Access — nothing about them is hard-coded.
+
+### The engine grew one thing
+
+Until M4 every ability was asked about a project or a job site. Expenses are
+asked about **a record**: `@can('expenses.pay', $expense)`. So
+`PermissionResolver::scopeOf()` now walks from any model to the scope that
+governs it — `job_site_id`, then `project_id`, then a model's own
+`permissionScope()` where it has neither (an `ExpensePayment` points at its
+expense and the walk continues). `ModulePolicy` delegates to it, so there is one
+implementation and every later pass gets record-level `@can` for free.
+
+### Money — roll-ups are hidden, records are not
+
+`can_see_money` hides what a project or a job site **adds up to**, not what an
+individual expense cost. A Site Supervisor who filed a receipt for R$ 1.250
+knows it was R$ 1.250; hiding it from them would be theatre. What is genuinely
+theirs to not see is the project's total spend, and that is what the flag now
+takes away.
+
+- **Hidden** — the three summary cards (Total / Paid / Pending), rendered as
+  `——` with *"Totals are hidden for your access on this project."*
+- **Shown** — each expense's amount, its line items, its installment schedule.
+- **Untouched** — the create and edit forms, so Site Supervisor and Site Team
+  can do the one job they exist for.
+
+`<x-ui.money :amount :scope rollup />` is the single place that decides, so M6,
+M11 and M17 mark a figure `rollup` and inherit the rule.
+
+**Stated plainly because it decides who the flag is worth setting on:** somebody
+who can see every row can add the rows up. The masking is only *real* where
+their list is also narrow — a job-site member totals one site and not the
+project. On a **project**-level membership with `expenses.view`, clearing
+`can_see_money` buys almost nothing.
+
+### Holes closed on the way
+
+Four of these were not permission gaps in the plan; they were found by reading
+the module and are fixed here because the pass is what made them visible.
+
+1. **Any expense by id, from any project.** `Expense::findOrFail($id)` on the
+   project and job-site screens accepted the id of *any* expense in the
+   database — delete, mark paid, revert, open. Every lookup is now narrowed to
+   the screen's own project or job site first, so a foreign id is a 404 before
+   any permission is even asked.
+2. **Job sites of other projects.** The Location picker validated
+   `exists:job_sites,id` with no project clause, so an expense could be filed
+   against another project's job site. Now `Rule::exists(...)->where('project_id', …)`.
+3. **Receipts were readable by anyone signed in.** `files.show` and
+   `files.download` took a path in the query string and served it. The
+   `expenses/` directory is now resolved back to its owning expense and
+   answered with `expenses.view`; a receipt no record claims is a 404. The
+   other directories keep the old rule until their own pass.
+4. **`deleteJobSite` on `JobSiteShow` had no guard of any kind.** M2 closed the
+   identical pair on `JobSiteOverview` and missed this one, which is live on six
+   routes — so any signed-in user could delete a job site and its expenses,
+   change orders, budgets and daily reports. Now `projects.delete`, matching
+   `JobSiteOverview`, with the button hidden to match.
+
+### Screens converted
+
+`ProjectExpenses`, `JobSiteShow` (expenses tab), `ExpenseCreate`, `ExpenseEdit`,
+`ProjectShow` (the legacy `projects/{project}/show` alias, which carries a full
+second copy of the expense CRUD), `ManagesExpenseForm`, and the
+`expense-modal` / `expense-history` partials.
+
+`JobSiteShow` and `ProjectShow` each serve several tabs from one component, so
+the guard is on the **tab** and not the route — `setActiveTab` is callable
+straight from the browser, and switching tab is not a fresh request. Only the
+swept modules answer there; the rest keep their old rules.
+
+`Expense::isEditableBy()` no longer reads `is_admin`; it asks for
+`expenses.edit_paid`.
+
+### Templates
+
+Already correct from E1 and verified by a test that will fail if they drift:
+
+| Template | Expense grants | Money |
+|---|---|---|
+| Project Manager | view, create, edit, pay | yes |
+| Accounting | view, pay | yes |
+| Site Supervisor | view, create, edit | no |
+| Site Team | view, create | no |
+| Procurement | — | yes |
+| Client (read only) | — | no |
+
+No template hands out `delete` or `edit_paid`; both stay with the administrator
+role and are one tick away for anyone who should have them.
+
+`ExpensesTest` — 29 cases: the three company-wide roles answering as before; the
+tab disappearing without the grant; a job-site member reaching their site and
+neither the project screen nor a sibling site; a guest holding nothing; every
+button hidden *and* its action refused, one grant at a time; the Location picker
+offering only sites the person may write to, and refusing a sibling; a foreign
+project's expense unreachable by id; the tab guard against `setActiveTab`;
+receipts served only to somebody who may see the expense; roll-ups masked while
+the expense's own amount stays; the legacy `projects/{project}/show` screen held
+to the same grants; and the six templates' grants pinned.
+
+**`expenses` is swept. Eight of thirty areas converted. M5 — Income — is next,
+and mirrors this pass almost line for line.**
+
+---
+
+## M5 — Income *(built 2026-08-21)*
+
+The mirror of M4 on both levels, plus the one grant expenses has no equivalent
+of. Nine of thirty areas converted.
+
+### The five grants
+
+| Ability | What it opens |
+|---|---|
+| `income.view` | The Income tab on a project and on a job site, the detail modal, its attachments, and a job site's window onto its share of a project-level payment |
+| `income.create` | *Add Income* on both levels |
+| `income.edit` | The pencil on a row, and **Mark as received** — booking expected money as cash is a correction to the record, not a separate act |
+| `income.distribute` | The *Split across locations* mode: the grid, its bulk helpers, and any save that carries shares |
+| `income.delete` | Deleting an income record |
+
+**Why `distribute` is held apart from `create`.** Recording that money arrived
+and deciding which job site's report it lands on are different acts. A split is
+project-level money by definition — the shares are what say where it went — so
+somebody can be trusted to enter a payment without being trusted to allocate it
+across sites.
+
+The guard is on **six** methods, not just the save: `updatedIncomeLocationMode`,
+`splitEvenly`, `assignRemainder`, `clearAllShares`, `toggleAllSites` and
+`updatedDistributionRows` are all callable from the browser, and the split radio
+is not rendered without the grant. The save asks again, so setting
+`income_location_mode` directly on the component still refuses.
+
+One wrinkle worth recording: leaving split mode used to call `clearAllShares()`,
+which is now guarded — so somebody who was never allowed into split mode would
+have been refused on the way *out* of it. The clearing work moved to an
+unguarded `resetShares()`, and `clearAllShares()` is the guard plus that.
+
+### Money, attachments, scoping
+
+The M4 rule applies unchanged: `can_see_money` hides the four roll-up cards
+(Total Received / This Month / Expected / Overdue) and leaves every record's own
+amount, its distribution rows and its share figures alone.
+
+Income files are **polymorphic attachments** rather than a column, so
+`FileController::authorizeFile()` grew a second shape: `income/` resolves the
+path to its `Attachment`, checks the attachable is an `Income`, and asks
+`income.view` on that record. The directory map is now a `match` so the third
+module's pass is one line either way.
+
+The lookups were already sound — `ProjectIncome` and `JobSiteIncome` both went
+through `$this->project->income()` / `$this->jobSite->income()` before this
+pass, so there was no cross-project id hole to close as there was in M4. The
+tests pin that anyway.
+
+### Templates
+
+| Template | Income grants |
+|---|---|
+| Project Manager | view, create, edit, distribute |
+| Accounting | view |
+| Procurement, Client, Site Supervisor, Site Team | — |
+
+No template hands out `income.delete`.
+
+`IncomeTest` — 20 cases: the three company-wide roles unchanged; the tab
+disappearing without the grant; a job-site member held to their own site; a
+guest holding nothing; each button hidden *and* its action refused, one grant at
+a time; **Mark as received** refused without `income.edit` and working with it;
+the split option not offered, its six methods refused, and a direct
+`income_location_mode = split` still refused at save; the distribute grant
+producing a split that adds up; income of another project unreachable by id
+through four different actions; attachments served only to somebody who may see
+the record, and an unclaimed file 404ing; roll-ups masked while amounts stay;
+and the templates pinned.
+
+**`income` is swept. Nine of thirty areas converted. M6 — Budget & Cost Codes —
+is next.**
+
+---
+
+## M6 — Budget & Cost Codes *(built 2026-08-21)*
+
+The first pass that **builds** something rather than only guarding it: budget
+locking existed as a toggle in the matrix and as nothing at all in the code.
+Eleven of thirty areas converted.
+
+### Two halves, deliberately not the same shape
+
+**Budgets** live on a project or a job site, so every one of their five grants
+can be given four ways: company-wide on a role, on a permission template, on one
+project or job site, or to one person on one project. Nothing is wired to
+`is_admin`.
+
+**Cost code templates** are the company-wide library a budget is built from.
+They belong to no project — one chart of accounts, used everywhere — so they are
+held by role, appear in the role editor's *Company-wide screens* section, and
+appear in **neither** project editor. A project membership granting every budget
+ability still cannot reach them, and a test says so.
+
+| Ability | Level | What it opens |
+|---|---|---|
+| `budget.view` | project / job site | The Budget tab, a budget, its cost grid, a cost code's detail |
+| `budget.create` | project / job site | Creating a budget; adding cost codes and child codes |
+| `budget.edit` | project / job site | The budget's own record, editing a cost code, the default-code star, importing a template |
+| `budget.delete` | project / job site | Deleting a cost code, and deleting the budget |
+| `budget.lock` | project / job site | Freezing the plan, and reopening it |
+| `cost-codes.*` | **global** | The template library: view / create / edit / delete |
+
+### Budget locking — what was built
+
+A locked budget's **plan** stops moving; everything that **reports** against it
+carries on. That distinction is the whole feature: freezing a baseline is not
+closing the job.
+
+- **Frozen** — adding, editing and deleting cost codes, the default-code star,
+  importing a template over the codes, editing the budget's own record, and
+  deleting the budget.
+- **Untouched** — expenses, purchase orders, contracts and change orders still
+  code to it, and every figure on the screen keeps updating. The screen says so
+  in as many words, because a locked budget whose numbers still move would
+  otherwise look broken.
+
+Two migrations, both additive: `budgets.locked_at` / `locked_by` for the state,
+and `budget_lock_histories` for what happened. The state alone was not enough —
+a budget frozen, reopened and frozen again would leave no trace of the middle,
+and a baseline that can be reopened is only worth having if reopening is on the
+record. Each line keeps the action, the person, the moment and an optional
+reason, and the screen shows them.
+
+Locking goes through `Budget::lock()` / `unlock()` and the two columns are
+deliberately **not fillable**, so it can never happen without a history line
+beside it. Both are no-ops when the budget is already in that state.
+
+**The refusal is about the record, not the person.** `refuseIfLocked()` runs
+after the ability check on every write, so holding `budget.edit` does not make a
+locked budget editable — and neither does being an administrator. Whoever may
+unlock it has to do that first, deliberately, so reopening a baseline is a
+visible act rather than a side effect of typing.
+
+### Holes closed on the way
+
+1. **The six budget screens had no guard of any kind.** Not an admin check, not
+   a role check — any signed-in user could create, edit and delete a budget.
+   `BudgetEdit::deleteBudget()` in particular, with `budget_items.budget_id`
+   cascading, wiped every cost code that expenses, POs and change orders are
+   coded against. All six now run on abilities.
+2. **`BudgetShow::openEditForm` and `deleteItem` used `BudgetItem::findOrFail()`
+   unscoped** — the same class of hole as M4's expenses. Every lookup goes
+   through `itemInScope()` now, so a cost code id from another budget is a 404.
+3. **The cost-code template routes came off the `admin` middleware** onto
+   `ability:cost-codes.*`. The answer is identical for the three seeded roles —
+   the seeds keep `cost-codes.*` to administrators — but it is a grant now, and
+   the chart of accounts can be handed to whoever keeps it.
+
+### Templates
+
+No permission template grants `budget.lock`, `budget.delete` or any
+`cost-codes.*`; the seeds keep all three with the administrator role. Every one
+of them is one tick away on a role, a template, a project or a person.
+
+`BudgetTest` — 21 cases, including four that exist only to prove the owner's
+rule: `budget.lock` granted on a **role**, on **one project only**, on **one job
+site**, and through a **permission template**, each working and each not
+reaching anything it was not given. Plus: a locked budget refusing all four plan
+writes *to an administrator*; the budget's own record and its deletion frozen
+with it; figures still rendering under the lock banner; unlocking reopening the
+plan; three lock changes kept in order with the right people; locking twice
+being a no-op; add / edit / delete as separate grants; a cost code of another
+budget unreachable through three actions; and the template library refusing a
+project member who holds every budget ability there is.
+
+**`budget` and `cost-codes` are swept. Eleven of thirty areas converted. M7 —
+Requisitions — is next.**
+
+---
+
+## M7 — Requisitions *(built 2026-08-21)*
+
+Twelve of thirty areas converted, and the pass where two of the notations from
+`docs/permissions-notes.md` stop being notations.
+
+### A correction to the catalogue
+
+`requisitions` was declared `money => true` with `approve` marked `limited`.
+Neither is true. **A requisition asks for things, not a sum** — its items carry
+a quantity and a unit and never a price, because pricing is what the quotation
+round is for. No figure on either screen is monetary, and there is nothing for
+an approval ceiling to be compared against. Both flags are corrected, and a test
+pins them so the claim cannot drift back. Approval limits start at M8, where
+money actually arrives.
+
+### The seven grants
+
+| Ability | What it opens |
+|---|---|
+| `requisitions.view` | The Requisitions tab on both levels, the detail view, its attachments |
+| `requisitions.create` | *Add Requisition*, and saving a draft |
+| `requisitions.edit` | Editing a draft, returning a submission to draft, cancelling |
+| `requisitions.submit` | *Submit for Approval*, and the "save and submit" half of the form's primary button |
+| `requisitions.approve` | Approving and rejecting, and cancelling something already approved |
+| `requisitions.approve_own` | **New.** Lifts the self-approval block (N2) |
+| `requisitions.delete` | Deleting a draft, rejected or cancelled requisition |
+
+`submit` being separate from `create` is what makes the rest meaningful: a site
+can raise the ask without being the one who puts it in the queue. The form's
+primary button asks both questions, so *Save as draft* works for somebody who
+holds `create` alone while *Save and submit* is refused.
+
+### N1 — a submitted requisition is locked
+
+`canBeEdited()` was `draft` **or** `pending`, so what was being asked for could
+change after somebody had been asked to approve it. The approval was a signature
+on a moving document. It is now `draft` only, and the lock is about the record
+rather than the person — an administrator is refused too.
+
+The way back is **Return to Draft**, which needs `requisitions.edit` and is
+either yours or a reviewer's. A raiser can always pull their own submission
+back; a reviewer can send one back for more detail instead of rejecting it
+outright. Either way it costs the requisition its place in the queue and writes
+`pending → draft` into its history, so withdrawing is visible.
+
+### N1 — Duplicate
+
+The piece the owner asked for. **Duplicate** copies a requisition into a fresh
+draft owned by whoever pressed it, from **any** status including approved and
+rejected — the point is to raise a near-identical ask without touching a
+document somebody has already signed.
+
+Copied: title, type, location, budget code and every line. **Not** copied: the
+status, the reviewer, the review notes and the needed-by date, which was
+somebody else's deadline. The copy gets its own requisition number and the
+original is untouched.
+
+### N2 — the reviewer must not be the requester
+
+Approving is refused when the approver either **keyed it in** (`created_by`) or
+is **named as the person it is for** (`requested_by`) — approving your own ask
+is the same act under either heading. *Rejecting* your own is not blocked; it is
+not the problem self-approval is.
+
+**It is lifted by a grant, not by a hard-coded exception.**
+`requisitions.approve_own` is held back from both seeded roles and from every
+template, so a company small enough that the raiser and the reviewer are the
+same person ticks one box — and the fact that they did is on the record. The
+detail view says *"You raised this requisition, so somebody else has to approve
+it"* rather than silently dropping the button.
+
+**What this does not do:** an administrator holds every ability by definition,
+including `approve_own`, so administrators can still approve their own. Making
+the block admin-proof would mean a rule outside the ability system, which is the
+one thing this module exists to remove. Recorded rather than assumed.
+
+### Holes closed on the way
+
+1. **`FIELD(priority, …)` in both list queries is MySQL-only** and threw on
+   sqlite, which is why neither requisition screen had ever been covered by a
+   test. Rewritten as a portable `CASE`; the ordering is unchanged on MySQL.
+2. **Cancelling had no guard at all** — any signed-in user could cancel anyone's
+   pending requisition. Now `requisitions.edit`, with the approved case still
+   needing `requisitions.approve`.
+3. **`requisitions/` added to `FileController::authorizeFile()`**, same
+   polymorphic-attachment shape as income.
+
+`RequisitionTest` — 20 cases: the three roles unchanged; the tab gone without
+the grant; a job-site member held to their site; each grant refused on its own,
+including *Save and submit* while *Save as draft* is allowed; a submitted
+requisition unopenable **by an administrator**; the raiser pulling their own back
+and somebody else's refused without review; duplicate copying the lines and
+dropping the approval; self-approval blocked by creation *and* by being the named
+requester, lifted by the grant, and rejection unaffected; no seeded role or
+template holding `approve_own`; attachments scoped; and the money/limited claims
+pinned false.
+
+**`requisitions` is swept. Twelve of thirty areas converted. M8 — Quotations —
+is next, and is where approval limits genuinely start.**
+
+---
+
+## M8 — Quotations *(built 2026-08-21)*
+
+Thirteen of thirty areas converted. The first area where money is genuinely
+committed, and so the first whose actions obey `approval_limit` — the resolver
+has carried `approvalLimit()` and `withinApprovalLimit()` since E2 and nothing
+had used them until now.
+
+### Seven grants, four of them held apart on purpose
+
+| Ability | What it opens |
+|---|---|
+| `quotations.view` | The Quotations tab on both levels, the round, the comparison map, its files |
+| `quotations.create` | Raising a round **from an approved requisition** |
+| `quotations.create_standalone` | Raising one **from nothing** — the half of N1 that M7 could not close |
+| `quotations.edit` | The round's own record, inviting vendors, sending the RFQ, keying in proposals, negotiating, cancelling |
+| `quotations.award` | Picking the winner, and undoing that choice — **capped by the ceiling** |
+| `quotations.award_own` | Awarding proposals you keyed in yourself (N3) |
+| `quotations.convert` | Committing an award into a **purchase order** — **capped** |
+| `quotations.convert_contract` | Committing it into a **contract** — **capped** |
+
+### N1, finally closed
+
+`quotations.purchase_requisition_id` is nullable by design, so a round could be
+raised with no requisition at all and the whole approval chain M7 built was
+walked around by starting one step further down. It is now a grant of its own,
+checked in three places: the button is not rendered, `openAddModal()` refuses,
+and `saveQuotation()` refuses again for any new round with no requisition
+behind it — so driving the form directly does not get past it.
+
+**This tightens what the application did**, deliberately. An employee can raise
+a standalone round today and cannot after this. A manager keeps it, because a
+manager can approve the requisition they would otherwise have needed — nothing
+is being walked around — and it is one tick for anybody else.
+
+### Approval limits, for real
+
+`approval_limit` lives on a permission template and on a membership, in cents.
+`authorizeAbilityWithin()` checks the ability first and then the ceiling.
+
+- **Award** is checked against what the *proposed* winner would commit. That
+  figure does not exist yet when the award form opens, so the check happens
+  after the winner is chosen and before anything is written —
+  `Quotation::totalForProposedAward()` computes it for both a whole award (the
+  winner's equalized total) and a split (winning line prices plus each winning
+  vendor's own freight, taxes and discount).
+- **Convert** is checked against `awardedTotalInCents()`, the money actually
+  being committed.
+
+Both ends matter: a round awarded by somebody with no ceiling still cannot be
+*converted* by somebody whose ceiling is below it. And the screen states the
+figure and the ceiling rather than silently dropping a button.
+
+### N3 — awarding proposals you keyed in
+
+`quotation_vendors` recorded who *invited* a vendor (`created_by`) but not who
+typed their prices, and those are different acts: inviting three vendors is
+administration, typing what they quoted is where a number could be favoured. M8
+adds `priced_by`, set on every proposal save.
+
+The block is on the **winning** rows only — keying in a losing vendor's numbers
+is no conflict — and is lifted by `quotations.award_own`, held back from both
+seeded roles and every template. Existing proposals carry a null `priced_by`,
+and an unknown author is never treated as the current user, so nothing already
+in the system becomes un-awardable.
+
+### Contract conversion held tighter than a purchase order
+
+A service round becomes a **contract** — a schedule of future payments — and
+anything else becomes one purchase order. `convertsToContract()` names that rule
+in one place, and the two now take different grants, so a buyer can be given
+purchase orders without being given the authority to commit a payment schedule.
+
+`convert_contract` is seeded to manager and admin, reproducing today, where
+whoever could convert could convert to either.
+
+### Files
+
+`quotations/` is the first directory with **two owners**: the round carries the
+RFQ's own files, and each vendor row carries the proposal that came back.
+`FileController::authorizeFile()` now accepts a list of attachable types, and
+`QuotationVendor` declares `permissionScope()` so a proposal row reaches its
+project through its round.
+
+`QuotationTest` — 20 cases: the three roles unchanged; the tab gone without the
+grant; standalone refused at the button, the modal *and* the save, and allowed
+with the grant; the employee role not holding it while the manager role does; an
+award above the ceiling refused and one within it allowed; no ceiling meaning no
+ceiling; the ceiling binding conversion even when somebody else awarded; the
+ceiling read from the membership of the project in hand; the winning proposal's
+author blocked, a losing proposal's author not, and the block lifted by the
+grant; `priced_by` recorded on save; no seeded role or template holding
+`award_own`; a service round refusing `convert` alone while a material round
+accepts it; award, edit, delete and cancel each refused on their own; revoking
+needing award rather than edit; and the three `limited` flags pinned.
+
+**`quotations` is swept. Thirteen of thirty areas converted. M9 — Purchase
+Orders — is next.**
+
+---
+
+## M9 — Purchase Orders *(built 2026-08-21)*
+
+Fourteen of thirty areas converted. Like M6, this pass **builds** the ability
+that had nothing behind it.
+
+### Six grants, and why `approve` and `receive` are not the same one
+
+| Ability | What it opens |
+|---|---|
+| `purchase-orders.view` | The tab on both levels, an order, its document |
+| `purchase-orders.create` | Raising an order, saving a draft, saving and submitting |
+| `purchase-orders.edit` | The order's record, submitting for approval, cancelling, revise-and-resubmit |
+| `purchase-orders.approve` | Approving and rejecting — **capped by the ceiling** |
+| `purchase-orders.receive` | Recording a delivery |
+| `purchase-orders.delete` | Deleting an order |
+
+On a real site the office approves the spend and the storeman signs for the
+lorry. Those are two people, so they are two grants — and the tests prove both
+directions: somebody who may approve every penny cannot record a delivery, and
+the storeman who may sign for anything cannot approve.
+
+`approve` obeys the ceiling because approving **creates the expense** — that is
+the moment the money is committed. `receive` commits nothing, so it does not,
+and rejecting is not capped either: turning an order down costs nothing, and a
+reviewer with a R$ 1 ceiling can still reject a R$ 4.000 order.
+
+### Receiving, built
+
+`purchase-orders.receive` existed in the catalogue and nothing in the code
+recorded that goods had arrived. The only thing called "receipt" on an order was
+a *document* attached when raising it — the supplier's confirmation — which is a
+different act entirely.
+
+Part-deliveries are the normal case on site, so what arrived is tracked **per
+line**:
+
+- `purchase_order_items.received_quantity` — cumulative, kept on the line
+  because the outstanding figure is read on every screen while the deliveries
+  are only read when somebody opens the history. Both are written in one
+  transaction, so they cannot drift.
+- `purchase_order_receipts` — one row per delivery: the date, who signed, and a
+  note.
+- `purchase_order_receipt_lines` — what was on that delivery.
+
+The order screen gains **Ordered / Received / Outstanding** columns and a status
+— *awaiting delivery* → *partially received* → *received* — plus a delivery
+history. The columns appear only once the order is approved, because nothing
+arrives against a draft.
+
+Two rules worth stating because they are decisions rather than mechanics:
+**an over-delivery is capped at what was outstanding** (999 bags against an
+order for 10 books in 10 — the rest is a conversation with the supplier, not a
+bigger order), and **a delivery with nothing on it is refused with a reason**
+rather than silently writing an empty receipt. The receipt form pre-fills every
+line with what is still outstanding, because the whole thing arriving is the
+common case and typing it again is work.
+
+### Holes closed on the way
+
+1. **All four purchase-order components had no guard of any kind.** Not admin,
+   not role — any signed-in user could raise, edit, approve or cancel an order,
+   and `approve()` creates an expense. All four now run on abilities.
+2. **The job-site Budget tab was never guarded.** M6 swept `budget` and
+   converted the budget screens, but `JobSiteShow` serves the job-site budget
+   tab and its `authorizeTab()` map only listed expenses. Both it and the
+   purchase-orders tab are in the map now.
+3. **P12 fixed properly.** `2026_08_21_140000` drops the legacy
+   `suppliers` / `subcontractors` foreign keys on every non-MySQL driver, so
+   the test database finally matches what production has looked like since the
+   vendor unification. `QuotationTest`'s scaffolding row is gone, and the
+   award-to-purchase-order path is now covered against a real schema.
+
+`PurchaseOrderTest` — 18 cases: the three roles unchanged; the tab and the
+detail gone without the grant; create and edit separate; approving refused
+without its grant, refused above the ceiling and allowed within it; rejecting
+needing review but not the ceiling; cancelling an approved order needing review;
+approve and receive proven separate in both directions; a full delivery closing
+the order with who, when and how many; a part delivery leaving the rest
+outstanding and a second delivery closing it; an over-delivery capped; an empty
+delivery refused; only an approved order taking delivery; the delivery columns
+absent on a draft; the order document scoped; the templates pinned; and the
+`limited` flags pinned.
+
+**`purchase-orders` is swept. Fourteen of thirty areas converted. M10 — Change
+Orders — is next.**
+
+---
+
+## M10 — Change Orders *(built 2026-08-21)*
+
+Fifteen of thirty areas converted, and the four open questions in
+`docs/permissions-notes.md` §4b are answered.
+
+Approving a change order is what moves the cost budget, and until this pass
+**anyone who could reach the screen could approve, reject or return one** — no
+guard of any kind, and nothing separating the person who raised it from the
+person who decided on it.
+
+### Six grants, and what each one is for
+
+| Ability | What it opens |
+|---|---|
+| `change-orders.view` | The tab on both levels, the detail, the signed file |
+| `change-orders.create` | Raising one |
+| `change-orders.edit` | Changing one, and returning a **pending** one to pending |
+| `change-orders.approve` | Approving, and turning down something still pending — **capped by the ceiling** |
+| `change-orders.approve_own` | Approving one you raised yourself |
+| `change-orders.unapprove` | Pulling an **approved** change back out of a live budget |
+| `change-orders.delete` | Deleting — and never an approved one |
+
+### The four answers
+
+**1. Who may approve, and up to how much.** `change-orders.approve`, seeded to
+manager and administrator. That is a **tightening**: an employee can approve one
+today and cannot after this. It obeys the ceiling, measured against the
+**cost** side rather than the revenue side, because the ceiling is about what
+somebody may commit the company to spending. A deductive change order is
+measured by its magnitude — taking R$ 4.000 out of a budget is not an act a
+spending ceiling should wave through unchecked just because the sign is
+negative.
+
+**2. Self-approval.** Blocked, lifted by `change-orders.approve_own` — the same
+answer M7 gave for requisitions and M8 for quotation awards, which is what §4b
+itself suggested. Turning down your own pending change order is *not* blocked;
+that is not the problem self-approval is.
+
+**3. Undoing an approval.** Narrower than making one, and held in its own grant.
+The rule is precise about *when*: a **pending** change order's lines are not in
+the budget, so turning it down is an ordinary review decision needing
+`approve`. An **approved** one's lines are, and taking them back out — by
+rejecting or by returning to pending — needs `unapprove`. Somebody who may
+approve any amount still cannot undo one.
+
+**4. Deleting an approved change order.** Refused outright. Deleting it would
+take its cost lines out of every budget they revised, leaving no record that the
+revision ever happened. Un-approve it first, which is a visible act needing
+`unapprove`.
+
+Like a locked budget in M6, **this is a rule about the record, so it binds
+administrators too** — and the delete button is not rendered on an approved
+change order at all.
+
+### Also closed
+
+The legacy `projects/{project}/show` screen's tab map was still guarding only
+expenses; change orders and budget are in it now, alongside the same fix made to
+`JobSiteShow` in M9. `change_orders/` is added to
+`FileController::authorizeFile()`.
+
+`ChangeOrderTest` — 21 cases: the three roles unchanged; the tab gone without
+the grant; create and edit separate; approving refused without its grant, above
+the ceiling, and for a deductive change measured by magnitude; the employee role
+losing approval while the manager keeps it; self-approval blocked and lifted by
+the grant, with rejection unaffected; an approved change refusing both undo
+routes to somebody holding `approve`, and yielding to `unapprove`; a pending one
+turned down with `approve` alone; an approved one undeletable **by an
+administrator** and deletable once returned to pending; the delete button absent
+on an approved change; a foreign project's change order unreachable through
+three actions; the file scoped; no seeded role or template holding `approve_own`
+or `unapprove`; and the `limited` flags pinned.
+
+**`change-orders` is swept. Fifteen of thirty areas converted — half the
+catalogue. M11 — Contracts & Payments — is next, and is the largest remaining
+pass: four company-wide money screens with no guard today.**
+
+---
+
+## M11 — Contracts & Payments *(built 2026-08-21)*
+
+Seventeen of thirty areas converted. The largest pass and the one held back
+longest: **fifteen components, 4,265 lines, and not one guard of any kind
+between them.**
+
+That was not an oversight. E1 recorded that the payments dashboard, the contract
+payments list and the payment batches were reachable by anybody signed in, and
+the owner declined a stopgap so they would be fixed properly in their own pass
+rather than patched ahead of the engine. This is that pass.
+
+### The two areas
+
+`contracts` is scoped to a project or a job site. `payments` is the company-wide
+half — three screens that belong to no project.
+
+| Ability | What it opens |
+|---|---|
+| `contracts.view` | The tab on both levels, a contract, its schedule, its measurements, its file |
+| `contracts.create` | Raising a contract |
+| `contracts.edit` | The record, its status, the schedule-of-values grid, and the *aditivos* |
+| `contracts.measure` | Measurements — draft, edit, approve, cancel — and releasing a scheduled instalment |
+| `contracts.pay` | Recording a payment and releasing retention — **capped by the ceiling** |
+| `contracts.unpay` | **New.** Taking a payment back out |
+| `contracts.delete` | Deleting a contract or an *aditivo* |
+| `payments.view` | The payments dashboard, the contract payments list, its export |
+| `payments.pay` | Marking a payment paid, processing them, approving a batch item |
+| `payments.batch` | The batch screens: building, editing, rejecting, cancelling, deleting |
+| `payments.refund` | Reserved for **invoice** payments — M15's, not this pass's |
+
+### The rule M10 set, applied again
+
+Doing and undoing are the same grant while nothing has moved, and undoing is
+narrower once it has.
+
+- **`measure`** covers confirming work — approving a measurement, releasing a
+  scheduled instalment — *and* undoing those, because neither has paid anybody.
+- **`pay`** actually moves money, and obeys the ceiling. Checked against the
+  amount on the form rather than when the modal opened, because the figure does
+  not exist until it is typed. Releasing retention is a payment too: it is money
+  that was held back and is now being handed over.
+- **`unpay`** takes a payment back out. Somebody who may pay any amount still
+  cannot undo one, and no seeded role or template holds it.
+
+### The company-wide screens: reproduced, not tightened
+
+All three still answer for every seeded role, which is the pass rule. **The
+difference is that it can now be taken away** — and the three grants are
+separable, so somebody can read the payments dashboard without being able to
+build a batch.
+
+Two of them (the batch index and the batch detail) have no `mount()` to guard,
+so the routes carry `ability:` middleware as well as the components carrying
+their own checks.
+
+**`payments.pay` is not `limited`, and that is a limitation rather than a
+decision.** `approval_limit` lives on a membership or a permission template, and
+these screens belong to no project, so there is nothing for a ceiling to read.
+The same root cause as P6 and P13, and it wants deciding before F1.
+
+### The *aditivo* is a contract's, not a change order's
+
+`App\Livewire\Contract\ContractChangeOrders` amends a **contract**;
+`change-orders` (M10) is a change to the **project's** scope. They are different
+records in different tables with different files, and M10 deliberately left this
+one alone so the two would not be conflated. It runs on `contracts.edit` and
+`contracts.delete`, and `contract-change-orders/` joins `contracts/` in
+`FileController::authorizeFile()`.
+
+`ContractPaymentTest` — 17 cases: the three roles unchanged across four screens;
+seeing contracts as a grant; create, edit and delete separate; the status change
+needing edit; paying refused without its grant, above the ceiling, and allowed
+within it; retention obeying the same ceiling; undoing a payment refused to
+somebody who may pay anything and allowed to the narrower grant; no seeded role
+or template holding `unpay`; the three money screens reproduced but revocable;
+view and batch separable; the export guarded; the menu following the grants; the
+contract file scoped; the `limited` flags pinned along with the note about why
+`payments.pay` is not one; and the templates pinned.
+
+**`contracts` and `payments` are swept. Seventeen of thirty areas converted.
+M12 — Documents — is next.**
+
+---
+
+## M12 — Documents *(built 2026-08-21)*
+
+Eighteen of thirty areas converted, and the pass that makes **reading** a grant
+— which in this module it never was.
+
+### N5, and it was worse than "reachable by id"
+
+`Document::isVisibleTo()` returned **true for every non-internal document, to
+anybody**, including a signed-out visitor. The download and preview routes sit
+behind `auth` and nothing else. So any signed-in person could fetch any
+project's drawings, contracts and photos by walking the ids.
+
+It now asks two questions: may this person open documents on the project this
+one belongs to, and — if it is flagged internal — may they see those.
+`scopeVisibleTo()` narrows lists the same way.
+
+**N8 needed nothing.** The plan said the presigned-URL check should move before
+the mint; it was already there. `DocumentFileController::serve()` aborts on
+`isVisibleTo` and only then asks the storage service for a URL, which is the
+right order and was never wrong. The 60-second TTL and the "a copied URL is
+access" property are inherent to serving from object storage, exactly as N8
+recorded.
+
+### Five grants where there were two
+
+The module had its own guard trait with a coarse split: `canManageDocuments()`
+for every write and `canDeleteDocuments()` for every delete, both reading
+`is_admin` / `is_manager` off the user and neither asking *where*.
+
+| Ability | What it opens |
+|---|---|
+| `documents.view` | The screen, a document, its versions, its download |
+| `documents.create` | Uploading, new versions, creating a folder |
+| `documents.edit` | Renaming, moving, tagging, recategorising, restoring a version, the bulk moves |
+| `documents.delete` | Delete, restore, purge, empty trash |
+| `documents.share` | Creating and revoking a share link |
+| `documents.see_internal` | The documents flagged internal |
+
+Because they are scoped, somebody can now be given documents on one project and
+not another — and `see_internal` is answered per project, so an internal
+document is hidden on a project where the grant is absent even from somebody
+who holds it elsewhere.
+
+### N7 — who may share
+
+**The owner's answer: one grant, seeded exactly as it works today.** Admin and
+manager can create a share link; an employee cannot. The difference is that it
+is now an ordinary toggle — revocable per role, per template, per project and
+per person — because it is the one place in the application where access leaves
+the application.
+
+The folder-vs-document split N7 offered as a third option was not taken; a
+folder link and a document link are the same grant.
+
+### Uploads go through a controller
+
+`DocumentUploadController` had the same "manager or administrator" check, asked
+about the person and never the location — so anybody who could upload anywhere
+could upload everywhere. It now asks `documents.create` against the project or
+job site the request names on `init`, and against the version's own document on
+`parts`, `complete` and `abort`, because the later calls carry only an upload
+id.
+
+`SharedDocumentController` is deliberately untouched: it serves a public token,
+which is the share link doing its job, and has never been a permissions
+question.
+
+`DocumentTest` — 18 cases: a foreign project's document invisible by id and a
+signed-out visitor seeing nothing; the download and preview routes refusing;
+the screen as a grant with the seeded roles still reaching it; internal
+documents needing their own grant, hidden from lists, and answered per project;
+upload, edit, delete and share each refused on their own; create not carrying
+share and share not carrying create or delete; the upload endpoint refusing
+another project and refusing somebody with no grant; share seeded exactly as
+before and revocable on one project; `share` marked sensitive; the templates
+pinned; and a guest holding `view` but never `see_internal` or `share`.
+
+**`documents` is swept. Eighteen of thirty areas converted. M13 — Tasks &
+Meetings — is next.**
+
+---
+
 ## Not yet built
 
-The eighteen module passes M1–M18, then the three closing steps. See
-`docs/permissions-module-plan.md` §9.
+M13–M18, then the three closing steps. See `docs/permissions-module-plan.md` §9.

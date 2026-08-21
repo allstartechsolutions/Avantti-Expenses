@@ -35,6 +35,7 @@ class QuotationVendor extends Model
         'tax_amount',
         'notes',
         'created_by',
+        'priced_by',
     ];
 
     protected $casts = [
@@ -66,6 +67,21 @@ class QuotationVendor extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    /**
+     * A proposal row has no project or job site of its own; permission
+     * questions about it are questions about its round.
+     */
+    public function permissionScope(): ?Quotation
+    {
+        return $this->relationLoaded('quotation') ? $this->quotation : $this->quotation()->first();
+    }
+
+    /** Who keyed in this vendor's prices — not who invited them (M8). */
+    public function pricedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'priced_by');
     }
 
     public function items(): HasMany

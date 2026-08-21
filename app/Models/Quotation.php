@@ -363,6 +363,60 @@ class Quotation extends Model
         return round((float) $lineTotal + (float) $vendorCharges, 2);
     }
 
+    /**
+     * What an award *would* commit, for a winner set that has not been saved
+     * yet — the figure an approval ceiling is checked against before the award
+     * happens, since `awardedTotal()` can only read an award already made.
+     *
+     * The rules are the same: a whole award is the winner's equalized total; a
+     * split is the winning line prices plus each winning vendor's own freight,
+     * taxes and discount, which are charged once per order rather than once
+     * per line.
+     *
+     * @param  array{vendor_row_ids: array<int>, lines: array<int, int|null>}  $winners
+     * @param  \Illuminate\Support\Collection  $awardable  Proposal rows keyed by id.
+     */
+    public function totalForProposedAward(array $winners, $awardable): float
+    {
+        $rows = $awardable->only($winners['vendor_row_ids']);
+
+        if (empty($winners['lines'])) {
+            $row = $rows->first();
+
+            return $row ? round((float) $row->equalizedTotal(), 2) : 0.0;
+        }
+
+        $lineTotal = 0.0;
+
+        foreach ($winners['lines'] as $itemId => $rowId) {
+            if (! $rowId) {
+                continue;
+            }
+
+            $priced = $awardable->get($rowId)?->items->firstWhere('quotation_item_id', $itemId);
+
+            $lineTotal += $priced && ! $priced->is_unavailable ? (float) $priced->total_amount : 0.0;
+        }
+
+        $charges = $rows->sum(fn ($row) => (float) $row->freight_amount
+            + (float) $row->tax_amount
+            - (float) $row->discount_amount);
+
+        return round($lineTotal + (float) $charges, 2);
+    }
+
+    /** What converting this round commits, in cents, for an approval ceiling. */
+    public function awardedTotalInCents(): int
+    {
+        return (int) round($this->awardedTotal() * 100);
+    }
+
+    /** A service round becomes a contract; anything else becomes a purchase order. */
+    public function convertsToContract(): bool
+    {
+        return $this->type === 'service';
+    }
+
     // =========================================================================
     // DISPLAY HELPERS
     // =========================================================================

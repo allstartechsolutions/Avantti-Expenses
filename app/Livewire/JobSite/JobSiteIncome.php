@@ -2,7 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Income;
 use App\Models\JobSite;
 use Livewire\Component;
@@ -19,7 +19,7 @@ use Livewire\WithFileUploads;
  */
 class JobSiteIncome extends Component
 {
-    use AuthorizesAdmin, WithFileUploads;
+    use AuthorizesAbility, WithFileUploads;
 
     public JobSite $jobSite;
 
@@ -44,11 +44,15 @@ class JobSiteIncome extends Component
 
     public function mount(JobSite $jobSite): void
     {
+        $this->authorizeAbility('income.view', $jobSite);
+
         $this->jobSite = $jobSite->load('project');
     }
 
     public function openAddModal(): void
     {
+        $this->authorizeAbility('income.create', $this->jobSite);
+
         $this->resetForm();
         $this->income_status = 'received';
         $this->income_date = now()->format('Y-m-d');
@@ -69,6 +73,8 @@ class JobSiteIncome extends Component
 
         $income = $this->jobSite->income()->findOrFail($incomeId);
 
+        $this->authorizeAbility('income.edit', $income);
+
         $this->editingIncomeId = $income->id;
         $this->income_date = $income->income_date->format('Y-m-d');
         $this->income_status = $income->status ?? 'received';
@@ -88,6 +94,13 @@ class JobSiteIncome extends Component
 
     public function saveIncome(): void
     {
+        // This screen writes to its own job site and nowhere else, so there is
+        // no destination to check beyond it.
+        $this->authorizeAbility(
+            $this->editingIncomeId ? 'income.edit' : 'income.create',
+            $this->jobSite,
+        );
+
         $validated = $this->validate([
             'income_date' => 'required|date',
             'income_status' => 'required|in:received,expected',
@@ -141,6 +154,8 @@ class JobSiteIncome extends Component
 
     public function openViewModal(int $incomeId): void
     {
+        $this->authorizeAbility('income.view', $this->jobSite);
+
         $this->viewingIncome = $this->jobSite->income()
             ->with(['project', 'createdBy', 'attachments'])
             ->findOrFail($incomeId);
@@ -156,6 +171,10 @@ class JobSiteIncome extends Component
      */
     public function openShareModal(int $incomeId): void
     {
+        // The record belongs to the project, but what is shown is this job
+        // site's share of it, so this job site's grant is the right question.
+        $this->authorizeAbility('income.view', $this->jobSite);
+
         $income = Income::query()
             ->where('project_id', $this->jobSite->project_id)
             ->whereNull('job_site_id')
@@ -185,9 +204,10 @@ class JobSiteIncome extends Component
 
     public function deleteIncome(int $incomeId): void
     {
-        $this->authorizeAdmin();
-
         $income = $this->jobSite->income()->findOrFail($incomeId);
+
+        $this->authorizeAbility('income.delete', $income);
+
         $income->delete();
 
         if ($this->viewingIncome && $this->viewingIncome->id === $incomeId) {
@@ -200,6 +220,9 @@ class JobSiteIncome extends Component
     public function markReceived(int $incomeId): void
     {
         $income = $this->jobSite->income()->findOrFail($incomeId);
+
+        // Booking expected money as cash is a correction to the record.
+        $this->authorizeAbility('income.edit', $income);
 
         if ($income->isReceived()) {
             return;

@@ -98,11 +98,13 @@
                                    class="p-1.5 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6]">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                 </a>
-                                @if($canWrite)
+                                @if($canShare)
                                     <button type="button" wire:click="openShareModal({{ $document->id }})" title="{{ __('Share') }}"
                                         class="p-1.5 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6]">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684zm0-12a3 3 0 105.368-2.684 3 3 0 00-5.368 2.684z"/></svg>
                                     </button>
+                                @endif
+                                @if($canWrite)
                                     <button type="button" wire:click="openUploadModal({{ $document->id }})" title="{{ __('Upload new version') }}"
                                         class="p-1.5 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6]">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>

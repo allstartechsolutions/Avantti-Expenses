@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Budget;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Services\CostCodeLedger;
@@ -16,6 +17,8 @@ use Livewire\Component;
  */
 class CostCodeDetail extends Component
 {
+    use AuthorizesAbility;
+
     public Budget $budget;
 
     public ?BudgetItem $item = null;
@@ -27,6 +30,8 @@ class CostCodeDetail extends Component
      */
     public function mount(Budget $budget, $budgetItem = null)
     {
+        $this->authorizeAbility('budget.view', $budget);
+
         $this->budget = $budget->load(['project', 'jobSite']);
 
         if (! $budgetItem) {

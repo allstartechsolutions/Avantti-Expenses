@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Budget;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Services\CostCodeLedger;
 use Livewire\Component;
 
 class BudgetCostGrid extends Component
 {
+    use AuthorizesAbility;
+
     public Budget $budget;
 
     /**
@@ -19,6 +22,8 @@ class BudgetCostGrid extends Component
 
     public function mount(Budget $budget)
     {
+        $this->authorizeAbility('budget.view', $budget);
+
         $this->budget = $budget->load(['project', 'jobSite']);
     }
 

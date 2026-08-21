@@ -2,12 +2,15 @@
 
 namespace App\Livewire\PaymentBatch;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\PaymentBatch;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class PaymentBatchIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public string $search = '';
@@ -31,6 +34,8 @@ class PaymentBatchIndex extends Component
 
     public function deleteBatch(int $batchId): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $batch = PaymentBatch::findOrFail($batchId);
 
         if (!$batch->isDraft()) {

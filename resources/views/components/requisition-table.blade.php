@@ -2,6 +2,8 @@
     'requisitions',
     'showLocation' => true,
     'hasFilters' => false,
+    /** The project or job site this list belongs to — what `requisitions.create` is asked about. */
+    'scope' => null,
 ])
 
 @if($requisitions->count() > 0)
@@ -101,7 +103,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <x-ui.view-edit-buttons
                                     :viewAction="'openViewModal('.$requisition->id.')'"
-                                    :editAction="$requisition->canBeEdited() ? 'openEditModal('.$requisition->id.')' : null" />
+                                    :editAction="$requisition->canBeEdited() && auth()->user()->can('requisitions.edit', $requisition)
+                                        ? 'openEditModal('.$requisition->id.')'
+                                        : null" />
                             </td>
                         </tr>
                     @endforeach
@@ -130,11 +134,13 @@
                 @endif
             </p>
             @if(!$hasFilters)
-                <div class="mt-6">
-                    <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
-                        {{ __('Add Requisition') }}
-                    </x-ui.button>
-                </div>
+                @can('requisitions.create', $scope)
+                    <div class="mt-6">
+                        <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
+                            {{ __('Add Requisition') }}
+                        </x-ui.button>
+                    </div>
+                @endcan
             @endif
         </div>
     </div>

@@ -2,7 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesChangeOrders;
 use App\Services\CostCodeLedger;
 use App\Models\CatalogItem;
@@ -22,7 +22,7 @@ use Livewire\WithFileUploads;
 
 class JobSiteShow extends Component
 {
-    use WithFileUploads, AuthorizesAdmin, ManagesChangeOrders;
+    use WithFileUploads, AuthorizesAbility, ManagesChangeOrders;
 
     public JobSite $jobSite;
     public $activeTab = 'overview';
@@ -104,11 +104,52 @@ class JobSiteShow extends Component
                 break;
             }
         }
+
+        $this->authorizeTab($this->activeTab);
     }
 
     public function setActiveTab($tab)
     {
+        $this->authorizeTab($tab);
+
         $this->activeTab = $tab;
+    }
+
+    /**
+     * This one component serves five job-site tabs, so the guard belongs to the
+     * tab rather than to the route: switching tab is not a fresh request, and
+     * `setActiveTab` can be called straight from the browser.
+     *
+     * Only the swept modules answer here. The rest keep their old rules until
+     * their own pass, exactly as the legacy bridge intends.
+     */
+    protected function authorizeTab(string $tab): void
+    {
+        $abilities = [
+            'expenses' => 'expenses.view',
+            'purchaseorders' => 'purchase-orders.view',
+            'changeorders' => 'change-orders.view',
+            'budget' => 'budget.view',
+        ];
+
+        if (isset($abilities[$tab])) {
+            $this->authorizeAbility($abilities[$tab], $this->jobSite);
+        }
+    }
+
+    /** An expense of THIS job site, or a 404. */
+    protected function expenseInScope(int $expenseId): Expense
+    {
+        return Expense::where('job_site_id', $this->jobSite->id)->findOrFail($expenseId);
+    }
+
+    /** An installment of an expense of THIS job site, or a 404. */
+    protected function paymentInScope(int $paymentId): \App\Models\ExpensePayment
+    {
+        return \App\Models\ExpensePayment::whereHas(
+            'expense',
+            fn ($q) => $q->where('job_site_id', $this->jobSite->id)
+        )->findOrFail($paymentId);
     }
 
     protected function changeOrderProjectId(): int
@@ -210,6 +251,8 @@ class JobSiteShow extends Component
 
     public function openExpenseCreateModal()
     {
+        $this->authorizeAbility('expenses.create', $this->jobSite);
+
         $this->reset([
             'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
@@ -238,9 +281,11 @@ class JobSiteShow extends Component
 
     public function openExpenseEditModal($expenseId)
     {
-        $expense = Expense::with('payments')->findOrFail($expenseId);
+        $expense = $this->expenseInScope((int) $expenseId)->load('payments');
 
-        // Check if expense is editable (admins can edit paid expenses)
+        $this->authorizeAbility('expenses.edit', $expense);
+
+        // Settled money needs `expenses.edit_paid` on top of `expenses.edit`.
         if (!$expense->isEditableBy(auth()->user())) {
             session()->flash('error', __('This expense cannot be edited because it has payments.'));
             return;
@@ -291,7 +336,9 @@ class JobSiteShow extends Component
 
     public function openExpenseViewModal($expenseId)
     {
-        $expense = Expense::with('payments')->findOrFail($expenseId);
+        $expense = $this->expenseInScope((int) $expenseId)->load('payments');
+
+        $this->authorizeAbility('expenses.view', $expense);
 
         $this->editingExpense = $expense->id;
         $this->isCustomItem = $expense->isCustom();
@@ -347,6 +394,20 @@ class JobSiteShow extends Component
 
     public function saveExpense()
     {
+        // The modal writes to this job site and nowhere else, so the ability is
+        // asked about the job site — create or correct, depending on the mode.
+        if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
+            $existing = $this->expenseInScope((int) $this->editingExpense);
+
+            $this->authorizeAbility('expenses.edit', $existing);
+
+            if (! $existing->isEditable()) {
+                $this->authorizeAbility('expenses.edit_paid', $existing);
+            }
+        } else {
+            $this->authorizeAbility('expenses.create', $this->jobSite);
+        }
+
         $rules = [
             'expense_item_name' => 'required|string|max:255',
             'expense_quantity' => 'required|numeric|min:0.01',
@@ -423,9 +484,9 @@ class JobSiteShow extends Component
         }
 
         if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
-            $expense = Expense::findOrFail($this->editingExpense);
+            $expense = $this->expenseInScope((int) $this->editingExpense);
 
-            // Check if editable (admins can edit paid expenses)
+            // Settled money needs `expenses.edit_paid` on top of `expenses.edit`.
             if (!$expense->isEditableBy(auth()->user())) {
                 session()->flash('error', __('This expense cannot be edited because it has payments.'));
                 return;
@@ -465,9 +526,10 @@ class JobSiteShow extends Component
 
     public function deleteExpense($expenseId)
     {
-        $this->authorizeAdmin();
+        $expense = $this->expenseInScope((int) $expenseId);
 
-        $expense = Expense::findOrFail($expenseId);
+        $this->authorizeAbility('expenses.delete', $expense);
+
         $expense->delete();
 
         session()->flash('message', __('Expense deleted successfully!'));
@@ -611,6 +673,10 @@ class JobSiteShow extends Component
     // Start marking a payment/expense as paid (shows inline date picker)
     public function startMarkPaid(string $type, $id)
     {
+        $this->authorizeAbility('expenses.pay', $type === 'payment'
+            ? $this->paymentInScope((int) $id)
+            : $this->expenseInScope((int) $id));
+
         $this->markPaidType = $type;
         $this->markPaidId = $id;
         $this->markPaidDate = now()->format('Y-m-d');
@@ -629,12 +695,14 @@ class JobSiteShow extends Component
         $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
 
         if ($this->markPaidType === 'payment') {
-            $payment = \App\Models\ExpensePayment::findOrFail($this->markPaidId);
+            $payment = $this->paymentInScope((int) $this->markPaidId);
+            $this->authorizeAbility('expenses.pay', $payment);
             $payment->markAsPaid($this->expense_payment_method, $paidDate);
             $expenseId = $payment->expense_id;
             session()->flash('message', __('Payment marked as paid.'));
         } else {
-            $expense = Expense::findOrFail($this->markPaidId);
+            $expense = $this->expenseInScope((int) $this->markPaidId);
+            $this->authorizeAbility('expenses.pay', $expense);
             if ($expense->isOneTime()) {
                 $expense->markAsPaid(null, $paidDate);
             }
@@ -654,7 +722,9 @@ class JobSiteShow extends Component
     // Mark payment as overdue
     public function markPaymentAsOverdue($paymentId)
     {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope((int) $paymentId);
+        $this->authorizeAbility('expenses.pay', $payment);
+
         $payment->markAsOverdue();
 
         session()->flash('message', __('Payment marked as overdue.'));
@@ -668,7 +738,9 @@ class JobSiteShow extends Component
     // Change the due date of an installment (shows inline date picker)
     public function startEditDueDate($paymentId)
     {
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope((int) $paymentId);
+        $this->authorizeAbility('expenses.edit', $payment);
+
         $this->editDueDateId = $payment->id;
         $this->editDueDate = $payment->due_date->format('Y-m-d');
     }
@@ -682,7 +754,8 @@ class JobSiteShow extends Component
     {
         $this->validate(['editDueDate' => 'required|date']);
 
-        $payment = \App\Models\ExpensePayment::findOrFail($this->editDueDateId);
+        $payment = $this->paymentInScope((int) $this->editDueDateId);
+        $this->authorizeAbility('expenses.edit', $payment);
 
         if (!$payment->isPaid()) {
             $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
@@ -698,24 +771,23 @@ class JobSiteShow extends Component
         }
     }
 
-    // Revert a paid one-time expense back to unpaid (admin only)
+    // Revert a paid one-time expense back to unpaid — `expenses.edit_paid`
     public function unmarkExpensePaid($expenseId)
     {
-        $this->authorizeAdmin();
+        $expense = $this->expenseInScope((int) $expenseId);
+        $this->authorizeAbility('expenses.edit_paid', $expense);
 
-        $expense = Expense::findOrFail($expenseId);
         $expense->unmarkAsPaid();
 
         session()->flash('message', __('Expense payment reverted to unpaid.'));
         $this->jobSite->refresh();
     }
 
-    // Revert a paid installment back to pending (admin only)
+    // Revert a paid installment back to pending — `expenses.edit_paid`
     public function unmarkPaymentPaid($paymentId)
     {
-        $this->authorizeAdmin();
-
-        $payment = \App\Models\ExpensePayment::findOrFail($paymentId);
+        $payment = $this->paymentInScope((int) $paymentId);
+        $this->authorizeAbility('expenses.edit_paid', $payment);
 
         if ($payment->isPaid()) {
             $payment->markAsPending();
@@ -735,6 +807,8 @@ class JobSiteShow extends Component
 
     public function confirmDeleteJobSite()
     {
+        $this->authorizeAbility('projects.delete', $this->jobSite);
+
         $jobSite = JobSite::withCount([
             'expenses',
             'changeOrders',
@@ -757,6 +831,8 @@ class JobSiteShow extends Component
 
     public function deleteJobSite()
     {
+        $this->authorizeAbility('projects.delete', $this->jobSite);
+
         $projectId = $this->jobSite->project_id;
 
         DB::transaction(function () {

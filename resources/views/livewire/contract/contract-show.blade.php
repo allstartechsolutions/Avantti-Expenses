@@ -64,12 +64,14 @@
                     icon="arrow-left">
                     {{ __('Back to List') }}
                 </x-ui.button>
-                <x-ui.button
-                    variant="secondary"
-                    href="{{ route('contracts.edit', $contract->id) }}"
-                    icon="edit">
-                    {{ __('Edit') }}
-                </x-ui.button>
+                @can('contracts.edit', $contract)
+                    <x-ui.button
+                        variant="secondary"
+                        href="{{ route('contracts.edit', $contract->id) }}"
+                        icon="edit">
+                        {{ __('Edit') }}
+                    </x-ui.button>
+                @endcan
             </div>
         </div>
     </div>
@@ -352,51 +354,61 @@
                 </div>
                 <div class="p-6 space-y-3">
                     @if(count($this->availableStatuses) > 0)
-                        <x-ui.button
-                            variant="primary"
-                            class="w-full justify-center"
-                            wire:click="openStatusModal"
-                            icon="refresh">
-                            {{ __('Change Status') }}
-                        </x-ui.button>
+                        @can('contracts.edit', $contract)
+                            <x-ui.button
+                                variant="primary"
+                                class="w-full justify-center"
+                                wire:click="openStatusModal"
+                                icon="refresh">
+                                {{ __('Change Status') }}
+                            </x-ui.button>
+                        @endcan
                     @endif
 
                     @if(in_array($contract->status, ['active', 'completed', 'partially_paid']))
-                        <x-ui.button
-                            variant="success"
-                            class="w-full justify-center"
-                            wire:click="openPaymentModal"
-                            icon="plus">
-                            {{ __('Record Payment') }}
-                        </x-ui.button>
+                        @can('contracts.pay', $contract)
+                            <x-ui.button
+                                variant="success"
+                                class="w-full justify-center"
+                                wire:click="openPaymentModal"
+                                icon="plus">
+                                {{ __('Record Payment') }}
+                            </x-ui.button>
+                        @endcan
                     @endif
 
                     @if($contract->getRetentionOutstanding() > 0)
-                        <x-ui.button
-                            variant="warning"
-                            class="w-full justify-center"
-                            wire:click="openRetentionModal"
-                            icon="banknotes">
-                            {{ __('Release Retention') }}
-                        </x-ui.button>
+                        @can('contracts.pay', $contract)
+                            <x-ui.button
+                                variant="warning"
+                                class="w-full justify-center"
+                                wire:click="openRetentionModal"
+                                icon="banknotes">
+                                {{ __('Release Retention') }}
+                            </x-ui.button>
+                        @endcan
                     @endif
 
-                    <x-ui.button
-                        variant="secondary"
-                        href="{{ route('contracts.edit', $contract->id) }}"
-                        class="w-full justify-center"
-                        icon="edit">
-                        {{ __('Edit Contract') }}
-                    </x-ui.button>
+                    @can('contracts.edit', $contract)
+                        <x-ui.button
+                            variant="secondary"
+                            href="{{ route('contracts.edit', $contract->id) }}"
+                            class="w-full justify-center"
+                            icon="edit">
+                            {{ __('Edit Contract') }}
+                        </x-ui.button>
+                    @endcan
 
-                    <x-ui.button
-                        variant="danger"
-                        class="w-full justify-center"
-                        wire:click="delete"
-                        wire:confirm="{{ __('Are you sure you want to delete this contract? This action cannot be undone.') }}"
-                        icon="trash">
-                        {{ __('Delete Contract') }}
-                    </x-ui.button>
+                    @can('contracts.delete', $contract)
+                        <x-ui.button
+                            variant="danger"
+                            class="w-full justify-center"
+                            wire:click="delete"
+                            wire:confirm="{{ __('Are you sure you want to delete this contract? This action cannot be undone.') }}"
+                            icon="trash">
+                            {{ __('Delete Contract') }}
+                        </x-ui.button>
+                    @endcan
                 </div>
             </div>
 
@@ -522,13 +534,15 @@
                                             {{ __('by') }} {{ $payment->createdBy?->name ?? __('Unknown') }}
                                         </p>
                                     </div>
-                                    <x-ui.button
-                                        variant="danger"
-                                        size="sm"
-                                        wire:click="deletePayment({{ $payment->id }})"
-                                        wire:confirm="{{ __('Are you sure you want to delete this payment?') }}"
-                                        icon="trash">
-                                    </x-ui.button>
+                                    @can('contracts.unpay', $contract)
+                                        <x-ui.button
+                                            variant="danger"
+                                            size="sm"
+                                            wire:click="deletePayment({{ $payment->id }})"
+                                            wire:confirm="{{ __('Are you sure you want to delete this payment?') }}"
+                                            icon="trash">
+                                        </x-ui.button>
+                                    @endcan
                                 </div>
                             </div>
                         @endforeach

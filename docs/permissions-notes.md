@@ -1,6 +1,8 @@
 # Permissions — running notations
 
-**Status: notes only. Nothing here is built.** This is the place to write down permission
+**Status: N1, N2, N3, N7 and §4b are settled (M7, M8, M10 and M12, 2026-08-21); N5 is half
+closed — the document repository in M12, the PDF controllers still open; N8 needed nothing, the
+check was already in the right place; N4 and N9 are closed by the passes as they land.** This is the place to write down permission
 problems as they are noticed, so the eventual permission work is designed once, from a full
 list, instead of being patched one screen at a time.
 
@@ -75,7 +77,33 @@ is justified.
 ## 3. Notations
 
 ### N1 — Approval must not be bypassable, and there needs to be a way around it that is honest
-*Opened 2026-08-19 (owner). Status: open.*
+*Opened 2026-08-19 (owner). Status: **fully settled — M7 and M8, 2026-08-21**.*
+
+**What was done (M7).** Options 2 and 4 of the four below, plus a piece of option 3:
+
+- **Submitted is locked.** `canBeEdited()` is `draft` only. Changing a submitted requisition
+  means pressing **Return to Draft** first — `requisitions.edit`, and either yours or a
+  reviewer's — which costs it its place in the queue and writes `pending → draft` into its
+  history. The lock is about the record, so an administrator is refused too.
+- **Duplicate**, from any status including approved and rejected, into a fresh draft owned by
+  whoever pressed it. Its own grant, `requisitions.duplicate`.
+- **Submitting is its own grant** (`requisitions.submit`), so raising an ask and putting it in
+  the queue are separable. Cancelling, which had no guard at all, now needs
+  `requisitions.edit` — and `requisitions.approve` when the requisition is already approved.
+
+**Closed in M8 (owner's choice: a grant, defined in the roles and templates matrix).** Raising a
+round *from an approved requisition* needs `quotations.create`; raising one *from nothing* needs
+`quotations.create_standalone` on top. Checked in three places — the button is not rendered,
+`openAddModal()` refuses, and `saveQuotation()` refuses again for any new round with no
+requisition behind it, so driving the form directly does not get past it.
+
+This **tightens** what the application did: an employee can raise a standalone round today and
+cannot after M8. A manager keeps it, because a manager can approve the requisition they would
+otherwise have needed — nothing is being walked around — and it is one tick for anybody else.
+
+---
+
+**The original notation, for the record:**
 
 **Observed.** The approval gate is only meaningful if a lesser user cannot reach the same
 outcome another way. Today an employee cannot approve, but the surrounding rules are loose
@@ -111,7 +139,32 @@ bypass approval.
    person duplicating. This is the piece the owner asked for.
 
 ### N2 — Self-approval
-*Opened 2026-08-19 (from the audit). Status: open.*
+*Opened 2026-08-19 (from the audit). Status: **settled in M7, 2026-08-21**.*
+
+**Blocked**, and lifted by a grant rather than by an exception in the code.
+
+Approving is refused when the approver either keyed the requisition in (`created_by`) or is
+named as the person it is for (`requested_by`) — approving your own ask is the same act under
+either heading. Rejecting your own is not blocked; it is not the problem self-approval is.
+
+The "block above a value" option was not available: a requisition carries no money at all (its
+items have a quantity and never a price), which is also why `requisitions.approve` is not
+`limited`. Value thresholds start at M8.
+
+`requisitions.approve_own` lifts the block. It is held back from both seeded roles and from
+every permission template, so a company small enough that the raiser and the reviewer are the
+same person ticks one box — and the fact that they did is on the record rather than being a
+quiet special case. The detail view says *"You raised this requisition, so somebody else has to
+approve it"* instead of dropping the button silently.
+
+**Known limit:** an administrator holds every ability by definition, `approve_own` included, so
+administrators can still approve their own. Making the block admin-proof would need a rule
+outside the ability system, which is the thing this module exists to remove. Recorded as a
+consequence rather than an oversight.
+
+---
+
+**The original notation, for the record:**
 
 A manager can raise a requisition and approve it themselves; nothing checks that the
 reviewer is not the requester. Standard BR practice for larger purchases is that the two are
@@ -121,7 +174,25 @@ different people, often with a value threshold below which it does not matter.
 plainly on the detail view and in the history ("approved by the person who raised it").
 
 ### N3 — Award and conversion authority
-*Opened 2026-08-19. Status: **built on the assumption**, still open for a decision.*
+*Opened 2026-08-19. Status: **settled in M8, 2026-08-21**.*
+
+All three questions answered:
+
+- **Should awarding above a value need somebody specific?** Yes — `quotations.award` obeys
+  `approval_limit`, checked against what the proposed winner would commit. M8 is the first pass
+  to use the ceiling at all.
+- **Should converting to a contract be tighter than converting to a PO?** Yes — they are now
+  two grants. `quotations.convert` commits one purchase order; `quotations.convert_contract`
+  commits a schedule of future payments. Both obey the ceiling.
+- **Should the person who keyed in the proposals be allowed to award them?** No, by default.
+  `quotation_vendors.priced_by` records who typed the prices (`created_by` records who invited
+  the vendor, a different act), the block applies to the **winning** rows only, and
+  `quotations.award_own` lifts it — held back from both seeded roles and every template, the
+  same shape as `requisitions.approve_own`.
+
+---
+
+**The original notation, for the record:**
 
 The award and the conversion shipped as **admin or manager, no value thresholds**, which was
 the stated assumption. Both are guarded server-side and neither action is offered to an
@@ -147,7 +218,23 @@ projects or job sites? If yes, that is a much larger change than role tweaks, an
 be decided before more screens are built on the assumption that everyone sees everything.
 
 ### N5 — Documents are reachable by id
-*Opened 2026-08-19 (from the audit). Status: open.*
+*Opened 2026-08-19 (from the audit). Status: **the repository half is closed (M12, 2026-08-21);
+the PDF controllers are still open**.*
+
+**Closed in M12, for the document repository.** `Document::isVisibleTo()` returned true for every
+non-internal document to anybody — including a signed-out visitor — so the download and preview
+routes handed any project's files to any signed-in person who guessed an id. It now asks
+`documents.view` on the document's own project, plus `documents.see_internal` for the internal
+ones, and `scopeVisibleTo()` narrows lists the same way.
+
+**Still open:** the PDF controllers named below. `/quotations/{id}/rfq/pdf`, the report PDFs and
+the estimate and invoice PDFs are behind `auth` only. Each module's own pass should guard its
+PDFs the way M12 guarded the repository — M8 did not, and that is a gap to sweep in F3 if no
+later pass picks it up.
+
+---
+
+**The original notation, for the record:**
 
 `/quotations/{id}/rfq/pdf`, `/quotations/{id}/map/pdf` and every existing report/estimate/
 invoice PDF are behind `auth` only. Any signed-in user can fetch any of them by guessing an
@@ -166,7 +253,16 @@ three names.
 (`procurement`); or move to per-capability permissions with roles as presets.
 
 ### N7 — A share link is unauthenticated access, granted by a manager
-*Opened 2026-08-19 (document repository, phase 7). Status: open.*
+*Opened 2026-08-19 (document repository, phase 7). Status: **settled in M12, 2026-08-21**.*
+
+**The owner's answer: leave it with admin and manager, but make it a grant.** `documents.share`
+is seeded exactly as the old check behaved, and is now revocable per role, per template, per
+project and per person. The folder-vs-document split offered below was not taken — a folder link
+and a document link are the same grant.
+
+---
+
+**The original notation, for the record:**
 
 **Observed.** The file repository lets an admin **or manager** create a public link that hands
 a document — or a whole folder, including anything filed into it later — to someone with no
@@ -250,6 +346,30 @@ role, what happens to a removed member's drafts and tasks, and whether any actio
 genuine two-person rule.
 
 ## 4b. Change orders (added 2026-08-19, phase 2)
+*Status: **settled in M10, 2026-08-21**.*
+
+All four questions answered, each following the pattern the earlier passes set:
+
+1. **Who may approve** — `change-orders.approve`, seeded to manager and administrator, and it
+   obeys `approval_limit`. A **tightening**: an employee can approve one today and cannot after
+   M10. The ceiling is measured against the **cost** side, by magnitude, so a deductive change
+   order is not waved through just because its sign is negative.
+2. **Self-approval** — blocked, lifted by `change-orders.approve_own`. The same answer as N2
+   (requisitions, M7) and N3 (quotation awards, M8), which is what this notation suggested.
+   Turning down your own *pending* change order is not blocked.
+3. **Un-approving** — narrower than approving, in its own grant. A *pending* change order's
+   lines are not in the budget, so turning it down needs only `approve`; an *approved* one's are,
+   so rejecting or returning it to pending needs `change-orders.unapprove`. Somebody who may
+   approve any amount still cannot undo one.
+4. **Deleting an approved change order** — refused outright, for everybody including
+   administrators. It would take the cost lines out of every budget they revised with no record
+   that the revision happened. Un-approve it first, which is visible and needs `unapprove`.
+
+`approve_own` and `unapprove` are held back from both seeded roles and every permission template.
+
+---
+
+**The original notation, for the record:**
 
 Approving a change order is what moves the cost budget, and today **anyone who can reach the
 change orders screen can approve, reject or return one to pending**. No admin guard, no

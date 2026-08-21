@@ -2,6 +2,7 @@
 
 namespace App\Livewire\CostCode;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CostCode;
 use App\Models\CostCodeTemplate;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,8 @@ use Livewire\WithFileUploads;
 
 class CostCodeTemplateShow extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads;
 
     public CostCodeTemplate $template;
@@ -50,11 +53,15 @@ class CostCodeTemplateShow extends Component
 
     public function mount(CostCodeTemplate $template)
     {
+        $this->authorizeAbility('cost-codes.view');
+
         $this->template = $template->load(['creator', 'parentCostCodes.children']);
     }
 
     public function openAddForm($parentId = null)
     {
+        $this->authorizeAbility('cost-codes.create');
+
         $this->resetForm();
         $this->parentId = $parentId;
         $this->sort_order = $this->nextSortOrder($parentId);
@@ -80,6 +87,8 @@ class CostCodeTemplateShow extends Component
 
     public function openEditForm($costCodeId)
     {
+        $this->authorizeAbility('cost-codes.edit');
+
         $costCode = CostCode::findOrFail($costCodeId);
 
         $this->resetForm();
@@ -100,6 +109,8 @@ class CostCodeTemplateShow extends Component
      */
     public function save($addAnother = false)
     {
+        $this->authorizeAbility($this->editingCostCodeId ? 'cost-codes.edit' : 'cost-codes.create');
+
         $this->validate();
 
         $data = [
@@ -137,6 +148,8 @@ class CostCodeTemplateShow extends Component
 
     public function deleteCostCode($costCodeId)
     {
+        $this->authorizeAbility('cost-codes.delete');
+
         $costCode = CostCode::findOrFail($costCodeId);
 
         // Check if it has children
@@ -175,6 +188,8 @@ class CostCodeTemplateShow extends Component
     // Import methods
     public function openImportModal()
     {
+        $this->authorizeAbility('cost-codes.create');
+
         $this->reset(['importFile', 'importErrors', 'importPreview']);
         $this->importMode = 'merge';
         $this->showImportModal = true;
@@ -188,6 +203,8 @@ class CostCodeTemplateShow extends Component
 
     public function updatedImportFile()
     {
+        $this->authorizeAbility('cost-codes.create');
+
         $this->validate([
             'importFile' => 'required|file|mimes:csv,txt|max:1024',
         ]);
@@ -380,6 +397,8 @@ class CostCodeTemplateShow extends Component
 
     public function executeImport()
     {
+        $this->authorizeAbility('cost-codes.create');
+
         if (!empty($this->importErrors) || empty($this->importPreview)) {
             return;
         }

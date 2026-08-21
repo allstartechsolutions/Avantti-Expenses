@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Budget;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\CostCodeTemplate;
 use App\Models\JobSite;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class BudgetCreate extends Component
 {
+    use AuthorizesAbility;
+
     public ?Project $project = null;
     public ?JobSite $jobSite = null;
 
@@ -41,6 +44,10 @@ class BudgetCreate extends Component
             $this->project = $project;
         }
 
+        // Answered against the job site where there is one: a site membership
+        // overrides the project's, in both directions.
+        $this->authorizeAbility('budget.create', $this->budgetScope());
+
         // Check if budget already exists for this location
         if ($this->budgetExists()) {
             session()->flash('error', __('A budget already exists for this location.'));
@@ -53,6 +60,22 @@ class BudgetCreate extends Component
             $this->source_template_id = $defaultTemplate->id;
             $this->use_template = true;
         }
+    }
+
+    /**
+     * The record this budget is being created against.
+     *
+     * Neither one bound means the route was reached with nothing to hang the
+     * budget on — a 404 rather than a permission question with no subject,
+     * which would be answered by role and then fail further down anyway.
+     */
+    protected function budgetScope(): JobSite|Project
+    {
+        $scope = $this->jobSite ?? $this->project;
+
+        abort_if($scope === null, 404, 'Project or Job Site required');
+
+        return $scope;
     }
 
     /**
@@ -95,6 +118,8 @@ class BudgetCreate extends Component
 
     public function save()
     {
+        $this->authorizeAbility('budget.create', $this->budgetScope());
+
         $this->validate();
 
         $budget = Budget::create([

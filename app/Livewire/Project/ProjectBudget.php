@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\Project;
 use App\Services\CostCodeLedger;
@@ -9,10 +10,14 @@ use Livewire\Component;
 
 class ProjectBudget extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('budget.view', $project);
+
         $this->project = $project;
     }
 

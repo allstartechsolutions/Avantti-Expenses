@@ -7,9 +7,12 @@ use App\Models\BudgetItem;
 use App\Models\CatalogItem;
 use App\Models\Expense;
 use App\Models\Supplier;
+use App\Models\JobSite;
+use App\Models\Project;
 use App\Services\BudgetService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 /**
  * The expense form — header, payment terms and line items with their cost
@@ -353,7 +356,12 @@ trait ManagesExpenseForm
         $this->validate([
             'expense_date' => 'required|date',
             'expense_supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
-            'expense_job_site_id' => 'nullable|exists:job_sites,id',
+            'expense_job_site_id' => [
+                'nullable',
+                // A job site of THIS project and no other. Without the
+                // project_id clause the picker accepted any id in the table.
+                Rule::exists('job_sites', 'id')->where('project_id', $this->expenseProjectId()),
+            ],
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',
         ], [
@@ -380,6 +388,45 @@ trait ManagesExpenseForm
                 'expense_payment_due_date' => 'required|date',
             ]);
         }
+    }
+
+    // =========================================================================
+    // WHERE THE EXPENSE LANDS
+    // =========================================================================
+
+    /**
+     * The project or job site the form is currently pointing at.
+     *
+     * The Location picker can move an expense between the project and any of
+     * its job sites, so the permission question has to be asked about the
+     * *destination* and not only about the screen it was opened from. A person
+     * holding `expenses.create` on one job site alone may not file against a
+     * sibling site by changing the dropdown.
+     */
+    protected function expenseDestination(): JobSite|Project|null
+    {
+        if ($this->expense_job_site_id) {
+            return JobSite::where('project_id', $this->expenseProjectId())
+                ->find($this->expense_job_site_id);
+        }
+
+        return Project::find($this->expenseProjectId());
+    }
+
+    /**
+     * The job sites this person may actually put an expense on, which is what
+     * the Location picker offers. An empty list still leaves "Project
+     * (General)" where they hold the ability on the project itself.
+     */
+    protected function selectableJobSites(string $ability): Collection
+    {
+        $resolver = app(\App\Services\PermissionResolver::class);
+
+        return JobSite::where('project_id', $this->expenseProjectId())
+            ->orderBy('job_site_name')
+            ->get()
+            ->filter(fn (JobSite $site) => $resolver->allows(Auth::user(), $ability, $site))
+            ->values();
     }
 
     // =========================================================================

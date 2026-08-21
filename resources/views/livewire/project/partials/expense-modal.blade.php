@@ -166,7 +166,7 @@
                                                         </div>
                                                     @else
                                                         {{ $payment->due_date->format('M d, Y') }}
-                                                        @if($payment->status !== 'paid')
+                                                        @if($payment->status !== 'paid' && auth()->user()->can('expenses.edit', $viewingExpense))
                                                             <button wire:click="startEditDueDate({{ $payment->id }})" class="ml-1 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6] align-middle" title="{{ __('Change due date') }}">
                                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                                             </button>
@@ -200,14 +200,18 @@
                                                             <button wire:click="cancelMarkPaid" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium">{{ __('Cancel') }}</button>
                                                         </div>
                                                     @elseif($payment->status === 'pending')
-                                                        <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
-                                                        <button wire:click="markPaymentAsOverdue({{ $payment->id }})" class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">{{ __('Overdue') }}</button>
+                                                        @can('expenses.pay', $viewingExpense)
+                                                            <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                            <button wire:click="markPaymentAsOverdue({{ $payment->id }})" class="ml-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">{{ __('Overdue') }}</button>
+                                                        @endcan
                                                     @elseif($payment->status === 'overdue')
-                                                        <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                        @can('expenses.pay', $viewingExpense)
+                                                            <button wire:click="startMarkPaid('payment', {{ $payment->id }})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Mark Paid') }}</button>
+                                                        @endcan
                                                     @elseif($payment->status === 'paid')
-                                                        @admin
+                                                        @can('expenses.edit_paid', $viewingExpense)
                                                             <button wire:click="unmarkPaymentPaid({{ $payment->id }})" wire:confirm="{{ __('Revert this payment to pending?') }}" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">{{ __('Revert') }}</button>
-                                                        @endadmin
+                                                        @endcan
                                                     @endif
                                                 </td>
                                             </tr>

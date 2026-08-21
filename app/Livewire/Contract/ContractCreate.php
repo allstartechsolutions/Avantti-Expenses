@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesContractAllocations;
 use App\Models\Contract;
 use App\Models\JobSite;
@@ -16,6 +17,8 @@ use Livewire\WithFileUploads;
 
 class ContractCreate extends Component
 {
+    use AuthorizesAbility;
+
     use ManagesContractAllocations, WithFileUploads;
 
     // Context
@@ -36,17 +39,27 @@ class ContractCreate extends Component
 
     public function mount(?Project $project = null, ?JobSite $jobSite = null)
     {
-        if ($jobSite) {
+        // `exists` and not truthiness: an unfilled route parameter can arrive
+        // as a blank model, which is truthy and has no project behind it.
+        if ($jobSite?->exists) {
             $this->jobSite = $jobSite;
             $this->project = $jobSite->project;
             $this->job_site_id = $jobSite->id;
-        } elseif ($project) {
+        } elseif ($project?->exists) {
             $this->project = $project;
         } else {
             abort(404, 'Project or Job Site required');
         }
 
+        $this->authorizeAbility('contracts.create', $this->contractScope());
+
         $this->start_date = now()->format('Y-m-d');
+    }
+
+    /** The record this contract is being raised against. */
+    protected function contractScope(): JobSite|Project
+    {
+        return $this->jobSite ?? $this->project;
     }
 
     protected function allocationProjectId(): int
@@ -73,6 +86,8 @@ class ContractCreate extends Component
 
     public function save()
     {
+        $this->authorizeAbility('contracts.create', $this->contractScope());
+
         $this->validate([
             'subcontractor_id' => 'nullable|exists:vendors,id,is_subcontractor,1',
             'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],

@@ -407,15 +407,15 @@ scoped module hangs off it; then modules in order of how much money they move.
 | M1 ✅ | **Access & Users** *(built 2026-08-20)* | Templates, memberships, the Team tab on both levels, invitations, guests, the guest shell. The module that grants all the others, so it is converted first and tested hardest |
 | M2 ✅ | **Project & Job Site shell** *(built 2026-08-20)* | `project.view/edit/archive`, the overview screens, the indexes, the breadcrumb rule for job-site-only members. Every later pass depends on this scope existing |
 | M3 ✅ | **Company & Settings** *(built 2026-08-20)* | Small, currently wide open (any user can edit the company record), and quick to prove the pattern on a non-scoped module |
-| M4 | **Expenses** | The daily module, the most users, `pay` and `edit_paid`, the first real money masking |
-| M5 | **Income** | Mirrors expenses, including the cross-job-site distribution |
-| M6 | **Budget & Cost Codes** | `budget.lock`, and the templates screen that is admin-only today |
-| M7 | **Requisitions** | Plus **N1/N2**: submitted requisition locked, self-approval blocked, *duplicate requisition* added |
-| M8 | **Quotations** | Plus **N3**: `award`, `convert`, `approval_limit`, and the rule that a round needs an approved requisition |
-| M9 | **Purchase Orders** | `approve`, `receive` |
-| M10 | **Change Orders** | Approval separated from raising; un-approve and delete-approved held tighter (§4b of the notes) |
-| M11 | **Contracts & Payments** | Contracts, measurements, the payments dashboard, contract payments, payment batches — four company-wide money screens with no guard today |
-| M12 | **Documents** | `share` (**N7**), `see_internal`, and the presigned-URL check moved before the mint (**N5/N8**) |
+| M4 ✅ | **Expenses** *(built 2026-08-20)* | The daily module, the most users, `pay` and `edit_paid`, the first real money masking |
+| M5 ✅ | **Income** *(built 2026-08-21)* | Mirrors expenses, including the cross-job-site distribution |
+| M6 ✅ | **Budget & Cost Codes** *(built 2026-08-21)* | `budget.lock`, and the templates screen that is admin-only today |
+| M7 ✅ | **Requisitions** *(built 2026-08-21)* | Plus **N1/N2**: submitted requisition locked, self-approval blocked, *duplicate requisition* added |
+| M8 ✅ | **Quotations** *(built 2026-08-21)* | Plus **N3**: `award`, `convert`, `approval_limit`, and the rule that a round needs an approved requisition |
+| M9 ✅ | **Purchase Orders** *(built 2026-08-21)* | `approve`, `receive` |
+| M10 ✅ | **Change Orders** *(built 2026-08-21)* | Approval separated from raising; un-approve and delete-approved held tighter (§4b of the notes) |
+| M11 ✅ | **Contracts & Payments** *(built 2026-08-21)* | Contracts, measurements, the payments dashboard, contract payments, payment batches — four company-wide money screens with no guard today |
+| M12 ✅ | **Documents** *(built 2026-08-21)* | `share` (**N7**), `see_internal`, and the presigned-URL check moved before the mint (**N5/N8**) |
 | M13 | **Tasks & Meetings** | `manage_series` off the inline role check; My Tasks scoped |
 | M14 | **Daily Reports** | Site-level module, the natural home of the guest and the supervisor persona |
 | M15 | **Estimates & Invoices** | Client-facing money, unguarded today; includes the public pay link's boundary |
@@ -427,7 +427,7 @@ Each pass is a day-to-a-few-days of work, ships on its own, and can be deployed 
 If the order needs to change because a customer needs a module confined sooner, it can —
 the passes do not depend on each other beyond M1 and M2.
 
-**Progress (2026-08-20): M1, M2 and M3 are done — 7 of 30 areas enforced. M4 is next.**
+**Progress (2026-08-21): M1–M12 are done — 18 of 30 areas enforced. M13 is next.**
 
 ### 9.5 Stage 3 — closing up
 

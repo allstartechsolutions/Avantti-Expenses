@@ -2,6 +2,7 @@
 
 namespace App\Livewire\CostCode;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CostCodeTemplate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -9,6 +10,8 @@ use Livewire\WithPagination;
 
 class CostCodeTemplateIndex extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public $search = '';
@@ -24,6 +27,8 @@ class CostCodeTemplateIndex extends Component
 
     public function deleteTemplate($id)
     {
+        $this->authorizeAbility('cost-codes.delete');
+
         $template = CostCodeTemplate::findOrFail($id);
         $template->delete();
         session()->flash('message', __('Template deleted successfully.'));
@@ -31,6 +36,8 @@ class CostCodeTemplateIndex extends Component
 
     public function duplicateTemplate($id)
     {
+        $this->authorizeAbility('cost-codes.create');
+
         $template = CostCodeTemplate::findOrFail($id);
         $newTemplate = $template->duplicate(Auth::id());
         session()->flash('message', __('Template duplicated successfully as ":name".', ['name' => $newTemplate->name]));
@@ -38,6 +45,8 @@ class CostCodeTemplateIndex extends Component
 
     public function setAsDefault($id)
     {
+        $this->authorizeAbility('cost-codes.edit');
+
         CostCodeTemplate::setDefault($id);
         session()->flash('message', __('Default template updated successfully.'));
     }

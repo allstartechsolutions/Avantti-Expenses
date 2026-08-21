@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Budget;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Models\CostCodeTemplate;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class BudgetEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Budget $budget;
 
     // Budget form fields
@@ -39,6 +42,8 @@ class BudgetEdit extends Component
 
     public function mount(Budget $budget)
     {
+        $this->authorizeAbility('budget.edit', $budget);
+
         $this->budget = $budget->load(['project', 'jobSite', 'sourceTemplate']);
         $this->name = $budget->name;
         $this->notes = $budget->notes ?? '';
@@ -54,6 +59,9 @@ class BudgetEdit extends Component
 
     public function save()
     {
+        $this->authorizeAbility('budget.edit', $this->budget);
+        $this->refuseIfLocked();
+
         $this->validate();
 
         $this->budget->update([
@@ -68,6 +76,9 @@ class BudgetEdit extends Component
     // Import from template methods
     public function openImportModal()
     {
+        $this->authorizeAbility('budget.edit', $this->budget);
+        $this->refuseIfLocked();
+
         $this->importTemplateId = '';
         $this->importMode = 'merge';
         $this->showImportModal = true;
@@ -81,6 +92,11 @@ class BudgetEdit extends Component
 
     public function importTemplate()
     {
+        // Importing can REPLACE every cost code, so it is the plan changing in
+        // the largest possible way.
+        $this->authorizeAbility('budget.edit', $this->budget);
+        $this->refuseIfLocked();
+
         $this->validate([
             'importTemplateId' => 'required|exists:cost_code_templates,id',
         ], [
@@ -149,9 +165,26 @@ class BudgetEdit extends Component
         session()->flash('message', __('Cost codes imported from template successfully.'));
     }
 
+    /**
+     * A locked budget is a frozen baseline; changing or deleting the plan is
+     * refused until somebody holding `budget.lock` reopens it, which leaves a
+     * line in the budget's history.
+     */
+    protected function refuseIfLocked(): void
+    {
+        abort_if(
+            $this->budget->isLocked(),
+            403,
+            __('This budget is locked. Unlock it before changing the plan.'),
+        );
+    }
+
     // Delete budget
     public function confirmDelete()
     {
+        $this->authorizeAbility('budget.delete', $this->budget);
+        $this->refuseIfLocked();
+
         $this->showDeleteConfirmation = true;
     }
 
@@ -162,6 +195,9 @@ class BudgetEdit extends Component
 
     public function deleteBudget()
     {
+        $this->authorizeAbility('budget.delete', $this->budget);
+        $this->refuseIfLocked();
+
         $projectId = $this->budget->project_id;
         $jobSiteId = $this->budget->job_site_id;
 

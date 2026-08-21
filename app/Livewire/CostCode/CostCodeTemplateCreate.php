@@ -2,12 +2,15 @@
 
 namespace App\Livewire\CostCode;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CostCodeTemplate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class CostCodeTemplateCreate extends Component
 {
+    use AuthorizesAbility;
+
     public $name = '';
     public $description = '';
     public $is_default = false;
@@ -20,6 +23,8 @@ class CostCodeTemplateCreate extends Component
 
     public function save()
     {
+        $this->authorizeAbility('cost-codes.create');
+
         $this->validate();
 
         // If setting as default, clear other defaults first

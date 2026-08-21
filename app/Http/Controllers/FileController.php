@@ -2,6 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attachment;
+use App\Models\ChangeOrder;
+use App\Models\Contract;
+use App\Models\ContractChangeOrder;
+use App\Models\Expense;
+use App\Models\Income;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequisition;
+use App\Models\Quotation;
+use App\Models\QuotationVendor;
+use App\Services\PermissionResolver;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -45,6 +57,7 @@ class FileController extends Controller
     public function download(Request $request): StreamedResponse
     {
         $path = $this->resolvePath($request);
+        $this->authorizeFile($request, $path);
 
         return Storage::download($path, basename($path), [
             'Content-Type' => Storage::mimeType($path),
@@ -54,6 +67,7 @@ class FileController extends Controller
     public function show(Request $request)
     {
         $path = $this->resolvePath($request);
+        $this->authorizeFile($request, $path);
 
         return response()->stream(function () use ($path) {
             $stream = Storage::readStream($path);
@@ -63,6 +77,90 @@ class FileController extends Controller
             'Content-Type' => Storage::mimeType($path),
             'Cache-Control' => 'private, max-age=3600',
         ]);
+    }
+
+    /**
+     * Whether this person may read this particular file.
+     *
+     * Being signed in used to be the whole of it: any user could read any
+     * receipt, contract or daily-report photo by asking for its path. That is
+     * closed one directory at a time, as each module has its permission pass —
+     * `expenses/` here in M4. A directory whose module has not been swept keeps
+     * the old answer, so nothing an existing customer does breaks mid-build.
+     *
+     * The owning record is found by the path itself, which is how it was
+     * stored; a file on disk that no record claims is refused rather than
+     * served, since nobody can be shown to have a right to it.
+     */
+    private function authorizeFile(Request $request, string $path): void
+    {
+        $directory = explode('/', $path)[0];
+
+        [$area, $record] = match ($directory) {
+            // M4 — the receipt is a column on the expense itself.
+            'expenses' => ['expenses', Expense::where('receipt_path', $path)->first()],
+
+            // M5 — income files are polymorphic attachments, so the owning
+            // record is reached through the attachment.
+            'income' => ['income', $this->attachedTo($path, Income::class)],
+
+            // M7 — same shape as income.
+            'requisitions' => ['requisitions', $this->attachedTo($path, PurchaseRequisition::class)],
+
+            // M11 — the signed contract, and the aditivo that amends it. Two
+            // directories, two owners, both reaching a project through their
+            // own columns.
+            'contracts' => ['contracts', Contract::where('contract_file_path', $path)->first()],
+            'contract-change-orders' => [
+                'contracts',
+                ContractChangeOrder::where('file_path', $path)->first(),
+            ],
+
+            // M10 — the signed change order, a column on the record itself.
+            'change_orders' => ['change-orders', ChangeOrder::where('file_path', $path)->first()],
+
+            // M9 — the supplier's order document, a column on the order itself.
+            'purchase-orders' => ['purchase-orders', PurchaseOrder::where('receipt_path', $path)->first()],
+
+            // M8 — this directory has two owners: the round itself carries the
+            // RFQ's own files, and each vendor row carries the proposal that
+            // came back. A row reaches its scope through its quotation.
+            'quotations' => ['quotations', $this->attachedTo($path, [Quotation::class, QuotationVendor::class])],
+
+            // Not yet swept: the old rule stands, and its own pass adds the
+            // line here. Nothing fails if that is forgotten, so it is written
+            // down in docs/review-and-improvements.md as well.
+            default => [null, null],
+        };
+
+        if ($area === null) {
+            return;
+        }
+
+        // A file on disk that no record claims is refused rather than served:
+        // nobody can be shown to have a right to it.
+        abort_if($record === null, 404, 'File not found');
+
+        abort_unless(
+            app(PermissionResolver::class)->allows($request->user(), $area.'.view', $record),
+            403,
+            __('You do not have permission to do that.'),
+        );
+    }
+
+    /**
+     * The record a polymorphic attachment hangs on, when it is one of the
+     * expected types. Anything else is treated as unclaimed.
+     *
+     * @param  string|array<int, string>  $expected
+     */
+    private function attachedTo(string $path, string|array $expected): ?Model
+    {
+        $attachment = Attachment::where('file_path', $path)
+            ->whereIn('attachable_type', (array) $expected)
+            ->first();
+
+        return $attachment?->attachable;
     }
 
     /**

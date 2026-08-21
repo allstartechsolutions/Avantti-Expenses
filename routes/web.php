@@ -305,17 +305,27 @@ Route::middleware(['auth'])->group(function () {
     Route::get('suppliers/{supplier}', SupplierShow::class)->name('suppliers.show');
     Route::get('suppliers/{supplier}/edit', SupplierEdit::class)->name('suppliers.edit');
 
-    // Payment routes
-    Route::get('payments', PaymentDashboard::class)->name('payments.index');
-    Route::get('contract-payments', ContractPayments::class)->name('contract-payments.index');
-    Route::get('contract-payments/pdf', [ContractPaymentsPdfController::class, 'download'])->name('contract-payments.pdf.download');
-    Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])->name('contract-payments.pdf.view');
+    // Payment routes — the company-wide money screens. Guarded on the route as
+    // well as in the component, because two of them (the batch index and the
+    // batch detail) have no mount() to guard (M11).
+    Route::get('payments', PaymentDashboard::class)
+        ->middleware('ability:payments.view')->name('payments.index');
+    Route::get('contract-payments', ContractPayments::class)
+        ->middleware('ability:payments.view')->name('contract-payments.index');
+    Route::get('contract-payments/pdf', [ContractPaymentsPdfController::class, 'download'])
+        ->middleware('ability:payments.view')->name('contract-payments.pdf.download');
+    Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])
+        ->middleware('ability:payments.view')->name('contract-payments.pdf.view');
 
     // Payment Batch routes
-    Route::get('payment-batches', PaymentBatchIndex::class)->name('payment-batches.index');
-    Route::get('payment-batches/create', PaymentBatchCreate::class)->name('payment-batches.create');
-    Route::get('payment-batches/{paymentBatch}', PaymentBatchShow::class)->name('payment-batches.show');
-    Route::get('payment-batches/{paymentBatch}/edit', PaymentBatchEdit::class)->name('payment-batches.edit');
+    Route::get('payment-batches', PaymentBatchIndex::class)
+        ->middleware('ability:payments.batch')->name('payment-batches.index');
+    Route::get('payment-batches/create', PaymentBatchCreate::class)
+        ->middleware('ability:payments.batch')->name('payment-batches.create');
+    Route::get('payment-batches/{paymentBatch}', PaymentBatchShow::class)
+        ->middleware('ability:payments.batch')->name('payment-batches.show');
+    Route::get('payment-batches/{paymentBatch}/edit', PaymentBatchEdit::class)
+        ->middleware('ability:payments.batch')->name('payment-batches.edit');
 
     // Estimate routes
     Route::get('estimates', EstimateIndex::class)->name('estimates.index');
@@ -361,13 +371,22 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:settings.view')
         ->name('system-settings.index');
 
-    Route::middleware('admin')->group(function () {
-
-        Route::get('cost-codes/templates', CostCodeTemplateIndex::class)->name('cost-codes.templates.index');
-        Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)->name('cost-codes.templates.create');
-        Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)->name('cost-codes.templates.show');
-        Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)->name('cost-codes.templates.edit');
-    });
+    // Cost code templates — the company-wide library a budget is built from.
+    // They belong to no project: one set of codes, used everywhere. Off the
+    // `admin` middleware in M6; the same people hold them by seed, but it is a
+    // grant now and can be handed to whoever keeps the chart of accounts.
+    Route::get('cost-codes/templates', CostCodeTemplateIndex::class)
+        ->middleware('ability:cost-codes.view')
+        ->name('cost-codes.templates.index');
+    Route::get('cost-codes/templates/create', CostCodeTemplateCreate::class)
+        ->middleware('ability:cost-codes.create')
+        ->name('cost-codes.templates.create');
+    Route::get('cost-codes/templates/{template}', CostCodeTemplateShow::class)
+        ->middleware('ability:cost-codes.view')
+        ->name('cost-codes.templates.show');
+    Route::get('cost-codes/templates/{template}/edit', CostCodeTemplateEdit::class)
+        ->middleware('ability:cost-codes.edit')
+        ->name('cost-codes.templates.edit');
 
     // Budget routes
     Route::get('budgets/{budget}', BudgetShow::class)->name('budgets.show');

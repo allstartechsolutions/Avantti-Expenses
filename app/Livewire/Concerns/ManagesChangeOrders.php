@@ -5,6 +5,8 @@ namespace App\Livewire\Concerns;
 use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Models\ChangeOrder;
+use App\Models\JobSite;
+use App\Models\Project;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -64,12 +66,67 @@ trait ManagesChangeOrders
         return $this->changeOrderPinnedJobSiteId() !== false;
     }
 
+    /** The project or job site this screen writes to. */
+    protected function changeOrderScope(): JobSite|Project
+    {
+        $jobSiteId = $this->changeOrderPinnedJobSiteId();
+
+        return $jobSiteId !== false
+            ? JobSite::findOrFail($jobSiteId)
+            : Project::findOrFail($this->changeOrderProjectId());
+    }
+
+    /** A change order of THIS project, or a 404. */
+    protected function changeOrderInScope(int $changeOrderId): ChangeOrder
+    {
+        return ChangeOrder::where('project_id', $this->changeOrderProjectId())
+            ->findOrFail($changeOrderId);
+    }
+
+    /**
+     * §4b question 2: may the person who raised it approve it?
+     *
+     * No, by default — the same answer M7 gave for requisitions and M8 gave
+     * for quotation awards, and the notation itself says the answer should be
+     * the same for all three. `change-orders.approve_own` lifts it.
+     */
+    public function isSelfApprovedChangeOrder(ChangeOrder $changeOrder): bool
+    {
+        return auth()->id() !== null && $changeOrder->created_by === auth()->id();
+    }
+
+    /**
+     * Approving is what revises the budget, so it obeys the ceiling and the
+     * self-approval rule. Turning down something still pending costs nothing
+     * and needs neither.
+     */
+    protected function authorizeChangeOrderDecision(ChangeOrder $changeOrder, bool $commitsMoney): void
+    {
+        $this->authorizeAbility('change-orders.approve', $changeOrder);
+
+        if (! $commitsMoney) {
+            return;
+        }
+
+        if ($this->isSelfApprovedChangeOrder($changeOrder)) {
+            $this->authorizeAbility('change-orders.approve_own', $changeOrder);
+        }
+
+        $this->authorizeAbilityWithin(
+            'change-orders.approve',
+            $changeOrder->costImpactInCents(),
+            $changeOrder,
+        );
+    }
+
     // =========================================================================
     // MODAL
     // =========================================================================
 
     public function openChangeOrderCreateModal(): void
     {
+        $this->authorizeAbility('change-orders.create', $this->changeOrderScope());
+
         $this->resetChangeOrderForm();
 
         $this->co_requested_date = now()->format('Y-m-d');
@@ -82,6 +139,8 @@ trait ManagesChangeOrders
 
     public function openChangeOrderEditModal(int $changeOrderId): void
     {
+        $this->authorizeAbility('change-orders.edit', $this->changeOrderInScope($changeOrderId));
+
         $this->fillChangeOrderForm($changeOrderId);
 
         $this->changeOrderModalMode = 'edit';
@@ -92,6 +151,8 @@ trait ManagesChangeOrders
 
     public function openChangeOrderViewModal(int $changeOrderId): void
     {
+        $this->authorizeAbility('change-orders.view', $this->changeOrderInScope($changeOrderId));
+
         $this->fillChangeOrderForm($changeOrderId);
 
         $this->changeOrderModalMode = 'view';
@@ -362,6 +423,11 @@ trait ManagesChangeOrders
 
     public function saveChangeOrder(): void
     {
+        $this->authorizeAbility(
+            $this->editingChangeOrder ? 'change-orders.edit' : 'change-orders.create',
+            $this->changeOrderScope(),
+        );
+
         $this->validate($this->changeOrderRules(), [], $this->changeOrderValidationAttributes());
 
         if (! $this->changeOrderLinesValid()) {
@@ -479,7 +545,11 @@ trait ManagesChangeOrders
 
     public function approveChangeOrder(int $changeOrderId): void
     {
-        $changeOrder = ChangeOrder::where('project_id', $this->changeOrderProjectId())->findOrFail($changeOrderId);
+        $changeOrder = $this->changeOrderInScope($changeOrderId);
+
+        // Approving puts the cost lines into the budget.
+        $this->authorizeChangeOrderDecision($changeOrder, commitsMoney: true);
+
         $changeOrder->approve(Auth::user());
 
         session()->flash('message', __('Change order approved. Its cost lines now revise the budget.'));
@@ -488,7 +558,17 @@ trait ManagesChangeOrders
 
     public function rejectChangeOrder(int $changeOrderId): void
     {
-        $changeOrder = ChangeOrder::where('project_id', $this->changeOrderProjectId())->findOrFail($changeOrderId);
+        $changeOrder = $this->changeOrderInScope($changeOrderId);
+
+        // Turning down something still pending is an ordinary review decision.
+        // Rejecting one already approved pulls its lines back out of a live
+        // budget, which is the narrower `unapprove`.
+        if ($changeOrder->undoingAffectsBudget()) {
+            $this->authorizeAbility('change-orders.unapprove', $changeOrder);
+        } else {
+            $this->authorizeChangeOrderDecision($changeOrder, commitsMoney: false);
+        }
+
         $changeOrder->reject(Auth::user());
 
         session()->flash('message', __('Change order rejected. Its cost lines no longer affect the budget.'));
@@ -497,7 +577,14 @@ trait ManagesChangeOrders
 
     public function returnChangeOrderToPending(int $changeOrderId): void
     {
-        $changeOrder = ChangeOrder::where('project_id', $this->changeOrderProjectId())->findOrFail($changeOrderId);
+        $changeOrder = $this->changeOrderInScope($changeOrderId);
+
+        if ($changeOrder->undoingAffectsBudget()) {
+            $this->authorizeAbility('change-orders.unapprove', $changeOrder);
+        } else {
+            $this->authorizeAbility('change-orders.edit', $changeOrder);
+        }
+
         $changeOrder->returnToPending();
 
         session()->flash('message', __('Change order moved back to pending. Its cost lines no longer affect the budget.'));
@@ -506,7 +593,22 @@ trait ManagesChangeOrders
 
     public function deleteChangeOrder(int $changeOrderId): void
     {
-        $changeOrder = ChangeOrder::where('project_id', $this->changeOrderProjectId())->findOrFail($changeOrderId);
+        $changeOrder = $this->changeOrderInScope($changeOrderId);
+
+        $this->authorizeAbility('change-orders.delete', $changeOrder);
+
+        // §4b question 4. Deleting an approved change order silently takes its
+        // cost lines out of every budget they revised, leaving no record that
+        // the revision ever happened. So it is refused outright — un-approve
+        // it first, which is a visible act needing `change-orders.unapprove`.
+        //
+        // This is a rule about the RECORD, like a locked budget in M6, so it
+        // binds administrators too.
+        abort_if(
+            $changeOrder->isApproved(),
+            403,
+            __('This change order is approved and is revising the budget. Undo the approval before deleting it.'),
+        );
 
         if ($changeOrder->file_path) {
             Storage::delete($changeOrder->file_path);

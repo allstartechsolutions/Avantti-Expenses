@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Contract;
 use App\Models\ContractMeasurement;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,8 @@ use Livewire\Component;
  */
 class ContractMeasurements extends Component
 {
+    use AuthorizesAbility;
+
     public Contract $contract;
 
     // Boletim editor (full screen, one row per cost code)
@@ -66,6 +69,8 @@ class ContractMeasurements extends Component
      */
     public function createDraft()
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $existing = $this->contract->measurements()->where('status', 'draft')->first();
 
         if ($existing) {
@@ -148,6 +153,8 @@ class ContractMeasurements extends Component
 
     public function openEditor($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $measurement = $this->findMeasurement($id);
 
         if (! $measurement) {
@@ -293,6 +300,8 @@ class ContractMeasurements extends Component
 
     public function saveDraft()
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         if (! $this->persistDraft()) {
             return;
         }
@@ -308,6 +317,8 @@ class ContractMeasurements extends Component
      */
     public function saveAndApprove()
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         if (! $this->persistDraft()) {
             return;
         }
@@ -385,6 +396,8 @@ class ContractMeasurements extends Component
 
     public function approve($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $measurement = $this->findMeasurement($id);
 
         if (! $measurement || ! $measurement->isDraft()) {
@@ -417,6 +430,8 @@ class ContractMeasurements extends Component
 
     public function deleteDraft($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $measurement = $this->findMeasurement($id);
 
         if (! $measurement || ! $measurement->isDraft()) {
@@ -438,6 +453,8 @@ class ContractMeasurements extends Component
      */
     public function cancelMeasurement($id)
     {
+        $this->authorizeAbility('contracts.measure', $this->contract);
+
         $measurement = $this->findMeasurement($id);
 
         if (! $measurement || ! $measurement->isApproved()) {
@@ -466,6 +483,8 @@ class ContractMeasurements extends Component
      */
     public function payMeasurement($id)
     {
+        $this->authorizeAbility('contracts.pay', $this->contract);
+
         $measurement = $this->findMeasurement($id);
 
         if (! $measurement || ! $measurement->isApproved() || $measurement->getRemainingNet() <= 0.009) {

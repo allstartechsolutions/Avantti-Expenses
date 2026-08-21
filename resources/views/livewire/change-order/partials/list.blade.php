@@ -1,6 +1,6 @@
 {{--
     Change order table, shared by the project and job-site levels.
-    Expects: $changeOrders, $showLocationColumn, $hasFilters
+    Expects: $changeOrders, $showLocationColumn, $hasFilters, $scope
 --}}
 @php
     $money = fn ($value) => Number::currency((float) $value, config('app.currency'), config('app.locale'));
@@ -100,7 +100,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
-                                    @if(! $changeOrder->isApproved())
+                                    @if(! $changeOrder->isApproved() && auth()->user()->can('change-orders.approve', $changeOrder))
                                         <button wire:click="approveChangeOrder({{ $changeOrder->id }})" title="{{ __('Approve') }}" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -113,16 +113,25 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </button>
+                                    @can('change-orders.edit', $changeOrder)
                                     <button wire:click="openChangeOrderEditModal({{ $changeOrder->id }})" title="{{ __('Edit') }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </button>
-                                    <button wire:click="deleteChangeOrder({{ $changeOrder->id }})" wire:confirm="{{ __('Are you sure you want to delete this change order?') }}" title="{{ __('Delete') }}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
+                                    @endcan
+                                    {{-- An approved change order is revising the budget; deleting it
+                                         would take its lines back out with no record. Undo the
+                                         approval first. --}}
+                                    @if(! $changeOrder->isApproved())
+                                        @can('change-orders.delete', $changeOrder)
+                                        <button wire:click="deleteChangeOrder({{ $changeOrder->id }})" wire:confirm="{{ __('Are you sure you want to delete this change order?') }}" title="{{ __('Delete') }}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                        @endcan
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -143,11 +152,13 @@
             @else
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No change orders') }}</h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('A change order records what the client is billed for a change, and what it costs across the cost codes.') }}</p>
-                <div class="mt-6">
-                    <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
-                        {{ __('Add Change Order') }}
-                    </x-ui.button>
-                </div>
+                @can('change-orders.create', $scope)
+                    <div class="mt-6">
+                        <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
+                            {{ __('Add Change Order') }}
+                        </x-ui.button>
+                    </div>
+                @endcan
             @endif
         </div>
     </div>

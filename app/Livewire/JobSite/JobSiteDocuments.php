@@ -28,6 +28,8 @@ class JobSiteDocuments extends Component
 
     public function mount(JobSite $jobSite): void
     {
+        $this->authorizeAbility('documents.view', $jobSite);
+
         $this->jobSite = $jobSite->load('project');
     }
 

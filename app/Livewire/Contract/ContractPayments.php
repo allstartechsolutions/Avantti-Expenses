@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
@@ -16,6 +17,8 @@ use Livewire\Component;
 
 class ContractPayments extends Component
 {
+    use AuthorizesAbility;
+
     #[Url(except: '')]
     public string $clientFilter = '';
 
@@ -42,6 +45,8 @@ class ContractPayments extends Component
 
     public function mount(): void
     {
+        $this->authorizeAbility('payments.view');
+
         $this->paymentDate = now()->format('Y-m-d');
     }
 
@@ -161,6 +166,8 @@ class ContractPayments extends Component
 
     public function processPayments(): void
     {
+        $this->authorizeAbility('payments.pay');
+
         $this->validate([
             'paymentDate' => 'required|date',
         ]);
@@ -233,6 +240,8 @@ class ContractPayments extends Component
 
     public function exportCsv()
     {
+        $this->authorizeAbility('payments.view');
+
         $contracts = Contract::committed()
             ->with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
             ->withSum('payments as total_paid_cents', 'amount')

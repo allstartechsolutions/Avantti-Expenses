@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Budget;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Services\CostCodeLedger;
@@ -9,7 +10,12 @@ use Livewire\Component;
 
 class BudgetShow extends Component
 {
+    use AuthorizesAbility;
+
     public Budget $budget;
+
+    /** The lock / unlock dialog's optional note. */
+    public string $lockReason = '';
 
     /** The add/edit cost code dialog. */
     public const FORM_MODAL = 'budget-item-modal';
@@ -50,7 +56,64 @@ class BudgetShow extends Component
 
     public function mount(Budget $budget)
     {
-        $this->budget = $budget->load(['project', 'jobSite', 'sourceTemplate', 'creator', 'parentItems.children']);
+        $this->authorizeAbility('budget.view', $budget);
+
+        $this->budget = $budget->load([
+            'project', 'jobSite', 'sourceTemplate', 'creator', 'parentItems.children',
+            'lockedBy', 'lockHistories.user',
+        ]);
+    }
+
+    // =========================================================================
+    // LOCKING
+    // =========================================================================
+
+    /**
+     * Every write to the PLAN goes through here first.
+     *
+     * A locked budget is a frozen baseline, so the refusal is about the record
+     * and not about the person: holding `budget.edit` does not make a locked
+     * budget editable, and the person who may unlock it has to do that first —
+     * deliberately, so that reopening a baseline is a visible act with a line
+     * in its history rather than a side effect of typing.
+     */
+    protected function refuseIfLocked(): void
+    {
+        abort_if(
+            $this->budget->isLocked(),
+            403,
+            __('This budget is locked. Unlock it before changing the plan.'),
+        );
+    }
+
+    public function lockBudget(): void
+    {
+        $this->authorizeAbility('budget.lock', $this->budget);
+
+        $this->budget->lock(auth()->user(), $this->lockReason);
+
+        $this->lockReason = '';
+        $this->refreshBudget();
+
+        session()->flash('message', __('Budget locked. Its cost codes and planned amounts are now fixed.'));
+    }
+
+    public function unlockBudget(): void
+    {
+        $this->authorizeAbility('budget.lock', $this->budget);
+
+        $this->budget->unlock(auth()->user(), $this->lockReason);
+
+        $this->lockReason = '';
+        $this->refreshBudget();
+
+        session()->flash('message', __('Budget unlocked. The plan can be changed again.'));
+    }
+
+    /** A cost code of THIS budget, or a 404. */
+    protected function itemInScope($itemId): BudgetItem
+    {
+        return BudgetItem::where('budget_id', $this->budget->id)->findOrFail($itemId);
     }
 
     /**
@@ -79,6 +142,9 @@ class BudgetShow extends Component
 
     public function openAddForm($parentId = null)
     {
+        $this->authorizeAbility('budget.create', $this->budget);
+        $this->refuseIfLocked();
+
         $this->resetForm();
         $this->parentId = $parentId;
         $this->sort_order = $this->nextSortOrder($parentId);
@@ -104,7 +170,10 @@ class BudgetShow extends Component
 
     public function openEditForm($itemId)
     {
-        $item = BudgetItem::findOrFail($itemId);
+        $item = $this->itemInScope($itemId);
+
+        $this->authorizeAbility('budget.edit', $this->budget);
+        $this->refuseIfLocked();
 
         $this->resetForm();
         $this->editingItemId = $item->id;
@@ -125,6 +194,12 @@ class BudgetShow extends Component
      */
     public function save($addAnother = false)
     {
+        $this->authorizeAbility(
+            $this->editingItemId ? 'budget.edit' : 'budget.create',
+            $this->budget,
+        );
+        $this->refuseIfLocked();
+
         $this->validate();
 
         $data = [
@@ -138,7 +213,7 @@ class BudgetShow extends Component
         ];
 
         if ($this->editingItemId) {
-            $item = BudgetItem::findOrFail($this->editingItemId);
+            $item = $this->itemInScope($this->editingItemId);
             $item->update($data);
             session()->flash('message', __('Budget item updated successfully.'));
         } else {
@@ -168,7 +243,10 @@ class BudgetShow extends Component
      */
     public function toggleDefaultItem($itemId)
     {
-        $item = BudgetItem::where('budget_id', $this->budget->id)->findOrFail($itemId);
+        $item = $this->itemInScope($itemId);
+
+        $this->authorizeAbility('budget.edit', $this->budget);
+        $this->refuseIfLocked();
 
         if ($item->is_default) {
             $item->update(['is_default' => false]);
@@ -183,7 +261,10 @@ class BudgetShow extends Component
 
     public function deleteItem($itemId)
     {
-        $item = BudgetItem::findOrFail($itemId);
+        $item = $this->itemInScope($itemId);
+
+        $this->authorizeAbility('budget.delete', $this->budget);
+        $this->refuseIfLocked();
 
         // Check if it has children
         if ($item->children()->count() > 0) {

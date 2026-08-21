@@ -2,11 +2,14 @@
 
 namespace App\Livewire\CostCode;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\CostCodeTemplate;
 use Livewire\Component;
 
 class CostCodeTemplateEdit extends Component
 {
+    use AuthorizesAbility;
+
     public CostCodeTemplate $template;
 
     public $name = '';
@@ -15,6 +18,8 @@ class CostCodeTemplateEdit extends Component
 
     public function mount(CostCodeTemplate $template)
     {
+        $this->authorizeAbility('cost-codes.edit');
+
         $this->template = $template;
         $this->name = $template->name;
         $this->description = $template->description ?? '';
@@ -32,6 +37,8 @@ class CostCodeTemplateEdit extends Component
 
     public function save()
     {
+        $this->authorizeAbility('cost-codes.edit');
+
         $this->validate();
 
         // If setting as default, clear other defaults first

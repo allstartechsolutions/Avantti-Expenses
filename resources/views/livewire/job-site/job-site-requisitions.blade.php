@@ -47,9 +47,11 @@
                     </button>
                 @endif
             </div>
+            @can('requisitions.create', $jobSite)
             <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
                 {{ __('Add Requisition') }}
             </x-ui.button>
+            @endcan
         </div>
 
         <!-- Summary -->
@@ -112,7 +114,7 @@
             </div>
         </div>
 
-        <x-requisition-table :requisitions="$requisitions" :showLocation="false" :hasFilters="$this->hasFilters()" />
+        <x-requisition-table :requisitions="$requisitions" :scope="$jobSite" :showLocation="false" :hasFilters="$this->hasFilters()" />
     </div>
 
     @include('livewire.requisition.partials.form-modal', [
@@ -122,7 +124,12 @@
     ])
 
     @include('livewire.requisition.partials.view-modal', [
-        'canReview' => auth()->user()?->canReviewRequisitions() ?? false,
+        'canReview' => $viewingRequisition
+            ? auth()->user()->can('requisitions.approve', $viewingRequisition)
+            : auth()->user()->can('requisitions.approve', $jobSite),
+        'selfApproval' => $viewingRequisition
+            && $this->isSelfApproval($viewingRequisition)
+            && ! auth()->user()->can('requisitions.approve_own', $viewingRequisition),
         'quotationsRoute' => route('jobsites.quotations', $jobSite).'?requisition='.($viewingRequisition->id ?? ''),
     ])
 </x-jobsite-layout>

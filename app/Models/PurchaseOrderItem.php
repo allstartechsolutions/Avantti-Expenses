@@ -16,6 +16,7 @@ class PurchaseOrderItem extends Model
         'item_type',
         'description',
         'quantity',
+        'received_quantity',
         'unit',
         'unit_price',
         'total_amount',
@@ -24,8 +25,20 @@ class PurchaseOrderItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'received_quantity' => 'decimal:2',
         'sort_order' => 'integer',
     ];
+
+    /** Still to come. Never negative: an over-delivery is not a debt. */
+    public function outstandingQuantity(): float
+    {
+        return max(0.0, round((float) $this->quantity - (float) $this->received_quantity, 2));
+    }
+
+    public function isFullyReceived(): bool
+    {
+        return $this->outstandingQuantity() <= 0.0;
+    }
 
     // =========================================================================
     // RELATIONSHIPS

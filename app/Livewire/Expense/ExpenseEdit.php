@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Expense;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesExpenseForm;
 use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ use Livewire\WithFileUploads;
  */
 class ExpenseEdit extends Component
 {
-    use WithFileUploads, ManagesExpenseForm, AuthorizesAdmin;
+    use WithFileUploads, ManagesExpenseForm, AuthorizesAbility;
 
     public Expense $expense;
 
@@ -27,11 +27,13 @@ class ExpenseEdit extends Component
 
     public function mount(Expense $expense)
     {
-        $expense->load(['items.budgetItem', 'items.catalogItem', 'supplier', 'payments', 'purchaseOrder']);
+        $expense->load(['items.budgetItem', 'items.catalogItem', 'supplier', 'payments', 'purchaseOrder', 'jobSite', 'project']);
 
-        // Editing money that has already been paid is an administrator's call.
+        $this->authorizeAbility('expenses.edit', $expense);
+
+        // Correcting money that has already been settled is a grant of its own.
         if ($this->expenseIsSettled($expense)) {
-            $this->authorizeAdmin();
+            $this->authorizeAbility('expenses.edit_paid', $expense);
         }
 
         $this->expense = $expense;
@@ -86,6 +88,15 @@ class ExpenseEdit extends Component
     public function save()
     {
         $this->validateExpenseForm();
+
+        $this->authorizeAbility('expenses.edit', $this->expense);
+
+        if ($this->expenseIsSettled($this->expense)) {
+            $this->authorizeAbility('expenses.edit_paid', $this->expense);
+        }
+
+        // Moving an expense to another job site is filing it there.
+        $this->authorizeAbility('expenses.edit', $this->expenseDestination());
 
         $beforeLines = $this->lineSnapshot($this->expense);
 
@@ -192,7 +203,7 @@ class ExpenseEdit extends Component
             'suppliers' => $this->supplierSearchResults(),
             'budgetItems' => $this->budgetItemSearchResults(),
             'catalogItems' => $this->catalogItemSearchResults(),
-            'jobSites' => $this->expense->project->jobSites()->orderBy('job_site_name')->get(),
+            'jobSites' => $this->selectableJobSites('expenses.edit'),
         ])->layout('components.layouts.app');
     }
 }

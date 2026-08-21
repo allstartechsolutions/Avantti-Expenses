@@ -2,8 +2,13 @@
 @php
     $documents = $this->documents;
     $folders = $this->folders;
+    // M12 split the old two-way write/delete flag into the grants that
+    // actually differ. $canWrite is still "may they change anything here",
+    // which is what most of the toolbar asks.
     $canWrite = $this->canManageDocuments();
+    $canCreate = $this->canCreateDocuments();
     $canDelete = $this->canDeleteDocuments();
+    $canShare = $this->canShareDocuments();
 @endphp
 
 <div
@@ -63,7 +68,7 @@
                 {{ trans_choice('{1} :count selected|[2,*] :count selected', count($selected), ['count' => count($selected)]) }}
             </span>
 
-            @if($canWrite && ! $showTrash)
+            @if($canCreate && ! $showTrash)
                 @unless($this->isFlatMode())
                     <div class="flex items-center gap-2">
                         <select wire:model="bulkFolderId" class="px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
@@ -127,16 +132,20 @@
                                 </span>
                             </span>
                         </button>
-                        @if($canWrite)
+                        @if($canWrite || $canShare)
                             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                                @if($canShare)
                                 <button type="button" wire:click="openShareModal(null, {{ $folder->id }})" title="{{ __('Share') }}"
                                     class="p-1 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6]">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684zm0-12a3 3 0 105.368-2.684 3 3 0 00-5.368 2.684z"/></svg>
                                 </button>
+                                @endif
+                                @if($canWrite)
                                 <button type="button" wire:click="openFolderModal({{ $folder->id }})" title="{{ __('Rename') }}"
                                     class="p-1 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6]">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </button>
+                                @endif
                                 @if($canDelete)
                                     <button type="button" wire:click="deleteFolder({{ $folder->id }})"
                                         wire:confirm="{{ __('Delete this folder? Anything inside moves up one level.') }}" title="{{ __('Delete') }}"
@@ -156,9 +165,9 @@
     @if($documents->count() === 0)
         @include('livewire.documents.partials.empty-state')
     @elseif($viewMode === 'grid')
-        @include('livewire.documents.partials.grid', ['documents' => $documents, 'canWrite' => $canWrite, 'canDelete' => $canDelete])
+        @include('livewire.documents.partials.grid', ['documents' => $documents, 'canWrite' => $canWrite, 'canDelete' => $canDelete, 'canShare' => $canShare])
     @else
-        @include('livewire.documents.partials.table', ['documents' => $documents, 'canWrite' => $canWrite, 'canDelete' => $canDelete])
+        @include('livewire.documents.partials.table', ['documents' => $documents, 'canWrite' => $canWrite, 'canDelete' => $canDelete, 'canShare' => $canShare])
     @endif
 
     @if($documents->hasPages())

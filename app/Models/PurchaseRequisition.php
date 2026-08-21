@@ -217,9 +217,28 @@ class PurchaseRequisition extends Model
         return $this->status === 'pending';
     }
 
+    /**
+     * N1 (docs/permissions-notes.md): a **submitted** requisition is locked.
+     *
+     * It used to stay editable while `pending`, so what was being asked for
+     * could change after somebody had been asked to approve it — which makes
+     * the approval a signature on a moving document. Now the content is fixed
+     * the moment it is submitted; to change it, send it back to draft, which
+     * is a visible act and costs the requisition its place in the queue.
+     */
     public function canBeEdited(): bool
     {
-        return in_array($this->status, ['draft', 'pending'], true);
+        return $this->status === 'draft';
+    }
+
+    /**
+     * Withdraw a submitted requisition so it can be changed. Whoever does it
+     * needs `requisitions.edit`, and it is theirs or they hold
+     * `requisitions.approve` — the rule lives in the component.
+     */
+    public function canReturnToDraft(): bool
+    {
+        return $this->status === 'pending';
     }
 
     public function canBeDeleted(): bool

@@ -1,4 +1,13 @@
-@admin
+{{--
+    The expense's change history.
+
+    Admin-only until M4; now behind `expenses.edit_paid`, the same grant that
+    lets somebody alter settled money. That reproduces today's answer exactly —
+    the seeds keep `edit_paid` to administrators — and makes it one tick to hand
+    to an auditor. Whether it should instead follow `expenses.view` is an open
+    question for the owner; see docs/review-and-improvements.md.
+--}}
+@can('expenses.edit_paid', $viewingExpense)
     @if(!empty($expenseHistory))
         <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
             <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">{{ __('History') }}</h4>
@@ -40,4 +49,4 @@
             </div>
         </div>
     @endif
-@endadmin
+@endcan

@@ -25,12 +25,14 @@
                     @endforeach
                 </select>
             </div>
-            <x-ui.button
-                variant="primary"
-                icon="plus"
-                wire:click="openAddModal">
-                {{ __('Add Income') }}
-            </x-ui.button>
+            @can('income.create', $project)
+                <x-ui.button
+                    variant="primary"
+                    icon="plus"
+                    wire:click="openAddModal">
+                    {{ __('Add Income') }}
+                </x-ui.button>
+            @endcan
         </div>
 
         <!-- Summary Cards -->
@@ -40,7 +42,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-white/80">{{ __('Total Received') }}</p>
-                        <p class="text-2xl font-bold mt-1">{{ Number::currency($totalIncomeAmount, config('app.currency'), config('app.locale')) }}</p>
+                        <x-ui.money class="block text-2xl font-bold mt-1" :amount="$totalIncomeAmount" :scope="$project" rollup />
                     </div>
                     <div class="bg-white/10 rounded-full p-3">
                         <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +57,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('This Month') }}</p>
-                        <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($thisMonthAmount, config('app.currency'), config('app.locale')) }}</p>
+                        <x-ui.money class="block text-2xl font-bold mt-1 text-green-600 dark:text-green-400" :amount="$thisMonthAmount" :scope="$project" rollup />
                     </div>
                     <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
                         <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,10 +71,10 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('To Receive') }}</p>
-                        <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ Number::currency($expectedAmount, config('app.currency'), config('app.locale')) }}</p>
+                        <x-ui.money class="block text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400" :amount="$expectedAmount" :scope="$project" rollup />
                         @if($overdueAmount > 0)
                             <p class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                {{ __('Overdue') }}: {{ Number::currency($overdueAmount, config('app.currency'), config('app.locale')) }}
+                                {{ __('Overdue') }}: <x-ui.money :amount="$overdueAmount" :scope="$project" rollup />
                             </p>
                         @endif
                     </div>
@@ -180,7 +182,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                 </svg>
                                             </button>
-                                            @if($income->isExpected())
+                                            @if($income->isExpected() && auth()->user()->can('income.edit', $income))
                                                 <button
                                                     wire:click="markReceived({{ $income->id }})"
                                                     wire:confirm="{{ __('Mark this income as received today?') }}"
@@ -191,6 +193,7 @@
                                                     </svg>
                                                 </button>
                                             @endif
+                                            @can('income.edit', $income)
                                             <button
                                                 wire:click="openEditModal({{ $income->id }})"
                                                 class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"
@@ -199,7 +202,8 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                 </svg>
                                             </button>
-                                            @admin
+                                            @endcan
+                                            @can('income.delete', $income)
                                             <button
                                                 wire:click="deleteIncome({{ $income->id }})"
                                                 wire:confirm="{{ __('Are you sure you want to delete this income record?') }}"
@@ -209,7 +213,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                 </svg>
                                             </button>
-                                            @endadmin
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
@@ -225,15 +229,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No income recorded') }}</h3>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding an income record.') }}</p>
-                    <div class="mt-6">
-                        <x-ui.button
-                            variant="primary"
-                            icon="plus"
-                            wire:click="openAddModal">
-                            {{ __('Add Income') }}
-                        </x-ui.button>
-                    </div>
+                    @can('income.create', $project)
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding an income record.') }}</p>
+                        <div class="mt-6">
+                            <x-ui.button
+                                variant="primary"
+                                icon="plus"
+                                wire:click="openAddModal">
+                                {{ __('Add Income') }}
+                            </x-ui.button>
+                        </div>
+                    @else
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Nothing has been recorded here yet. You can see income on this project but not add it — ask an administrator if that is wrong.') }}</p>
+                    @endcan
                 </div>
             </div>
         @endif
@@ -372,6 +380,7 @@
                                         </div>
                                     </div>
                                 </label>
+                                @can('income.distribute', $project)
                                 <label class="rounded-lg border-2 p-4 transition-colors {{ $jobSites->count() === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }} {{ $income_location_mode === 'split' ? 'border-[#3F5189] bg-[#3F5189]/5 dark:border-[#4A5A96] dark:bg-[#4A5A96]/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300' }}">
                                     <div class="flex items-start gap-3">
                                         <input type="radio" value="split" wire:model.live="income_location_mode" @disabled($jobSites->count() === 0) class="mt-1 h-4 w-4 border-slate-300 text-[#3F5189] focus:ring-[#3F5189]">
@@ -383,6 +392,7 @@
                                         </div>
                                     </div>
                                 </label>
+                                @endcan
                             </div>
 
                             @if($income_location_mode === 'single')
@@ -680,12 +690,14 @@
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Distribution') }}</h3>
                                     @if($viewingIncome->isProjectLevel() && $jobSites->count() > 0)
+                                        @can('income.distribute', $project)
                                         <button
                                             type="button"
                                             wire:click="openEditModal({{ $viewingIncome->id }})"
                                             class="text-xs text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                                             {{ $viewingIncome->isDistributed() ? __('Edit distribution') : __('Distribute across locations') }}
                                         </button>
+                                        @endcan
                                     @endif
                                 </div>
 
@@ -772,7 +784,7 @@
                             {{ $viewingIncome->created_at?->format('M d, Y H:i') }}
                         </p>
                         <div class="flex flex-wrap items-center justify-end gap-3">
-                            @if($viewingIncome->isExpected())
+                            @if($viewingIncome->isExpected() && auth()->user()->can('income.edit', $viewingIncome))
                                 <x-ui.button
                                     type="button"
                                     variant="success"
@@ -781,7 +793,7 @@
                                     {{ __('Mark as received') }}
                                 </x-ui.button>
                             @endif
-                            @admin
+                            @can('income.delete', $viewingIncome)
                                 <x-ui.button
                                     type="button"
                                     variant="danger"
@@ -790,8 +802,10 @@
                                     wire:confirm="{{ __('Are you sure you want to delete this income record?') }}">
                                     {{ __('Delete') }}
                                 </x-ui.button>
-                            @endadmin
-                            <x-ui.button type="button" variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingIncome->id }})">{{ __('Edit') }}</x-ui.button>
+                            @endcan
+                            @can('income.edit', $viewingIncome)
+                                <x-ui.button type="button" variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingIncome->id }})">{{ __('Edit') }}</x-ui.button>
+                            @endcan
                             <x-ui.button type="button" variant="primary" wire:click="closeViewModal">{{ __('Close') }}</x-ui.button>
                         </div>
                     </div>

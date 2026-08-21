@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Contract;
 use App\Models\ContractMeasurement;
 use App\Models\ContractPayment;
@@ -15,6 +16,8 @@ use Livewire\Component;
 
 class ContractShow extends Component
 {
+    use AuthorizesAbility;
+
     public Contract $contract;
 
     // Status change modal
@@ -80,6 +83,8 @@ class ContractShow extends Component
 
     public function mount(Contract $contract)
     {
+        $this->authorizeAbility('contracts.view', $contract);
+
         $this->contract = $contract->load([
             'project',
             'jobSite',
@@ -106,6 +111,8 @@ class ContractShow extends Component
 
     public function openStatusModal()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         if (empty($this->availableStatuses)) {
             return;
         }
@@ -124,6 +131,8 @@ class ContractShow extends Component
 
     public function changeStatus()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $allowed = array_keys($this->availableStatuses);
 
         if (! in_array($this->newStatus, $allowed)) {
@@ -443,6 +452,8 @@ class ContractShow extends Component
     #[\Livewire\Attributes\On('pay-measurement')]
     public function openPaymentModalForMeasurement($measurementId)
     {
+        $this->authorizeAbility('contracts.pay', $this->contract);
+
         $this->openPaymentModal();
 
         if ($this->payableMeasurements->firstWhere('id', (int) $measurementId)) {
@@ -453,6 +464,8 @@ class ContractShow extends Component
 
     public function openPaymentModal()
     {
+        $this->authorizeAbility('contracts.pay', $this->contract);
+
         // With a cronograma the amount comes from the parcela the user
         // picks — or from the unscheduled balance, which is what the
         // empty choice pays; without one it defaults to the balance due.
@@ -548,6 +561,14 @@ class ContractShow extends Component
 
     public function recordPayment()
     {
+        // The ceiling is checked against the amount being released, so it has
+        // to happen after the form is read rather than when the modal opened.
+        $this->authorizeAbilityWithin(
+            'contracts.pay',
+            (int) round((float) $this->paymentAmount * 100),
+            $this->contract,
+        );
+
         $balanceDue = $this->contract->getBalanceDue();
 
         $this->validate([
@@ -673,6 +694,8 @@ class ContractShow extends Component
 
     public function openRetentionModal()
     {
+        $this->authorizeAbility('contracts.pay', $this->contract);
+
         $outstanding = $this->contract->getRetentionOutstanding();
 
         if ($outstanding <= 0) {
@@ -707,6 +730,14 @@ class ContractShow extends Component
      */
     public function releaseRetention()
     {
+        // Retention is money that was held back and is now being handed over,
+        // so it is a payment and obeys the same ceiling.
+        $this->authorizeAbilityWithin(
+            'contracts.pay',
+            (int) round((float) $this->retentionAmount * 100),
+            $this->contract,
+        );
+
         $this->validate([
             'retentionAmount' => ['required', 'numeric', 'min:0.01'],
             'retentionDate' => ['required', 'date'],
@@ -831,6 +862,10 @@ class ContractShow extends Component
 
     public function deletePayment($id)
     {
+        // Taking a payment back out is the narrow act, not the same grant that
+        // made it — the same rule M10 applies to un-approving a change order.
+        $this->authorizeAbility('contracts.unpay', $this->contract);
+
         $payment = ContractPayment::where('contract_id', $this->contract->id)->findOrFail($id);
         $payment->delete();
 
@@ -860,6 +895,8 @@ class ContractShow extends Component
 
     public function delete()
     {
+        $this->authorizeAbility('contracts.delete', $this->contract);
+
         // Clean up contract file before deleting
         if ($this->contract->contract_file_path && Storage::exists($this->contract->contract_file_path)) {
             Storage::delete($this->contract->contract_file_path);

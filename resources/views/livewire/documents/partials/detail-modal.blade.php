@@ -11,6 +11,7 @@
         @php
             $current = $document->currentVersion;
             $canWrite = $this->canManageDocuments() && ! $document->trashed();
+            $canShare = $this->canShareDocuments() && ! $document->trashed();
             $card = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700';
             $term = 'text-xs font-medium text-slate-500 dark:text-slate-400';
             $value = 'text-sm text-slate-900 dark:text-white break-words';
@@ -43,7 +44,7 @@
                             <x-ui.button variant="secondary" size="sm" icon="download" href="{{ route('documents.download', $document) }}">
                                 {{ __('Download') }}
                             </x-ui.button>
-                            @if($canWrite)
+                            @if($canShare)
                                 <x-ui.button variant="secondary" size="sm" wire:click="openShareModal({{ $document->id }})">
                                     {{ __('Share') }}
                                 </x-ui.button>
@@ -250,7 +251,7 @@
                         <div class="{{ $card }}">
                             <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                                 <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Share links') }}</h3>
-                                @if($canWrite)
+                                @if($canShare)
                                     <button type="button" wire:click="openShareModal({{ $document->id }})"
                                         class="text-sm text-[#3F5189] dark:text-[#8B9DD6] hover:underline">{{ __('Manage') }}</button>
                                 @endif

@@ -2,12 +2,15 @@
 
 namespace App\Livewire\PurchaseOrder;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class PurchaseOrderShow extends Component
 {
+    use AuthorizesAbility;
+
     public PurchaseOrder $purchaseOrder;
 
     // Modal states
@@ -16,8 +19,18 @@ class PurchaseOrderShow extends Component
     public $rejectReason = '';
     public $cancelReason = '';
 
+    // Receiving (M9)
+    public $showReceiptModal = false;
+    public $receiptDate = '';
+    public $receiptNote = '';
+
+    /** Ordered-line id => the quantity being booked in on this delivery. */
+    public array $receiptQuantities = [];
+
     public function mount(PurchaseOrder $purchaseOrder)
     {
+        $this->authorizeAbility('purchase-orders.view', $purchaseOrder);
+
         $this->purchaseOrder = $purchaseOrder->load([
             'project',
             'jobSite',
@@ -27,6 +40,8 @@ class PurchaseOrderShow extends Component
             'createdBy',
             'approvedBy',
             'expense',
+            'receipts.receivedBy',
+            'receipts.lines.item',
         ]);
     }
 
@@ -35,6 +50,8 @@ class PurchaseOrderShow extends Component
      */
     public function submitForApproval()
     {
+        $this->authorizeAbility('purchase-orders.edit', $this->purchaseOrder);
+
         if (!$this->purchaseOrder->canBeSubmitted()) {
             session()->flash('error', __('This purchase order cannot be submitted for approval.'));
             return;
@@ -55,6 +72,14 @@ class PurchaseOrderShow extends Component
      */
     public function approve()
     {
+        // Approving turns the order into an expense — this is the moment the
+        // money is committed, so it is the moment the ceiling binds.
+        $this->authorizeAbilityWithin(
+            'purchase-orders.approve',
+            $this->purchaseOrder->totalInCents(),
+            $this->purchaseOrder,
+        );
+
         if (!$this->purchaseOrder->canBeApproved()) {
             session()->flash('error', __('This purchase order cannot be approved.'));
             return;
@@ -75,6 +100,8 @@ class PurchaseOrderShow extends Component
      */
     public function openRejectModal()
     {
+        $this->authorizeAbility('purchase-orders.approve', $this->purchaseOrder);
+
         $this->rejectReason = '';
         $this->showRejectModal = true;
     }
@@ -93,6 +120,10 @@ class PurchaseOrderShow extends Component
      */
     public function reject()
     {
+        // Turning an order down commits nothing, so it needs the review grant
+        // and not the ceiling.
+        $this->authorizeAbility('purchase-orders.approve', $this->purchaseOrder);
+
         if (!$this->purchaseOrder->canBeRejected()) {
             session()->flash('error', __('This purchase order cannot be rejected.'));
             $this->closeRejectModal();
@@ -116,6 +147,8 @@ class PurchaseOrderShow extends Component
      */
     public function openCancelModal()
     {
+        $this->authorizeAbility('purchase-orders.edit', $this->purchaseOrder);
+
         // Check if we can cancel (for approved POs, check expense status)
         if ($this->purchaseOrder->isApproved() && !$this->purchaseOrder->canChangeStatusFromApproved()) {
             session()->flash('error', __('Cannot cancel this PO because the linked expense has payments or is paid.'));
@@ -140,6 +173,14 @@ class PurchaseOrderShow extends Component
      */
     public function cancel()
     {
+        $this->authorizeAbility('purchase-orders.edit', $this->purchaseOrder);
+
+        // Cancelling an order that was already approved unwinds committed
+        // money, which is the reviewer's call rather than the raiser's.
+        if ($this->purchaseOrder->isApproved()) {
+            $this->authorizeAbility('purchase-orders.approve', $this->purchaseOrder);
+        }
+
         if ($this->purchaseOrder->isCancelled()) {
             session()->flash('error', __('This purchase order is already cancelled.'));
             $this->closeCancelModal();
@@ -163,6 +204,8 @@ class PurchaseOrderShow extends Component
      */
     public function reviseAndResubmit()
     {
+        $this->authorizeAbility('purchase-orders.edit', $this->purchaseOrder);
+
         if (!$this->purchaseOrder->canReviseAndResubmit()) {
             session()->flash('error', __('This purchase order cannot be revised and resubmitted.'));
             return;
@@ -176,6 +219,85 @@ class PurchaseOrderShow extends Component
         } else {
             session()->flash('error', __('Failed to resubmit purchase order.'));
         }
+    }
+
+    // =========================================================================
+    // RECEIVING
+    //
+    // Approving an order commits the money; receiving it records that the
+    // goods turned up. On a real site those are two people, so this is its own
+    // grant and the storeman does not need `approve`.
+    // =========================================================================
+
+    public function openReceiptModal(): void
+    {
+        $this->authorizeAbility('purchase-orders.receive', $this->purchaseOrder);
+
+        abort_unless(
+            $this->purchaseOrder->canBeReceived(),
+            403,
+            __('This purchase order is not awaiting delivery.'),
+        );
+
+        $this->receiptDate = now()->format('Y-m-d');
+        $this->receiptNote = '';
+
+        // Pre-filled with what is still outstanding, because the whole
+        // delivery arriving is the common case and typing it again is work.
+        $this->receiptQuantities = $this->purchaseOrder->items
+            ->mapWithKeys(fn ($item) => [$item->id => $item->outstandingQuantity() ?: ''])
+            ->all();
+
+        $this->resetErrorBag();
+        $this->showReceiptModal = true;
+        $this->dispatch('open-modal', 'po-receipt-modal');
+    }
+
+    public function closeReceiptModal(): void
+    {
+        $this->showReceiptModal = false;
+        $this->reset(['receiptDate', 'receiptNote', 'receiptQuantities']);
+        $this->dispatch('close-modal', 'po-receipt-modal');
+    }
+
+    public function recordReceipt(): void
+    {
+        $this->authorizeAbility('purchase-orders.receive', $this->purchaseOrder);
+
+        abort_unless(
+            $this->purchaseOrder->canBeReceived(),
+            403,
+            __('This purchase order is not awaiting delivery.'),
+        );
+
+        $this->validate([
+            'receiptDate' => 'required|date',
+            'receiptNote' => 'nullable|string|max:2000',
+            'receiptQuantities.*' => 'nullable|numeric|min:0',
+        ], [], [
+            'receiptDate' => __('delivery date'),
+            'receiptNote' => __('note'),
+        ]);
+
+        $receipt = $this->purchaseOrder->recordReceipt(
+            Auth::user(),
+            $this->receiptQuantities,
+            $this->receiptDate,
+            $this->receiptNote,
+        );
+
+        if (! $receipt) {
+            $this->addError('receiptQuantities', __('Enter what actually arrived on at least one line.'));
+
+            return;
+        }
+
+        $this->closeReceiptModal();
+        $this->refreshPurchaseOrder();
+
+        session()->flash('message', $this->purchaseOrder->isFullyReceived()
+            ? __('Delivery recorded. This order is now fully received.')
+            : __('Delivery recorded. Some lines are still outstanding.'));
     }
 
     /**
@@ -192,6 +314,8 @@ class PurchaseOrderShow extends Component
             'createdBy',
             'approvedBy',
             'expense',
+            'receipts.receivedBy',
+            'receipts.lines.item',
         ]);
     }
 

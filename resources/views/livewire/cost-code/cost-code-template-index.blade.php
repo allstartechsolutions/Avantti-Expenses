@@ -7,12 +7,14 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Manage cost code templates for your projects') }}</p>
             </div>
             <div class="flex gap-3">
-                <x-ui.button
-                    variant="primary"
-                    href="{{ route('cost-codes.templates.create') }}"
-                    icon="plus">
-                    {{ __('Add Template') }}
-                </x-ui.button>
+                @can('cost-codes.create')
+                    <x-ui.button
+                        variant="primary"
+                        href="{{ route('cost-codes.templates.create') }}"
+                        icon="plus">
+                        {{ __('Add Template') }}
+                    </x-ui.button>
+                @endcan
             </div>
         </div>
     </div>
@@ -112,12 +114,15 @@
                                             href="{{ route('cost-codes.templates.show', $template->id) }}"
                                             icon="eye"
                                             title="{{ __('View') }}" />
+                                        @can('cost-codes.edit')
                                         <x-ui.icon-button
                                             variant="secondary"
                                             size="sm"
                                             href="{{ route('cost-codes.templates.edit', $template->id) }}"
                                             icon="edit"
                                             title="{{ __('Edit') }}" />
+                                        @endcan
+                                        @can('cost-codes.create')
                                         <x-ui.icon-button
                                             variant="outline"
                                             size="sm"
@@ -125,14 +130,18 @@
                                             wire:confirm="{{ __('Are you sure you want to duplicate this template?') }}"
                                             icon="copy"
                                             title="{{ __('Copy') }}" />
+                                        @endcan
                                         @if(!$template->is_default)
+                                            @can('cost-codes.edit')
                                             <x-ui.icon-button
                                                 variant="ghost"
                                                 size="sm"
                                                 wire:click="setAsDefault({{ $template->id }})"
                                                 icon="star"
                                                 title="{{ __('Set Default') }}" />
+                                            @endcan
                                         @endif
+                                        @can('cost-codes.delete')
                                         <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
@@ -140,6 +149,7 @@
                                             wire:confirm="{{ __('Are you sure you want to delete this template? All associated cost codes will also be deleted.') }}"
                                             icon="trash"
                                             title="{{ __('Delete') }}" />
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -160,15 +170,19 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No templates found') }}</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a new cost code template.') }}</p>
-                <div class="mt-6">
-                    <x-ui.button
-                        variant="primary"
-                        href="{{ route('cost-codes.templates.create') }}"
-                        icon="plus">
-                        {{ __('Add Template') }}
-                    </x-ui.button>
-                </div>
+                @can('cost-codes.create')
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a new cost code template.') }}</p>
+                    <div class="mt-6">
+                        <x-ui.button
+                            variant="primary"
+                            href="{{ route('cost-codes.templates.create') }}"
+                            icon="plus">
+                            {{ __('Add Template') }}
+                        </x-ui.button>
+                    </div>
+                @else
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('No cost code templates have been created yet. You can see them but not add them — ask an administrator if that is wrong.') }}</p>
+                @endcan
             </div>
         </div>
     @endif

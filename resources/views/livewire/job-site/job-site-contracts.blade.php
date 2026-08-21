@@ -28,9 +28,11 @@
                 </select>
             </div>
             <div>
+                @can('contracts.create', $jobSite)
                 <x-ui.button variant="primary" href="{{ route('contracts.jobsite.create', $jobSite) }}" icon="plus">
                     {{ __('Add Contract') }}
                 </x-ui.button>
+                @endcan
             </div>
         </div>
 
@@ -155,7 +157,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <x-ui.view-edit-buttons
                                             :viewRoute="route('contracts.show', $contract->id)"
-                                            :editRoute="route('contracts.edit', $contract->id)" />
+                                            :editRoute="auth()->user()->can('contracts.edit', $contract)
+                                                ? route('contracts.edit', $contract->id)
+                                                : null" />
                                     </td>
                                 </tr>
                             @endforeach

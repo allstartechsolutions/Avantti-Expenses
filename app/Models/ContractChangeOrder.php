@@ -36,6 +36,12 @@ class ContractChangeOrder extends Model
         return $this->belongsTo(Contract::class);
     }
 
+    /** An aditivo has no project of its own; it inherits its contract's. */
+    public function permissionScope(): ?Contract
+    {
+        return $this->relationLoaded('contract') ? $this->contract : $this->contract()->first();
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

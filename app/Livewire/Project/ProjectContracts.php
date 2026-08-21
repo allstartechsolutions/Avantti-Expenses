@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Project;
 use Livewire\Component;
 
 class ProjectContracts extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
 
     public $search = '';
@@ -15,6 +18,8 @@ class ProjectContracts extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('contracts.view', $project);
+
         $this->project = $project;
     }
 

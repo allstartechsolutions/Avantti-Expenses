@@ -2,7 +2,7 @@
 
 namespace App\Livewire\JobSite;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesRequisitions;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -18,7 +18,7 @@ use Livewire\WithPagination;
  */
 class JobSiteRequisitions extends Component
 {
-    use AuthorizesAdmin, ManagesRequisitions, WithFileUploads, WithPagination;
+    use AuthorizesAbility, ManagesRequisitions, WithFileUploads, WithPagination;
 
     public JobSite $jobSite;
 
@@ -37,6 +37,8 @@ class JobSiteRequisitions extends Component
 
     public function mount(JobSite $jobSite)
     {
+        $this->authorizeAbility('requisitions.view', $jobSite);
+
         $this->jobSite = $jobSite->load('project');
     }
 
@@ -128,7 +130,10 @@ class JobSiteRequisitions extends Component
         }
 
         $requisitions = $query
-            ->orderByRaw("FIELD(priority, 'urgent', 'normal', 'low')")
+            // Urgent first, then normal, then low. Written as a CASE rather
+            // than FIELD(), which is MySQL-only and made these two screens
+            // impossible to cover with a test.
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 

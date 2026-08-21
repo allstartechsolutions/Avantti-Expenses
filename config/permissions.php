@@ -672,16 +672,25 @@ return [
             'name' => 'Cost Codes',
             'module' => 'projects',
             'levels' => ['global'],
-            'swept' => false,
+            'swept' => true,
             'actions' => ['view', 'create', 'edit', 'delete'],
         ],
 
+        // The three company-wide money screens: the payments dashboard, the
+        // contract payments list and the payment batches. All three had no
+        // guard at all beyond being signed in — noted in E1, deliberately left
+        // for this pass rather than patched ahead of the engine.
+        //
+        // `pay` is NOT `limited`, and that is a limitation rather than a
+        // decision: `approval_limit` lives on a membership or a template, and
+        // these screens belong to no project, so there is nothing to read a
+        // ceiling from. See P13 in docs/review-and-improvements.md.
         'payments' => [
             'name' => 'Payments',
             'module' => 'projects',
             'levels' => ['global'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view',
                 'pay' => ['name' => 'Record a payment'],
@@ -788,7 +797,7 @@ return [
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'pay' => ['name' => 'Mark as paid'],
@@ -801,85 +810,161 @@ return [
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'distribute' => ['name' => 'Distribute across job sites'],
             ],
         ],
 
+        // A requisition asks for *things*, not a sum: its items carry a quantity
+        // and a unit and never a price, because pricing is what the quotation
+        // round is for. So no figure on these screens is monetary, and
+        // `approve` is deliberately NOT `limited` — there is nothing to compare
+        // an approval ceiling against. Limits start at M8, where money is.
         'requisitions' => [
             'name' => 'Requisitions',
             'module' => 'quotations',
             'levels' => ['global', 'project', 'job_site'],
-            'money' => true,
-            'swept' => false,
+            'money' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'submit' => ['name' => 'Submit for approval'],
-                'approve' => ['name' => 'Approve or reject', 'limited' => true],
+                'approve' => ['name' => 'Approve or reject'],
+                'approve_own' => [
+                    'name' => 'Approve their own requisitions',
+                    'sensitive' => true,
+                ],
                 'duplicate' => ['name' => 'Duplicate into a new draft'],
             ],
         ],
 
+        // Where money genuinely arrives, and so the first area whose actions
+        // obey `approval_limit`. Four of the seven are held apart on purpose:
+        //
+        //  create_standalone  a round raised with no requisition is how the
+        //                     whole approval chain gets walked around (N1)
+        //  award_own          whoever typed a vendor's prices picking that
+        //                     vendor as the winner (N3, mirrors M7's rule)
+        //  convert            committing an award into a purchase order
+        //  convert_contract   committing it into a *schedule of payments*,
+        //                     which is a bigger act than one expense
         'quotations' => [
             'name' => 'Quotations',
             'module' => 'quotations',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
+                'create_standalone' => [
+                    'name' => 'Raise a round with no requisition',
+                    'sensitive' => true,
+                ],
                 'award' => ['name' => 'Award a round', 'limited' => true],
-                'convert' => ['name' => 'Convert to a PO or contract', 'limited' => true],
+                'award_own' => [
+                    'name' => 'Award proposals they keyed in',
+                    'sensitive' => true,
+                ],
+                'convert' => ['name' => 'Convert to a purchase order', 'limited' => true],
+                'convert_contract' => [
+                    'name' => 'Convert to a contract',
+                    'limited' => true,
+                    'sensitive' => true,
+                ],
             ],
         ],
 
+        // `approve` and `receive` are deliberately not the same grant: on a
+        // real site the office approves the spend and the storeman signs for
+        // the delivery. `approve` obeys the ceiling because approving an order
+        // creates the expense; `receive` commits nothing, so it does not.
         'purchase-orders' => [
             'name' => 'Purchase Orders',
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'approve' => ['name' => 'Approve', 'limited' => true],
-                'receive' => ['name' => 'Record receipt'],
+                'receive' => ['name' => 'Record a delivery'],
             ],
         ],
 
+        // Approving a change order is what moves the cost budget, and today
+        // anyone who can reach the screen can approve, reject or return one
+        // (docs/permissions-notes.md §4b). The four questions that notation
+        // asks are answered by holding four things apart:
+        //
+        //  approve       deciding on a pending change — obeys the ceiling,
+        //                because approving is what revises the budget
+        //  approve_own   approving one you raised yourself, as N2 and N3
+        //  unapprove     pulling an APPROVED change back out of a live budget,
+        //                which is a narrower act than approving it was
+        //  delete        and an approved change cannot be deleted at all until
+        //                somebody has un-approved it — a rule about the
+        //                record, so it binds administrators too
         'change-orders' => [
             'name' => 'Change Orders',
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit',
-                'approve' => ['name' => 'Approve', 'limited' => true],
-                'unapprove' => ['name' => 'Reject or return to pending', 'sensitive' => true],
+                'approve' => ['name' => 'Approve or turn down', 'limited' => true],
+                'approve_own' => [
+                    'name' => 'Approve their own change orders',
+                    'sensitive' => true,
+                ],
+                'unapprove' => [
+                    'name' => 'Undo an approval',
+                    'sensitive' => true,
+                ],
                 'delete' => ['sensitive' => true],
             ],
         ],
 
+        // The same rule as M10's change orders: doing and undoing are the same
+        // grant while nothing has moved, and undoing is narrower once it has.
+        // `measure` covers confirming work — a measurement, or releasing a
+        // scheduled instalment — and undoing those, because neither has paid
+        // anybody yet. `pay` actually moves money and obeys the ceiling.
+        // `unpay` takes a payment back out, which is the narrow act.
         'contracts' => [
             'name' => 'Contracts',
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
-                'measure' => ['name' => 'Record a measurement'],
+                'measure' => ['name' => 'Measure and release instalments'],
                 'pay' => ['name' => 'Release a payment', 'limited' => true],
+                'unpay' => [
+                    'name' => 'Undo a payment',
+                    'sensitive' => true,
+                ],
             ],
         ],
 
+        // N5, N7 and `see_internal`. Reading is a grant now, which it never
+        // was: `Document::isVisibleTo()` used to return true for every
+        // non-internal document to anybody, so the download route — behind
+        // `auth` and nothing else — handed any project's files to any signed-in
+        // person who guessed an id.
+        //
+        // `share` stays with admin and manager as it is today (the owner's
+        // answer to N7), but as an ordinary toggle rather than a role check:
+        // it is the one place in the application where access leaves the
+        // application, so it is worth being able to take away.
         'documents' => [
             'name' => 'Documents',
             'module' => 'documents',
             'levels' => ['project', 'job_site'],
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'share' => ['name' => 'Create a share link', 'sensitive' => true],
@@ -923,7 +1008,7 @@ return [
             'module' => 'projects',
             'levels' => ['project', 'job_site'],
             'money' => true,
-            'swept' => false,
+            'swept' => true,
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'lock' => ['name' => 'Lock the budget', 'sensitive' => true],

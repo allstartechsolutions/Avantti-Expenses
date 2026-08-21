@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ResolvesContractBudget;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
@@ -13,6 +14,8 @@ use Livewire\WithFileUploads;
 
 class ContractChangeOrders extends Component
 {
+    use AuthorizesAbility;
+
     use ResolvesContractBudget;
     use WithFileUploads;
 
@@ -36,6 +39,8 @@ class ContractChangeOrders extends Component
 
     public function openCreateModal()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $this->resetForm();
         $this->date = now()->format('Y-m-d');
         $this->showModal = true;
@@ -43,6 +48,8 @@ class ContractChangeOrders extends Component
 
     public function openEditModal($id)
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $changeOrder = ContractChangeOrder::where('contract_id', $this->contract->id)->findOrFail($id);
 
         $this->editingId = $changeOrder->id;
@@ -63,6 +70,8 @@ class ContractChangeOrders extends Component
 
     public function save()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $budget = $this->locationBudget();
 
         $this->validate([
@@ -112,6 +121,8 @@ class ContractChangeOrders extends Component
 
     public function delete($id)
     {
+        $this->authorizeAbility('contracts.delete', $this->contract);
+
         $changeOrder = ContractChangeOrder::where('contract_id', $this->contract->id)->findOrFail($id);
 
         if ($changeOrder->file_path && Storage::exists($changeOrder->file_path)) {

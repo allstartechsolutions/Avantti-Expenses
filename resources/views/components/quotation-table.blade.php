@@ -2,6 +2,8 @@
     'quotations',
     'showLocation' => true,
     'hasFilters' => false,
+    /** The project or job site this list belongs to — what the grants are asked about. */
+    'scope' => null,
 ])
 
 @if($quotations->count() > 0)
@@ -133,11 +135,14 @@
                 @endif
             </p>
             @if(!$hasFilters)
-                <div class="mt-6">
-                    <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
-                        {{ __('New Quotation') }}
-                    </x-ui.button>
-                </div>
+                {{-- A round with no requisition behind it is its own grant (N1). --}}
+                @can('quotations.create_standalone', $scope)
+                    <div class="mt-6">
+                        <x-ui.button variant="primary" icon="plus" wire:click="openAddModal">
+                            {{ __('New Quotation') }}
+                        </x-ui.button>
+                    </div>
+                @endcan
             @endif
         </div>
     </div>

@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAdmin;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesQuotations;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -17,7 +17,7 @@ use Livewire\WithPagination;
  */
 class ProjectQuotations extends Component
 {
-    use AuthorizesAdmin, ManagesQuotations, WithFileUploads, WithPagination;
+    use AuthorizesAbility, ManagesQuotations, WithFileUploads, WithPagination;
 
     public Project $project;
 
@@ -36,6 +36,8 @@ class ProjectQuotations extends Component
 
     public function mount(Project $project)
     {
+        $this->authorizeAbility('quotations.view', $project);
+
         $this->project = $project;
         $this->openRequisitionFromQuery();
     }

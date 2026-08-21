@@ -1,6 +1,6 @@
 {{--
     Requisition detail — every field the record holds, on a full page.
-    Expects: $viewingRequisition, $canReview
+    Expects: $viewingRequisition, $canReview, $selfApproval
 --}}
 <x-ui.modal name="requisition-view-modal" maxWidth="full">
     @if($viewingRequisition)
@@ -291,7 +291,7 @@
                         @if($viewingRequisition->canBeReviewed())
                             <div class="{{ $card }}">
                                 <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ __('Approval') }}</h3>
-                                @if($canReview)
+                                @if($canReview && ! $selfApproval)
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Review Notes') }}</label>
                                     <textarea
                                         wire:model="reviewNotes"
@@ -307,9 +307,20 @@
                                             {{ __('Reject') }}
                                         </x-ui.button>
                                     </div>
+                                @elseif($canReview && $selfApproval)
+                                    {{-- N2: the reviewer must not be the requester. Say which
+                                         of the two roles they are in, and that it is a grant. --}}
+                                    <p class="text-sm text-amber-700 dark:text-amber-400">
+                                        {{ __('You raised this requisition, so somebody else has to approve it.') }}
+                                    </p>
+                                    <div class="mt-3">
+                                        <x-ui.button variant="danger" icon="x" wire:click="rejectRequisition({{ $viewingRequisition->id }})">
+                                            {{ __('Reject') }}
+                                        </x-ui.button>
+                                    </div>
                                 @else
                                     <p class="text-sm text-slate-500 dark:text-slate-400">
-                                        {{ __('This requisition is waiting for a manager or an administrator to approve it.') }}
+                                        {{ __('This requisition is waiting for somebody who can approve it.') }}
                                     </p>
                                 @endif
                             </div>
@@ -323,8 +334,21 @@
                 <div class="mx-auto max-w-7xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-3">
                         @if($viewingRequisition->status === 'draft')
-                            <x-ui.button variant="primary" icon="save" wire:click="submitForApproval({{ $viewingRequisition->id }})">
-                                {{ __('Submit for Approval') }}
+                            @can('requisitions.submit', $viewingRequisition)
+                                <x-ui.button variant="primary" icon="save" wire:click="submitForApproval({{ $viewingRequisition->id }})">
+                                    {{ __('Submit for Approval') }}
+                                </x-ui.button>
+                            @endcan
+                        @endif
+                        {{-- N1: a submitted requisition is locked. This is the way back. --}}
+                        @if($viewingRequisition->canReturnToDraft()
+                            && ($viewingRequisition->created_by === auth()->id() || $canReview)
+                            && auth()->user()->can('requisitions.edit', $viewingRequisition))
+                            <x-ui.button
+                                variant="warning"
+                                wire:click="returnToDraft({{ $viewingRequisition->id }})"
+                                wire:confirm="{{ __('Return this requisition to draft? It loses its place in the approval queue and will need approving again.') }}">
+                                {{ __('Return to Draft') }}
                             </x-ui.button>
                         @endif
                         @if($viewingRequisition->canBeQuoted())
@@ -336,26 +360,44 @@
                             </x-ui.button>
                         @endif
                         @if($viewingRequisition->canBeEdited())
-                            <x-ui.button variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingRequisition->id }})">
-                                {{ __('Edit') }}
-                            </x-ui.button>
+                            @can('requisitions.edit', $viewingRequisition)
+                                <x-ui.button variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingRequisition->id }})">
+                                    {{ __('Edit') }}
+                                </x-ui.button>
+                            @endcan
                         @endif
+                        {{-- N1: raise a near-identical ask without touching a signed document.
+                             Offered from any status, approved and rejected included. --}}
+                        @can('requisitions.duplicate', $viewingRequisition)
+                            <x-ui.button
+                                variant="secondary"
+                                icon="copy"
+                                wire:click="duplicateRequisition({{ $viewingRequisition->id }})">
+                                {{ __('Duplicate') }}
+                            </x-ui.button>
+                        @endcan
                         @if($viewingRequisition->canBeCancelled())
-                            <x-ui.button
-                                variant="warning"
-                                wire:click="cancelRequisition({{ $viewingRequisition->id }})"
-                                wire:confirm="{{ __('Cancel this requisition?') }}">
-                                {{ __('Cancel Requisition') }}
-                            </x-ui.button>
+                            @can('requisitions.edit', $viewingRequisition)
+                                @if($viewingRequisition->status !== 'approved' || $canReview)
+                                    <x-ui.button
+                                        variant="warning"
+                                        wire:click="cancelRequisition({{ $viewingRequisition->id }})"
+                                        wire:confirm="{{ __('Cancel this requisition?') }}">
+                                        {{ __('Cancel Requisition') }}
+                                    </x-ui.button>
+                                @endif
+                            @endcan
                         @endif
-                        @if($viewingRequisition->canBeDeleted() && auth()->user()?->is_admin)
-                            <x-ui.button
-                                variant="danger"
-                                icon="trash"
-                                wire:click="deleteRequisition({{ $viewingRequisition->id }})"
-                                wire:confirm="{{ __('Delete this requisition permanently?') }}">
-                                {{ __('Delete') }}
-                            </x-ui.button>
+                        @if($viewingRequisition->canBeDeleted())
+                            @can('requisitions.delete', $viewingRequisition)
+                                <x-ui.button
+                                    variant="danger"
+                                    icon="trash"
+                                    wire:click="deleteRequisition({{ $viewingRequisition->id }})"
+                                    wire:confirm="{{ __('Delete this requisition permanently?') }}">
+                                    {{ __('Delete') }}
+                                </x-ui.button>
+                            @endcan
                         @endif
                     </div>
                     <x-ui.button variant="secondary" wire:click="closeViewModal">{{ __('Close') }}</x-ui.button>

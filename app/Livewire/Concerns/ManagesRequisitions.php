@@ -51,6 +51,8 @@ trait ManagesRequisitions
 
     public function openAddModal(): void
     {
+        $this->authorizeAbility('requisitions.create', $this->requisitionScope());
+
         $this->resetForm();
         $this->req_requested_by = (string) auth()->id();
         $this->itemRows = [$this->blankItemRow()];
@@ -61,7 +63,14 @@ trait ManagesRequisitions
     {
         $requisition = $this->scopedQuery()->with('items')->findOrFail($requisitionId);
 
-        abort_unless($requisition->canBeEdited(), 403);
+        $this->authorizeAbility('requisitions.edit', $requisition);
+
+        // N1: once submitted the content is fixed. Send it back to draft first.
+        abort_unless(
+            $requisition->canBeEdited(),
+            403,
+            __('This requisition has been submitted. Return it to draft before changing it.'),
+        );
 
         // Escape and backdrop clicks close the modal without telling the
         // server, so start clean rather than inherit a stale session.
@@ -268,6 +277,17 @@ trait ManagesRequisitions
     {
         $mode = in_array($mode, ['draft', 'pending'], true) ? $mode : 'pending';
 
+        // Two questions, because "Save and submit" is two acts in one button:
+        // may they write this at all, and may they send it for approval.
+        $this->authorizeAbility(
+            $this->editingRequisitionId ? 'requisitions.edit' : 'requisitions.create',
+            $this->requisitionScope(),
+        );
+
+        if ($mode === 'pending') {
+            $this->authorizeAbility('requisitions.submit', $this->requisitionScope());
+        }
+
         $validated = $this->validate([
             'req_type' => 'required|in:material,service',
             'req_title' => 'required|string|max:255',
@@ -296,6 +316,15 @@ trait ManagesRequisitions
         ]);
 
         $jobSiteId = $this->contextJobSite()?->id ?? ($validated['req_job_site_id'] ?: null);
+
+        // Wherever the Location picker now points is where this lands, so the
+        // grant is asked for there too.
+        $this->authorizeAbility(
+            $this->editingRequisitionId ? 'requisitions.edit' : 'requisitions.create',
+            $jobSiteId
+                ? JobSite::where('project_id', $this->contextProject()->id)->find($jobSiteId)
+                : $this->contextProject(),
+        );
 
         if ($jobSiteId && ! $this->contextProject()->jobSites()->whereKey($jobSiteId)->exists()) {
             $this->addError('req_job_site_id', __('The selected location is invalid.'));
@@ -336,7 +365,11 @@ trait ManagesRequisitions
             if ($this->editingRequisitionId) {
                 $requisition = $this->scopedQuery()->findOrFail($this->editingRequisitionId);
 
-                abort_unless($requisition->canBeEdited(), 403);
+                abort_unless(
+                    $requisition->canBeEdited(),
+                    403,
+                    __('This requisition has been submitted. Return it to draft before changing it.'),
+                );
 
                 $oldStatus = $requisition->status;
                 $requisition->update($data + ['status' => $mode]);
@@ -434,7 +467,11 @@ trait ManagesRequisitions
 
     public function openViewModal(int $requisitionId): void
     {
-        $this->viewingRequisitionId = $this->scopedQuery()->findOrFail($requisitionId)->id;
+        $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        $this->authorizeAbility('requisitions.view', $requisition);
+
+        $this->viewingRequisitionId = $requisition->id;
         $this->reviewNotes = '';
         $this->resetErrorBag('reviewNotes');
         $this->dispatch('open-modal', 'requisition-view-modal');
@@ -447,15 +484,50 @@ trait ManagesRequisitions
         $this->dispatch('close-modal', 'requisition-view-modal');
     }
 
-    /** Approving and rejecting is for admins and managers. */
-    protected function authorizeReview(): void
+    /** The project or job site this page writes to. */
+    protected function requisitionScope(): JobSite|Project
     {
-        abort_unless(auth()->user()?->canReviewRequisitions(), 403, 'Manager or administrator access required.');
+        return $this->contextJobSite() ?? $this->contextProject();
+    }
+
+    /** Whether this person may review at all, here. */
+    protected function canReview(?PurchaseRequisition $requisition = null): bool
+    {
+        return $this->allowsAbility('requisitions.approve', $requisition ?? $this->requisitionScope());
+    }
+
+    /**
+     * N2 (docs/permissions-notes.md): the reviewer must not be the requester.
+     *
+     * "Raised it" means either keying it in or being named as the person it is
+     * for; approving your own ask is the same act under either heading.
+     *
+     * Not a hard stop — `requisitions.approve_own` lifts it. A two-person
+     * company that would otherwise deadlock ticks one box, and the grant is on
+     * the record rather than being a quiet exception in the code.
+     */
+    public function isSelfApproval(PurchaseRequisition $requisition): bool
+    {
+        $userId = auth()->id();
+
+        return $userId !== null
+            && ($requisition->created_by === $userId || $requisition->requested_by === $userId);
+    }
+
+    protected function authorizeReview(PurchaseRequisition $requisition): void
+    {
+        $this->authorizeAbility('requisitions.approve', $requisition);
+
+        if ($this->isSelfApproval($requisition)) {
+            $this->authorizeAbility('requisitions.approve_own', $requisition);
+        }
     }
 
     public function submitForApproval(int $requisitionId): void
     {
         $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        $this->authorizeAbility('requisitions.submit', $requisition);
 
         if ($requisition->status !== 'draft') {
             return;
@@ -469,9 +541,9 @@ trait ManagesRequisitions
 
     public function approveRequisition(int $requisitionId): void
     {
-        $this->authorizeReview();
-
         $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        $this->authorizeReview($requisition);
 
         if (! $requisition->canBeReviewed()) {
             return;
@@ -495,9 +567,11 @@ trait ManagesRequisitions
 
     public function rejectRequisition(int $requisitionId): void
     {
-        $this->authorizeReview();
-
         $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        // Rejecting your own is not the problem self-approval is, so it needs
+        // the review grant and nothing more.
+        $this->authorizeAbility('requisitions.approve', $requisition);
 
         if (! $requisition->canBeReviewed()) {
             return;
@@ -530,6 +604,8 @@ trait ManagesRequisitions
     {
         $requisition = $this->scopedQuery()->findOrFail($requisitionId);
 
+        $this->authorizeAbility('requisitions.edit', $requisition);
+
         if (! $requisition->canBeCancelled()) {
             return;
         }
@@ -537,7 +613,7 @@ trait ManagesRequisitions
         // Cancelling an approved requisition is a reviewer's call; the raiser
         // can still drop their own draft or pending one.
         if ($requisition->status === 'approved') {
-            $this->authorizeReview();
+            $this->authorizeAbility('requisitions.approve', $requisition);
         }
 
         $oldStatus = $requisition->status;
@@ -550,9 +626,9 @@ trait ManagesRequisitions
 
     public function deleteRequisition(int $requisitionId): void
     {
-        $this->authorizeAdmin();
-
         $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        $this->authorizeAbility('requisitions.delete', $requisition);
 
         if (! $requisition->canBeDeleted()) {
             return;
@@ -565,6 +641,92 @@ trait ManagesRequisitions
         }
 
         session()->flash('message', __('Requisition deleted.'));
+    }
+
+    /**
+     * Withdraw a submitted requisition so it can be changed again (N1).
+     *
+     * Theirs, or a reviewer's — a raiser may always pull their own back, and
+     * somebody who could have approved it may send it back for more detail
+     * instead of rejecting it outright.
+     */
+    public function returnToDraft(int $requisitionId): void
+    {
+        $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        $this->authorizeAbility('requisitions.edit', $requisition);
+
+        abort_unless(
+            $requisition->created_by === auth()->id() || $this->canReview($requisition),
+            403,
+            __('Only the person who raised this requisition, or a reviewer, can return it to draft.'),
+        );
+
+        if (! $requisition->canReturnToDraft()) {
+            return;
+        }
+
+        $requisition->update(['status' => 'draft']);
+        $requisition->recordStatusChange(auth()->user(), 'pending', 'draft');
+
+        session()->flash('message', __('Requisition returned to draft. It will need approving again once resubmitted.'));
+    }
+
+    /**
+     * Copy a requisition into a fresh draft owned by whoever duplicated it
+     * (N1, the piece the owner asked for).
+     *
+     * Works from **any** status, including approved and rejected: the point is
+     * to raise a near-identical ask without touching a document somebody has
+     * already signed. Nothing about the original's review travels with it —
+     * the copy starts as a draft with no reviewer, no notes and no attachments.
+     */
+    public function duplicateRequisition(int $requisitionId): void
+    {
+        $original = $this->scopedQuery()->with('items')->findOrFail($requisitionId);
+
+        $this->authorizeAbility('requisitions.duplicate', $original);
+
+        $user = auth()->user();
+
+        $copy = DB::transaction(function () use ($original, $user) {
+            $copy = PurchaseRequisition::createWithNumber([
+                'project_id' => $original->project_id,
+                'job_site_id' => $original->job_site_id,
+                'type' => $original->type,
+                'title' => $original->title,
+                'justification' => $original->justification,
+                'needed_by' => null,          // the old date is somebody else's deadline
+                'priority' => $original->priority,
+                'budget_item_id' => $original->budget_item_id,
+                'requested_by' => $user->id,
+                'requested_by_name' => null,
+                'status' => 'draft',
+                'created_by' => $user->id,
+            ]);
+
+            foreach ($original->items as $item) {
+                $copy->items()->create([
+                    'catalog_item_id' => $item->catalog_item_id,
+                    'item_name' => $item->item_name,
+                    'item_type' => $item->item_type,
+                    'description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
+                    'sort_order' => $item->sort_order,
+                ]);
+            }
+
+            $copy->recordStatusChange($user, null, 'draft');
+
+            return $copy;
+        });
+
+        $this->closeViewModal();
+
+        session()->flash('message', __('Copied into :number, a new draft you can change before submitting.', [
+            'number' => $copy->requisition_number,
+        ]));
     }
 
     // =========================================================================

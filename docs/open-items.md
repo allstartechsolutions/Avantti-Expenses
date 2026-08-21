@@ -8,8 +8,11 @@ its own file (index at the bottom).
 
 ## 1. State of the repo
 
-- **The working tree is NOT clean.** The permissions module (engine + three module passes) is
-  built and uncommitted — see §1a below and `docs/permissions-module.md`. Everything else
+- **The working tree is NOT clean.** The permissions module's **M4 (Expenses)** and
+  **M5 (Income)**, **M6 (Budget & Cost Codes)**, **M7 (Requisitions)**, **M8 (Quotations)** and
+  **M9 (Purchase Orders)**, **M10 (Change Orders)**, **M11 (Contracts & Payments)** and
+  **M12 (Documents)** passes are built and uncommitted — see §1a below and
+  `docs/permissions-module.md`. The engine and M1–M3 are committed. Everything else
   described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
   library and the cost code / change order work are all in.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
@@ -27,24 +30,111 @@ its own file (index at the bottom).
 - **Process rules (user-set):** never commit, never merge, never push — the user does all three.
   Leave finished work in the working tree and report it.
 
-### 1a. Permissions module — in progress, uncommitted (2026-08-20)
+### 1a. Permissions module — in progress (2026-08-21)
 
-The whole of it is in the working tree and nothing is committed. It is safe to deploy as it
-stands: every module that has not had its pass keeps its old rules exactly.
+The engine and M1–M3 are committed (`f95ead5`); **M4 through M12 are in the working tree and
+uncommitted.**
+It is safe to deploy as it stands: every module that has not had its pass keeps its old rules
+exactly.
 
 - **Where it is:** engine complete (E1–E4); passes **M1** Access & Users, **M2** Project &
-  Job Site shell, **M3** Company & Settings done. **7 of 30 areas enforced.**
+  Job Site shell, **M3** Company & Settings, **M4** Expenses, **M5** Income,
+  **M6** Budget & Cost Codes, **M7** Requisitions, **M8** Quotations, **M9** Purchase Orders,
+  **M10** Change Orders, **M11** Contracts & Payments, **M12** Documents done.
+  **18 of 30 areas enforced.**
 - **What to read:** `docs/permissions-module-plan.md` for the design and the remaining pass
   order; `docs/permissions-module.md` for what is actually built, step by step.
 - **Deploy:** `php artisan migrate --force` then **`php artisan permissions:sync`** — the
   second one matters, it seeds templates and hands new areas to existing roles.
-- **New migrations:** 10 (`2026_08_20_140000` … `2026_08_20_150001`), all additive.
-- **Tests:** 211 in `tests/Feature/Permissions/`. Three failures elsewhere in the suite are
-  stale Laravel scaffold tests that predate this work (`RegistrationTest` ×2 — the public
+- **New migrations:** 12 — 10 from the engine (`2026_08_20_140000` … `2026_08_20_150001`) plus
+  two from M6 (`2026_08_21_120000` adds `budgets.locked_at` / `locked_by`, `2026_08_21_120001`
+  creates `budget_lock_histories`) and one from M8 (`2026_08_21_130000` adds
+  `quotation_vendors.priced_by`) and three from M9 (`2026_08_21_140000` drops stale legacy
+  foreign keys on **non-MySQL drivers only** — a no-op on production; `2026_08_21_150000` adds
+  `purchase_order_items.received_quantity`; `2026_08_21_150001` creates
+  `purchase_order_receipts` and `purchase_order_receipt_lines`). All additive; every existing
+  budget is unlocked, every existing proposal carries a null `priced_by`, and every existing
+  order line starts at zero received, so none of them changes anything anyone can see until
+  somebody uses the feature.
+- **Tests:** 396 in `tests/Feature/Permissions/`, 429 in the suite. Three failures elsewhere
+  are stale Laravel scaffold tests that predate this work (`RegistrationTest` ×2 — the public
   `register` route was removed from this app — and `ExampleTest`, which expects `/` to
   return 200 where it redirects to login).
-- **Next:** **M4 — Expenses**, the first pass that changes what a confined member sees
-  *inside* a project.
+- **M4 also closed four holes that were not permission gaps in the plan** — any expense
+  reachable by id from any project, the Location picker accepting another project's job site,
+  expense receipts readable by any signed-in user via `files.show?path=`, and `deleteJobSite`
+  on `JobSiteShow` having no guard at all (M2 fixed the identical pair on `JobSiteOverview`
+  and missed this one, live on six routes). See `docs/permissions-module.md`, M4.
+- **Money rule set in M4, and inherited by every later pass:** `can_see_money` hides
+  **roll-ups**, not records — the summary cards go, each expense's own amount stays. Mark a
+  figure with `<x-ui.money … rollup />`.
+- **M5 added `income.distribute`** — splitting one payment across job sites is held apart from
+  recording it, because a split decides which site's report the money lands on. Guarded on all
+  six methods that touch the grid, not only the save.
+- **M6 BUILT budget locking** — it existed as a matrix toggle and as nothing in the code. A
+  locked budget's *plan* is frozen (cost codes, planned amounts, the budget record, deletion);
+  everything that reports against it carries on (expenses, POs, change orders, all the figures).
+  Two additive migrations; every lock and unlock kept with who, when and why.
+- **Owner's rule, set in M6 and applying to every later pass:** no ability may be reachable only
+  through a role. Anything scoped to a project must be grantable on a role, on a template, on one
+  project or job site, and to one person — `BudgetTest` proves all four for `budget.lock`.
+  The one place this is not yet true is company-wide areas; see P6 in
+  `docs/review-and-improvements.md`, worth deciding before F1.
+- **Cost code templates are the GLOBAL library** — one chart of accounts, held by role, in
+  neither project editor. Do not scope them to a project.
+- **M7 settled notations N1 and N2** (see `docs/permissions-notes.md`, both now marked
+  settled): a submitted requisition is locked and comes back via **Return to Draft**;
+  **Duplicate** copies any requisition into a fresh draft; **self-approval is blocked** and
+  lifted only by the new `requisitions.approve_own` grant, which no seeded role or template
+  holds. Two catalogue claims were corrected — a requisition carries **no money**, so
+  `approve` is not value-limited. Limits start at M8.
+- **M8 settled N3 and the rest of N1.** A round raised with no requisition now needs
+  `quotations.create_standalone` (a **tightening** — employees lose it, managers keep it);
+  awarding and converting obey `approval_limit` for the first time; converting to a **contract**
+  is a separate grant from converting to a **purchase order**; and whoever keyed a winning
+  vendor's prices in cannot pick that vendor unless granted `quotations.award_own`. New column
+  `quotation_vendors.priced_by` records who typed the prices, which `created_by` never did.
+- **M9 BUILT purchase-order receiving** — the ability existed and nothing recorded that goods
+  had arrived. Per-line quantities, so a part-delivery is honest: Ordered / Received /
+  Outstanding on the order, a status (awaiting → partially received → received), and a delivery
+  history with who signed and when. `receive` is held apart from `approve` — on a real site the
+  office approves the spend and the storeman signs for the lorry.
+- **M9 also closed two guard gaps:** all four purchase-order components had no guard of any kind
+  (`approve()` creates an expense), and the job-site **Budget** tab was never guarded — M6 swept
+  `budget` but `JobSiteShow`'s tab map only listed expenses.
+- **P12 is fixed** (`2026_08_21_140000`), so the sqlite test database now matches production.
+- **M10 settled §4b** (all four questions, now marked settled in the notations): approving is
+  manager-and-above and obeys the ceiling (**a tightening** — employees could approve until
+  now); self-approval blocked and lifted by `change-orders.approve_own`; undoing an approval is
+  its own narrower grant `change-orders.unapprove`; and **an approved change order cannot be
+  deleted by anybody, administrators included** — un-approve it first.
+- **M11 closed the four unguarded money screens** that E1 flagged and the owner deliberately
+  left for this pass. Fifteen components, 4,265 lines, **not one guard between them**. The
+  three company-wide screens are **reproduced, not tightened** — every seeded role still
+  reaches them; the difference is that it can now be taken away, and view / pay / batch are
+  separable. New grant `contracts.unpay`: somebody who may pay any amount still cannot take a
+  payment back out.
+- **P19 is the one to read before F1.** `contracts.pay` obeys the approval ceiling;
+  `payments.pay` cannot, because the ceiling lives on a membership and the payments dashboard
+  belongs to no project. So the same person can be stopped inside a project and then pay the
+  same money from the dashboard. Same root cause as P6 and P13 — **all three want one answer,
+  decided together.**
+- **M12 closed the repository half of N5 and settled N7.** `Document::isVisibleTo()` returned
+  **true for every non-internal document to anybody** — including a signed-out visitor — so the
+  download route handed any project's files to anyone who guessed an id. Reading is a grant now,
+  and `see_internal` is answered per project. **N8 needed nothing:** the permission check was
+  already before the presigned URL was minted, which is where it belongs.
+- **N7's answer (owner):** `documents.share` stays with admin and manager exactly as today, but
+  as a revocable toggle rather than a role check.
+- **P22 is the leftover to watch:** every PDF controller in the app is still `auth` only —
+  quotation RFQ/map, the six reports, contract schedule and measurement, daily reports,
+  estimates and invoices. **M8 should have guarded the quotation PDFs and did not.** Either the
+  remaining passes pick up their own or F3 sweeps the lot.
+- **Next:** **M13 — Tasks & Meetings**. `manage_series` off the inline role check; My Tasks
+  scoped.
+- **Two things to decide before F1 (confinement going live), both the same root cause:**
+  P6, no per-user company-wide grant; and P13, `approval_limit` has no company-wide home, so a
+  company-wide user currently has no ceiling at all.
 - **Two standing rules the owner set during this work:**
   1. Every report says what to expect **and what still will not work** — they test straight
      after reading.

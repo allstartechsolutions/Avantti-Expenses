@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PurchaseOrder;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\BudgetItem;
 use App\Models\CatalogItem;
 use App\Models\PurchaseOrder;
@@ -15,6 +16,8 @@ use Livewire\WithFileUploads;
 
 class PurchaseOrderEdit extends Component
 {
+    use AuthorizesAbility;
+
     use WithFileUploads;
 
     public PurchaseOrder $purchaseOrder;
@@ -72,6 +75,8 @@ class PurchaseOrderEdit extends Component
 
     public function mount(PurchaseOrder $purchaseOrder)
     {
+        $this->authorizeAbility('purchase-orders.edit', $purchaseOrder);
+
         // Only draft and rejected POs can be edited
         if (!$purchaseOrder->canBeEdited()) {
             session()->flash('error', __('This purchase order cannot be edited.'));
@@ -333,6 +338,8 @@ class PurchaseOrderEdit extends Component
      */
     public function save()
     {
+        $this->authorizeAbility('purchase-orders.edit', $this->purchaseOrder);
+
         // Re-check if still editable
         if (!$this->purchaseOrder->canBeEdited()) {
             session()->flash('error', __('This purchase order can no longer be edited.'));

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Project;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesChangeOrders;
 use App\Models\ChangeOrder;
 use App\Models\Project;
@@ -10,7 +11,7 @@ use Livewire\WithFileUploads;
 
 class ProjectChangeOrders extends Component
 {
-    use WithFileUploads, ManagesChangeOrders;
+    use WithFileUploads, AuthorizesAbility, ManagesChangeOrders;
 
     public Project $project;
 
@@ -19,6 +20,8 @@ class ProjectChangeOrders extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('change-orders.view', $project);
+
         $this->project = $project;
     }
 

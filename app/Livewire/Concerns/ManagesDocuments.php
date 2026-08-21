@@ -136,6 +136,15 @@ trait ManagesDocuments
     abstract protected function contextJobSite(): ?JobSite;
 
     /**
+     * The record every document grant on this screen is asked about — the job
+     * site where the page is pinned to one, the project otherwise.
+     */
+    protected function documentScope(): JobSite|Project
+    {
+        return $this->contextJobSite() ?? $this->contextProject();
+    }
+
+    /**
      * True on the job site page, where the location is fixed and the location
      * selector must not appear.
      */
@@ -292,7 +301,7 @@ trait ManagesDocuments
 
     public function openFolderModal(?int $folderId = null): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentCreate();
 
         $this->resetValidation();
         $this->editingFolderId = $folderId;
@@ -312,7 +321,9 @@ trait ManagesDocuments
 
     public function saveFolder(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->editingFolderId
+            ? $this->authorizeDocumentEdit()
+            : $this->authorizeDocumentCreate();
 
         $this->validate([
             'folderName' => ['required', 'string', 'max:120'],
@@ -437,7 +448,7 @@ trait ManagesDocuments
 
     public function openUploadModal(?int $documentId = null): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentCreate();
 
         $this->uploadDocumentId = $documentId;
         $this->uploadVersionNotes = '';
@@ -505,7 +516,7 @@ trait ManagesDocuments
      */
     public function documentUploaded(int $documentId): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentCreate();
 
         $document = Document::find($documentId);
 
@@ -534,7 +545,7 @@ trait ManagesDocuments
      */
     public function saveLocalUploads(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentCreate();
 
         $maxKilobytes = (int) max(1, floor(DocumentSettings::maxUploadBytes() / 1024));
 
@@ -656,7 +667,7 @@ trait ManagesDocuments
 
     public function openEditModal(int $documentId): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentEdit();
 
         $document = Document::with('tags')->findOrFail($documentId);
         $this->assertDocumentInProject($document);
@@ -674,7 +685,7 @@ trait ManagesDocuments
 
     public function saveDocument(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentEdit();
 
         $this->validate([
             'documentName' => ['required', 'string', 'max:255'],
@@ -826,7 +837,7 @@ trait ManagesDocuments
      */
     public function restoreVersion(int $versionId): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentEdit();
 
         $version = DocumentVersion::findOrFail($versionId);
         $document = Document::withTrashed()->find($version->document_id);
@@ -908,7 +919,7 @@ trait ManagesDocuments
      */
     public function openShareModal(?int $documentId = null, ?int $folderId = null): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentShare();
 
         if ($documentId) {
             $document = Document::findOrFail($documentId);
@@ -948,7 +959,7 @@ trait ManagesDocuments
 
     public function createShare(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentShare();
 
         $this->validate([
             'shareExpiresAt' => ['nullable', 'date', 'after:today'],
@@ -1011,7 +1022,7 @@ trait ManagesDocuments
 
     public function revokeShare(int $shareId): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentShare();
 
         // withTrashed: a link to a deleted document must still be revocable,
         // which is exactly when someone is most likely to want it gone.
@@ -1184,7 +1195,7 @@ trait ManagesDocuments
 
     public function bulkMove(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentEdit();
 
         if (! $this->selected) {
             return;
@@ -1220,7 +1231,7 @@ trait ManagesDocuments
 
     public function bulkSetCategory(): void
     {
-        $this->authorizeDocumentWrite();
+        $this->authorizeDocumentEdit();
 
         if (! $this->selected || $this->bulkCategory === '') {
             return;

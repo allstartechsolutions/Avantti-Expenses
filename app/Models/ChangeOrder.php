@@ -219,6 +219,31 @@ class ChangeOrder extends Model
     }
 
     /**
+     * What approving this change commits, in cents, for an approval ceiling.
+     *
+     * The **cost** side, not the revenue side: the ceiling is about what
+     * somebody may commit the company to spending. A deductive change order
+     * takes money out, and taking money out of a budget is not an act a
+     * spending ceiling should refuse, so the magnitude is what is compared.
+     */
+    public function costImpactInCents(): int
+    {
+        return (int) round(abs($this->cost_impact) * 100);
+    }
+
+    /**
+     * Whether undoing this would pull money back out of a live budget.
+     *
+     * A pending change order's lines are not in the budget yet, so turning it
+     * down costs nothing and is an ordinary review decision. An approved one's
+     * lines are, and taking them back out is the narrower act.
+     */
+    public function undoingAffectsBudget(): bool
+    {
+        return $this->isApproved();
+    }
+
+    /**
      * Revenue minus cost: what this change is worth to the company.
      */
     public function getMarginAttribute(): float

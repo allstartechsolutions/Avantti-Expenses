@@ -1,6 +1,6 @@
 {{--
     Quotation detail — every field the round holds, on a full page.
-    Expects: $viewingQuotation, $canReview
+    Expects: $viewingQuotation, $canReview, $canAward, $canConvert, $awardCeiling
 --}}
 <x-ui.modal name="quotation-view-modal" maxWidth="full">
     @if($viewingQuotation)
@@ -448,7 +448,7 @@
                                                                 </button>
                                                             @endif
                                                         @endif
-                                                        @if($row->status === 'responded' && $canReview)
+                                                        @if($row->status === 'responded' && auth()->user()->can('quotations.edit', $viewingQuotation))
                                                             <button
                                                                 type="button"
                                                                 wire:click="clearProposal({{ $row->id }})"
@@ -610,12 +610,22 @@
             <div class="sticky bottom-0 z-20 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <div class="mx-auto max-w-7xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-3">
-                        @if($canReview && $viewingQuotation->canBeAwarded())
+                        {{-- The ceiling is a fact about this round's money, so it is
+                             stated with the figure rather than hidden. --}}
+                        @if($awardCeiling !== null && $viewingQuotation->canBeConverted())
+                            <p class="w-full text-sm text-amber-700 dark:text-amber-400">
+                                {{ __('This round commits :amount, which is above the :ceiling you may approve. Somebody with a higher ceiling has to convert it.', [
+                                    'amount' => Number::currency($viewingQuotation->awardedTotal(), config('app.currency'), config('app.locale')),
+                                    'ceiling' => Number::currency($awardCeiling / 100, config('app.currency'), config('app.locale')),
+                                ]) }}
+                            </p>
+                        @endif
+                        @if($canAward && $viewingQuotation->canBeAwarded())
                             <x-ui.button variant="success" icon="check" wire:click="openAwardModal({{ $viewingQuotation->id }})">
                                 {{ __('Award the Round') }}
                             </x-ui.button>
                         @endif
-                        @if($canReview && $viewingQuotation->canBeConverted())
+                        @if($canConvert && $viewingQuotation->canBeConverted())
                             <x-ui.button
                                 variant="primary"
                                 icon="arrow-right"
@@ -626,7 +636,7 @@
                                 {{ $viewingQuotation->type === 'service' ? __('Raise the Contract') : __('Raise the Purchase Order') }}
                             </x-ui.button>
                         @endif
-                        @if($canReview && $viewingQuotation->canRevokeAward())
+                        @if($canAward && $viewingQuotation->canRevokeAward())
                             <x-ui.button
                                 variant="warning"
                                 wire:click="revokeAward({{ $viewingQuotation->id }})"
@@ -645,19 +655,23 @@
                             </x-ui.button>
                         @endif
                         @if($viewingQuotation->canBeEdited())
-                            <x-ui.button variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingQuotation->id }})">
-                                {{ __('Edit') }}
-                            </x-ui.button>
+                            @can('quotations.edit', $viewingQuotation)
+                                <x-ui.button variant="secondary" icon="edit" wire:click="openEditModal({{ $viewingQuotation->id }})">
+                                    {{ __('Edit') }}
+                                </x-ui.button>
+                            @endcan
                         @endif
-                        @if($viewingQuotation->canBeCancelled() && $canReview)
+                        @if($viewingQuotation->canBeCancelled())
+                            @can('quotations.edit', $viewingQuotation)
                             <x-ui.button
                                 variant="warning"
                                 wire:click="cancelQuotation({{ $viewingQuotation->id }})"
                                 wire:confirm="{{ __('Cancel this quotation round?') }}">
                                 {{ __('Cancel Round') }}
                             </x-ui.button>
+                            @endcan
                         @endif
-                        @if($viewingQuotation->canBeDeleted() && auth()->user()?->is_admin)
+                        @if($viewingQuotation->canBeDeleted() && auth()->user()->can('quotations.delete', $viewingQuotation))
                             <x-ui.button
                                 variant="danger"
                                 icon="trash"

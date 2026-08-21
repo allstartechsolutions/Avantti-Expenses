@@ -412,3 +412,367 @@ The browser sends the order it now shows and the server rebuilds from it defensi
 part worth testing: a **sub-item** id is ignored (not a sibling), an id from **another meeting** is
 ignored and does not move, a **partial list** from a stale page leaves the omitted rows in place
 rather than dropping them, and a **published** agenda refuses the reorder outright.
+
+---
+
+## Permissions module — parked during M4 (Expenses), 2026-08-20
+
+Three things noticed while sweeping the expense module. None of them blocked the pass; each
+needs a decision rather than a fix, so they are recorded here instead of being taken
+unilaterally.
+
+### P1 — who should read an expense's change history? *(open — owner's call)*
+
+The history panel on the expense detail was `@admin`. M4 converted it to
+`expenses.edit_paid`, which reproduces today's answer exactly (the seeds keep `edit_paid` to
+administrators) and makes it one tick to grant.
+
+But `edit_paid` means *"may amend settled money"*, and reading who changed what is not that.
+The design standard says a detail view shows its audit facts, which argues for
+`expenses.view` — every person who can see the expense sees its history.
+
+Against that: the history names people and shows old amounts, which is exactly the sort of
+thing a customer may not want a site team reading.
+
+**Options:** (a) leave it on `expenses.edit_paid`; (b) move it to `expenses.view`; (c) give the
+area a seventh action, `expenses.history`, and seed it to administrators. Nothing is blocked
+either way.
+
+### P2 — M2 left two redundant `authorizeAdmin()` calls behind its own guards
+
+In `ProjectShow`, `deleteProject()` and `deleteJobSite()` each call
+`authorizeAbility('projects.delete', …)` **and then** `authorizeAdmin()`. The confirmation
+methods that open the modals ask only for the ability.
+
+So a non-administrator holding `projects.delete` is shown the confirmation dialog, confirms,
+and is then refused — precisely the "offered and then refused" behaviour the owner objected to
+during M2. The safe direction, but still a screen saying something the code does not do.
+
+Deleting the `authorizeAdmin()` lines makes the grant mean what the matrix says it means. That
+is M2's decision to revisit rather than M4's to take, so it was left alone. The buttons were
+made consistent where they were plainly wrong: the job-site Delete on the legacy project screen
+was `@admin` while its guard was `projects.delete`, and is now `@can('projects.delete')`.
+
+### P3 — the receipt route is closed one directory at a time
+
+`FileController` served **any** file under `storage/app` whose path a signed-in user could
+name. M4 closed `expenses/` by resolving the path back to its owning `Expense` and asking
+`expenses.view`.
+
+Eleven directories are still open on the old rule — `income/`, `purchase-orders/`,
+`requisitions/`, `quotations/`, `contracts/`, `contract-change-orders/`, `change_orders/`,
+`daily_reports/`, `temp_daily_reports/`, `subcontractor-documents/`, `company-logos/`. Each
+module's pass adds one line to the `$areas` map in `authorizeFile()`. **Every pass from M5
+onwards must do this** — it is easy to forget because nothing fails when it is skipped.
+
+`livewire-tmp/` is deliberately left open: it holds in-flight uploads that belong to no record
+yet.
+
+**Updated after M5:** `income/` is closed too, through its polymorphic `Attachment` rather than a
+column, and the map is now a `match` in `authorizeFile()` that takes either shape. M6 added no
+directory — budgets and cost code templates store no files. M7 closed
+`requisitions/`, M8 closed `quotations/` — the first with two owners, the round's own files and
+each vendor's proposal — M9 closed `purchase-orders/`, M10 closed `change_orders/` and M11 closed both
+`contracts/` and `contract-change-orders/`. Four
+directories remain —
+`daily_reports/` and `temp_daily_reports/` (M14), `subcontractor-documents/` (M16) and
+`company-logos/` (already behind `company.view` at the screen; its directory is the only one
+that holds nothing project-scoped).
+
+
+---
+
+## Permissions module — parked during M5 (Income), 2026-08-21
+
+### P4 — "Mark as received" is filed under `income.edit` *(open — low stakes)*
+
+Booking expected money as cash changes what the company financial report counts as revenue, and
+M5 put it behind `income.edit` because it is a correction to the record and the income area has
+no `pay`-style action.
+
+Expenses got a separate `expenses.pay` for the equivalent act. The asymmetry is deliberate —
+`expenses.pay` already existed in the catalogue and settling a supplier is a bigger act than
+confirming a client's payment landed — but if the owner wants them to match, adding
+`income.receive` is a catalogue line, a guard swap on two methods and a seed entry.
+
+Nothing is blocked; recorded so the asymmetry is a decision rather than an oversight.
+
+### P5 — the split grid is guarded six times over *(done, noted for the pattern)*
+
+`income.distribute` guards `updatedIncomeLocationMode`, `splitEvenly`, `assignRemainder`,
+`clearAllShares`, `toggleAllSites`, `updatedDistributionRows` **and** the save. That is not
+belt-and-braces for its own sake: every one of them is a public Livewire method reachable from
+the browser regardless of what the page rendered.
+
+The trap it exposed is worth carrying into later passes: **an action that a component calls
+internally must not be the guarded one.** Leaving split mode called `clearAllShares()`, so
+guarding that method would have refused somebody on the way *out* of a mode they were never
+allowed into. Split into a guarded public action plus an unguarded protected worker.
+
+---
+
+## Permissions module — parked during M6 (Budget & Cost Codes), 2026-08-21
+
+### P6 — company-wide abilities can only be held through a role *(open — the owner's rule points at it)*
+
+The owner's standing rule during M6: **no ability should be reachable only through a role.** For
+anything scoped to a project or a job site that already holds — `budget.lock` can be granted on a
+role, on a permission template, on one project, on one job site, or to one person on one project,
+and M6's tests prove all four.
+
+For a **company-wide** area it does not. A user's company-wide abilities come from
+`users.role_id` → `role_abilities`, and nothing else. To give one person `cost-codes.edit` without
+giving it to everyone who shares their role, you have to create a role for them.
+
+Memberships already model "this person, this scope, these abilities" and are `nullableMorphs`, so
+a company-level membership would need no new table — a scope of null, or a `Company` scope
+implementing `PermissionScope`. The resolver's step 4 would consult it before falling back to the
+role.
+
+Not built, because it changes the engine rather than a module and every pass so far has been
+deployable on its own. **Worth deciding before F1**, since confinement going live is when
+per-person company-wide grants start to matter.
+
+### P7 — `budget.lock` is not a `sensitive` action but arguably should be *(open — cosmetic)*
+
+The catalogue marks it `sensitive`, which today means one thing only: a warning marker in the
+matrix, and never granted by a template by default. Both are true of it. Recorded only so the
+flag's meaning is not quietly widened later — `sensitive` is a hint to the person granting, not a
+statement about who may hold it.
+
+### P8 — locking is a project-level idea applied to a per-budget record
+
+A project can have one project budget and one budget per job site, and each locks independently.
+That is right for a job site that has finished while the rest of the project runs, but it means
+there is no single "the project's baseline is frozen" state, and no way to lock all of them at
+once.
+
+Nobody has asked for one. If it comes up, the natural shape is a *Lock all* action on the project
+Budget tab gated on `budget.lock` for the project, which cascades to its job-site budgets and
+writes one history line each — not a new column.
+
+---
+
+## Permissions module — parked during M7 (Requisitions), 2026-08-21
+
+### P9 — the standalone quotation round is the half of N1 still open *(M8's to settle)*
+
+M7 locked the submitted requisition, added *Duplicate*, and made submitting its own grant. What
+it could **not** close is the original point of N1: `quotations.purchase_requisition_id` is
+nullable by design, so a round can be raised with no requisition at all — and the approval gate
+is walked around by starting one step further down the chain.
+
+This is M8's, not a leftover: it is a question about quotations, and the answer shapes that
+pass. The three shapes on the table are per-install (a setting), per requisition type, or per
+grant (`quotations.create_standalone`, which would match how `requisitions.approve_own` handles
+the equivalent problem).
+
+### P10 — administrators are outside every rule the ability system expresses
+
+Surfaced by N2 but general. `PermissionResolver::decide()` step 3 returns true for
+`$user->is_admin` before any area is consulted, so an administrator holds `approve_own`,
+`edit_paid`, `budget.lock` and everything else by definition. Every "block" this module builds is
+therefore a block on non-administrators.
+
+That is the right default and it is what makes the legacy bridge safe. But it means a rule the
+owner states as absolute — "the reviewer must not be the requester" — is absolute only below
+admin. If any of these need to bind administrators too, the check has to sit outside the ability
+system (a model-level rule, like `refuseIfLocked()` in M6, which *does* bind administrators).
+
+**`refuseIfLocked()` is the pattern to copy** where a rule is about the record rather than the
+person. Worth deciding case by case rather than as a policy.
+
+### P11 — ownership rules on submit are still loose *(low stakes)*
+
+N1 option 3 was "you may submit, edit and cancel **your own** draft; someone else's needs a
+reviewer". M7 implemented the *return-to-draft* half of that but left `submitForApproval` open to
+anyone holding `requisitions.submit` on the project — so a colleague can still put your draft in
+the queue.
+
+Arguably fine: on a site, somebody keying in and somebody sending are often different people by
+design, and the requisition names its requester either way. Left as it is; recorded so the gap is
+a decision.
+
+---
+
+## Permissions module — parked during M8 (Quotations), 2026-08-21
+
+### P12 — a stale foreign key survives on sqlite only *(FIXED in M9, 2026-08-21)*
+
+Closed by `2026_08_21_140000_drop_legacy_vendor_foreign_keys_on_other_drivers`, which drops the
+seven legacy constraints on every non-MySQL driver and does nothing on MySQL, where the vendor
+unification already dropped them. `QuotationTest`'s scaffolding row is gone and the
+award-to-purchase-order path is covered against a real schema. **The original note follows.**
+
+
+`create_purchase_orders_table` gave `purchase_orders.supplier_id` a foreign key to the legacy
+`suppliers` table. The vendor unification drops that constraint and remaps the ids — but its body
+returns early on any driver that is not MySQL, because there are no legacy rows to move.
+
+So on **MySQL, production is correct**: the constraint is gone and `supplier_id` holds a vendor
+id. On **sqlite**, the original constraint is still there, and converting an awarded round into a
+purchase order fails with a foreign-key error for any vendor with no matching legacy row.
+
+*(As written during M8: `QuotationTest` inserted a matching `suppliers` row in its fixture rather
+than pretend the schema was something it was not, and noted that M9 would hit the same wall. M9
+took the better option — a new additive migration rather than editing one that has already run in
+production.)*
+
+### P13 — `approval_limit` has no company-wide home *(open — same shape as P6)*
+
+The ceiling lives on a permission **template** and on a **membership**. A company-wide user with
+no membership on the project therefore has **no ceiling at all** — `approvalLimit()` returns null
+and every amount is within it.
+
+That is fine while confinement is off, since every real user is company-wide and the ceiling was
+never enforced before. It stops being fine at F1: the moment "Assigned only" is offered, an
+install will have some people capped and some not, with no way to cap the company-wide ones short
+of giving them a membership on every project.
+
+Same root as P6 — there is no per-user company-wide grant record. Both want the same answer, and
+**both should be decided before F1**.
+
+### P14 — `User::canReviewRequisitions()` is now dead
+
+M7 and M8 replaced every call site. The method survives only in `app/Models/User.php`. It goes
+with `AuthorizesAdmin`, the `@admin` directive and the `admin` middleware in F2; recorded so it is
+not mistaken for something still in use.
+
+
+---
+
+## Permissions module — parked during M9 (Purchase Orders), 2026-08-21
+
+### P15 — the delivery does not touch the expense *(open — worth a decision, not urgent)*
+
+Approving a purchase order creates an expense. Recording a delivery against that order changes
+nothing about the expense: it stays at the full ordered amount whether one bag arrived or all
+hundred did.
+
+That is defensible — the order is what was committed, and the supplier will invoice for it — but
+it means "partially received" and "expense for the full amount" sit side by side with nothing
+tying them together. On a part-delivery that never completes, the expense overstates what was
+actually taken.
+
+Three shapes if it matters: leave it (the order is the commitment); show the received proportion
+on the expense as information only; or let a receipt adjust the expense, which is a much bigger
+change and would need its own history.
+
+Nobody has asked. Recorded so the gap is a decision.
+
+### P16 — receiving is per order, not per job site delivery note
+
+A delivery is recorded against the whole order. Where one order covers several job sites — which
+the data model allows, since `job_site_id` is on the order and not on its lines — there is no way
+to say "the cement went to Site A". In practice orders are raised per site, so this has not come
+up; if it does, the answer is a job site on the receipt rather than on the line.
+
+
+---
+
+## Permissions module — parked during M10 (Change Orders), 2026-08-21
+
+### P17 — `contract-change-orders/` is a different module *(M11's)*
+
+`change_orders/` and `contract-change-orders/` are two different things. The first is a change to
+the **project's** scope, which M10 covers. The second is an *aditivo* to a **contract**, served by
+`App\Livewire\Contract\ContractChangeOrders`, and it belongs to the `contracts` area rather than
+`change-orders`. M11 closes its directory and guards its screen; M10 deliberately left both alone
+so the two are not conflated.
+
+### P18 — the ceiling reads the cost side, and a change order has two
+
+A change order carries **revenue** (`amount`, what the client is now billed) and **cost** (the sum
+of its cost lines). M10 checks the approval ceiling against the cost side, because the ceiling is
+about what somebody may commit the company to spending.
+
+That is the right reading for a normal change order, where the client pays more and the company
+spends more. It is a weaker control on one where the revenue is large and the cost small — the
+margin is the company's gain, so there is nothing to protect against — and on the reverse, where
+the cost is large and the revenue small, the ceiling still binds correctly.
+
+Recorded because "the ceiling" is now checked against three different figures in three modules
+(the awarded total in M8, the order total in M9, the cost impact in M10) and each choice is
+deliberate rather than incidental.
+
+
+---
+
+## Permissions module — parked during M11 (Contracts & Payments), 2026-08-21
+
+### P19 — `payments.pay` cannot obey a ceiling, and that is P13 biting for real
+
+`contracts.pay` obeys `approval_limit`. `payments.pay` — the same act, on the company-wide
+dashboard — cannot, because the ceiling lives on a membership or a permission template and these
+screens belong to no project.
+
+So the same person can be stopped from releasing R$ 50.000 against a contract from inside the
+project, and then release it from the payments dashboard with no ceiling at all. **That is a real
+hole in the ceiling as a control, not a cosmetic gap.**
+
+It is the same root cause as P6 (no per-user company-wide grant) and P13 (no company-wide
+ceiling), and M11 is where it stops being theoretical. All three want the same answer — a
+company-level membership, or a ceiling on the role — and **they should be decided together,
+before F1.**
+
+Until then the honest description is: *the approval ceiling binds inside a project and does not
+bind on the company-wide payment screens.*
+
+### P20 — deleting a contract is not blocked when it has payments
+
+`ContractShow::delete()` now needs `contracts.delete`, but nothing stops deleting a contract that
+has been paid against — its payments go with it through the cascade, and the money that left the
+company loses its record.
+
+M10 refuses to delete an approved change order for exactly this reason, and M6 refuses to change
+a locked budget. The same shape fits here: refuse the delete while the contract has payments, and
+say so. Not done in M11 because it changes behaviour beyond the permission pass and deserves to
+be a decision rather than a side effect.
+
+### P21 — the schedule-of-values grid is `contracts.edit`, not its own grant
+
+Rebuilding the schedule of values changes *when* money becomes payable, which is close to
+`measure` and close to `edit`. M11 put the grid under `edit` (it is part of the contract's own
+terms) and releasing an instalment under `measure` (it confirms the trigger happened).
+
+Defensible, but somebody could be given `edit` to fix a typo in the notes and thereby be able to
+restructure the payment schedule. If that matters, `contracts.schedule` is the fourth grant.
+
+
+---
+
+## Permissions module — parked during M12 (Documents), 2026-08-21
+
+### P22 — the PDF controllers are still `auth` only *(the other half of N5)*
+
+M12 closed the document repository's half of N5. The PDF controllers named in that notation are
+untouched: `/quotations/{id}/rfq/pdf`, `/quotations/{id}/map/pdf`, the six report PDFs, the
+contract schedule and measurement PDFs, the daily report PDFs, and the estimate and invoice ones.
+All are behind `auth` and nothing else, so any signed-in person can fetch any of them by id.
+
+Each of them belongs to a module that has had, or will have, its own pass. **M8 should have
+guarded the quotation PDFs and did not**; M9's, M10's and M11's PDFs are in the same state.
+
+The fix is one line per controller — resolve the record, ask the module's `view` ability against
+it — and it is the same shape as `FileController::authorizeFile()`. Either later passes pick up
+their own, or **F3 sweeps the lot**; recorded so it cannot be forgotten either way.
+
+### P23 — `scopeVisibleTo` resolves internal documents in PHP
+
+`documents.see_internal` is a scoped grant, so the answer differs per project and a single WHERE
+clause cannot express it. `Document::scopeVisibleTo()` therefore loads every internal document's
+id, filters them through the resolver, and feeds the surviving ids back into the query.
+
+That is fine at the sizes this application sees — internal documents are the exception, and the
+resolver memoises per request — but it is a query that grows with the number of internal
+documents rather than with the page being shown. If an install ever files thousands of them, the
+answer is to resolve the person's projects once and compare `project_id` in SQL.
+
+### P24 — the trash is one grant, not two
+
+Delete, restore, purge and empty-trash all sit under `documents.delete`, which reproduces the old
+`canDeleteDocuments()` exactly. Purging is irreversible and restoring is not, so they are
+arguably different acts — `documents.purge` would be the fifth grant.
+
+Not split, because nothing in the old behaviour distinguished them and this pass had enough
+genuine changes in it. Recorded as a decision rather than an omission.

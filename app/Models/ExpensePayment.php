@@ -46,6 +46,15 @@ class ExpensePayment extends Model
     }
 
     /**
+     * An installment has no project or job site of its own; permission
+     * questions about it are questions about its expense.
+     */
+    public function permissionScope(): ?Expense
+    {
+        return $this->relationLoaded('expense') ? $this->expense : $this->expense()->first();
+    }
+
+    /**
      * Get the user who marked this payment as paid
      */
     public function paidBy(): BelongsTo

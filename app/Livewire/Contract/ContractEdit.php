@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contract;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesContractAllocations;
 use App\Models\Contract;
 use App\Models\Subcontractor;
@@ -14,6 +15,8 @@ use Livewire\WithFileUploads;
 
 class ContractEdit extends Component
 {
+    use AuthorizesAbility;
+
     use ManagesContractAllocations, WithFileUploads;
 
     public Contract $contract;
@@ -34,6 +37,8 @@ class ContractEdit extends Component
 
     public function mount(Contract $contract)
     {
+        $this->authorizeAbility('contracts.edit', $contract);
+
         $this->contract = $contract->load(['project', 'jobSite', 'subcontractor']);
 
         $this->subcontractor_id = $contract->subcontractor_id;
@@ -90,6 +95,8 @@ class ContractEdit extends Component
 
     public function save()
     {
+        $this->authorizeAbility('contracts.edit', $this->contract);
+
         $this->validate([
             'subcontractor_id' => 'nullable|exists:vendors,id,is_subcontractor,1',
             'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],

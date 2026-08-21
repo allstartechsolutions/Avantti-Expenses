@@ -1,3 +1,15 @@
+@php
+    // The approval ceiling is a fact about this order's money, so the button
+    // obeys it and the sidebar says why when it does not.
+    $resolver = app(\App\Services\PermissionResolver::class);
+    $mayApprove = auth()->user()->can('purchase-orders.approve', $purchaseOrder);
+    $withinCeiling = $resolver->withinApprovalLimit(auth()->user(), $purchaseOrder->totalInCents(), $purchaseOrder);
+    $ceiling = $resolver->approvalLimit(auth()->user(), $purchaseOrder);
+
+    // Delivery columns only mean something once the order has been approved —
+    // nothing arrives against a draft.
+    $showsDelivery = $purchaseOrder->receiptStatus() !== null;
+@endphp
 <div>
     {{-- Breadcrumbs --}}
     @php
@@ -62,12 +74,14 @@
                 </x-ui.button>
 
                 @if($purchaseOrder->canBeEdited())
-                    <x-ui.button
-                        variant="secondary"
-                        href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
-                        icon="edit">
-                        {{ __('Edit') }}
-                    </x-ui.button>
+                    @can('purchase-orders.edit', $purchaseOrder)
+                        <x-ui.button
+                            variant="secondary"
+                            href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
+                            icon="edit">
+                            {{ __('Edit') }}
+                        </x-ui.button>
+                    @endcan
                 @endif
             </div>
         </div>
@@ -167,7 +181,11 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Cost Code') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Item') }}</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Qty') }}</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Ordered') }}</th>
+                                @if($showsDelivery)
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Received') }}</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Outstanding') }}</th>
+                                @endif
                                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Unit Price') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Total') }}</th>
                             </tr>
@@ -187,6 +205,14 @@
                                     <td class="px-6 py-4 text-sm text-slate-900 dark:text-white text-right">
                                         {{ $item->quantity }} {{ $item->unit }}
                                     </td>
+                                    @if($showsDelivery)
+                                        <td class="px-6 py-4 text-sm text-right {{ $item->isFullyReceived() ? 'text-green-600 dark:text-green-400 font-medium' : 'text-slate-900 dark:text-white' }}">
+                                            {{ (float) $item->received_quantity > 0 ? rtrim(rtrim(number_format((float) $item->received_quantity, 2, '.', ''), '0'), '.').' '.$item->unit : '—' }}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right {{ $item->isFullyReceived() ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400 font-medium' }}">
+                                            {{ $item->isFullyReceived() ? '—' : rtrim(rtrim(number_format($item->outstandingQuantity(), 2, '.', ''), '0'), '.').' '.$item->unit }}
+                                        </td>
+                                    @endif
                                     <td class="px-6 py-4 text-sm text-slate-900 dark:text-white text-right">
                                         {{ Number::currency($item->unit_price, config('app.currency'), config('app.locale')) }}
                                     </td>
@@ -204,7 +230,7 @@
                             @php($hasExtras = $purchaseOrder->freight_amount || $purchaseOrder->tax_amount || $purchaseOrder->discount_amount)
                             @if($hasExtras)
                                 <tr>
-                                    <td colspan="4" class="px-6 pt-4 text-sm text-slate-500 dark:text-slate-400 text-right">{{ __('Items:') }}</td>
+                                    <td colspan="{{ $showsDelivery ? 6 : 4 }}" class="px-6 pt-4 text-sm text-slate-500 dark:text-slate-400 text-right">{{ __('Items:') }}</td>
                                     <td class="px-6 pt-4 text-sm text-slate-600 dark:text-slate-300 text-right">
                                         {{ Number::currency($purchaseOrder->itemsTotal(), config('app.currency'), config('app.locale')) }}
                                     </td>
@@ -216,7 +242,7 @@
                                 ] as $extra)
                                     @if($extra['amount'] > 0)
                                         <tr>
-                                            <td colspan="4" class="px-6 py-1 text-sm text-slate-500 dark:text-slate-400 text-right">{{ $extra['label'] }}</td>
+                                            <td colspan="{{ $showsDelivery ? 6 : 4 }}" class="px-6 py-1 text-sm text-slate-500 dark:text-slate-400 text-right">{{ $extra['label'] }}</td>
                                             <td class="px-6 py-1 text-sm text-slate-600 dark:text-slate-300 text-right">
                                                 {{ $extra['sign'] < 0 ? '−' : '' }}{{ Number::currency($extra['amount'], config('app.currency'), config('app.locale')) }}
                                             </td>
@@ -225,7 +251,7 @@
                                 @endforeach
                             @endif
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white text-right">{{ __('Total:') }}</td>
+                                <td colspan="{{ $showsDelivery ? 6 : 4 }}" class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white text-right">{{ __('Total:') }}</td>
                                 <td class="px-6 py-4 text-lg font-bold text-slate-900 dark:text-white text-right">
                                     {{ Number::currency($purchaseOrder->total_amount, config('app.currency'), config('app.locale')) }}
                                 </td>
@@ -281,50 +307,102 @@
                 <div class="p-6 space-y-3">
                     @if($purchaseOrder->isDraft())
                         <!-- Draft Actions -->
-                        <x-ui.button
-                            variant="primary"
-                            class="w-full justify-center"
-                            wire:click="submitForApproval"
-                            wire:confirm="{{ __('Submit this purchase order for approval?') }}"
-                            icon="paper-airplane">
-                            {{ __('Submit for Approval') }}
-                        </x-ui.button>
-                        <x-ui.button
-                            variant="danger"
-                            class="w-full justify-center"
-                            wire:click="openCancelModal"
-                            icon="x">
-                            {{ __('Cancel PO') }}
-                        </x-ui.button>
+                        @can('purchase-orders.edit', $purchaseOrder)
+                            <x-ui.button
+                                variant="primary"
+                                class="w-full justify-center"
+                                wire:click="submitForApproval"
+                                wire:confirm="{{ __('Submit this purchase order for approval?') }}"
+                                icon="paper-airplane">
+                                {{ __('Submit for Approval') }}
+                            </x-ui.button>
+                            <x-ui.button
+                                variant="danger"
+                                class="w-full justify-center"
+                                wire:click="openCancelModal"
+                                icon="x">
+                                {{ __('Cancel PO') }}
+                            </x-ui.button>
+                        @endcan
 
                     @elseif($purchaseOrder->isPending())
-                        <!-- Pending Actions (Admin) -->
-                        <x-ui.button
-                            variant="success"
-                            class="w-full justify-center"
-                            wire:click="approve"
-                            wire:confirm="{{ __('Approve this purchase order? This will create an expense.') }}"
-                            icon="check">
-                            {{ __('Approve') }}
-                        </x-ui.button>
-                        <x-ui.button
-                            variant="danger"
-                            class="w-full justify-center"
-                            wire:click="openRejectModal"
-                            icon="x">
-                            {{ __('Reject') }}
-                        </x-ui.button>
-                        <x-ui.button
-                            variant="secondary"
-                            class="w-full justify-center"
-                            wire:click="openCancelModal"
-                            icon="ban">
-                            {{ __('Cancel PO') }}
-                        </x-ui.button>
+                        <!-- Pending: approving commits the money -->
+                        @if($mayApprove && $withinCeiling)
+                            <x-ui.button
+                                variant="success"
+                                class="w-full justify-center"
+                                wire:click="approve"
+                                wire:confirm="{{ __('Approve this purchase order? This will create an expense.') }}"
+                                icon="check">
+                                {{ __('Approve') }}
+                            </x-ui.button>
+                        @elseif($mayApprove)
+                            <p class="text-xs text-amber-700 dark:text-amber-400 text-center">
+                                {{ __('This order commits :amount, which is above the :ceiling you may approve. Somebody with a higher ceiling has to approve it.', [
+                                    'amount' => Number::currency($purchaseOrder->total_amount, config('app.currency'), config('app.locale')),
+                                    'ceiling' => Number::currency($ceiling / 100, config('app.currency'), config('app.locale')),
+                                ]) }}
+                            </p>
+                        @endif
+                        @if($mayApprove)
+                            <x-ui.button
+                                variant="danger"
+                                class="w-full justify-center"
+                                wire:click="openRejectModal"
+                                icon="x">
+                                {{ __('Reject') }}
+                            </x-ui.button>
+                        @endif
+                        @can('purchase-orders.edit', $purchaseOrder)
+                            <x-ui.button
+                                variant="secondary"
+                                class="w-full justify-center"
+                                wire:click="openCancelModal"
+                                icon="ban">
+                                {{ __('Cancel PO') }}
+                            </x-ui.button>
+                        @endcan
 
                     @elseif($purchaseOrder->isApproved())
+                        <!-- Delivery -->
+                        <div class="rounded-lg border p-3 text-center
+                            {{ match($purchaseOrder->receiptStatus()) {
+                                'received' => 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20',
+                                'partial' => 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20',
+                                default => 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40',
+                            } }}">
+                            <p class="text-xs font-semibold uppercase tracking-wider
+                                {{ match($purchaseOrder->receiptStatus()) {
+                                    'received' => 'text-green-700 dark:text-green-400',
+                                    'partial' => 'text-amber-700 dark:text-amber-400',
+                                    default => 'text-slate-500 dark:text-slate-400',
+                                } }}">
+                                {{ $purchaseOrder->receiptStatusLabel() }}
+                            </p>
+                            @if($purchaseOrder->receipts->isNotEmpty())
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ __('Last delivery :date by :name', [
+                                        'date' => $purchaseOrder->receipts->first()->received_at?->format('M d, Y'),
+                                        'name' => $purchaseOrder->receipts->first()->receivedBy?->name ?? __('Unknown'),
+                                    ]) }}
+                                </p>
+                            @endif
+                        </div>
+
+                        @if($purchaseOrder->canBeReceived())
+                            @can('purchase-orders.receive', $purchaseOrder)
+                                <x-ui.button
+                                    variant="primary"
+                                    class="w-full justify-center"
+                                    wire:click="openReceiptModal"
+                                    icon="check">
+                                    {{ __('Record Receipt') }}
+                                </x-ui.button>
+                            @endcan
+                        @endif
+
                         <!-- Approved - Show linked expense info -->
-                        @if($purchaseOrder->canChangeStatusFromApproved())
+                        @if($purchaseOrder->canChangeStatusFromApproved() && $mayApprove)
                             <x-ui.button
                                 variant="warning"
                                 class="w-full justify-center"
@@ -353,24 +431,26 @@
 
                     @elseif($purchaseOrder->isRejected())
                         <!-- Rejected Actions -->
-                        <x-ui.button
-                            variant="primary"
-                            class="w-full justify-center"
-                            wire:click="reviseAndResubmit"
-                            wire:confirm="{{ __('Resubmit this purchase order for approval? This will increment the revision number.') }}"
-                            icon="refresh">
-                            {{ __('Revise & Resubmit') }}
-                        </x-ui.button>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-                            {{ __('You can edit the PO before resubmitting.') }}
-                        </p>
-                        <x-ui.button
-                            variant="secondary"
-                            href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
-                            class="w-full justify-center"
-                            icon="edit">
-                            {{ __('Edit PO') }}
-                        </x-ui.button>
+                        @can('purchase-orders.edit', $purchaseOrder)
+                            <x-ui.button
+                                variant="primary"
+                                class="w-full justify-center"
+                                wire:click="reviseAndResubmit"
+                                wire:confirm="{{ __('Resubmit this purchase order for approval? This will increment the revision number.') }}"
+                                icon="refresh">
+                                {{ __('Revise & Resubmit') }}
+                            </x-ui.button>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                                {{ __('You can edit the PO before resubmitting.') }}
+                            </p>
+                            <x-ui.button
+                                variant="secondary"
+                                href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}"
+                                class="w-full justify-center"
+                                icon="edit">
+                                {{ __('Edit PO') }}
+                            </x-ui.button>
+                        @endcan
 
                     @elseif($purchaseOrder->isCancelled())
                         <!-- Cancelled - No actions -->
@@ -568,5 +648,104 @@
             </div>
         </div>
     </div>
+    @endif
+
+    {{-- Deliveries so far. A part-delivery is the normal case on site, so the
+         history is what makes "25 of 40 arrived" defensible later. --}}
+    @if($purchaseOrder->receipts->isNotEmpty())
+        <div class="mt-6 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+            <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                {{ __('Delivery history') }}
+            </h3>
+            <ul class="space-y-4">
+                @foreach($purchaseOrder->receipts as $receipt)
+                    <li class="border-l-2 border-slate-200 pl-4 dark:border-slate-700">
+                        <p class="text-sm text-slate-900 dark:text-white">
+                            <span class="font-medium">{{ $receipt->received_at?->format('M d, Y') }}</span>
+                            <span class="text-slate-500 dark:text-slate-400">
+                                &middot; {{ $receipt->receivedBy?->name ?? __('Unknown') }}
+                            </span>
+                        </p>
+                        <ul class="mt-1 space-y-0.5">
+                            @foreach($receipt->lines as $line)
+                                <li class="text-xs text-slate-600 dark:text-slate-300">
+                                    {{ rtrim(rtrim(number_format((float) $line->quantity, 2, '.', ''), '0'), '.') }}
+                                    {{ $line->item?->unit }} &middot; {{ $line->item?->item_name }}
+                                </li>
+                            @endforeach
+                        </ul>
+                        @if($receipt->note)
+                            <p class="mt-1 text-xs italic text-slate-500 dark:text-slate-400">{{ $receipt->note }}</p>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    {{-- Record a delivery --}}
+    @if($showReceiptModal)
+        <x-ui.modal name="po-receipt-modal" maxWidth="2xl" :show="true">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Record Receipt') }}</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {{ __('Enter what actually arrived. Leave a line blank, or at zero, if none of it came.') }}
+                </p>
+
+                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Delivery date') }}</label>
+                        <input type="date" wire:model="receiptDate"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        @error('receiptDate') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Note') }} <span class="text-slate-400">({{ __('optional') }})</span></label>
+                        <input type="text" wire:model="receiptNote" placeholder="{{ __('e.g. rest due Friday') }}"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="mt-5 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{{ __('Item') }}</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{{ __('Outstanding') }}</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{{ __('Arriving now') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                            @foreach($purchaseOrder->items as $item)
+                                <tr class="{{ $item->isFullyReceived() ? 'opacity-50' : '' }}">
+                                    <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $item->item_name }}</td>
+                                    <td class="px-4 py-2 text-right text-sm text-slate-600 dark:text-slate-300">
+                                        {{ rtrim(rtrim(number_format($item->outstandingQuantity(), 2, '.', ''), '0'), '.') }} {{ $item->unit }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right">
+                                        @if($item->isFullyReceived())
+                                            <span class="text-xs text-slate-400">{{ __('Complete') }}</span>
+                                        @else
+                                            <input type="number" step="0.01" min="0"
+                                                max="{{ $item->outstandingQuantity() }}"
+                                                wire:model="receiptQuantities.{{ $item->id }}"
+                                                class="w-28 px-2 py-1 text-right text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @error('receiptQuantities') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                <div class="mt-6 flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <x-ui.button type="button" variant="secondary" wire:click="closeReceiptModal">{{ __('Cancel') }}</x-ui.button>
+                    <x-ui.button type="button" variant="primary" wire:click="recordReceipt" icon="check">
+                        {{ __('Record Receipt') }}
+                    </x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
     @endif
 </div>

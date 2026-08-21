@@ -22,12 +22,14 @@
                     icon="arrow-left">
                     {{ __('Back to Templates') }}
                 </x-ui.button>
-                <x-ui.button
-                    variant="primary"
-                    href="{{ route('cost-codes.templates.edit', $template->id) }}"
-                    icon="edit">
-                    {{ __('Edit Template') }}
-                </x-ui.button>
+                @can('cost-codes.edit')
+                    <x-ui.button
+                        variant="primary"
+                        href="{{ route('cost-codes.templates.edit', $template->id) }}"
+                        icon="edit">
+                        {{ __('Edit Template') }}
+                    </x-ui.button>
+                @endcan
             </div>
         </div>
     </div>
@@ -53,6 +55,7 @@
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Cost Codes') }}</h3>
                     <div class="flex items-center gap-2">
+                        @can('cost-codes.create')
                         <x-ui.button
                             variant="secondary"
                             size="sm"
@@ -67,6 +70,7 @@
                             icon="plus">
                             {{ __('Add Cost Code') }}
                         </x-ui.button>
+                        @endcan
                     </div>
                 </div>
 
@@ -89,6 +93,7 @@
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
+                                            @can('cost-codes.create')
                                             <x-ui.button
                                                 variant="ghost"
                                                 size="sm"
@@ -96,6 +101,8 @@
                                                 icon="plus"
                                                 title="{{ __('Add child code') }}">
                                             </x-ui.button>
+                                            @endcan
+                                            @can('cost-codes.edit')
                                             <x-ui.button
                                                 variant="ghost"
                                                 size="sm"
@@ -103,7 +110,9 @@
                                                 icon="edit"
                                                 title="{{ __('Edit') }}">
                                             </x-ui.button>
+                                            @endcan
                                             @if($parentCode->children->count() === 0)
+                                                @can('cost-codes.delete')
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
@@ -113,6 +122,7 @@
                                                     title="{{ __('Delete') }}"
                                                     class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                 </x-ui.button>
+                                                @endcan
                                             @endif
                                         </div>
                                     </div>
@@ -134,6 +144,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center gap-2">
+                                                        @can('cost-codes.edit')
                                                         <x-ui.button
                                                             variant="ghost"
                                                             size="sm"
@@ -141,6 +152,8 @@
                                                             icon="edit"
                                                             title="{{ __('Edit') }}">
                                                         </x-ui.button>
+                                                        @endcan
+                                                        @can('cost-codes.delete')
                                                         <x-ui.button
                                                             variant="ghost"
                                                             size="sm"
@@ -150,6 +163,7 @@
                                                             title="{{ __('Delete') }}"
                                                             class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                         </x-ui.button>
+                                                        @endcan
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -164,15 +178,19 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No cost codes yet') }}</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding cost codes to this template.') }}</p>
-                            <div class="mt-6">
-                                <x-ui.button
-                                    variant="primary"
-                                    wire:click="openAddForm()"
-                                    icon="plus">
-                                    {{ __('Add Cost Code') }}
-                                </x-ui.button>
-                            </div>
+                            @can('cost-codes.create')
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding cost codes to this template.') }}</p>
+                                <div class="mt-6">
+                                    <x-ui.button
+                                        variant="primary"
+                                        wire:click="openAddForm()"
+                                        icon="plus">
+                                        {{ __('Add Cost Code') }}
+                                    </x-ui.button>
+                                </div>
+                            @else
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('This template has no cost codes. You can see it but not build it — ask an administrator if that is wrong.') }}</p>
+                            @endcan
                         </div>
                     @endif
                 </div>

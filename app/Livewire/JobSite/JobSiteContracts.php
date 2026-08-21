@@ -2,11 +2,14 @@
 
 namespace App\Livewire\JobSite;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\JobSite;
 use Livewire\Component;
 
 class JobSiteContracts extends Component
 {
+    use AuthorizesAbility;
+
     public JobSite $jobSite;
 
     public $search = '';
@@ -14,6 +17,8 @@ class JobSiteContracts extends Component
 
     public function mount(JobSite $jobSite): void
     {
+        $this->authorizeAbility('contracts.view', $jobSite);
+
         $this->jobSite = $jobSite->load('project');
     }
 

@@ -144,7 +144,11 @@ class SecurityStateTest extends TestCase
         sort($swept);
 
         $this->assertSame(
-            ['access', 'company', 'project', 'projects', 'settings', 'team', 'users'],
+            [
+                'access', 'budget', 'change-orders', 'company', 'contracts', 'cost-codes',
+                'documents', 'expenses', 'income', 'payments', 'project', 'projects',
+                'purchase-orders', 'quotations', 'requisitions', 'settings', 'team', 'users',
+            ],
             $swept,
             'An area is marked swept. Move its cases in this file from "not enforced" to "enforced".',
         );
@@ -203,11 +207,11 @@ class SecurityStateTest extends TestCase
         }
     }
 
-    public function test_what_is_inside_a_project_is_still_wide_open(): void
+    public function test_what_is_inside_a_project_is_open_only_where_the_module_has_not_had_its_pass(): void
     {
         // M2 decides which projects somebody may open, not what they may do
         // inside one. A member with a narrow membership still sees every tab
-        // until each module has had its own pass.
+        // of a module that has not had its pass.
         $membership = Membership::create([
             'user_id' => $this->confined->id,
             'scopeable_type' => Project::class,
@@ -219,18 +223,52 @@ class SecurityStateTest extends TestCase
 
         $this->actingAs($this->confined)->get(route('projects.overview', $this->project))->assertOk();
 
-        // …and these should be refused once M4 and M6 land, but are not yet.
-        $this->actingAs($this->confined)->get(route('projects.expenses', $this->project))->assertOk();
-        $this->actingAs($this->confined)->get(route('projects.budget', $this->project))->assertOk();
+        // Expenses (M4) and Budget (M6) are swept: the membership says nothing
+        // about either, so no.
+        $this->actingAs($this->confined)->get(route('projects.expenses', $this->project))->assertForbidden();
+        $this->actingAs($this->confined)->get(route('projects.budget', $this->project))->assertForbidden();
+
+        // Change orders no longer either — M10 swept them.
+        $this->actingAs($this->confined)->get(route('projects.change-orders', $this->project))->assertForbidden();
+
+        // Contracts no longer either — M11 swept them.
+        $this->actingAs($this->confined)->get(route('projects.contracts', $this->project))->assertForbidden();
+
+        // Daily reports are still open, and should be refused once M14 lands.
+        $this->actingAs($this->confined)->get(route('projects.daily-reports', $this->project))->assertOk();
+    }
+
+    public function test_the_money_screens_m11_closed_are_now_grants_rather_than_open_doors(): void
+    {
+        // All three were reachable by anybody signed in — what E1 recorded and
+        // what M11 was held back for. The seeded roles still reach them, which
+        // is the pass rule: reproduce today's answer, but make it a grant.
+        foreach (['payments.index', 'contract-payments.index', 'payment-batches.index'] as $name) {
+            $this->actingAs($this->employee)->get(route($name))->assertOk();
+        }
+
+        // The difference is that it can now be taken away.
+        $role = Role::create(['name' => 'no-payments-'.uniqid()]);
+        $role->syncAbilities(['projects.view', 'project.view']);
+        $blind = User::factory()->create(['role_id' => $role->id]);
+
+        foreach (['payments.index', 'contract-payments.index', 'payment-batches.index'] as $name) {
+            $this->actingAs($blind)->get(route($name))->assertForbidden();
+        }
+
+        // …and the three grants are separable: the batches need their own.
+        $viewer = Role::create(['name' => 'payments-viewer-'.uniqid()]);
+        $viewer->syncAbilities(['projects.view', 'project.view', 'payments.view']);
+        $reader = User::factory()->create(['role_id' => $viewer->id]);
+
+        $this->actingAs($reader)->get(route('payments.index'))->assertOk();
+        $this->actingAs($reader)->get(route('payment-batches.index'))->assertForbidden();
     }
 
     public function test_the_unguarded_money_screens_are_still_unguarded(): void
     {
-        // M11 (payments), M15 (estimates and invoices).
+        // M15 (estimates and invoices) — the last two.
         foreach ([
-            route('payments.index'),
-            route('contract-payments.index'),
-            route('payment-batches.index'),
             route('estimates.index'),
             route('invoices.index'),
         ] as $url) {
@@ -238,7 +276,7 @@ class SecurityStateTest extends TestCase
         }
     }
 
-    public function test_a_membership_grants_nothing_in_the_application_yet(): void
+    public function test_a_membership_now_decides_the_swept_modules_and_not_the_rest(): void
     {
         $template = PermissionTemplate::where('key', 'site-supervisor')->first();
 
@@ -253,13 +291,16 @@ class SecurityStateTest extends TestCase
 
         $resolver = app(PermissionResolver::class);
 
-        // The resolver would deny — every area is unswept, and a confined user
-        // is denied outright there…
-        $this->assertFalse($resolver->allows($this->confined, 'expenses.create', $this->jobSite));
+        // Expenses is swept, so the template's grants are live…
+        $this->assertTrue($resolver->allows($this->confined, 'expenses.create', $this->jobSite));
+        $this->assertFalse($resolver->allows($this->confined, 'expenses.delete', $this->jobSite));
 
-        // …but the expenses screen does not ask it yet, so the person still
-        // reaches everything. That gap closes in M4.
         $this->actingAs($this->confined)->get(route('jobsites.expenses', $this->jobSite))->assertOk();
+
+        // …and an unswept area still denies a confined person outright,
+        // whatever the template says. Daily reports close in M14.
+        $this->assertTrue(in_array('daily-reports.view', $template->abilities(), true));
+        $this->assertFalse($resolver->allows($this->confined, 'daily-reports.view', $this->jobSite));
     }
 
     public function test_documents_and_reports_are_still_reachable_by_id(): void

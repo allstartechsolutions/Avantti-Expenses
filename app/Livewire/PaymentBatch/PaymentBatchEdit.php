@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PaymentBatch;
 
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
@@ -18,6 +19,8 @@ use Livewire\WithPagination;
 
 class PaymentBatchEdit extends Component
 {
+    use AuthorizesAbility;
+
     use WithPagination;
 
     public PaymentBatch $paymentBatch;
@@ -59,6 +62,8 @@ class PaymentBatchEdit extends Component
 
     public function mount(): void
     {
+        $this->authorizeAbility('payments.batch');
+
         if (! $this->paymentBatch->canBeEdited()) {
             $this->redirect(route('payment-batches.show', $this->paymentBatch->id), navigate: true);
 
@@ -197,6 +202,8 @@ class PaymentBatchEdit extends Component
 
     public function saveDraft(): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $this->validate([
             'name' => 'required|string|max:255',
             'payment_date' => 'required|date',
@@ -480,6 +487,8 @@ class PaymentBatchEdit extends Component
 
     public function approveItem(int $itemId): void
     {
+        $this->authorizeAbility('payments.pay');
+
         $item = PaymentBatchItem::where('payment_batch_id', $this->paymentBatch->id)
             ->where('id', $itemId)
             ->where('status', 'pending')
@@ -573,6 +582,8 @@ class PaymentBatchEdit extends Component
 
     public function approveAll(): void
     {
+        $this->authorizeAbility('payments.pay');
+
         $pendingItems = $this->paymentBatch->items()->where('status', 'pending')->get();
 
         if ($pendingItems->isEmpty()) {
@@ -644,6 +655,8 @@ class PaymentBatchEdit extends Component
 
     public function rejectItem(int $itemId): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $item = PaymentBatchItem::where('payment_batch_id', $this->paymentBatch->id)
             ->where('id', $itemId)
             ->where('status', 'pending')
@@ -665,6 +678,8 @@ class PaymentBatchEdit extends Component
 
     public function cancelBatch(): void
     {
+        $this->authorizeAbility('payments.batch');
+
         $approvedCount = $this->paymentBatch->items()->where('status', 'approved')->count();
 
         if ($approvedCount > 0) {

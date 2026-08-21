@@ -31,6 +31,8 @@ class ProjectDocuments extends Component
 
     public function mount(Project $project): void
     {
+        $this->authorizeAbility('documents.view', $project);
+
         $this->project = $project;
     }
 

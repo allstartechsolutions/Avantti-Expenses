@@ -124,6 +124,11 @@ trait ManagesQuotations
 
     public function openAddModal(): void
     {
+        // N1: a round with no requisition behind it is how the approval chain
+        // gets walked around, so it is a grant of its own on top of `create`.
+        $this->authorizeAbility('quotations.create', $this->quotationScope());
+        $this->authorizeAbility('quotations.create_standalone', $this->quotationScope());
+
         $this->resetForm();
         $this->itemRows = [$this->blankItemRow()];
         $this->dispatch('open-modal', 'quotation-form-modal');
@@ -132,6 +137,8 @@ trait ManagesQuotations
     /** Raised straight from an approved requisition: scope and context copied. */
     public function openAddFromRequisition(int $requisitionId): void
     {
+        $this->authorizeAbility('quotations.create', $this->quotationScope());
+
         $requisition = $this->requisitionQuery()->with('items')->findOrFail($requisitionId);
 
         abort_unless($requisition->canBeQuoted(), 403);
@@ -167,6 +174,8 @@ trait ManagesQuotations
     public function openEditModal(int $quotationId): void
     {
         $quotation = $this->scopedQuery()->with(['items', 'quotationVendors.vendor'])->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.edit', $quotation);
 
         abort_unless($quotation->canBeEdited(), 403);
 
@@ -437,6 +446,18 @@ trait ManagesQuotations
 
     public function saveQuotation(): void
     {
+        $this->authorizeAbility(
+            $this->editingQuotationId ? 'quotations.edit' : 'quotations.create',
+            $this->quotationScope(),
+        );
+
+        // N1 again, on the way in rather than only on the button: a round
+        // saved without a requisition behind it is the standalone case,
+        // whichever screen it was started from.
+        if (! $this->editingQuotationId && ! $this->quo_requisition_id) {
+            $this->authorizeAbility('quotations.create_standalone', $this->quotationScope());
+        }
+
         $validated = $this->validate([
             'quo_type' => 'required|in:material,service',
             'quo_title' => 'required|string|max:255',
@@ -727,6 +748,8 @@ trait ManagesQuotations
 
     public function openViewModal(int $quotationId): void
     {
+        $this->authorizeAbility('quotations.view', $this->quotationScope());
+
         $this->viewingQuotationId = $this->scopedQuery()->findOrFail($quotationId)->id;
         $this->sendMethod = 'email';
         $this->resetErrorBag();
@@ -745,6 +768,8 @@ trait ManagesQuotations
      */
     public function markAsSent(int $quotationId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $quotation = $this->scopedQuery()->with('quotationVendors')->findOrFail($quotationId);
 
         if (! $quotation->isOpen()) {
@@ -818,6 +843,8 @@ trait ManagesQuotations
     /** The e-mail composer, prefilled and with every invitable vendor ticked. */
     public function openSendModal(int $quotationId, ?int $onlyVendorRowId = null): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $quotation = $this->scopedQuery()->with(['quotationVendors.vendor', 'items'])->findOrFail($quotationId);
 
         $this->viewingQuotationId = $quotation->id;
@@ -861,6 +888,8 @@ trait ManagesQuotations
     /** Re-send to one vendor — a lost e-mail, a corrected address. */
     public function resendRfq(int $quotationVendorId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $row = $this->quotationVendorQuery()->findOrFail($quotationVendorId);
 
         $this->openSendModal($row->quotation_id, $row->id);
@@ -885,6 +914,8 @@ trait ManagesQuotations
      */
     public function sendRfq(int $quotationId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $quotation = $this->scopedQuery()->with(['items', 'quotationVendors.vendor', 'jobSite', 'project'])->findOrFail($quotationId);
 
         // A cancelled or converted round is closed; nothing more goes out.
@@ -1045,6 +1076,8 @@ trait ManagesQuotations
     /** A vendor who says they will not bid. */
     public function declineVendor(int $quotationVendorId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $row = $this->quotationVendorQuery()->with('quotation')->findOrFail($quotationVendorId);
 
         if ($row->status !== 'invited' || ! $row->quotation?->isOpen()) {
@@ -1059,6 +1092,8 @@ trait ManagesQuotations
     /** Undo a decline — vendors change their mind. */
     public function reinviteVendor(int $quotationVendorId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $row = $this->quotationVendorQuery()->with('quotation')->findOrFail($quotationVendorId);
 
         if ($row->status !== 'declined' || ! $row->quotation?->isOpen()) {
@@ -1070,9 +1105,9 @@ trait ManagesQuotations
 
     public function cancelQuotation(int $quotationId): void
     {
-        $this->authorizeReview();
-
         $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.edit', $quotation);
 
         if (! $quotation->canBeCancelled()) {
             return;
@@ -1089,9 +1124,9 @@ trait ManagesQuotations
 
     public function deleteQuotation(int $quotationId): void
     {
-        $this->authorizeAdmin();
-
         $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.delete', $quotation);
 
         if (! $quotation->canBeDeleted()) {
             return;
@@ -1109,10 +1144,32 @@ trait ManagesQuotations
         session()->flash('message', __('Quotation deleted.'));
     }
 
-    /** Cancelling a round is a reviewer's call, like approving a requisition. */
-    protected function authorizeReview(): void
+    /** The project or job site this page writes to. */
+    protected function quotationScope(): JobSite|Project
     {
-        abort_unless(auth()->user()?->canReviewRequisitions(), 403, 'Manager or administrator access required.');
+        return $this->contextJobSite() ?? $this->contextProject();
+    }
+
+    /**
+     * N3 (docs/permissions-notes.md): whoever keyed a vendor's prices in must
+     * not be the one who picks that vendor as the winner.
+     *
+     * It is about the **winning** proposals only. Typing in three vendors'
+     * numbers is administration; choosing the one you typed is where a vendor
+     * relationship could be favoured. `created_by` is deliberately not used —
+     * that records who invited the vendor, a different act.
+     *
+     * Not a hard stop: `quotations.award_own` lifts it, exactly as
+     * `requisitions.approve_own` does for M7's rule.
+     *
+     * @param  \Illuminate\Support\Collection  $winningRows
+     */
+    public function isSelfAward($winningRows): bool
+    {
+        $userId = auth()->id();
+
+        return $userId !== null
+            && $winningRows->contains(fn ($row) => $row->priced_by === $userId);
     }
 
     // =========================================================================
@@ -1127,6 +1184,8 @@ trait ManagesQuotations
     /** Record a round of haggling: the same form, plus the reason. */
     public function openNegotiationModal(int $quotationVendorId): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $row = $this->quotationVendorQuery()->with('quotation')->findOrFail($quotationVendorId);
 
         // There has to be an offer before there is anything to negotiate.
@@ -1137,6 +1196,8 @@ trait ManagesQuotations
 
     public function openProposalModal(int $quotationVendorId, string $mode = 'entry'): void
     {
+        $this->authorizeAbility('quotations.edit', $this->quotationScope());
+
         $row = $this->quotationVendorQuery()
             ->with(['vendor', 'items', 'quotation.items'])
             ->findOrFail($quotationVendorId);
@@ -1260,6 +1321,8 @@ trait ManagesQuotations
             ->with(['vendor', 'items', 'quotation.items'])
             ->findOrFail($this->pricingVendorRowId);
 
+        $this->authorizeAbility('quotations.edit', $row->quotation);
+
         abort_unless($this->proposalCanBeEntered($row), 403);
 
         // A negotiation with no reason on it is just a price change nobody
@@ -1378,6 +1441,10 @@ trait ManagesQuotations
                 'discount_amount' => (float) ($validated['prop_discount_amount'] ?: 0),
                 'tax_amount' => (float) ($validated['prop_tax_amount'] ?: 0),
                 'notes' => $validated['prop_notes'] ?: null,
+                // Who typed these numbers, which is what the self-award rule
+                // asks about (N3). Overwritten each time, so it names whoever
+                // last touched the figures rather than whoever first did.
+                'priced_by' => auth()->id(),
             ]);
 
             // The first proposal turns the round from waiting into comparing.
@@ -1434,9 +1501,9 @@ trait ManagesQuotations
      */
     public function clearProposal(int $quotationVendorId): void
     {
-        $this->authorizeReview();
-
         $row = $this->quotationVendorQuery()->with('quotation')->findOrFail($quotationVendorId);
+
+        $this->authorizeAbility('quotations.edit', $row->quotation);
 
         if ($row->status !== 'responded') {
             return;
@@ -1523,6 +1590,8 @@ trait ManagesQuotations
 
     public function openComparisonModal(int $quotationId): void
     {
+        $this->authorizeAbility('quotations.view', $this->quotationScope());
+
         $quotation = $this->scopedQuery()->findOrFail($quotationId);
 
         $this->comparingQuotationId = $quotation->id;
@@ -1573,7 +1642,7 @@ trait ManagesQuotations
             ->with(['items', 'quotationVendors.vendor', 'quotationVendors.items'])
             ->findOrFail($quotationId);
 
-        $this->authorizeReview();
+        $this->authorizeAbility('quotations.award', $quotation);
         abort_unless($quotation->canBeAwarded(), 403);
 
         $this->resetAwardForm();
@@ -1628,11 +1697,11 @@ trait ManagesQuotations
             return;
         }
 
-        $this->authorizeReview();
-
         $quotation = $this->scopedQuery()
             ->with(['items', 'quotationVendors.vendor', 'quotationVendors.items'])
             ->findOrFail($this->awardingQuotationId);
+
+        $this->authorizeAbility('quotations.award', $quotation);
 
         abort_unless($quotation->canBeAwarded(), 403);
 
@@ -1677,6 +1746,21 @@ trait ManagesQuotations
 
             return;
         }
+
+        // The ceiling and the self-award rule are both about the winner that
+        // was just chosen, so they are checked here rather than when the form
+        // opened — the choice did not exist then.
+        $winningRows = $awardable->only($winners['vendor_row_ids']);
+
+        if ($this->isSelfAward($winningRows)) {
+            $this->authorizeAbility('quotations.award_own', $quotation);
+        }
+
+        $this->authorizeAbilityWithin(
+            'quotations.award',
+            (int) round($quotation->totalForProposedAward($winners, $awardable) * 100),
+            $quotation,
+        );
 
         $user = auth()->user();
 
@@ -1814,11 +1898,18 @@ trait ManagesQuotations
      */
     public function convertAward(int $quotationId): void
     {
-        $this->authorizeReview();
-
         $quotation = $this->scopedQuery()
             ->with(['items', 'quotationVendors.vendor', 'quotationVendors.items'])
             ->findOrFail($quotationId);
+
+        // A service round becomes a contract — a schedule of future payments —
+        // and anything else becomes one purchase order. The owner holds those
+        // apart, so they are two grants, and both obey the ceiling.
+        $this->authorizeAbilityWithin(
+            $quotation->convertsToContract() ? 'quotations.convert_contract' : 'quotations.convert',
+            $quotation->awardedTotalInCents(),
+            $quotation,
+        );
 
         abort_unless($quotation->canBeConverted(), 403);
 
@@ -2127,9 +2218,10 @@ trait ManagesQuotations
      */
     public function revokeAward(int $quotationId): void
     {
-        $this->authorizeReview();
-
         $quotation = $this->scopedQuery()->with(['items', 'quotationVendors'])->findOrFail($quotationId);
+
+        // Undoing an award is the same authority as making one.
+        $this->authorizeAbility('quotations.award', $quotation);
 
         if (! $quotation->canRevokeAward()) {
             return;

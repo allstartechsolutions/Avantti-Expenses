@@ -296,7 +296,14 @@ class Expense extends Model
      */
     public function isEditableBy(?User $user): bool
     {
-        return $this->isEditable() || ($user?->is_admin ?? false);
+        if ($this->isEditable()) {
+            return true;
+        }
+
+        // Settled money is a grant of its own — `expenses.edit_paid` — rather
+        // than a hard-coded administrator check.
+        return $user !== null
+            && app(\App\Services\PermissionResolver::class)->allows($user, 'expenses.edit_paid', $this);
     }
 
     /**

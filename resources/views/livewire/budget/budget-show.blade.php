@@ -1,3 +1,9 @@
+@php
+    // A write to the PLAN needs the grant AND an unlocked budget. Read the two
+    // together everywhere, so a locked budget never offers a button that the
+    // server would refuse.
+    $planUnlocked = ! $budget->isLocked();
+@endphp
 <div>
     <!-- Page Header -->
     <div class="mb-8">
@@ -22,15 +28,66 @@
                     icon="eye">
                     {{ __('Cost Grid') }}
                 </x-ui.button>
-                <x-ui.button
-                    variant="primary"
-                    href="{{ route('budgets.edit', $budget->id) }}"
-                    icon="edit">
-                    {{ __('Edit Budget') }}
-                </x-ui.button>
+                @can('budget.lock', $budget)
+                    @if($budget->isLocked())
+                        <x-ui.button
+                            variant="warning"
+                            wire:click="unlockBudget"
+                            wire:confirm="{{ __('Reopen this budget? Its cost codes and planned amounts become editable again, and the change is recorded.') }}">
+                            {{ __('Unlock') }}
+                        </x-ui.button>
+                    @else
+                        <x-ui.button
+                            variant="secondary"
+                            wire:click="lockBudget"
+                            wire:confirm="{{ __('Lock this budget? Its cost codes and planned amounts stop changing. Expenses, purchase orders and change orders carry on as normal.') }}">
+                            {{ __('Lock') }}
+                        </x-ui.button>
+                    @endif
+                @endcan
+                @if(! $budget->isLocked())
+                    @can('budget.edit', $budget)
+                        <x-ui.button
+                            variant="primary"
+                            href="{{ route('budgets.edit', $budget->id) }}"
+                            icon="edit">
+                            {{ __('Edit Budget') }}
+                        </x-ui.button>
+                    @endcan
+                @endif
             </div>
         </div>
     </div>
+
+    {{-- A locked budget says so, and says what is still moving underneath it. --}}
+    @if($budget->isLocked())
+        <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+            <div class="flex items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <div class="text-sm">
+                    <p class="font-semibold text-amber-800 dark:text-amber-300">
+                        {{ __('This budget is locked.') }}
+                        @if($budget->lockedBy)
+                            <span class="font-normal">
+                                {{ __('by :name on :date', [
+                                    'name' => $budget->lockedBy->name,
+                                    'date' => $budget->locked_at?->format('M d, Y'),
+                                ]) }}
+                            </span>
+                        @endif
+                    </p>
+                    <p class="mt-1 text-amber-700 dark:text-amber-400">
+                        {{ __('Its cost codes and planned amounts are fixed. Expenses, purchase orders and change orders still code to it, and the figures below keep updating.') }}
+                        @cannot('budget.lock', $budget)
+                            {{ __('Ask somebody who can unlock it if the plan needs to change.') }}
+                        @endcannot
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Success Message -->
     @if (session()->has('message'))
@@ -111,13 +168,17 @@
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Cost Codes') }}</h3>
-                    <x-ui.button
-                        variant="primary"
-                        size="sm"
-                        wire:click="openAddForm()"
-                        icon="plus">
-                        {{ __('Add Cost Code') }}
-                    </x-ui.button>
+                    @if($planUnlocked)
+                        @can('budget.create', $budget)
+                            <x-ui.button
+                                variant="primary"
+                                size="sm"
+                                wire:click="openAddForm()"
+                                icon="plus">
+                                {{ __('Add Cost Code') }}
+                            </x-ui.button>
+                        @endcan
+                    @endif
                 </div>
 
                 <div class="p-6">
@@ -147,7 +208,9 @@
                                                 'item' => $parentItem,
                                                 'size' => 'parent',
                                             ])
+                                            @if($planUnlocked)
                                             <div class="flex items-center gap-1">
+                                                @can('budget.edit', $budget)
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
@@ -156,6 +219,8 @@
                                                     title="{{ $parentItem->is_default ? 'Clear default cost code' : 'Set as default cost code' }}"
                                                     class="{{ $parentItem->is_default ? 'text-amber-500 hover:text-amber-600' : '' }}">
                                                 </x-ui.button>
+                                                @endcan
+                                                @can('budget.create', $budget)
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
@@ -163,6 +228,8 @@
                                                     icon="plus"
                                                     title="{{ __('Add child code') }}">
                                                 </x-ui.button>
+                                                @endcan
+                                                @can('budget.edit', $budget)
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
@@ -170,7 +237,9 @@
                                                     icon="edit"
                                                     title="{{ __('Edit') }}">
                                                 </x-ui.button>
+                                                @endcan
                                                 @if($parentItem->children->count() === 0)
+                                                    @can('budget.delete', $budget)
                                                     <x-ui.button
                                                         variant="ghost"
                                                         size="sm"
@@ -180,8 +249,10 @@
                                                         title="{{ __('Delete') }}"
                                                         class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                     </x-ui.button>
+                                                    @endcan
                                                 @endif
                                             </div>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -210,7 +281,9 @@
                                                             'item' => $childItem,
                                                             'size' => 'child',
                                                         ])
+                                                        @if($planUnlocked)
                                                         <div class="flex items-center gap-1">
+                                                            @can('budget.edit', $budget)
                                                             <x-ui.button
                                                                 variant="ghost"
                                                                 size="sm"
@@ -226,6 +299,8 @@
                                                                 icon="edit"
                                                                 title="{{ __('Edit') }}">
                                                             </x-ui.button>
+                                                            @endcan
+                                                            @can('budget.delete', $budget)
                                                             <x-ui.button
                                                                 variant="ghost"
                                                                 size="sm"
@@ -235,7 +310,9 @@
                                                                 title="{{ __('Delete') }}"
                                                                 class="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                                                             </x-ui.button>
+                                                            @endcan
                                                         </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -280,15 +357,21 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No cost codes yet') }}</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding cost codes to this budget.') }}</p>
-                            <div class="mt-6">
-                                <x-ui.button
-                                    variant="primary"
-                                    wire:click="openAddForm()"
-                                    icon="plus">
-                                    {{ __('Add Cost Code') }}
-                                </x-ui.button>
-                            </div>
+                            @if($planUnlocked && auth()->user()->can('budget.create', $budget))
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding cost codes to this budget.') }}</p>
+                                <div class="mt-6">
+                                    <x-ui.button
+                                        variant="primary"
+                                        wire:click="openAddForm()"
+                                        icon="plus">
+                                        {{ __('Add Cost Code') }}
+                                    </x-ui.button>
+                                </div>
+                            @elseif(! $planUnlocked)
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('This budget is locked and has no cost codes. Unlock it to build the plan.') }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('No cost codes yet. You can see this budget but not build it — ask an administrator if that is wrong.') }}</p>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -358,4 +441,31 @@
     </div>
 
     @include('livewire.budget.partials.item-modal')
+
+    {{-- Every freeze and reopen, kept: a baseline that can be reopened is only
+         worth having if reopening is on the record. --}}
+    @if($budget->lockHistories->isNotEmpty())
+        <div class="mt-8 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+            <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                {{ __('Lock history') }}
+            </h3>
+            <ul class="space-y-2">
+                @foreach($budget->lockHistories as $entry)
+                    <li class="flex flex-wrap items-baseline gap-x-2 text-sm">
+                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium
+                            {{ $entry->isLock()
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                                : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' }}">
+                            {{ $entry->label() }}
+                        </span>
+                        <span class="text-slate-700 dark:text-slate-300">{{ $entry->user?->name ?? __('Unknown') }}</span>
+                        <span class="text-slate-400 dark:text-slate-500">{{ $entry->created_at?->format('M d, Y H:i') }}</span>
+                        @if($entry->reason)
+                            <span class="w-full text-xs text-slate-500 dark:text-slate-400">{{ $entry->reason }}</span>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 </div>

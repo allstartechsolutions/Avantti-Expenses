@@ -162,6 +162,129 @@ class PurchaseOrder extends Model
         return $this->status === 'cancelled';
     }
 
+    // =========================================================================
+    // RECEIVING (M9)
+    //
+    // Approving an order commits the money; receiving it records that the
+    // goods turned up. Two different acts, done by two different people on a
+    // real site, so `purchase-orders.receive` is held apart from
+    // `purchase-orders.approve`.
+    //
+    // Part-deliveries are the normal case, so what has arrived is tracked per
+    // line and an order is only "received" when every line is.
+    // =========================================================================
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderReceipt::class)->latest('received_at');
+    }
+
+    /** Only an approved order can take delivery, and only until it is complete. */
+    public function canBeReceived(): bool
+    {
+        return $this->isApproved() && ! $this->isFullyReceived();
+    }
+
+    public function isFullyReceived(): bool
+    {
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        return $items->isNotEmpty() && $items->every(fn ($item) => $item->isFullyReceived());
+    }
+
+    public function hasAnyReceipt(): bool
+    {
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        return $items->contains(fn ($item) => (float) $item->received_quantity > 0);
+    }
+
+    /** awaiting | partial | received — null while the order is not approved. */
+    public function receiptStatus(): ?string
+    {
+        if (! $this->isApproved()) {
+            return null;
+        }
+
+        if ($this->isFullyReceived()) {
+            return 'received';
+        }
+
+        return $this->hasAnyReceipt() ? 'partial' : 'awaiting';
+    }
+
+    public function receiptStatusLabel(): ?string
+    {
+        return match ($this->receiptStatus()) {
+            'received' => __('Received'),
+            'partial' => __('Partially received'),
+            'awaiting' => __('Awaiting delivery'),
+            default => null,
+        };
+    }
+
+    /**
+     * Record one delivery.
+     *
+     * @param  array<int, float>  $quantities  Ordered-line id => quantity that arrived.
+     * @return PurchaseOrderReceipt|null  Null when nothing usable was passed.
+     */
+    public function recordReceipt(
+        ?User $user,
+        array $quantities,
+        ?string $receivedOn = null,
+        ?string $note = null,
+    ): ?PurchaseOrderReceipt {
+        $items = $this->items()->get()->keyBy('id');
+        $accepted = [];
+
+        foreach ($quantities as $itemId => $quantity) {
+            $item = $items->get((int) $itemId);
+            $quantity = round((float) $quantity, 2);
+
+            if (! $item || $quantity <= 0) {
+                continue;
+            }
+
+            // Never book in more than is outstanding: an over-delivery is a
+            // conversation with the supplier, not a bigger order.
+            $accepted[$item->id] = min($quantity, $item->outstandingQuantity());
+        }
+
+        $accepted = array_filter($accepted, fn ($quantity) => $quantity > 0);
+
+        if ($accepted === []) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($user, $accepted, $receivedOn, $note, $items) {
+            $receipt = $this->receipts()->create([
+                'received_at' => $receivedOn ?: now()->toDateString(),
+                'received_by' => $user?->id,
+                'note' => $note ?: null,
+            ]);
+
+            foreach ($accepted as $itemId => $quantity) {
+                $receipt->lines()->create([
+                    'purchase_order_item_id' => $itemId,
+                    'quantity' => $quantity,
+                ]);
+
+                $item = $items->get($itemId);
+                $item->received_quantity = round((float) $item->received_quantity + $quantity, 2);
+                $item->save();
+            }
+
+            return $receipt;
+        });
+    }
+
+    /** What approving this order commits, in cents, for an approval ceiling. */
+    public function totalInCents(): int
+    {
+        return (int) round((float) $this->total_amount * 100);
+    }
+
     public function canBeEdited(): bool
     {
         // Draft and rejected POs can be edited

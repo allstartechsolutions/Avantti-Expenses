@@ -727,7 +727,7 @@
                                                             icon="edit">
                                                             {{ __('Edit') }}
                                                         </x-ui.button>
-                                                        @admin
+                                                        @can('projects.delete', $project)
                                                         <x-ui.button
                                                             variant="danger"
                                                             size="sm"
@@ -735,7 +735,7 @@
                                                             icon="trash">
                                                             {{ __('Delete') }}
                                                         </x-ui.button>
-                                                        @endadmin
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>
@@ -809,12 +809,14 @@
                             <option value="cancelled">{{ __('Cancelled') }}</option>
                         </select>
                     </div>
-                    <x-ui.button
-                        variant="primary"
-                        icon="plus"
-                        href="{{ route('expenses.project.create', $project) }}">
-                        {{ __('Add Expense') }}
-                    </x-ui.button>
+                    @can('expenses.create', $project)
+                        <x-ui.button
+                            variant="primary"
+                            icon="plus"
+                            href="{{ route('expenses.project.create', $project) }}">
+                            {{ __('Add Expense') }}
+                        </x-ui.button>
+                    @endcan
                 </div>
 
                 <!-- Summary Cards -->
@@ -824,7 +826,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-white/80">{{ __('Total Expenses') }}</p>
-                                <p class="text-2xl font-bold mt-1">{{ Number::currency($totalExpensesAmount, config('app.currency'), config('app.locale')) }}</p>
+                                <x-ui.money class="block text-2xl font-bold mt-1" :amount="$totalExpensesAmount" :scope="$project" rollup />
                             </div>
                             <div class="bg-white/10 rounded-full p-3">
                                 <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -839,7 +841,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Paid') }}</p>
-                                <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">{{ Number::currency($totalPaidAmount, config('app.currency'), config('app.locale')) }}</p>
+                                <x-ui.money class="block text-2xl font-bold mt-1 text-green-600 dark:text-green-400" :amount="$totalPaidAmount" :scope="$project" rollup />
                             </div>
                             <div class="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
                                 <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -853,7 +855,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Pending') }}</p>
-                                <p class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{{ Number::currency($totalPendingAmount, config('app.currency'), config('app.locale')) }}</p>
+                                <x-ui.money class="block text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400" :amount="$totalPendingAmount" :scope="$project" rollup />
                             </div>
                             <div class="bg-amber-100 dark:bg-amber-900/20 rounded-full p-3">
                                 <svg class="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -947,6 +949,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </button>
+                                                    @can('expenses.edit', $expense)
                                                     <a
                                                         href="{{ route('expenses.edit', $expense->id) }}"
                                                         class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]"
@@ -955,7 +958,9 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                         </svg>
                                                     </a>
+                                                    @endcan
                                                     @if($expense->status !== 'paid' && $expense->isOneTime())
+                                                        @can('expenses.pay', $expense)
                                                         @if($markPaidType === 'expense' && $markPaidId === $expense->id)
                                                             <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                                             <button
@@ -984,8 +989,9 @@
                                                                 </svg>
                                                             </button>
                                                         @endif
+                                                        @endcan
                                                     @elseif($expense->status === 'paid' && $expense->isOneTime())
-                                                        @admin
+                                                        @can('expenses.edit_paid', $expense)
                                                         <button
                                                             wire:click="unmarkExpensePaid({{ $expense->id }})"
                                                             wire:confirm="{{ __('Revert this expense to unpaid?') }}"
@@ -995,9 +1001,9 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v1m-15-6l4-4m-4 4l4 4"></path>
                                                             </svg>
                                                         </button>
-                                                        @endadmin
+                                                        @endcan
                                                     @endif
-                                                    @admin
+                                                    @can('expenses.delete', $expense)
                                                     <button
                                                         wire:click="deleteExpense({{ $expense->id }})"
                                                         wire:confirm="{{ __('Are you sure you want to delete this expense?') }}"
@@ -1007,7 +1013,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
                                                     </button>
-                                                    @endadmin
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>
@@ -1023,15 +1029,19 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No expenses') }}</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding an expense.') }}</p>
-                            <div class="mt-6">
-                                <x-ui.button
-                                    variant="primary"
-                                    icon="plus"
-                                    href="{{ route('expenses.project.create', $project) }}">
-                                    {{ __('Add Expense') }}
-                                </x-ui.button>
-                            </div>
+                            @can('expenses.create', $project)
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by adding an expense.') }}</p>
+                                <div class="mt-6">
+                                    <x-ui.button
+                                        variant="primary"
+                                        icon="plus"
+                                        href="{{ route('expenses.project.create', $project) }}">
+                                        {{ __('Add Expense') }}
+                                    </x-ui.button>
+                                </div>
+                            @else
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Nothing has been recorded here yet. You can see expenses on this project but not add them — ask an administrator if that is wrong.') }}</p>
+                            @endcan
                         </div>
                     </div>
                 @endif
@@ -1076,14 +1086,17 @@
                         </select>
                     </div>
 
+                    @can('change-orders.create', $project)
                     <x-ui.button variant="primary" icon="plus" wire:click="openChangeOrderCreateModal">
                         {{ __('Add Change Order') }}
                     </x-ui.button>
+                    @endcan
                 </div>
 
                 @include('livewire.change-order.partials.summary-cards', ['summary' => $changeOrderSummary])
 
                 @include('livewire.change-order.partials.list', [
+                    'scope' => $project,
                     'changeOrders' => $changeOrders,
                     'showLocationColumn' => true,
                     'hasFilters' => $changeOrderSearch || $changeOrderStatusFilter !== 'all' || $changeOrderLocationFilter !== 'all',

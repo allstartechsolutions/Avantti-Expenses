@@ -114,23 +114,24 @@ class PermissionResolverTest extends TestCase
     {
         $employee = $this->user('employee');
 
-        // expenses is unswept by default, and the employee role holds
-        // expenses.create today.
-        $this->assertFalse(AbilityCatalog::isSwept('expenses.create'));
-        $this->assertTrue($this->resolver->allows($employee, 'expenses.create', $this->project));
-        $this->assertFalse($this->resolver->allows($employee, 'expenses.delete', $this->project));
+        // daily-reports is unswept, and the employee role holds
+        // daily-reports.create today. (expenses was the example until M4 swept
+        // it, income until M5, requisitions until M7, quotations until M8,
+        // documents until M12.)
+        $this->assertFalse(AbilityCatalog::isSwept('daily-reports.create'));
+        $this->assertTrue($this->resolver->allows($employee, 'daily-reports.create', $this->project));
     }
 
     public function test_an_unswept_area_denies_a_confined_user_outright(): void
     {
         $employee = $this->user('employee', ['access_scope' => AccessScope::ASSIGNED]);
 
-        $this->member($employee, $this->project, ['expenses.view', 'expenses.create']);
+        $this->member($employee, $this->project, ['daily-reports.view', 'daily-reports.create']);
 
         // Confined, and the area has not had its pass: denied even though the
         // membership grants it. This is what stops a half-converted module
         // leaking to somebody who is supposed to be confined.
-        $this->assertFalse($this->resolver->allows($employee, 'expenses.create', $this->project));
+        $this->assertFalse($this->resolver->allows($employee, 'daily-reports.create', $this->project));
     }
 
     public function test_a_guest_is_denied_by_an_unswept_area_whatever_the_column_says(): void
