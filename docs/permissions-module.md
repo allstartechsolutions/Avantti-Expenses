@@ -1,48 +1,165 @@
 # Permissions module — as built
 
-**Status (2026-08-20): the engine is complete (E1–E4) and three module passes are done —
-M1 Access & Users, M2 Project & Job Site shell, M3 Company & Settings. Seven of thirty areas
-are enforced by the new rules: `users`, `access`, `team`, `project`, `projects`, `company`,
-`settings`.**
+**Status: COMPLETE and deployed, 2026-08-21.** Engine E1–E4, eighteen module passes M1–M18,
+and three closing phases F0–F2. **All 30 areas and 147 abilities are enforced.** The legacy
+bridge that made the rollout possible has been deleted. Only **F3 — review and improvements**
+remains, and its backlog is in `docs/review-and-improvements.md`.
 
-What that means in practice today:
+This file records **what is in the code**, one section per step, in the order it was built.
+`docs/permissions-module-plan.md` records **why**. If you are adding a new module and want to
+know what to do about permissions, neither of these is the right file — read
+**`docs/permissions-for-new-modules.md`**.
 
-| Works now | Does not work yet |
+---
+
+## What the module is, in one page
+
+Three flat roles (`is_admin` / `is_manager`) became a catalogue of **30 areas and 147
+abilities**, granted four ways:
+
+| Granted on | Covers | Screen |
+|---|---|---|
+| A **role** | Everything, company-wide | Settings → Roles & Access |
+| A **person** | Company-wide exceptions, added or taken away (F0) | Users → *(person)* → Access |
+| A **membership** on one project or job site | That project or site only, and it *replaces* the role there | The project's Team tab |
+| A **template** | A starting point for memberships ("Site Supervisor", "Procurement") | Roles & Access → Templates |
+
+Plus two settings that cut across all four: **`access_scope`** (company-wide, or confined to
+the projects you are added to) and **`can_see_money`** (whether roll-ups are shown), each
+settable on a role and overridable on a person.
+
+**One class answers every question.** `PermissionResolver::allows($user, $ability, $scope)`,
+in this order:
+
+1. No user, or a suspended one → no.
+2. The customer has the module switched off → no, for everybody.
+3. Administrator → yes.
+4. A company-wide ability → the person's own exceptions, then their role (`companyAllows()`).
+5. Scoped to a project or job site → the membership there, if any. **A membership replaces
+   the role on the scope it covers**; specific beats general, and a job-site membership beats
+   its project's.
+6. No membership → a confined person is refused; anybody else falls back to step 4's answer.
+
+Money masking and approval ceilings sit on top of that answer, never inside it.
+
+### The rules that came out of building it
+
+Written down because each one was learned by getting it wrong first:
+
+1. **Hiding a button is not protection.** The `wire:click` behind it can be invoked directly,
+   so every action method guards itself. The view's `@can` is cosmetics.
+2. **Reproduce first, then make it revocable.** Every pass reproduced the existing behaviour
+   exactly and made it a grant. A pass that widened or narrowed access without saying so was
+   a bug, and `LegacyBehaviourTest` is what caught them.
+3. **`can_see_money` hides roll-ups, not records.** A project total is the company's financial
+   picture; the amount on an expense somebody filed is not a secret from them.
+4. **Never trust an id from the browser.** Half the holes this module closed were a record
+   fetched by an id and then acted on without checking which project it belonged to.
+5. **A child component's `mount()` may only ask for what its parent already required** (P30).
+   Guarding an embedded panel more tightly than the page it sits on 403s the whole page.
+6. **MySQL-only SQL silently means untested.** `FIELD()` and `DATE_FORMAT` made three screens
+   500 on sqlite, which is exactly why no test had ever rendered them.
+7. **A wording that promises what the code does not enforce is a bug.** Screens that recorded
+   an unenforced setting said so, and the notices removed themselves as the passes landed.
+
+---
+
+## What was built, step by step
+
+### The engine
+
+| Step | What it added |
 |---|---|
-| Somebody confined sees only the projects they are on — in the list, the search, the dashboard and by URL | What is *inside* a project: expenses, budget, documents, tasks, reports all still ignore memberships |
-| A project or job site they are not on answers 403 on every tab and PDF | A confined member sees only Overview and Job Sites inside a project, because the other tabs' modules are unconverted |
-| Roles, templates, memberships, invitations, guests, the Users screen, Company and Settings | Payments, contract payments, batches, estimates and invoices are still open to anybody signed in |
+| **E1** | `config/permissions.php` — the catalogue. Seven tables: `role_abilities`, `permission_templates`, `permission_template_abilities`, `memberships`, `membership_abilities`, `user_invitations`, `permission_audits`. `access_scope` on users and roles. Changed nothing on screen. |
+| **E2** | `PermissionResolver`, `Gate::before`, the `AuthorizesAbility` trait, the `ability:` route middleware, `EnsureScopeIsVisible`, the `@money` directive. |
+| **E3** | The left menu generated from the catalogue by `Navigation`, so an entry appears because its ability is held and its module is on — never because a Blade file remembered to hide it. |
+| **E4** | Settings → Roles & Access: the role editor, the ability matrix, templates, and the audit trail. |
 
-Every screen that records a permission which is not yet enforced says so on the screen, and
-those notices remove themselves as each pass lands.
+### The module passes
 
-The plan is `docs/permissions-module-plan.md`; this file records what is actually in the
-code, and grows one section per step. Read the plan for *why*, this for *what is there*.
+Each converted one area's screens from role checks to grants, with its own test file.
+
+| Pass | Area | The notable thing about it |
+|---|---|---|
+| **M1** | Access, Users, Team | The module governing itself. `access.manage` hands out every other ability, so it is never in a template. |
+| **M2** | Project & Job Site shell | `Project::visibleTo()` and `JobSite::visibleTo()` — the scoping every later pass leans on. |
+| **M3** | Company & Settings | Every signed-in person could **edit the company record**; now a grant. |
+| **M4** | Expenses | The money rule settled: roll-ups masked, records not. `scopeOf()` added — walks any model to its governing project. |
+| **M5** | Income | Split mode's guard trap: leaving split mode called `clearAllShares()`, so guarding it refused people on the way *out*. |
+| **M6** | Budget & Cost Codes | Budget locking built (freeze the plan, keep the actuals live). **The owner's standing rule set here: no ability may be reachable only through a role.** |
+| **M7** | Requisitions | `requisitions.approve_own` — self-approval, blocked by default, liftable for a company small enough. First `FIELD()` (MySQL-only) found. |
+| **M8** | Quotations | Standalone rounds, `award_own`, PO-vs-contract conversion split into two toggles. |
+| **M9** | Purchase Orders | Per-line receiving built. Four components had **zero guards**. |
+| **M10** | Change Orders | `approve_own` and `unapprove`: undoing is narrower than doing. |
+| **M11** | Contracts & Payments | **Fifteen unguarded actions**, the largest single find in the module. |
+| **M12** | Documents | `Document::isVisibleTo()` returned **true for every non-internal document to anybody**. Rewritten. |
+| **M13** | Tasks & Meetings | A task's scope is the task's, not the screen's. The old inline guards were *tighter* than the seeded abilities, so the pass would have silently widened access — caught by `LegacyBehaviourTest`. |
+| **M14** | Daily Reports | `edit_locked` for reopening a closed report. Second MySQL-only find. |
+| **M15** | Estimates & Invoices | The public pay link proved to be a token boundary, not a permission question. **P30 learned here.** |
+| **M16** | Reference data | Clients, vendors, catalog — one pass, three screens. |
+| **M17** | Reports | The six company reports came off one `admin` middleware onto **one grant each**. P28 fixed: two reports had never been rendered by a test because their SQL was MySQL-only. |
+| **M18** | Dashboard & search | Two abilities — `view` opens the page, `overview` fills it — and every card obeys the module it summarises. "Your dashboard is coming soon" replaced with a real screen. |
+
+### The closing phases
+
+| Phase | What it did |
+|---|---|
+| **F0** | **Per-person access.** `user_abilities` (add *and* take away), `roles.approval_limit` + `users.approval_limit`, `companyAllows()` in the resolver, the Users → Access screen. Closed P6, P13, P19, P34. |
+| **F1** | **Confinement live.** The criterion proved against the router itself (49 routes), the effective-access inspector, the "who can approve what" report. Capped `payments.pay` — the last way round an approval ceiling. |
+| **F2** | **The bridge removed.** `documentation` swept last; the bridge branch, `AuthorizesAdmin`, `@admin`, the `admin` middleware and four role helpers on `User` deleted. Found `Attachments` had **no upload guard at all**. |
+| **F3** | Review and improvements. **Not done** — see `docs/review-and-improvements.md`. |
 
 ---
 
 ## Deploying this
-
-Every step of this module is its own deploy. The command is always the same pair:
 
 ```bash
 php artisan migrate --force
 php artisan permissions:sync
 ```
 
-Both are safe to run again. `permissions:sync` creates what is missing, never overwrites a
-template or role somebody has edited (unless `--force`), and finishes by printing where the
-build is up to:
+Both are safe to run again. **25 migrations** belong to this work. `permissions:sync` creates
+what is missing and never overwrites a template or a role somebody has edited (unless
+`--force`); it offers a newly added area's abilities to the seeded roles **once**, recorded on
+the role itself, because "holds nothing from this area" also describes an area an
+administrator deliberately emptied.
+
+It finishes by printing where the build is up to:
 
 ```
-Catalogue: 29 areas, 133 abilities. Swept: 0/29.
-Still on the legacy bridge: dashboard, company, users, …
+Catalogue: 30 areas, 147 abilities. Swept: 30/30.
 Grants: 188 role, 121 template, 58 membership.
 ```
 
-**Deploying E1 changes nothing on screen.** No route, view, component or existing guard was
-touched. The tables are filled and the catalogue is declared, but every area is still
-`swept => false`, so the application keeps making the decisions it makes today.
+### What a deploy does *not* change
+
+Nothing, on the day. Every pass reproduced the behaviour it replaced, and the tables start
+empty:
+
+- No `user_abilities` rows → every person answers exactly as their role says.
+- No `approval_limit` anywhere → no ceiling, which is what the application enforced before.
+- `access_scope` null on every user and role → everybody is company-wide, as they were.
+
+Confinement, per-person exceptions and ceilings are things somebody switches on, one person
+at a time.
+
+---
+
+## Test coverage
+
+**31 files, 534 tests, 3,518 assertions** in `tests/Feature/Permissions/`. Four of them are
+bookkeeping rather than feature tests, and they are the ones that caught the real mistakes:
+
+| File | What it pins |
+|---|---|
+| `LegacyBehaviourTest` | Every role answers exactly as it did before. The list of converted areas. |
+| `SecurityStateTest` | What is enforced *today* — an inventory, as assertions. |
+| `PermissionResolverTest` | The decision order itself. |
+| `BridgeRemovedTest` | No role check survives; `is_admin` has not spread past nine places. |
+
+**Four of these had to be rewritten rather than updated** over the course of the module,
+each time because the thing they recorded had stopped being true. That is the sign they were
+doing their job.
 
 ---
 

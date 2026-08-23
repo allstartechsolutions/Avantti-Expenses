@@ -1,20 +1,21 @@
 # Open Items — handoff for the next session
 
-Rewritten **2026-08-20**, after the meetings / minutes / tasks module was built through phase 7
-and the in-app documentation library shipped. Read this first; every finished piece of work has
-its own file (index at the bottom).
+Rewritten **2026-08-21**, after the permissions module was completed and deployed — engine,
+eighteen module passes and the three closing phases. Read this first; every finished piece of
+work has its own file (index at the bottom).
 
 ---
 
 ## 1. State of the repo
 
-- **The working tree is NOT clean.** The permissions module's **M13 (Tasks & Meetings)**,
-  **M14 (Daily Reports)**, **M15 (Estimates & Invoices)**, **M16 (Reference data)** and
-  **M17 (Reports)**, **M18 (Dashboard & search)**, **F0 (per-person access)**, **F1
-  (confinement live)** and **F2 (the bridge removed)** are uncommitted — see §1a below and `docs/permissions-module.md`. The engine and M1–M3
-  are committed at `f95ead5`, and **M4 (Expenses) through M12 (Documents) at `4700912`**.
-  Everything else described in this file is committed. The quotation chain, the document repository, the meetings module, the documentation
-  library and the cost code / change order work are all in.
+- **The permissions module is COMPLETE and DEPLOYED (2026-08-21).** Engine E1–E4, every
+  module pass M1–M18, and the closing phases F0 (per-person access), F1 (confinement live)
+  and F2 (the bridge removed) are all in production. **Only F3 — review and improvements —
+  remains**, and its backlog is in `docs/review-and-improvements.md`. See §1a.
+  **The owner is testing it over the following days**; expect findings to come back.
+- Everything else described in this file is in. The quotation chain, the document repository,
+  the meetings module, the documentation library and the cost code / change order work are all
+  deployed.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
   outstanding at the *phase* level — every screen that exists, works.
 - **Deploy needs:** `php artisan migrate` (47 additive migrations since `985089c`, listed by
@@ -30,12 +31,20 @@ its own file (index at the bottom).
 - **Process rules (user-set):** never commit, never merge, never push — the user does all three.
   Leave finished work in the working tree and report it.
 
-### 1a. Permissions module — in progress (2026-08-21)
+### 1a. Permissions module — COMPLETE and deployed (2026-08-21)
 
-The engine and M1–M3 are committed (`f95ead5`) and **M4 through M12 at `4700912`**;
-**M13 through M18, plus F0, F1 and F2, are in the working tree and uncommitted.**
-It is safe to deploy as it stands: every module that has not had its pass keeps its old rules
-exactly.
+**All 30 areas and 147 abilities are enforced. The legacy bridge is deleted. Only F3
+(review and improvements) is left.**
+
+Deployed with `php artisan migrate --force && php artisan permissions:sync`. **The deploy
+changes nothing on the day**: every pass reproduced the behaviour it replaced, and the new
+tables start empty — no `user_abilities` rows, no `approval_limit` anywhere, `access_scope`
+null on every user and role. Confinement, per-person exceptions and ceilings are things
+somebody switches on, one person at a time.
+
+**If you are adding a NEW module, read `docs/permissions-for-new-modules.md` before writing
+its first screen.** The rule is also in `CLAUDE.md` under *Every Module Ships With Its
+Permissions*.
 
 - **Where it is:** engine complete (E1–E4); passes **M1** Access & Users, **M2** Project &
   Job Site shell, **M3** Company & Settings, **M4** Expenses, **M5** Income,
@@ -238,7 +247,25 @@ exactly.
 - **New ability `tasks.edit_any`** ("change somebody else's task"), because the task guards are
   two layers and reusing `tasks.edit` for the senior half would have collapsed them into one.
   **New ability `meetings.revise`**, for correcting a minute already signed off and mailed out.
-- **Next: F3 — review and improvements.** The last phase. Everything else is built.
+- **Next and last: F3 — review and improvements.** Per `CLAUDE.md`'s standing rule, every
+  module ends with one, and this backlog is worked rather than archived:
+  - **P35 + P37 together** — what a company-wide money area (the six company reports,
+    invoices, estimates) shows a **confined** reader. Nothing limits it today; it only bites
+    once one of those is granted to a confined person, which F1 made possible.
+  - **P39** — on a purchase order, deleting an attachment moved from admin-only to whoever
+    holds `purchase-orders.delete`. Leave it, or give attachments their own grant.
+  - **P36** — `reports.view` / `reports.export` are declared and used nowhere.
+  - **P38** — ~40 catalogue ability names have no pt_BR. The permission matrix and template
+    editor are **the only English left in a pt_BR install**. Half an hour.
+  - **P22 leftovers** — the quotation RFQ + comparison-map PDFs and the contract schedule +
+    measurement PDFs are still `auth`-only. **One line each; no other pass will pick them up.**
+  - The review proper: walk the real screens in both themes, both locales and on a phone;
+    long names, many members, empty and error states.
+- **Documentation of the whole module:** `docs/permissions-module.md` (what was built, step by
+  step, with a one-page summary at the top), `docs/permissions-module-plan.md` (why),
+  `docs/permissions-notes.md` (the notations N1–N9, all closed or decided),
+  `docs/review-and-improvements.md` (P1–P39), and
+  **`docs/permissions-for-new-modules.md` (how to do this for a new module)**.
 - **Two things to decide before F1 (confinement going live), both the same root cause:**
   P6, no per-user company-wide grant; and P13, `approval_limit` has no company-wide home, so a
   company-wide user currently has no ceiling at all.
@@ -484,7 +511,10 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 | **Meetings — the user guide, also published in-app** | `docs/meetings-module-guide.md` |
 | **Documentation module (the in-app library)** | `docs/documentation-module.md` |
 | **Review and Improvements — the standing final phase + the whole backlog** | `docs/review-and-improvements.md` |
-| **Permissions — running notations (nothing built)** | `docs/permissions-notes.md` |
+| **Permissions — HOW TO DO IT FOR A NEW MODULE** | **`docs/permissions-for-new-modules.md`** |
+| Permissions — what was built, step by step (complete, deployed) | `docs/permissions-module.md` |
+| Permissions — the design and why | `docs/permissions-module-plan.md` |
+| Permissions — the notations N1–N9, all closed or decided | `docs/permissions-notes.md` |
 | Quotation module plan (phase 9 next) | `docs/quotation-module-plan.md` |
 | Requisitions — phase 1, as built | `docs/requisition-module.md` |
 | Quotation rounds — phases 2–8, as built | `docs/quotation-module.md` |

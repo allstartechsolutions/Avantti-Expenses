@@ -34,6 +34,42 @@ Concretely, for every feature:
    patterns already in the codebase; when a level (project / job site) gains a UI
    improvement, the other level gains it too.
 
+## Every Module Ships With Its Permissions
+
+**A new module is not finished when its screens work.** The permission module
+(`docs/permissions-module.md`) is complete and deployed: 30 areas, 147 abilities, no role
+checks left anywhere in the application. Anything built from now on joins it **as it is
+built**, never afterwards — retro-fitting permissions onto eighteen modules took a week and
+found forty-odd holes that had been live in production.
+
+**Before writing the first screen of a new module, read
+`docs/permissions-for-new-modules.md`** and copy its checklist into the module's plan. The
+whole of it, in five lines:
+
+1. **Declare the area** in `config/permissions.php` — its `levels` (`global` for a company
+   record, plus `project` / `job_site` for anything that belongs to one), its `money` flag,
+   its actions, and `swept => false` until the rest is done. Nothing exists until it is
+   declared: the Gate refuses an undeclared ability.
+2. **Guard every action method**, not only the destructive ones. Hiding a button is not
+   protection — the `wire:click` behind it is a public endpoint. A route with no `mount()`
+   gets `ability:` middleware instead. **Every PDF controller needs the same grant as its
+   screen**, and every file directory goes into `FileController::authorizeFile()`.
+3. **Filter every list**, with a `visibleTo()` scope. A guard answers "may you open this
+   record?"; only a filter answers "which records may you see?" — and a total across projects
+   somebody cannot open is a leak by aggregate.
+4. **Money through `<x-ui.money>`**, with `rollup` on totals. `can_see_money` hides roll-ups,
+   not records: a project total is the company's financial picture, the amount on an expense
+   somebody filed is not a secret from them.
+5. **Write the test** — reproduced, revocable, scoped, separate — and add the pt_BR strings in
+   the same change. Then flip `swept => true`.
+
+Two rules that hold everywhere and were each learned the hard way:
+
+- **Never act on an id that came from the browser without checking which project it belongs
+  to.** `findOrFail($id)` proves the record exists, not that this person may touch it.
+- **Reproduce first, then make it revocable.** A change that quietly widens or narrows who
+  can do something is a bug even when the new behaviour seems more sensible. Say what moved.
+
 ## Every Module Ends With a Review Phase
 
 **No module is finished when its features are.** Every module gets one extra, explicit

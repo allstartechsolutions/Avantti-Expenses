@@ -10,11 +10,23 @@ feature in hand gets written down here instead — with enough detail that it ca
 up cold — and is then worked during the module's review phase.
 
 **What is in here right now:** the quotation chain rows, the 2026-08-19 code review, the cost
-code / change order rows (phases 1–6, for that module's phase 7), and the meetings rows
-M1–M12 with the write-ups of the ones already done.
+code / change order rows (phases 1–6, for that module's phase 7), the meetings rows M1–M12,
+and **P1–P39 from the permissions module**, which is built and deployed and whose own review
+phase — F3 — is the last thing outstanding on it.
 
-Permission gaps go in `docs/permissions-notes.md` instead; they are a separate decision the
-owner has to take.
+**The permissions module's F3 backlog, in one place** (each has its own entry below):
+
+| | |
+|---|---|
+| **P35 + P37** | What a company-wide money area shows a **confined** reader. Decide them together — they are one question. |
+| **P39** | On a purchase order, deleting an attachment moved from admin-only to whoever holds `purchase-orders.delete`. |
+| **P36** | `reports.view` / `reports.export` are declared and used nowhere. Give them a job or delete them. |
+| **P38** | ~40 catalogue ability names have no pt_BR — the only English left in a pt_BR install. |
+| **P22 tail** | Four PDF controllers still `auth`-only: the quotation RFQ + comparison map, the contract schedule + measurement. **One line each; nothing else will pick them up.** |
+
+`docs/permissions-notes.md` is now closed — it was the design-time list and every notation on
+it is settled. New permission findings come **here**. A **new module** follows
+`docs/permissions-for-new-modules.md` and should not generate any of these in the first place.
 
 **Status key:** `open` (to be worked) · `scheduled` (assigned to a phase) · `won't fix`
 (decided, with the reason) · `done` (with the date).

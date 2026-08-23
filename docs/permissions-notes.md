@@ -1,10 +1,17 @@
 # Permissions — running notations
 
-**Status: N1, N2, N3, N7 and §4b are settled (M7, M8, M10 and M12, 2026-08-21); N5 is half
-closed — the document repository in M12, the PDF controllers still open; N8 needed nothing, the
-check was already in the right place; N4 and N9 are closed by the passes as they land.** This is the place to write down permission
-problems as they are noticed, so the eventual permission work is designed once, from a full
-list, instead of being patched one screen at a time.
+**Status: CLOSED. The permission module was built, and deployed on 2026-08-21.** Every
+notation on this list is settled — N1, N2, N3, N7 and §4b in the module passes; N4 (per-project
+confinement) and N9 (the header search) at F1; N8 needed nothing, the check was already in the
+right place. **N5 is the only one with a tail left:** the document repository half was closed
+in M12, and four PDF controllers — the quotation RFQ and comparison map, the contract schedule
+and measurement — are still `auth`-only and are waiting for F3.
+
+This was the place to write down permission problems as they were noticed, so the work could
+be designed once from a full list instead of being patched one screen at a time. **It worked,
+and the file is now history rather than a backlog.** New findings go to
+`docs/review-and-improvements.md`; new modules follow
+**`docs/permissions-for-new-modules.md`**.
 
 Started 2026-08-19, from the observation that a requisition must be approved before it can
 be quoted — and that the rule only holds if a lesser user cannot go around it.
