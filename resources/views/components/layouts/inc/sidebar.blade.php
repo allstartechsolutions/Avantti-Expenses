@@ -1,11 +1,11 @@
-<aside class="app-sidebar fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-sm"
+<aside class="app-sidebar fixed top-0 left-0 z-40 flex h-screen flex-col transition-all duration-300 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-sm"
        :class="[
                    sidebarOpen || !sidebarCollapsed ? 'sidebar-expanded' : 'sidebar-collapsed',
                    sidebarOpen ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full'
                ]">
 
     <!-- Sidebar Header -->
-    <div class="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-700">
+    <div class="flex shrink-0 items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-700">
         <div class="flex items-center space-x-3" x-show="!sidebarCollapsed || sidebarOpen" x-cloak>
             <x-app-logo-icon class="h-8 w-8 shrink-0" />
             <span class="text-xl font-bold text-slate-800 dark:text-white">{{ config('app.name') }}</span>
@@ -33,7 +33,7 @@
     </div>
 
     <!-- Navigation Menu -->
-    <nav class="flex-1 px-4 py-4 overflow-y-auto" @scroll="$dispatch('rail-reposition')">
+    <nav class="min-h-0 flex-1 px-4 py-4 overflow-y-auto" @scroll="$dispatch('rail-reposition')">
         <!-- MENU Section -->
         <div class="mb-6">
             <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3"
@@ -61,7 +61,7 @@
     </nav>
 
     <!-- User Profile Section -->
-    <div class="border-t border-slate-200 dark:border-slate-700">
+    <div class="mt-auto shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
             <button @click="open = !open"
                     class="flex items-center w-full p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">
