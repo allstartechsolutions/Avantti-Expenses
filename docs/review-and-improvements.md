@@ -1045,3 +1045,16 @@ in the other direction, narrowing who may delete purchase orders at all.
 
 **Decide in F3:** leave it, or give attachments their own grant (`attachments.delete`) so the six
 kinds can differ.
+
+## Scheduler timezone — `EST` does not observe daylight saving
+
+`config/app.php` sets `'timezone' => 'EST'`, a fixed UTC−5 zone. Laravel evaluates every
+scheduled time in it (`app.schedule_timezone` falls back to `app.timezone`), so
+`tasks:notify-overdue` at `dailyAt('07:00')` fires at 07:00 local in winter and 08:00 local
+in summer. The weekly digest's `now()->hour` check drifts the same way, meaning a digest an
+admin sets to 09:00 in System Settings goes out at 10:00 between March and November.
+
+The fix is `'timezone' => 'America/New_York'`, but that moves every date the application
+stores, displays and compares — not only the scheduler — so it needs its own change and its
+own testing rather than being folded into a deployment step. Noted while documenting the
+Forge scheduler (`docs/deployment-scheduler.md`).

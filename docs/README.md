@@ -90,6 +90,11 @@
     - Live password requirements checklist (Alpine.js)
     - Logout on password change
 
+### Deployment
+
+- **[Scheduler on Forge](./deployment-scheduler.md)** - The one `schedule:run` cron entry that drives all four recurring jobs (task overdue mail, weekly task digest, R2 upload pruning, document purge), plus the `EST` timezone caveat
+- **[Cloudflare R2](./deployment-cloudflare-r2.md)** - Bucket, credentials and CORS for the document repository
+
 ### Architecture
 
 16. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
