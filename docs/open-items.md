@@ -341,7 +341,17 @@ module added nothing to this file: its guards are on the models and were built a
 
 ---
 
-## 3. Shipped 2026-08-20
+## 3. Shipped 2026-08-24
+
+Branding (the ManagerPro mark replaces the Laravel logo everywhere, served from the CDN by
+URL), the Forge scheduler documented (one `schedule:run` entry drives all four jobs), and a
+full pt_BR translation sweep — 773 unwrapped strings found by an eight-agent audit, all seven
+remediation items closed, plus three real bugs fixed along the way. Summary in
+`changelog-2026-08-24.md`; detail and the deliberate exclusions in `pt-br-translation-audit.md`.
+
+---
+
+## 3b. Shipped 2026-08-20
 
 - **Cost codes on expenses and change orders — phases 1 to 6.** Change orders gained a cost side
   (`change_order_items`, signed per code) and an approval that gates it, while the revenue side
@@ -426,6 +436,18 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 ---
 
 ## 7. Engineering items still open
+
+- **Scheduler timezone.** `config/app.php` sets `'timezone' => 'EST'` — fixed UTC−5, no
+  daylight saving — and Laravel evaluates every scheduled time in it. Overdue task mail fires
+  at 07:00 local in winter, 08:00 in summer; the weekly digest drifts the same way. The fix is
+  `America/New_York`, but it moves every date the application stores and displays, so it needs
+  its own change and its own testing. See `deployment-scheduler.md`.
+- **`welcome.blade.php`** — a layout reference page with hardcoded demo data (`JD` initials, a
+  fake profile). ~53 untranslated strings, deliberately skipped in the pt_BR sweep. Decide
+  whether it is still a reference worth keeping or dead code to delete.
+- **`/favicon.ico` now 404s.** The branding change deleted the old Laravel `.ico` and points
+  the `<link>` tags at the CDN PNG. Browsers are fine; anything probing the conventional path
+  is not, and the tab icon is a downscaled PNG rather than a purpose-built 16px icon.
 
 - **Meetings M4, M6, M7, M10** — query shapes on `Meeting::openActionCount()`,
   `MyTasks::stats()` and `MeetingAgenda::scopeCandidates()`, all acceptable today and all wrong at

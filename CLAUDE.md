@@ -70,6 +70,51 @@ Two rules that hold everywhere and were each learned the hard way:
 - **Reproduce first, then make it revocable.** A change that quietly widens or narrows who
   can do something is a bug even when the new behaviour seems more sensible. Say what moved.
 
+## Every Module Ships Translated
+
+**A screen is not built until it is translatable.** The pt_BR sweep of 24 Aug 2026 found
+**773 user-facing strings that had never been wrapped in `__()`** across eighteen modules —
+a week of retro-fitting that would have been minutes per screen if done as the screens were
+written. Translation is a build step, not a clean-up phase. Never leave it "for later".
+
+**Wrap it as you write it, and add the pt_BR value in the same change.** A string added to
+`en.json` without its `pt_BR.json` counterpart is unfinished work. See
+`docs/pt-br-translation-audit.md` for the full findings; the rules below are what they taught.
+
+1. **Every user-visible string goes through `__()`** — headings, labels, table headers, button
+   text, empty states, help text, `placeholder=` / `title=` / `alt=` / `wire:confirm=`,
+   `<option>` labels, flash messages, `addError()`, custom validation messages, `abort()`
+   messages, Mailable subjects and e-mail bodies. If a person can read it, it is translatable.
+2. **Never build a sentence by concatenation or by splitting it around a tag.** Use one key
+   with placeholders — `__('Your payment of :amount for invoice :number has been processed.')`.
+   Portuguese agreement and word order do not follow English, so a sentence assembled from
+   fragments cannot be translated correctly.
+3. **Counted nouns use `trans_choice(':count thing|:count things', $n, ['count' => $n])`.**
+   Never `Str::plural()` — pt_BR plurals are not a bare "+s" (*item → itens*,
+   *imagem → imagens*, *ordem de compra → **ordens** de compra*).
+4. **Never print a stored enum.** No `ucfirst($model->status)`. Put a `getStatusLabel()` on the
+   model, with a `static ...Label(?string $value)` beside it so filter values and history rows
+   can be labelled without an instance. Mind grammatical gender: the shared status words are
+   masculine, so a feminine noun (*despesa*) needs its own keys — see `Expense::getStatusLabel()`.
+5. **Validation comes from the shared map.** `lang/pt_BR/validation.php` and
+   `lang/en/validation.php` already carry the messages and the field names. Declare a
+   `validationAttributes()` entry only when a name differs from that map, and use the method
+   form — a `protected $validationAttributes` property cannot call `__()`.
+6. **Check the glossary before inventing a term.** `pt_BR.json` already fixes the vocabulary:
+   Job Site → *Local*, Project → *Projeto*, Purchase Orders → *Ordens de Compra*,
+   Subcontractor → *Subempreiteiro*. Consistency across screens beats a better word on one.
+7. **The things people forget**, all of which shipped English to real users: PDF templates,
+   CSV exports, e-mail subjects and bodies, `abort()` messages, and empty-value fallbacks
+   (`?? 'Not provided'`). None of these show up in a walk-through of the screens.
+
+Two traps worth knowing before you trust a search:
+
+- **A key-diff cannot see `__($variable)`.** Labels pulled from `config/permissions.php`, the
+  nav config, enum `label()` methods or database columns look translated and are not. Check
+  those sources directly.
+- **Proper nouns stay as they are** — `PIX`, `PDF`, `SKU`, `CEP`, card brands. Wrapping them
+  adds noise without adding meaning.
+
 ## Every Module Ends With a Review Phase
 
 **No module is finished when its features are.** Every module gets one extra, explicit

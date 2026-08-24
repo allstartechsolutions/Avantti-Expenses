@@ -92,6 +92,7 @@
 
 ### Quality
 
+- **[Changelog 2026-08-24](./changelog-2026-08-24.md)** - Branding (ManagerPro mark), the Forge scheduler entry, and the pt_BR translation sweep
 - **[pt_BR translation audit](./pt-br-translation-audit.md)** - 24 Aug 2026 sweep of every module: 773 unwrapped user-facing strings, the six patterns behind most of them, and a suggested order of work
 
 ### Deployment
