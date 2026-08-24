@@ -36,9 +36,7 @@
 
             <!-- Mobile Logo -->
             <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-sm leading-none">A</span>
-                </div>
+                <x-app-logo-icon class="h-8 w-8 shrink-0" />
                 <span class="text-xl font-bold text-slate-800 dark:text-white">Avantti</span>
             </div>
 

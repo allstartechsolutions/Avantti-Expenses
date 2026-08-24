@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Logo
+    |--------------------------------------------------------------------------
+    |
+    | The product mark, served from the brand CDN so every install picks up a
+    | new one without a deploy. Used for the favicon and for <x-app-logo-icon>.
+    |
+    */
+
+    'logo_url' => env('APP_LOGO_URL', 'https://media.managerpro.us/icon.png'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

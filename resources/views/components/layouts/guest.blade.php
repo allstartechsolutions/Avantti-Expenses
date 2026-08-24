@@ -4,9 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name') }}</title>
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="icon" href="{{ config('app.logo_url') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ config('app.logo_url') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -22,8 +21,8 @@
     <!-- Header -->
     <header class="bg-[#3F5189] text-white shadow-sm">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center space-x-3">
-            <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-sm leading-none">A</span>
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/95 p-1">
+                <x-app-logo-icon class="h-full w-full" />
             </div>
             <span class="text-lg font-semibold">
                 {{ \App\Models\Company::first()?->name ?? config('app.name') }}
