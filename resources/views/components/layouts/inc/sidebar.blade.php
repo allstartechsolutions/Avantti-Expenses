@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-slate-700">
         <div class="flex items-center space-x-3" x-show="!sidebarCollapsed || sidebarOpen" x-cloak>
             <x-app-logo-icon class="h-8 w-8 shrink-0" />
-            <span class="text-xl font-bold text-slate-800 dark:text-white">{{ __('Despesas') }}</span>
+            <span class="text-xl font-bold text-slate-800 dark:text-white">{{ config('app.name') }}</span>
         </div>
         <div class="flex items-center space-x-2">
             <!-- Desktop Toggle -->

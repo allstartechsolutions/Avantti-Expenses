@@ -44,7 +44,7 @@
             <!-- Mobile Logo -->
             <div class="flex items-center space-x-2">
                 <x-app-logo-icon class="h-8 w-8 shrink-0" />
-                <span class="text-xl font-bold text-slate-800 dark:text-white">{{ __('Avantti') }}</span>
+                <span class="text-xl font-bold text-slate-800 dark:text-white">{{ config('app.name') }}</span>
             </div>
 
             <!-- Mobile Profile -->
