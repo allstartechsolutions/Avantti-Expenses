@@ -81,7 +81,7 @@
             <td style="width: 25%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Expenses') }}</div>
                 <div style="font-size: 11pt; font-weight: bold; color: #e74c3c;">${{ number_format($financials['total_expenses'], 2) }}</div>
-                <div style="font-size: 6.5pt; color: #888; margin-top: 2px;">{{ $financials['expenses_count'] }} {{ Str::plural('item', $financials['expenses_count']) }}</div>
+                <div style="font-size: 6.5pt; color: #888; margin-top: 2px;">{{ trans_choice(':count item|:count items', $financials['expenses_count'], ['count' => $financials['expenses_count']]) }}</div>
             </td>
             <td style="width: 25%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Contracts') }}</div>
@@ -233,7 +233,7 @@
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->item_name }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->supplier?->name ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->jobSite?->job_site_name ?? __('Project-level') }}</td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ ucfirst($expense->status) }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->getStatusLabel() }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($expense->total_amount, 2) }}</td>
                 </tr>
             @empty
@@ -278,7 +278,7 @@
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">#{{ $contract->contract_number }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $contract->subcontractor?->company_name ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $contract->jobSite?->job_site_name ?? __('Project-level') }}</td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ ucfirst(str_replace('_', ' ', $contract->status)) }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $contract->getStatusLabel() }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">
                         ${{ number_format($adjusted, 2) }}
                         @if($coTotal != 0)

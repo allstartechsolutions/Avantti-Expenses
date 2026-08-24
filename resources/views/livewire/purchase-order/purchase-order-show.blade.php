@@ -270,13 +270,13 @@
                     <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Payment Method') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $purchaseOrder->payment_method ?? 'Not specified')) }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->getPaymentMethodLabel() ?? __('Not specified') }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Installments') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 @if($purchaseOrder->total_installments > 1)
-                                    {{ $purchaseOrder->total_installments }}x ({{ ucfirst($purchaseOrder->payment_frequency) }})
+                                    {{ $purchaseOrder->total_installments }}x ({{ \App\Models\PurchaseOrder::paymentFrequencyLabel($purchaseOrder->payment_frequency) }})
                                 @else
                                     {{ __('Single payment') }}
                                 @endif
@@ -477,7 +477,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <dt class="text-sm text-green-700 dark:text-green-400">{{ __('Status:') }}</dt>
-                                    <dd class="text-sm font-medium text-green-800 dark:text-green-300">{{ ucfirst($purchaseOrder->expense->status) }}</dd>
+                                    <dd class="text-sm font-medium text-green-800 dark:text-green-300">{{ $purchaseOrder->expense->getStatusLabel() }}</dd>
                                 </div>
                                 <div class="flex justify-between">
                                     <dt class="text-sm text-green-700 dark:text-green-400">{{ __('Amount:') }}</dt>
@@ -538,7 +538,7 @@
                                                             {{ $history->getChangeDescription() }}
                                                         </p>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                            {{ __('by') }} {{ $history->changedBy?->name ?? 'System' }}
+                                                            {{ __('by') }} {{ $history->changedBy?->name ?? __('System') }}
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">

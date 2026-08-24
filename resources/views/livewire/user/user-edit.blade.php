@@ -109,7 +109,7 @@
                                 >
                                     <option value="">{{ __('Select a role') }}</option>
                                     @foreach($roles as $role)
-                                        <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                                        <option value="{{ $role->id }}">{{ $role->getLabel() }}</option>
                                     @endforeach
                                 </select>
                                 @error('role_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -147,7 +147,7 @@
                             @else
                                 <select id="accessScope" wire:model.live="accessScope"
                                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                    <option value="">{{ __('Follow their role (:scope)', ['scope' => __($user->role?->access_scope?->label() ?? 'Every project and job site')]) }}</option>
+                                    <option value="">{{ __('Follow their role (:scope)', ['scope' => __($user->role?->access_scope?->label() ?? __('Every project and job site'))]) }}</option>
                                     <option value="company">{{ __('Every project and job site') }}</option>
                                     <option value="assigned">{{ __('Only the ones they are added to') }}</option>
                                 </select>

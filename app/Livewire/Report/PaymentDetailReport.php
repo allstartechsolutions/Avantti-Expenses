@@ -182,30 +182,30 @@ class PaymentDetailReport extends Component
 
     protected function detailCsv(PaymentDetailReportService $service): array
     {
-        $headers = ['Date', 'Type', 'Vendor', 'Item', 'Project', 'Job Site', 'Installment', 'Status', 'Paid Date', 'Paid By', 'Amount'];
+        $headers = [__('Date'), __('Type'), __('Vendor'), __('Item'), __('Project'), __('Job Site'), __('Installment'), __('Status'), __('Paid Date'), __('Paid By'), __('Amount')];
         $rows = $service->rows()->map(fn ($r) => [
             $r['date']?->format('Y-m-d') ?? '',
-            $r['type'] === 'contract' ? 'Contract' : 'Expense',
+            $r['type'] === 'contract' ? __('Contract') : __('Expense'),
             $r['vendor'] ?? '',
             $r['item'] ?? '',
             $r['project'] ?? '',
             $r['job_site'] ?? '',
             $r['installment_label'] ?? '',
-            ucfirst($r['status']),
+            \App\Models\ExpensePayment::statusLabel($r['status']),
             $r['paid_date']?->format('Y-m-d') ?? '',
             $r['paid_by'] ?? '',
             $this->money($r['amount']),
         ])->all();
 
         $k = $service->kpis();
-        $totals = ['Total', '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
+        $totals = [__('Total'), '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
 
         return [$headers, $rows, $totals];
     }
 
     protected function projectCsv(PaymentDetailReportService $service): array
     {
-        $headers = ['Project', 'Job Site', 'Payments', 'Total', 'Paid', 'Pending', 'Overdue'];
+        $headers = [__('Project'), __('Job Site'), __('Payments'), __('Total'), __('Paid'), __('Pending'), __('Overdue')];
         $rows = [];
 
         foreach ($service->byProject() as $proj) {
@@ -221,7 +221,7 @@ class PaymentDetailReport extends Component
             foreach ($proj['jobsites'] as $js) {
                 $rows[] = [
                     $proj['project'],
-                    $js['job_site'] ?? 'Project-level',
+                    $js['job_site'] ?? __('Project-level'),
                     $js['count'],
                     $this->money($js['total']),
                     $this->money($js['paid']),
@@ -232,17 +232,17 @@ class PaymentDetailReport extends Component
         }
 
         $k = $service->kpis();
-        $totals = ['Total', '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['pending']), $this->money($k['overdue'])];
+        $totals = [__('Total'), '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['pending']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }
 
     protected function vendorCsv(PaymentDetailReportService $service): array
     {
-        $headers = ['Vendor', 'Type', 'Payments', 'Total', 'Paid', 'Pending', 'Overdue'];
+        $headers = [__('Vendor'), __('Type'), __('Payments'), __('Total'), __('Paid'), __('Pending'), __('Overdue')];
         $rows = $service->byVendor()->map(fn ($v) => [
-            $v['vendor'] ?? 'No vendor',
-            $v['type'] === 'contract' ? 'Contract' : 'Expense',
+            $v['vendor'] ?? __('No vendor'),
+            $v['type'] === 'contract' ? __('Contract') : __('Expense'),
             $v['count'],
             $this->money($v['total']),
             $this->money($v['paid']),
@@ -251,7 +251,7 @@ class PaymentDetailReport extends Component
         ])->all();
 
         $k = $service->kpis();
-        $totals = ['Total', '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['pending']), $this->money($k['overdue'])];
+        $totals = [__('Total'), '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['pending']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }

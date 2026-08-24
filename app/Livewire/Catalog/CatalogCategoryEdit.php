@@ -42,11 +42,6 @@ class CatalogCategoryEdit extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'applicable_types' => 'applicable types',
-        'parent_id' => 'parent category',
-        'display_order' => 'display order',
-    ];
 
     public function save()
     {

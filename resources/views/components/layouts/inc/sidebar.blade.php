@@ -71,7 +71,7 @@
                     </div>
                     <div x-show="!sidebarCollapsed || sidebarOpen" x-cloak class="flex-1 text-left">
                         <p class="text-sm font-medium text-slate-900 dark:text-white">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->role?->name ? ucfirst(Auth::user()->role->name) : __('User') }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->role?->getLabel() ?? __('User') }}</p>
                     </div>
                 </div>
                 <svg x-show="(!sidebarCollapsed || sidebarOpen)" x-cloak

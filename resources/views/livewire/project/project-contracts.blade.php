@@ -61,7 +61,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="mt-2 text-sm text-white/80">{{ $contracts->count() }} {{ Str::plural('contract', $contracts->count()) }}</p>
+                <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count contract|:count contracts', $contracts->count(), ['count' => $contracts->count()]) }}</p>
             </div>
             <!-- Active -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -131,7 +131,7 @@
                                         {{ $contract->contract_number }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $contract->subcontractor?->company_name ?? 'N/A' }}
+                                        {{ $contract->subcontractor?->company_name ?? __('N/A') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                         @if($contract->isProjectLevel())
@@ -161,17 +161,9 @@
                                                 'paid' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400',
                                                 'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
                                             ];
-                                            $statusLabels = [
-                                                'draft' => 'Draft',
-                                                'active' => 'Active',
-                                                'completed' => 'Completed',
-                                                'partially_paid' => 'Partially Paid',
-                                                'paid' => 'Paid',
-                                                'cancelled' => 'Cancelled',
-                                            ];
                                         @endphp
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$contract->status] ?? '' }}">
-                                            {{ $statusLabels[$contract->status] ?? ucfirst($contract->status) }}
+                                            {{ $contract->getStatusLabel() }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

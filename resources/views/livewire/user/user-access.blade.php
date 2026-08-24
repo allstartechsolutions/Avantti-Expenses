@@ -13,7 +13,7 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Access') }}</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {{ $user->name }} · {{ $user->role?->name ? ucfirst($user->role->name) : __('No role') }}
+                {{ $user->name }} · {{ $user->role?->getLabel() ?? __('No role') }}
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -70,7 +70,7 @@
                     <div>
                         <h2 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Starting from their role') }}</h2>
                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-                            {{ __('Everything below starts as whatever :role allows. Change anything you like — only the differences are saved, so the rest keeps following the role when the role changes.', ['role' => $user->role?->name ? ucfirst($user->role->name) : __('their role')]) }}
+                            {{ __('Everything below starts as whatever :role allows. Change anything you like — only the differences are saved, so the rest keeps following the role when the role changes.', ['role' => $user->role?->getLabel() ?? __('their role')]) }}
                         </p>
                     </div>
                     <div class="text-right shrink-0">

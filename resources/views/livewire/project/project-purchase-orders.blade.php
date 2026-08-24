@@ -61,7 +61,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="mt-2 text-sm text-white/80">{{ $stats['total'] }} {{ Str::plural('purchase order', $stats['total']) }}</p>
+                <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count purchase order|:count purchase orders', $stats['total'], ['count' => $stats['total']]) }}</p>
             </div>
             <!-- Pending Approval -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">

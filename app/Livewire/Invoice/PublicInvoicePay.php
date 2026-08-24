@@ -50,7 +50,7 @@ class PublicInvoicePay extends Component
         $balanceDue = $this->invoice->getBalanceDue();
 
         if ($balanceDue <= 0) {
-            $this->cardPaymentError = 'This invoice has already been paid in full.';
+            $this->cardPaymentError = __('This invoice has already been paid in full.');
             return;
         }
 
@@ -62,17 +62,17 @@ class PublicInvoicePay extends Component
             'cardCvv' => ['required', 'string', 'min:3', 'max:4'],
             'cardZip' => ['required', 'string', 'max:10'],
         ], [
-            'paymentAmount.max' => 'Payment amount cannot exceed the balance due ($' . number_format($balanceDue, 2) . ').',
-            'cardName.required' => 'Name on card is required.',
-            'cardExpiryMonth.required' => 'Expiration month is required.',
-            'cardExpiryMonth.in' => 'Invalid month.',
-            'cardExpiryYear.required' => 'Expiration year is required.',
-            'cardCvv.required' => 'CVV is required.',
-            'cardZip.required' => 'Billing zip code is required.',
+            'paymentAmount.max' => __('Payment amount cannot exceed the balance due (:amount).', ['amount' => '$'.number_format($balanceDue, 2)]),
+            'cardName.required' => __('Name on card is required.'),
+            'cardExpiryMonth.required' => __('Expiration month is required.'),
+            'cardExpiryMonth.in' => __('Invalid month.'),
+            'cardExpiryYear.required' => __('Expiration year is required.'),
+            'cardCvv.required' => __('CVV is required.'),
+            'cardZip.required' => __('Billing zip code is required.'),
         ]);
 
         if (empty($this->cardToken)) {
-            $this->cardPaymentError = 'Please enter your card details.';
+            $this->cardPaymentError = __('Please enter your card details.');
             return;
         }
 

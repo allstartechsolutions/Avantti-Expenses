@@ -168,10 +168,52 @@ class CatalogItem extends Model
     }
 
     /**
+     * Human labels for the stored English enums.
+     *
+     * Static so the category screen can label a bare type string from
+     * applicable_types without an item to hang it on.
+     */
+    public static function typeLabel(?string $type): string
+    {
+        return match ($type) {
+            'product' => __('Product'),
+            'service' => __('Service'),
+            'rental' => __('Rental'),
+            default => ucfirst((string) $type),
+        };
+    }
+
+    public static function billingTypeLabel(?string $billingType): ?string
+    {
+        if ($billingType === null || $billingType === '') {
+            return null;
+        }
+
+        return match ($billingType) {
+            'hourly' => __('Hourly'),
+            'fixed' => __('Fixed'),
+            'daily' => __('Daily'),
+            'weekly' => __('Weekly'),
+            'monthly' => __('Monthly'),
+            default => ucfirst($billingType),
+        };
+    }
+
+    public function getTypeLabel(): string
+    {
+        return static::typeLabel($this->type);
+    }
+
+    public function getBillingTypeLabel(): ?string
+    {
+        return static::billingTypeLabel($this->billing_type);
+    }
+
+    /**
      * Get display name with type badge
      */
     public function getDisplayNameAttribute()
     {
-        return $this->name . ' (' . ucfirst($this->type) . ')';
+        return $this->name . ' (' . static::typeLabel($this->type) . ')';
     }
 }

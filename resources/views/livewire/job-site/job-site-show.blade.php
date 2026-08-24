@@ -75,7 +75,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <p class="mt-2 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }}</p>
+                        <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count expense|:count expenses', $expenses->count(), ['count' => $expenses->count()]) }}</p>
                     </div>
                     <!-- Paid Amount -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -184,7 +184,7 @@
                                                     ];
                                                 @endphp
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$expense->status] ?? $statusColors['unpaid'] }}">
-                                                    {{ __(ucfirst($expense->status)) }}
+                                                    {{ $expense->getStatusLabel() }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -391,7 +391,7 @@
                                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                                     </svg>
-                                                    {{ $report->tasks->count() }} {{ Str::plural('task', $report->tasks->count()) }}
+                                                    {{ trans_choice(':count task|:count tasks', $report->tasks->count(), ['count' => $report->tasks->count()]) }}
                                                 </span>
                                             </div>
                                         </div>
@@ -442,7 +442,7 @@
                                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                                                     </svg>
-                                                                    {{ $task->images->count() }} {{ Str::plural('image', $task->images->count()) }}
+                                                                    {{ trans_choice(':count image|:count images', $task->images->count(), ['count' => $task->images->count()]) }}
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -810,13 +810,13 @@
                                     ];
                                 @endphp
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium {{ $statusColors[$expense_status] ?? $statusColors['unpaid'] }}">
-                                    {{ ucfirst($expense_status) }}
+                                    {{ \App\Models\Expense::statusLabel($expense_status) }}
                                 </span>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Payment Method') }}</label>
                                 <p class="text-slate-900 dark:text-white">
-                                    {{ $expense_payment_method ? str_replace('_', ' ', ucfirst($expense_payment_method)) : 'Not specified' }}
+                                    {{ \App\Models\Expense::paymentMethodLabel($expense_payment_method) ?? __('Not specified') }}
                                     @if($expense_is_auto_payment)
                                         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
                                             {{ __('Auto') }}
@@ -887,7 +887,7 @@
                                                             ];
                                                         @endphp
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $paymentStatusColors[$payment->status] ?? $paymentStatusColors['pending'] }}">
-                                                            {{ ucfirst($payment->status) }}
+                                                            {{ $payment->getStatusLabel() }}
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
@@ -1028,7 +1028,7 @@
                                             class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between">
                                             <div>
                                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $catalogItem->name }}</div>
-                                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ ucfirst($catalogItem->type) }} - {{ Number::currency($catalogItem->current_cost, config('app.currency'), config('app.locale')) }}</div>
+                                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ $catalogItem->getTypeLabel() }} - {{ Number::currency($catalogItem->current_cost, config('app.currency'), config('app.locale')) }}</div>
                                             </div>
                                         </button>
                                     @endforeach

@@ -122,7 +122,7 @@ class AccountsPayableReport extends Component
             $out = fopen('php://output', 'w');
             // BOM so Excel handles UTF-8 correctly
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Due Date', 'Vendor', 'Item', 'Project', 'Job Site', 'Status', 'Amount']);
+            fputcsv($out, [__('Due Date'), __('Vendor'), __('Item'), __('Project'), __('Job Site'), __('Status'), __('Amount')]);
 
             foreach ($rows as $row) {
                 fputcsv($out, [
@@ -130,14 +130,14 @@ class AccountsPayableReport extends Component
                     $row['vendor'] ?? '',
                     $row['item'] ?? '',
                     $row['project'] ?? '',
-                    $row['job_site'] ?? 'Project-level',
-                    ucfirst($row['status']),
+                    $row['job_site'] ?? __('Project-level'),
+                    \App\Models\ExpensePayment::statusLabel($row['status']),
                     number_format($row['amount'], 2, '.', ''),
                 ]);
             }
 
             fputcsv($out, []);
-            fputcsv($out, ['Total', '', '', '', '', '', number_format($rows->sum('amount'), 2, '.', '')]);
+            fputcsv($out, [__('Total'), '', '', '', '', '', number_format($rows->sum('amount'), 2, '.', '')]);
 
             fclose($out);
         }, 200, [

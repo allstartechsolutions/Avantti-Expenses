@@ -38,7 +38,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="mt-2 text-sm text-white/80">{{ $entries->count() }} {{ Str::plural('record', $entries->count()) }}</p>
+                <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count record|:count records', $entries->count(), ['count' => $entries->count()]) }}</p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="flex items-center justify-between">

@@ -212,7 +212,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Phone Number') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->formatted_phone ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->formatted_phone ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Email -->
@@ -247,7 +247,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Street Address') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->street ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->street ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Address Line 2 -->
@@ -255,7 +255,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Address Line 2') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->address_2 ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->address_2 ?? __('Not provided') }}</p>
                                 </div>
 
                                 @if(config('app.country') === 'BR')
@@ -264,7 +264,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Neighborhood (Bairro)') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->neighborhood ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->neighborhood ?? __('Not provided') }}</p>
                                 </div>
                                 @endif
 
@@ -273,7 +273,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('City') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->city ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->city ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- State -->
@@ -281,7 +281,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('State') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->state ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->state ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Postal Code -->
@@ -289,7 +289,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ config('app.country') === 'BR' ? 'CEP' : 'Postal Code' }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->postal_code ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->postal_code ?? __('Not provided') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -834,7 +834,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <p class="mt-2 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }}</p>
+                        <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count expense|:count expenses', $expenses->count(), ['count' => $expenses->count()]) }}</p>
                     </div>
                     <!-- Paid Amount -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -892,11 +892,11 @@
                                                 <div class="flex items-center">
                                                     <div>
                                                         <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                            {{ $expense->supplier?->name ?? 'No Supplier' }}
+                                                            {{ $expense->supplier?->name ?? __('No Supplier') }}
                                                         </div>
                                                         @if($expense->items->count() > 0)
                                                             <span class="text-xs text-slate-500 dark:text-slate-400">
-                                                                {{ $expense->items->count() }} {{ Str::plural('item', $expense->items->count()) }}
+                                                                {{ trans_choice(':count item|:count items', $expense->items->count(), ['count' => $expense->items->count()]) }}
                                                             </span>
                                                         @elseif($expense->item_name)
                                                             <span class="text-xs text-slate-500 dark:text-slate-400">{{ $expense->item_name }}</span>
@@ -935,7 +935,7 @@
                                                     ];
                                                 @endphp
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$expense->status] ?? $statusColors['unpaid'] }}">
-                                                    {{ ucfirst($expense->status) }}
+                                                    {{ $expense->getStatusLabel() }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1153,7 +1153,7 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm text-white/80">{{ $dailyReports->count() }} {{ Str::plural('report', $dailyReports->count()) }} recorded</p>
+                    <p class="mt-4 text-sm text-white/80">{{ trans_choice(':count report|:count reports', $dailyReports->count(), ['count' => $dailyReports->count()]) }} recorded</p>
                 </div>
 
                 <!-- Daily Reports List -->
@@ -1187,10 +1187,10 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ $report->preparedBy?->name ?? 'Unknown' }}
+                                                {{ $report->preparedBy?->name ?? __('Unknown') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ $report->tasks->count() }} {{ Str::plural('task', $report->tasks->count()) }}
+                                                {{ trans_choice(':count task|:count tasks', $report->tasks->count(), ['count' => $report->tasks->count()]) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 @if($report->locked_at)

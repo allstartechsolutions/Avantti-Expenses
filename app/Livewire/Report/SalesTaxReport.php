@@ -194,18 +194,18 @@ class SalesTaxReport extends Component
         $breakdown = $this->breakdown;
         $totals = $this->totals;
         $basis = $this->basis;
-        $countLabel = $basis === 'cash' ? 'Payments' : 'Invoices';
+        $countLabel = $basis === 'cash' ? __('Payments') : __('Invoices');
 
         return response()->streamDownload(function () use ($grouped, $breakdown, $totals, $basis, $countLabel) {
             $out = fopen('php://output', 'w');
 
-            fputcsv($out, ['Sales Tax Report']);
-            fputcsv($out, ['Period', $this->fromDate . ' to ' . $this->toDate]);
-            fputcsv($out, ['Basis', $basis === 'cash' ? 'Cash (by payment date)' : 'Accrual (by invoice date)']);
+            fputcsv($out, [__('Sales Tax Report')]);
+            fputcsv($out, [__('Period'), $this->fromDate . ' to ' . $this->toDate]);
+            fputcsv($out, [__('Basis'), $basis === 'cash' ? __('Cash (by payment date)') : __('Accrual (by invoice date)')]);
             fputcsv($out, []);
 
-            fputcsv($out, ['Summary by Tax Rate']);
-            fputcsv($out, ['Tax Rate %', 'Taxable Sales', 'Non-Taxable Sales', 'Tax Collected', $countLabel]);
+            fputcsv($out, [__('Summary by Tax Rate')]);
+            fputcsv($out, [__('Tax Rate %'), __('Taxable Sales'), __('Non-Taxable Sales'), __('Tax Collected'), $countLabel]);
             foreach ($grouped as $row) {
                 fputcsv($out, [
                     number_format((float) $row->tax_rate * 100, 4),
@@ -216,7 +216,7 @@ class SalesTaxReport extends Component
                 ]);
             }
             fputcsv($out, [
-                'TOTAL',
+                __('TOTAL'),
                 number_format($totals['taxable'], 2, '.', ''),
                 number_format($totals['non_taxable'], 2, '.', ''),
                 number_format($totals['tax'], 2, '.', ''),
@@ -225,8 +225,8 @@ class SalesTaxReport extends Component
             fputcsv($out, []);
 
             if ($basis === 'cash') {
-                fputcsv($out, ['Payment Breakdown']);
-                fputcsv($out, ['Payment Date', 'Invoice #', 'Client', 'Payment Method', 'Payment Amount', 'Share %', 'Attributed Tax']);
+                fputcsv($out, [__('Payment Breakdown')]);
+                fputcsv($out, [__('Payment Date'), __('Invoice #'), __('Client'), __('Payment Method'), __('Payment Amount'), __('Share %'), __('Attributed Tax')]);
                 foreach ($breakdown as $p) {
                     fputcsv($out, [
                         $p->payment_date->toDateString(),
@@ -239,8 +239,8 @@ class SalesTaxReport extends Component
                     ]);
                 }
             } else {
-                fputcsv($out, ['Invoice Breakdown']);
-                fputcsv($out, ['Invoice #', 'Date', 'Client', 'Status', 'Subtotal', 'Discount', 'Tax', 'Total']);
+                fputcsv($out, [__('Invoice Breakdown')]);
+                fputcsv($out, [__('Invoice #'), __('Date'), __('Client'), __('Status'), __('Subtotal'), __('Discount'), __('Tax'), __('Total')]);
                 foreach ($breakdown as $invoice) {
                     fputcsv($out, [
                         $invoice->invoice_number,

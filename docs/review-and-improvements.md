@@ -1058,3 +1058,45 @@ The fix is `'timezone' => 'America/New_York'`, but that moves every date the app
 stores, displays and compares — not only the scheduler — so it needs its own change and its
 own testing rather than being folded into a deployment step. Noted while documenting the
 Forge scheduler (`docs/deployment-scheduler.md`).
+
+## pt_BR translations — full audit, 24 Aug 2026
+
+Eight agents swept every module for user-facing English never wrapped in `__()`: **773
+confirmed findings**. Full report with file:line detail in `docs/pt-br-translation-audit.md`.
+
+The translation files themselves are fine (nothing in `en.json` missing from `pt_BR.json`).
+The gap is unwrapped strings, and six repeating patterns account for most of it:
+
+1. **No `lang/pt_BR/validation.php`** — framework validation falls back to English on 550
+   `@error` blocks across 89 files, with `:attribute` printing raw column names. One file
+   to fix; the largest single gap in the application.
+2. **`$validationAttributes`** hardcoded in 22 components (~83 entries).
+3. **`ucfirst($model->status)`** — 58 blade sites, only 9 wrapped; the same status renders
+   translated on one screen and English on the next.
+4. **`Str::plural()`** — 35 sites emitting English nouns that can never translate.
+5. **Derived labels** in `project-layout.blade.php:12`, `jobsite-layout.blade.php:14`
+   (25 screens) and the sidebar role label (every page) — need a key→label map, not `__()`.
+6. **`'Not provided'` / `'Unknown'` / `'N/A'` fallbacks** — 39 sites.
+
+Client-facing output is the priority: the invoice and estimate send-email builders compose
+entire English e-mails, the public payment page is English, `pdf/daily-report.blade.php` has
+16 hardcoded strings, and all six CSV exports are 100% English.
+
+Also found, and separately actionable: `config/permissions.php` has 40 of 98 human labels
+missing from `pt_BR.json` (invisible to a key diff because `__()` is called with a variable);
+`BudgetService` persists English names into the database; and `Str::plural`/date formats
+(`format('M d, Y')`, 44 uses) are not localized.
+
+Three real bugs surfaced by the sweep, unrelated to translation:
+- `components/ui/file-uploader.blade.php` never defines the `messages.etag` key that
+  `resources/js/app.js:405` reads — an ETag failure shows the user `undefined`.
+- `livewire/client/client-create.blade.php:7` has a malformed closing tag (`/p>`).
+- `livewire/client/client-create.blade.php:6` keys on Portuguese (`__('Novo Cliente')`), so
+  that page is Portuguese even under `en`.
+
+### Decision — `en.json` maps "Project" to "Job Site" (24 Aug 2026)
+
+Reviewed and **kept as is** at the owner's direction. 36 blades render through `__('Project')`,
+so English screens and CSV exports show "Job Site" where the data means a project. That is the
+intended vocabulary for this install, not a translation bug — do not change the key.
+Full context in `docs/pt-br-translation-audit.md`.

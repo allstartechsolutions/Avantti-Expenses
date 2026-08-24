@@ -75,7 +75,7 @@
                 @if($categoryFilter)
                     <div style="font-size: 7pt; color: #888;">{{ __('Category') }}: {{ $categoryLabels[$categoryFilter] ?? ucfirst($categoryFilter) }}</div>
                 @endif
-                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ ucfirst($statusFilter) }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ \App\Models\Expense::statusLabel($statusFilter) }}</div>
                 <div style="font-size: 7pt; color: #888;">{{ __('Date basis') }}: {{ $dateBasis === 'due' ? __('Payment due date') : __('Expense date (incurred)') }}</div>
                 @if($dateBasis === 'due')
                     <div style="font-size: 6.5pt; color: #b45309;">{{ __('Showing expenses with a payment due in this period. Amounts are full expense totals, not the portion due in the period.') }}</div>
@@ -90,7 +90,7 @@
             <td style="width: 25%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Total Expenses') }}</div>
                 <div style="font-size: 12pt; font-weight: bold; color: #333;">{{ $money($kpis['total']) }}</div>
-                <div style="font-size: 6.5pt; color: #888;">{{ $kpis['count'] }} {{ Str::plural('expense', $kpis['count']) }}</div>
+                <div style="font-size: 6.5pt; color: #888;">{{ trans_choice(':count expense|:count expenses', $kpis['count'], ['count' => $kpis['count']]) }}</div>
             </td>
             <td style="width: 25%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Paid') }}</div>

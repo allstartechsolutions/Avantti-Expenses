@@ -10,7 +10,7 @@
                         <span class="font-medium text-slate-700 dark:text-slate-300">{{ $jobSite->job_site_name }}</span>
                     @else
                         <span class="font-medium text-slate-700 dark:text-slate-300">{{ $project->project_name }}</span>
-                        <span class="text-slate-400">(Project Level)</span>
+                        <span class="text-slate-400">{{ __('(Project Level)') }}</span>
                     @endif
                 </p>
             </div>
@@ -101,7 +101,7 @@
                                 class="mt-1 text-[#3F5189] focus:ring-[#3F5189]">
                             <div class="flex-1">
                                 <p class="font-medium text-slate-900 dark:text-white">{{ __('Use cost code template') }}</p>
-                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Cost codes will be copied with $0.00 amounts</p>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">{{ __('Cost codes will be copied with $0.00 amounts') }}</p>
 
                                 @if($use_template)
                                     <select

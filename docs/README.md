@@ -90,10 +90,15 @@
     - Live password requirements checklist (Alpine.js)
     - Logout on password change
 
+### Quality
+
+- **[pt_BR translation audit](./pt-br-translation-audit.md)** - 24 Aug 2026 sweep of every module: 773 unwrapped user-facing strings, the six patterns behind most of them, and a suggested order of work
+
 ### Deployment
 
 - **[Scheduler on Forge](./deployment-scheduler.md)** - The one `schedule:run` cron entry that drives all four recurring jobs (task overdue mail, weekly task digest, R2 upload pruning, document purge), plus the `EST` timezone caveat
 - **[Cloudflare R2](./deployment-cloudflare-r2.md)** - Bucket, credentials and CORS for the document repository
+- **[Error monitoring — Sentry](./sentry-monitoring.md)** - Optional crash and performance reporting: what is sent and what is deliberately withheld (no request bodies, no SQL bindings, no e-mail), cron check-ins on the four scheduled jobs, release tagging from the deploy script
 
 ### Architecture
 

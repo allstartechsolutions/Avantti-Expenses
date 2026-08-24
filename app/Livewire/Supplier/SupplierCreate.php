@@ -28,6 +28,19 @@ class SupplierCreate extends Component
     public $email = '';
     public $description = '';
 
+
+    /**
+     * Only the names that differ from the shared map in
+     * lang/<locale>/validation.php — everything else falls through to it.
+     */
+    public function validationAttributes(): array
+    {
+        return [
+            'name' => __('supplier name'),
+            'address_2' => __('complement'),
+        ];
+    }
+
     public function mount()
     {
         $this->authorizeAbility('vendors.create');
@@ -49,13 +62,6 @@ class SupplierCreate extends Component
         'description' => 'nullable|string|max:1000',
     ];
 
-    protected $validationAttributes = [
-        'name' => 'supplier name',
-        'address_2' => 'complement',
-        'neighborhood' => 'neighborhood',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-    ];
 
     public function updated($propertyName)
     {

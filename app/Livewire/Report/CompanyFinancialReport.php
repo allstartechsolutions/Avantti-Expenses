@@ -145,30 +145,30 @@ class CompanyFinancialReport extends Component
             fwrite($out, "\xEF\xBB\xBF");
             $money = fn ($v) => number_format((float) $v, 2, '.', '');
 
-            fputcsv($out, ['Summary', 'Settled', 'Open', 'Overdue', 'Total']);
-            foreach (['in' => 'Money in', 'out' => 'Money out'] as $key => $label) {
+            fputcsv($out, [__('Summary'), __('Settled'), __('Open'), __('Overdue'), __('Total')]);
+            foreach (['in' => __('Money in'), 'out' => __('Money out')] as $key => $label) {
                 fputcsv($out, [$label, $money($data[$key]['settled']), $money($data[$key]['open']), $money($data[$key]['overdue']), $money($data[$key]['total'])]);
             }
-            fputcsv($out, ['Net (cash)', $money($data['net']['cash']), '', '', '']);
-            fputcsv($out, ['Net (forecast)', $money($data['net']['forecast']), '', '', '']);
+            fputcsv($out, [__('Net (cash)'), $money($data['net']['cash']), '', '', '']);
+            fputcsv($out, [__('Net (forecast)'), $money($data['net']['forecast']), '', '', '']);
 
             fputcsv($out, []);
-            fputcsv($out, ['By source', 'Direction', 'Settled', 'Open', 'Overdue', 'Total']);
+            fputcsv($out, [__('By source'), __('Direction'), __('Settled'), __('Open'), __('Overdue'), __('Total')]);
             foreach ($data['sources'] as $source) {
                 fputcsv($out, [$source['label'], $source['direction'], $money($source['settled']), $money($source['open']), $money($source['overdue']), $money($source['total'])]);
             }
 
             fputcsv($out, []);
-            fputcsv($out, ['Month', 'In', 'Out', 'Net']);
+            fputcsv($out, [__('Month'), __('In'), __('Out'), __('Net')]);
             foreach ($data['timeline']['months'] as $month) {
                 fputcsv($out, [$month['label'], $money($month['in']), $money($month['out']), $money($month['net'])]);
             }
             if ($data['timeline']['undated']['in'] > 0 || $data['timeline']['undated']['out'] > 0) {
-                fputcsv($out, ['No due date', $money($data['timeline']['undated']['in']), $money($data['timeline']['undated']['out']), $money($data['timeline']['undated']['net'])]);
+                fputcsv($out, [__('No due date'), $money($data['timeline']['undated']['in']), $money($data['timeline']['undated']['out']), $money($data['timeline']['undated']['net'])]);
             }
 
             fputcsv($out, []);
-            fputcsv($out, ['Date', 'Direction', 'Source', 'Party', 'Project', 'Job Site', 'Description', 'Status', 'Amount']);
+            fputcsv($out, [__('Date'), __('Direction'), __('Source'), __('Party'), __('Project'), __('Job Site'), __('Description'), __('Status'), __('Amount')]);
             foreach ($rows as $row) {
                 fputcsv($out, [
                     $row['date']?->format('Y-m-d') ?? '',

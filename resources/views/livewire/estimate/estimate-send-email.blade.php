@@ -10,7 +10,7 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('To') }}</label>
                     <div class="px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300">
-                        {{ $emailTo ?: 'No email address on file' }}
+                        {{ $emailTo ?: __('No email address on file') }}
                     </div>
                 </div>
 
@@ -49,7 +49,7 @@
                 @if($estimate->isDraft())
                     <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p class="text-xs text-blue-700 dark:text-blue-300">
-                            This estimate is currently a <strong>draft</strong>. Sending it will automatically change the status to <strong>{{ __('Sent') }}</strong>.
+                            {!! __('This estimate is currently a :draft. Sending it will automatically change the status to :sent.', ['draft' => '<strong>'.__('draft').'</strong>', 'sent' => '<strong>'.__('Sent').'</strong>']) !!}
                         </p>
                     </div>
                 @endif

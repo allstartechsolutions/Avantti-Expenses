@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
+use App\Models\Concerns\HasPaymentMethodLabel;
 
 class ExpensePayment extends Model
 {
+    use HasPaymentMethodLabel;
+
     protected $fillable = [
         'expense_id',
         'payment_number',
@@ -203,6 +206,33 @@ class ExpensePayment extends Model
     public function getEffectivePaymentMethod(): ?string
     {
         return $this->payment_method ?? $this->expense->payment_method;
+    }
+
+    /**
+     * Human label for the instalment's status.
+     *
+     * A *pagamento* is masculine, so the shared keys are the right gender and
+     * no new ones are needed — unlike Expense, see Expense::getStatusLabel().
+     */
+    public static function statusLabel(?string $status): string
+    {
+        return match ($status) {
+            'pending' => __('Pending'),
+            'paid' => __('Paid'),
+            'overdue' => __('Overdue'),
+            default => ucfirst(str_replace('_', ' ', (string) $status)),
+        };
+    }
+
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
+    }
+
+    /** Label for the method actually used, falling back to the expense's. */
+    public function getEffectivePaymentMethodLabel(): ?string
+    {
+        return static::paymentMethodLabel($this->getEffectivePaymentMethod());
     }
 
     /**

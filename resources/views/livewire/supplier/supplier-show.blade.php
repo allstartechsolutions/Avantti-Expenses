@@ -67,7 +67,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Email Address') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->email ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->email ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Phone -->
@@ -75,7 +75,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Phone Number') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->formatted_phone ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->formatted_phone ?? __('Not provided') }}</p>
                         </div>
                     </div>
 
@@ -111,7 +111,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Street Address') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->street ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->street ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Address Line 2 -->
@@ -119,7 +119,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ $supplier->country === 'BR' ? 'Complement' : 'Address Line 2' }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->address_2 ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->address_2 ?? __('Not provided') }}</p>
                         </div>
 
                         @if($supplier->country === 'BR')
@@ -128,7 +128,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Neighborhood (Bairro)') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->neighborhood ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->neighborhood ?? __('Not provided') }}</p>
                         </div>
                         @endif
 
@@ -137,7 +137,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('City') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->city ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->city ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- State -->
@@ -145,7 +145,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ $supplier->country === 'BR' ? 'State (UF)' : 'State' }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->state ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->state ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Postal Code -->
@@ -153,7 +153,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ $supplier->country === 'BR' ? 'CEP' : 'ZIP Code' }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $supplier->postal_code ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $supplier->postal_code ?? __('Not provided') }}</p>
                         </div>
                     </div>
                 </div>

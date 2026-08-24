@@ -151,7 +151,7 @@
                             $statusColor = $statusColors[$contract->status] ?? '#555';
                         @endphp
                         <span style="color: {{ $statusColor }}; font-weight: bold;">
-                            {{ ucfirst(str_replace('_', ' ', $contract->status)) }}
+                            {{ $contract->getStatusLabel() }}
                         </span>
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt;">

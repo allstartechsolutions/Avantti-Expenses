@@ -99,7 +99,7 @@
                                 {{ __('Role') }}
                             </label>
                             <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                {{ $user->role ? ucfirst($user->role->name) : __('No Role') }}
+                                {{ $user->role?->getLabel() ?? __('No Role') }}
                             </span>
                         </div>
 

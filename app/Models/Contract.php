@@ -111,6 +111,32 @@ class Contract extends Model
         return $this->status === 'cancelled';
     }
 
+    /**
+     * Human label for the contract's status.
+     *
+     * A *contrato* is masculine, so unlike expenses this can reuse the shared
+     * keys — they are already translated in the masculine ("Ativo", "Pago").
+     * 'draft' is included because the contract blades render it, even though
+     * the column's enum does not carry it.
+     */
+    public static function statusLabel(?string $status): string
+    {
+        return match ($status) {
+            'draft' => __('Draft'),
+            'active' => __('Active'),
+            'completed' => __('Completed'),
+            'partially_paid' => __('Partially Paid'),
+            'paid' => __('Paid'),
+            'cancelled' => __('Cancelled'),
+            default => ucfirst(str_replace('_', ' ', (string) $status)),
+        };
+    }
+
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

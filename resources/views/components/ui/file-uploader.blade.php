@@ -31,6 +31,9 @@
             'network' => __('The connection dropped during the upload.'),
             'cancelled' => __('Upload cancelled.'),
             'failed' => __('The upload failed. Please try again.'),
+            // Read by createUploader() in resources/js/app.js when the bucket
+            // response carries no ETag. Without this key the user sees "undefined".
+            'etag' => __('Storage did not return a file signature. Check the bucket CORS policy.'),
         ],
     ];
 

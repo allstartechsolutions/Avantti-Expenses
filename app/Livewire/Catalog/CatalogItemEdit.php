@@ -98,16 +98,6 @@ class CatalogItemEdit extends Component
         }
     }
 
-    protected $validationAttributes = [
-        'category_id' => 'category',
-        'supplier_id' => 'preferred supplier',
-        'current_cost' => 'cost',
-        'purchase_unit' => 'purchase unit',
-        'usage_unit' => 'usage unit',
-        'units_per_purchase' => 'units per purchase',
-        'billing_type' => 'billing type',
-        'tax_rate_id' => 'tax rate',
-    ];
 
     public function save()
     {

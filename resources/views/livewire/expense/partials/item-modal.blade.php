@@ -84,7 +84,7 @@
                                         @foreach($catalogItems as $ci)
                                             <button type="button" wire:click="selectCatalogItem({{ $ci->id }})" class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700">
                                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $ci->name }}</div>
-                                                <div class="text-xs text-slate-500">{{ Number::currency($ci->current_cost, config('app.currency'), config('app.locale')) }} / {{ $ci->usage_unit ?? $ci->purchase_unit ?? 'unit' }}</div>
+                                                <div class="text-xs text-slate-500">{{ Number::currency($ci->current_cost, config('app.currency'), config('app.locale')) }} / {{ $ci->usage_unit ?? $ci->purchase_unit ?? __('unit') }}</div>
                                             </button>
                                         @endforeach
                                     </div>

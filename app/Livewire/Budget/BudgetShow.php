@@ -46,13 +46,6 @@ class BudgetShow extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'code' => 'code',
-        'name' => 'name',
-        'description' => 'description',
-        'budgeted_amount' => 'budgeted amount',
-        'sort_order' => 'sort order',
-    ];
 
     public function mount(Budget $budget)
     {

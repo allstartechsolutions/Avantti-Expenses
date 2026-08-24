@@ -142,7 +142,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Title/Position') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->title ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->title ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Phone -->
@@ -150,7 +150,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Phone Number') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->formatted_phone ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->formatted_phone ?? __('Not provided') }}</p>
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Street Address') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->street ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->street ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- City -->
@@ -185,7 +185,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('City') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->city ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->city ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- State -->
@@ -193,7 +193,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('State') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->state ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->state ?? __('Not provided') }}</p>
                         </div>
 
                         <!-- Postal Code -->
@@ -201,7 +201,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Postal Code') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $client->postal_code ?? 'Not provided' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $client->postal_code ?? __('Not provided') }}</p>
                         </div>
                     </div>
                 </div>
@@ -231,7 +231,7 @@
                                             <div>
                                                 <div class="flex items-center gap-2">
                                                     <span class="text-sm font-medium text-slate-900 dark:text-white">
-                                                        {{ ucfirst($pm['card_brand'] ?? 'Card') }} ending in {{ $pm['card_last_four'] }}
+                                                        {{ __(':brand ending in :last4', ['brand' => $pm['card_brand'] ? ucfirst($pm['card_brand']) : __('Card'), 'last4' => $pm['card_last_four']]) }}
                                                     </span>
                                                     @if($pm['is_default'])
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
@@ -240,7 +240,7 @@
                                                     @endif
                                                 </div>
                                                 @if($pm['expiry_formatted'])
-                                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Expires {{ $pm['expiry_formatted'] }}</p>
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Expires :date', ['date' => $pm['expiry_formatted']]) }}</p>
                                                 @endif
                                             </div>
                                         </div>

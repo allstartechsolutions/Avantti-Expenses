@@ -38,13 +38,19 @@ class SupplierEdit extends Component
         'description' => 'nullable|string|max:1000',
     ];
 
-    protected $validationAttributes = [
-        'name' => 'supplier name',
-        'address_2' => 'complement',
-        'neighborhood' => 'neighborhood',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-    ];
+
+
+    /**
+     * Only the names that differ from the shared map in
+     * lang/<locale>/validation.php — everything else falls through to it.
+     */
+    public function validationAttributes(): array
+    {
+        return [
+            'name' => __('supplier name'),
+            'address_2' => __('complement'),
+        ];
+    }
 
     public function mount(Supplier $supplier)
     {

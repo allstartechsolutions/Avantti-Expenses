@@ -137,13 +137,6 @@ class ProjectShow extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'job_site_name' => 'job site name',
-        'contact_person' => 'contact person',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'job_amount' => 'job amount',
-    ];
 
     public function mount(Project $project, ?string $tab = null)
     {

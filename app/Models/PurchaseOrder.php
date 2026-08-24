@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Concerns\HasPaymentMethodLabel;
 
 class PurchaseOrder extends Model
 {
+    use HasPaymentMethodLabel;
+
     protected $fillable = [
         'project_id',
         'job_site_id',

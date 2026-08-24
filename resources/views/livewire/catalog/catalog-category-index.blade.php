@@ -127,7 +127,7 @@
                                         @endphp
                                         @foreach($category->applicable_types ?? [] as $type)
                                             <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full {{ $typeColors[$type] ?? 'bg-gray-100 text-gray-800' }}">
-                                                {{ ucfirst($type) }}
+                                                {{ \App\Models\CatalogItem::typeLabel($type) }}
                                             </span>
                                         @endforeach
                                     </div>

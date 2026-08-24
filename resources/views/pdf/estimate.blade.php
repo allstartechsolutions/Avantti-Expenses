@@ -179,7 +179,7 @@
     @if($estimate->message_body)
     <div style="margin-bottom: 25px; border: 1px solid #ddd; padding: 15px; background-color: #fafafa;">
         <div style="font-size: 9pt; font-weight: bold; color: #3F5189; margin-bottom: 8px;">
-            {{ $estimate->message_title ?? 'Message' }}
+            {{ $estimate->message_title ?? __('Message') }}
         </div>
         <div style="font-size: 8pt; color: #555; line-height: 1.5;">
             {!! strip_tags(App\Support\RichText::sanitize($estimate->message_body), '<br><p><ul><li><ol><strong><em>') !!}

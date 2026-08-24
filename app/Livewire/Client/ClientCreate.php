@@ -35,14 +35,6 @@ class ClientCreate extends Component
         'website' => 'nullable|url|max:255',
     ];
 
-    protected $validationAttributes = [
-        'company_name' => 'company name',
-        'contact_name' => 'contact name',
-        'title' => 'title',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'website' => 'website',
-    ];
 
     public function updated($propertyName)
     {

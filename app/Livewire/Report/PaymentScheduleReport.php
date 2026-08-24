@@ -119,17 +119,17 @@ class PaymentScheduleReport extends Component
 
             $money = fn ($v) => number_format((float) $v, 2, '.', '');
 
-            fputcsv($out, ['Summary', 'Committed', 'Paid', 'Outstanding']);
-            fputcsv($out, ['Expenses', $money($schedule['combined']['expenses']['total']), $money($schedule['combined']['expenses']['paid']), $money($schedule['combined']['expenses']['outstanding'])]);
-            fputcsv($out, ['Contracts', $money($schedule['combined']['contracts']['total']), $money($schedule['combined']['contracts']['paid']), $money($schedule['combined']['contracts']['outstanding'])]);
-            fputcsv($out, ['Total', $money($schedule['combined']['committed']), $money($schedule['combined']['paid']), $money($schedule['combined']['outstanding'])]);
+            fputcsv($out, [__('Summary'), __('Committed'), __('Paid'), __('Outstanding')]);
+            fputcsv($out, [__('Expenses'), $money($schedule['combined']['expenses']['total']), $money($schedule['combined']['expenses']['paid']), $money($schedule['combined']['expenses']['outstanding'])]);
+            fputcsv($out, [__('Contracts'), $money($schedule['combined']['contracts']['total']), $money($schedule['combined']['contracts']['paid']), $money($schedule['combined']['contracts']['outstanding'])]);
+            fputcsv($out, [__('Total'), $money($schedule['combined']['committed']), $money($schedule['combined']['paid']), $money($schedule['combined']['outstanding'])]);
 
             fputcsv($out, []);
-            fputcsv($out, ['Month', 'Payments Due', 'Amount Due']);
+            fputcsv($out, [__('Month'), __('Payments Due'), __('Amount Due')]);
             foreach ($schedule['projection']['buckets'] as $bucket) {
                 fputcsv($out, [$bucket['label'], $bucket['count'], $money($bucket['amount'])]);
             }
-            fputcsv($out, ['Total Open', $schedule['projection']['total_count'], $money($schedule['projection']['total_open'])]);
+            fputcsv($out, [__('Total Open'), $schedule['projection']['total_count'], $money($schedule['projection']['total_open'])]);
 
             fclose($out);
         }, 200, [

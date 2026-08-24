@@ -306,15 +306,15 @@ class Invoice extends Model
     public function getStatusLabelAttribute(): string
     {
         if ($this->isPastDue()) {
-            return 'Past Due';
+            return __('Past Due');
         }
 
         return match ($this->status) {
-            'draft' => 'Draft',
-            'sent' => 'Sent',
-            'pending' => 'Pending',
-            'partial' => 'Partial',
-            'paid' => 'Paid',
+            'draft' => __('Draft'),
+            'sent' => __('Sent'),
+            'pending' => __('Pending'),
+            'partial' => __('Partial'),
+            'paid' => __('Paid'),
             default => ucfirst($this->status),
         };
     }

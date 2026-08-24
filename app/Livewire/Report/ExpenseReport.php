@@ -178,7 +178,7 @@ class ExpenseReport extends Component
 
     protected function projectCsv(ExpenseReportService $service): array
     {
-        $headers = ['Project', 'Job Site', 'Expenses', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $headers = [__('Project'), __('Job Site'), __('Expenses'), __('Total'), __('Paid'), __('Outstanding'), __('Overdue')];
         $rows = [];
 
         foreach ($service->byProject() as $proj) {
@@ -194,7 +194,7 @@ class ExpenseReport extends Component
             foreach ($proj['jobsites'] as $js) {
                 $rows[] = [
                     $proj['project'] ?? '',
-                    $js['job_site'] ?? 'Project-level',
+                    $js['job_site'] ?? __('Project-level'),
                     $js['count'],
                     $this->money($js['total']),
                     $this->money($js['paid']),
@@ -205,16 +205,16 @@ class ExpenseReport extends Component
         }
 
         $k = $service->kpis();
-        $totals = ['Total', '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+        $totals = [__('Total'), '', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }
 
     protected function vendorCsv(ExpenseReportService $service): array
     {
-        $headers = ['Vendor', 'Expenses', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $headers = [__('Vendor'), __('Expenses'), __('Total'), __('Paid'), __('Outstanding'), __('Overdue')];
         $rows = $service->byVendor()->map(fn ($v) => [
-            $v['vendor'] ?? 'No vendor',
+            $v['vendor'] ?? __('No vendor'),
             $v['count'],
             $this->money($v['total']),
             $this->money($v['paid']),
@@ -223,14 +223,14 @@ class ExpenseReport extends Component
         ])->all();
 
         $k = $service->kpis();
-        $totals = ['Total', $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+        $totals = [__('Total'), $k['count'], $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }
 
     protected function costCodeCsv(ExpenseReportService $service): array
     {
-        $headers = ['Cost Code', 'Line Items', 'Expenses', 'Contracted', 'Contract Paid', 'Total Committed'];
+        $headers = [__('Cost Code'), __('Line Items'), __('Expenses'), __('Contracted'), __('Contract Paid'), __('Total Committed')];
         $byCostCode = $service->byCostCode();
         $rows = $byCostCode->map(fn ($cc) => [
             $cc['code'],
@@ -242,7 +242,7 @@ class ExpenseReport extends Component
         ])->all();
 
         $totals = [
-            'Total',
+            __('Total'),
             $byCostCode->sum('count'),
             $this->money($byCostCode->sum('expenses')),
             $this->money($byCostCode->sum('contracted')),
@@ -256,14 +256,14 @@ class ExpenseReport extends Component
     protected function detailCsv(ExpenseReportService $service): array
     {
         $dueBasis = $this->dateBasis === 'due';
-        $headers = [$dueBasis ? 'Due Date' : 'Date', 'Item', 'Vendor', 'Project', 'Job Site', 'Category', 'Installments', 'Total', 'Paid', 'Outstanding', 'Overdue'];
+        $headers = [$dueBasis ? __('Due Date') : __('Date'), __('Item'), __('Vendor'), __('Project'), __('Job Site'), __('Category'), __('Installments'), __('Total'), __('Paid'), __('Outstanding'), __('Overdue')];
         $rows = $service->detail()->map(fn ($row) => [
             ($dueBasis ? $row['due_date'] : $row['expense_date'])?->format('Y-m-d'),
             $row['item'],
             $row['vendor'] ?? '',
             $row['project'] ?? '',
-            $row['job_site'] ?? 'Project-level',
-            $row['category'] ? ucfirst($row['category']) : '',
+            $row['job_site'] ?? __('Project-level'),
+            $row['category'] ? \App\Models\CatalogItem::typeLabel($row['category']) : '',
             $row['payment_label'],
             $this->money($row['total']),
             $this->money($row['paid']),
@@ -272,7 +272,7 @@ class ExpenseReport extends Component
         ])->all();
 
         $k = $service->kpis();
-        $totals = ['Total', '', '', '', '', '', '', $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+        $totals = [__('Total'), '', '', '', '', '', '', $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }

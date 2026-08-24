@@ -435,9 +435,9 @@ class Quotation extends Model
         };
     }
 
-    public function getStatusLabel(): string
+    public static function statusLabel(?string $status): string
     {
-        return match ($this->status) {
+        return match ($status) {
             'draft' => __('Draft'),
             'sent' => __('Sent to Vendors'),
             'comparing' => __('Comparing'),
@@ -445,8 +445,13 @@ class Quotation extends Model
             'awarded' => __('Awarded'),
             'converted' => __('Converted'),
             'cancelled' => __('Cancelled'),
-            default => ucfirst($this->status),
+            default => ucfirst($status),
         };
+    }
+
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
     }
 
     public function getTypeLabel(): string

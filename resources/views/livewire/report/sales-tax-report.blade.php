@@ -208,7 +208,7 @@
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $invoice->invoice_date->format('M d, Y') }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $invoice->client?->company_name }}</td>
                                 <td class="px-6 py-3 text-sm">
-                                    <span class="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{{ ucfirst($invoice->status) }}</span>
+                                    <span class="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{{ $invoice->status_label }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white text-right">{{ Number::currency($invoice->subtotal, config('app.currency'), config('app.locale')) }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-500 dark:text-slate-400 text-right">{{ Number::currency($invoice->discount_amount, config('app.currency'), config('app.locale')) }}</td>

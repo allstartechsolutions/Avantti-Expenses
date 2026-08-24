@@ -57,6 +57,20 @@ class Role extends Model
      */
     public const SYSTEM = ['admin', 'manager', 'employee'];
 
+    /**
+     * Human label for the role.
+     *
+     * Role names are stored lower-case and are user-creatable, so a custom
+     * role has no key to translate — __() returns the name unchanged, which is
+     * the right answer for one somebody typed themselves. The three seeded
+     * roles do have keys. This mirrors access-index.blade.php, which already
+     * wrapped $role->name in __().
+     */
+    public function getLabel(): string
+    {
+        return __(ucfirst($this->name));
+    }
+
     public function isAdmin(): bool
     {
         return $this->name === 'admin';

@@ -115,7 +115,7 @@
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Payment Method') }}</label>
                             <p class="text-slate-900 dark:text-white">
-                                {{ $expense_payment_method ? __(str_replace('_', ' ', ucfirst($expense_payment_method))) : __('Not specified') }}
+                                {{ \App\Models\Expense::paymentMethodLabel($expense_payment_method) ?? __('Not specified') }}
                                 @if($expense_is_auto_payment)
                                     <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">{{ __('Auto') }}</span>
                                 @endif
@@ -183,7 +183,7 @@
                                                         ];
                                                     @endphp
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $paymentStatusColors[$payment->status] ?? $paymentStatusColors['pending'] }}">
-                                                        {{ __(ucfirst($payment->status)) }}
+                                                        {{ $payment->getStatusLabel() }}
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">

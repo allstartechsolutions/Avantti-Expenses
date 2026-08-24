@@ -214,7 +214,7 @@
     @if($invoice->message_body)
     <div style="margin-bottom: 25px; border: 1px solid #ddd; padding: 15px; background-color: #fafafa;">
         <div style="font-size: 9pt; font-weight: bold; color: #3F5189; margin-bottom: 8px;">
-            {{ $invoice->message_title ?? 'Message' }}
+            {{ $invoice->message_title ?? __('Message') }}
         </div>
         <div style="font-size: 8pt; color: #555; line-height: 1.5;">
             {!! strip_tags(App\Support\RichText::sanitize($invoice->message_body), '<br><p><ul><li><ol><strong><em>') !!}

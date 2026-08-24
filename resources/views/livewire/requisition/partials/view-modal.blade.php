@@ -269,8 +269,8 @@
                                             <div>
                                                 <p class="text-sm text-slate-900 dark:text-white">
                                                     {{ $history->old_status
-                                                        ? __(':old to :new', ['old' => ucfirst($history->old_status), 'new' => ucfirst($history->new_status)])
-                                                        : __('Created as :status', ['status' => ucfirst($history->new_status)]) }}
+                                                        ? __(':old to :new', ['old' => \App\Models\PurchaseRequisition::statusLabel($history->old_status), 'new' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)])
+                                                        : __('Created as :status', ['status' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)]) }}
                                                 </p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
                                                     {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->format('M d, Y H:i') }}

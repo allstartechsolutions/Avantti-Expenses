@@ -90,7 +90,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->createdBy?->name ?? 'Unknown' }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->createdBy?->name ?? __('Unknown') }}</dd>
                         </div>
                         @if($estimate->sent_at)
                             <div>
@@ -211,7 +211,7 @@
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                         <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                            {{ $estimate->message_title ?? 'Message' }}
+                            {{ $estimate->message_title ?? __('Message') }}
                         </h3>
                     </div>
                     <div class="p-6">
@@ -247,7 +247,7 @@
                                             {{ $email->sent_at->format('M d, Y H:i') }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white whitespace-nowrap">
-                                            {{ $email->sentBy?->name ?? 'Unknown' }}
+                                            {{ $email->sentBy?->name ?? __('Unknown') }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white">
                                             {{ $email->sent_to }}
@@ -487,7 +487,7 @@
                                                             {{ $history->getChangeDescription() }}
                                                         </p>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                            by {{ $history->changedBy?->name ?? 'System' }}
+                                                            by {{ $history->changedBy?->name ?? __('System') }}
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">

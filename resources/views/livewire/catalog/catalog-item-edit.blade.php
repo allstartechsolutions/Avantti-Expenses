@@ -428,7 +428,7 @@
                                 @enderror
                                 @if($type === 'product' && $units_per_purchase > 0 && $current_cost > 0)
                                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                        Unit cost: {{ Number::currency(round($current_cost / $units_per_purchase, 2), config('app.currency'), config('app.locale')) }}/{{ $usage_unit ?: 'unit' }}
+                                        Unit cost: {{ Number::currency(round($current_cost / $units_per_purchase, 2), config('app.currency'), config('app.locale')) }}/{{ $usage_unit ?: __('unit') }}
                                     </p>
                                 @endif
                             </div>

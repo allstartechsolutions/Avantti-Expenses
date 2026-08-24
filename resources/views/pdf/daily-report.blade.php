@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Daily Report - {{ $dailyReport->report_date->format('m/d/Y') }}</title>
+    <title>{{ __('Daily Report') }} - {{ $dailyReport->report_date->format('m/d/Y') }}</title>
 </head>
 <body style="font-family: DejaVu Sans, sans-serif; font-size: 9pt; line-height: 1.4; color: #333; margin: 0; padding: 20px;">
 
@@ -21,13 +21,13 @@
                 @endif
             </td>
             <td style="width: 50%; vertical-align: top; text-align: right; border: none; padding: 0;">
-                <div style="font-size: 11pt; font-weight: bold; color: #3F5189;">Project: {{ $dailyReport->project->project_name }}</div>
+                <div style="font-size: 11pt; font-weight: bold; color: #3F5189;">{{ __('Project:') }} {{ $dailyReport->project->project_name }}</div>
                 <div style="font-size: 8pt; color: #666;">
                     @if($dailyReport->jobSite)
                         <strong>{{ __('Job Site:') }}</strong> {{ $dailyReport->jobSite->job_site_name }}<br>
                         {{ $dailyReport->jobSite->full_address ?? '' }}
                     @else
-                        <strong>{{ __('Location:') }}</strong> Project (General)<br>
+                        <strong>{{ __('Location:') }}</strong> {{ __('Project (General)') }}<br>
                         {{ $dailyReport->project->full_address ?? '' }}
                     @endif
                 </div>
@@ -37,14 +37,14 @@
 
     <!-- Report Title -->
     <div style="font-size: 16pt; font-weight: bold; color: #333; margin-bottom: 15px; padding-top: 10px; border-top: 3px solid #3F5189;">
-        Daily Log: {{ $dailyReport->report_date->format('l n/j/Y') }}
+        {{ __('Daily Log:') }} {{ $dailyReport->report_date->format('l n/j/Y') }}
     </div>
 
     <!-- Status Box -->
     <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 10px 15px; margin-bottom: 20px;">
         <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">{{ __('Daily Log Completed') }}</div>
         <div style="font-size: 8pt; color: #555;">
-            Prepared by {{ $dailyReport->preparedBy->name }} on {{ $dailyReport->created_at->format('D, M d, Y \a\t h:i A T') }}
+            {{ __('Prepared by :name on :date', ['name' => $dailyReport->preparedBy->name, 'date' => $dailyReport->created_at->format('D, M d, Y \a\t h:i A T')]) }}
         </div>
     </div>
 
@@ -65,8 +65,8 @@
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('High') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Avg') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Midnight') }}</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">2 Days</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">3 Days</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('2 Days') }}</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('3 Days') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Low') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Avg') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555;">{{ __('High') }}</th>
@@ -158,14 +158,14 @@
     @endphp
     <div style="font-size: 11pt; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
         {{ __('MANPOWER LOG') }}
-        <span style="float: right; font-size: 10pt; color: #3F5189;">{{ $totalWorkers }} Workers | {{ number_format($totalManHours, 1) }} Man Hours</span>
+        <span style="float: right; font-size: 10pt; color: #3F5189;">{{ __(':workers Workers | :hours Man Hours', ['workers' => $totalWorkers, 'hours' => number_format($totalManHours, 1)]) }}</span>
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 30px;">{{ __('No.') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: left; font-size: 8pt; font-weight: bold; color: #555;">{{ __('Contact/Company') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;">{{ __('Workers') }}</th>
-            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;"># Hours</th>
+            <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 60px;">{{ __('# Hours') }}</th>
             <th style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 8pt; font-weight: bold; color: #555; width: 70px;">{{ __('Man Hours') }}</th>
         </tr>
         @foreach($dailyReport->manpowerLogs as $index => $log)
@@ -174,10 +174,10 @@
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt;">
                 <strong>{{ $log->contact_company }}</strong>
                 @if($log->works)
-                    <br><span style="font-size: 7pt; color: #666; font-style: italic;">Works: {{ $log->works }}</span>
+                    <br><span style="font-size: 7pt; color: #666; font-style: italic;">{{ __('Works:') }} {{ $log->works }}</span>
                 @endif
                 @if($log->comments)
-                    <br><span style="font-size: 7pt; color: #666; font-style: italic;">Comments: {{ $log->comments }}</span>
+                    <br><span style="font-size: 7pt; color: #666; font-style: italic;">{{ __('Comments:') }} {{ $log->comments }}</span>
                 @endif
             </td>
             <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 8pt; text-align: center;">{{ $log->workers }}</td>
@@ -202,7 +202,7 @@
     @foreach($dailyReport->tasks as $index => $task)
     <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background-color: #fafafa;">
         <span style="display: inline-block; background-color: #3F5189; color: white; width: 18px; height: 18px; text-align: center; line-height: 18px; font-size: 8pt; font-weight: bold; margin-right: 8px;">{{ $index + 1 }}</span>
-        <span style="font-weight: bold; font-size: 9pt;">Task {{ $index + 1 }}</span>
+        <span style="font-weight: bold; font-size: 9pt;">{{ __('Task :n', ['n' => $index + 1]) }}</span>
         <div style="font-size: 8pt; color: #555; margin-top: 8px; line-height: 1.5;">{!! strip_tags(App\Support\RichText::sanitize($task->description), '<br><p><ul><li><ol>') !!}</div>
     </div>
     @endforeach
@@ -265,7 +265,7 @@
                         @if($imageData)
                             <img src="{{ $imageData }}" style="max-width: 100%; max-height: 200px;">
                         @else
-                            <div style="color: #999; font-size: 8pt;">[Image not found]</div>
+                            <div style="color: #999; font-size: 8pt;">{{ __('[Image not found]') }}</div>
                         @endif
                         <div style="font-size: 7pt; color: #666; margin-top: 5px;">{{ $image->file_name }}</div>
                     </div>
@@ -289,7 +289,7 @@
     @foreach($dailyReport->tasks as $index => $task)
         @if($task->images && $task->images->count() > 0)
         <div style="font-size: 9pt; font-weight: bold; margin: 15px 0 10px 0; color: #555;">
-            Task {{ $index + 1 }}
+            {{ __('Task :n', ['n' => $index + 1]) }}
         </div>
         <table style="width: 100%; border: none;">
             @foreach($task->images->chunk(2) as $imageRow)
@@ -310,7 +310,7 @@
                         @if($imageData)
                             <img src="{{ $imageData }}" style="max-width: 100%; max-height: 200px;">
                         @else
-                            <div style="color: #999; font-size: 8pt;">[Image not found]</div>
+                            <div style="color: #999; font-size: 8pt;">{{ __('[Image not found]') }}</div>
                         @endif
                         <div style="font-size: 7pt; color: #666; margin-top: 5px;">{{ $image->file_name }}</div>
                     </div>
@@ -345,7 +345,7 @@
     <!-- Footer -->
     <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 8pt; color: #666;">
         <span>{{ $company->name ?? config('app.name') }}</span>
-        <span style="float: right;">Printed On: {{ now()->format('M d, Y \a\t h:i A T') }}</span>
+        <span style="float: right;">{{ __('Printed On:') }} {{ now()->format('M d, Y \a\t h:i A T') }}</span>
     </div>
 
 </body>

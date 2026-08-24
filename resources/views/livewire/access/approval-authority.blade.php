@@ -42,7 +42,7 @@
                             <td class="px-5 py-4 align-top">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $row['user']->name }}</div>
                                 <div class="text-xs text-slate-500 dark:text-slate-400">
-                                    {{ $row['user']->role?->name ? ucfirst($row['user']->role->name) : __('No role') }}
+                                    {{ $row['user']->role?->getLabel() ?? __('No role') }}
                                     @if ($row['exceptions'] > 0)
                                         ·
                                         <a href="{{ route('users.access', $row['user']->id) }}" class="text-[#3F5189] dark:text-blue-400 hover:underline">

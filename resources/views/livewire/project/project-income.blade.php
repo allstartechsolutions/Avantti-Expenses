@@ -50,7 +50,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="mt-2 text-sm text-white/80">{{ $incomeRecords->count() }} {{ Str::plural('record', $incomeRecords->count()) }}</p>
+                <p class="mt-2 text-sm text-white/80">{{ trans_choice(':count record|:count records', $incomeRecords->count(), ['count' => $incomeRecords->count()]) }}</p>
             </div>
             <!-- This Month -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">

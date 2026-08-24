@@ -50,7 +50,7 @@
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
                 @endif
-                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ ucfirst($statusFilter) }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ \App\Models\ExpensePayment::statusLabel($statusFilter) }}</div>
             </td>
         </tr>
     </table>
@@ -61,7 +61,7 @@
             <td style="width: 33%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Due in Period') }}</div>
                 <div style="font-size: 12pt; font-weight: bold; color: #333;">${{ number_format($kpis['total_due'], 2) }}</div>
-                <div style="font-size: 6.5pt; color: #888;">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }} ${{ number_format($kpis['due_expenses'], 2) }} · {{ __('contracts') }} ${{ number_format($kpis['due_contracts'], 2) }}</div>
+                <div style="font-size: 6.5pt; color: #888;">{{ trans_choice(':count payment|:count payments', $kpis['count_due'], ['count' => $kpis['count_due']]) }} · {{ __('expenses') }} ${{ number_format($kpis['due_expenses'], 2) }} · {{ __('contracts') }} ${{ number_format($kpis['due_contracts'], 2) }}</div>
             </td>
             <td style="width: 33%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase;">{{ __('Overdue (today)') }}</div>
@@ -98,7 +98,7 @@
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['item'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['project'] ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['job_site'] ?? __('Project-level') }}</td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ ucfirst($row['status']) }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ \App\Models\ExpensePayment::statusLabel($row['status']) }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">${{ number_format($row['amount'], 2) }}</td>
                 </tr>
             @empty

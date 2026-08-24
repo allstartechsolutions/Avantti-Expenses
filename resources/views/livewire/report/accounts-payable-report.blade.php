@@ -85,7 +85,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Due in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($kpis['total_due'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count_due'] }} {{ Str::plural('payment', $kpis['count_due']) }} · {{ __('expenses') }} {{ Number::currency($kpis['due_expenses'], $currency, $locale) }} · {{ __('contracts') }} {{ Number::currency($kpis['due_contracts'], $currency, $locale) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count payment|:count payments', $kpis['count_due'], ['count' => $kpis['count_due']]) }} · {{ __('expenses') }} {{ Number::currency($kpis['due_expenses'], $currency, $locale) }} · {{ __('contracts') }} {{ Number::currency($kpis['due_contracts'], $currency, $locale) }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Overdue (today)') }}</p>
@@ -95,7 +95,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Contract Balances Outstanding') }}</p>
             <p class="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{{ Number::currency($kpis['contract_outstanding_total'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['contract_outstanding_count'] }} {{ Str::plural('subcontractor contract', $kpis['contract_outstanding_count']) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count subcontractor contract|:count subcontractor contracts', $kpis['contract_outstanding_count'], ['count' => $kpis['contract_outstanding_count']]) }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Expenses Paid in Period') }}</p>
@@ -174,7 +174,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-xs">
-                                    <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $statusClass }}">{{ ucfirst($row['status']) }}</span>
+                                    <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $statusClass }}">{{ \App\Models\ExpensePayment::statusLabel($row['status']) }}</span>
                                 </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-white">
                                     {{ Number::currency($row['amount'], $currency, $locale) }}

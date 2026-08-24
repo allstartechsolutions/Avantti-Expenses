@@ -28,11 +28,18 @@ class BudgetCreate extends Component
         'source_template_id' => 'nullable|exists:cost_code_templates,id',
     ];
 
-    protected $validationAttributes = [
-        'name' => 'budget name',
-        'notes' => 'notes',
-        'source_template_id' => 'template',
-    ];
+
+
+    /**
+     * Only the names that differ from the shared map in
+     * lang/<locale>/validation.php — everything else falls through to it.
+     */
+    public function validationAttributes(): array
+    {
+        return [
+            'name' => __('budget name'),
+        ];
+    }
 
     public function mount(?Project $project = null, ?JobSite $jobSite = null)
     {

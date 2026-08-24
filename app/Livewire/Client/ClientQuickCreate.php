@@ -38,13 +38,6 @@ class ClientQuickCreate extends Component
         'website' => 'nullable|url|max:255',
     ];
 
-    protected $validationAttributes = [
-        'company_name' => 'company name',
-        'contact_name' => 'contact name',
-        'postal_code' => 'postal code',
-        'email' => 'email address',
-        'website' => 'website',
-    ];
 
     #[On('open-quick-add-client')]
     public function openModal($companyName = '')

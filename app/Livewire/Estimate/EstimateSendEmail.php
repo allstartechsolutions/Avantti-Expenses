@@ -33,15 +33,19 @@ class EstimateSendEmail extends Component
         $company = Company::first();
         $companyName = $company?->name ?? config('app.name');
 
-        $this->subject = "Estimate {$estimate->estimate_number} from {$companyName}";
+        $this->subject = __('Estimate :number from :company', [
+            'number' => $estimate->estimate_number,
+            'company' => $companyName,
+        ]);
 
-        $this->body = "Dear {$estimate->client->contact_name},<br><br>"
-            . "Please find attached the estimate <strong>{$estimate->estimate_number}</strong> "
-            . "for your review.<br><br>"
-            . "Total Amount: <strong>\${$this->formatMoney($estimate->total_amount)}</strong><br><br>"
-            . "If you have any questions, please don't hesitate to reach out.<br><br>"
-            . "Best regards,<br>"
-            . $companyName;
+        $this->body = __('Dear :name,', ['name' => $estimate->client->contact_name]).'<br><br>'
+            .__('Please find attached the estimate :number for your review.', [
+                'number' => '<strong>'.$estimate->estimate_number.'</strong>',
+            ]).'<br><br>'
+            .__('Total Amount:').' <strong>$'.$this->formatMoney($estimate->total_amount).'</strong><br><br>'
+            .__("If you have any questions, please don't hesitate to reach out.").'<br><br>'
+            .__('Best regards,').'<br>'
+            .$companyName;
     }
 
     public function sendEmail(): void

@@ -31,7 +31,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="mt-4 text-sm text-white/80">{{ __('Job Amount') }} + {{ $changeOrders->count() }} {{ Str::plural('change order', $changeOrders->count()) }}</p>
+            <p class="mt-4 text-sm text-white/80">{{ __('Job Amount') }} + {{ trans_choice(':count change order|:count change orders', $changeOrders->count(), ['count' => $changeOrders->count()]) }}</p>
         </div>
 
         <!-- Total Expenses Card -->
@@ -47,7 +47,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="mt-4 text-sm text-white/80">{{ $expenses->count() }} {{ Str::plural('expense', $expenses->count()) }} {{ __('recorded') }}</p>
+            <p class="mt-4 text-sm text-white/80">{{ trans_choice(':count expense|:count expenses', $expenses->count(), ['count' => $expenses->count()]) }} {{ __('recorded') }}</p>
         </div>
 
         <!-- Contracts Card -->

@@ -116,7 +116,7 @@
                                         ];
                                     @endphp
                                     <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $typeColors[$item->type] }}">
-                                        {{ ucfirst($item->type) }}
+                                        {{ $item->getTypeLabel() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -146,7 +146,7 @@
                                         @endif
                                     @else
                                         <div class="text-sm text-slate-500 dark:text-slate-400">
-                                            {{ ucfirst($item->billing_type) ?? '-' }}
+                                            {{ $item->getBillingTypeLabel() ?? '-' }}
                                         </div>
                                     @endif
                                 </td>

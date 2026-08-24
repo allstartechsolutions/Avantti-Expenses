@@ -27,6 +27,18 @@ class BudgetEdit extends Component
     // Delete confirmation
     public $showDeleteConfirmation = false;
 
+
+    /**
+     * Only the names that differ from the shared map in
+     * lang/<locale>/validation.php — everything else falls through to it.
+     */
+    public function validationAttributes(): array
+    {
+        return [
+            'name' => __('budget name'),
+        ];
+    }
+
     protected function rules()
     {
         return [
@@ -35,10 +47,6 @@ class BudgetEdit extends Component
         ];
     }
 
-    protected $validationAttributes = [
-        'name' => 'budget name',
-        'notes' => 'notes',
-    ];
 
     public function mount(Budget $budget)
     {

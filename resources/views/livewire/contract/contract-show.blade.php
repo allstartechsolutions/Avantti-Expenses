@@ -45,7 +45,7 @@
                         ];
                     @endphp
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$contract->status] ?? '' }}">
-                        {{ $statusLabels[$contract->status] ?? ucfirst($contract->status) }}
+                        {{ $contract->getStatusLabel() }}
                     </span>
                 </div>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -464,10 +464,10 @@
                                                     <div>
                                                         <p class="text-sm font-medium text-slate-900 dark:text-white">
                                                             @if($history->old_status)
-                                                                {{ $statusLabels[$history->old_status] ?? ucfirst($history->old_status) }}
+                                                                {{ \App\Models\Contract::statusLabel($history->old_status) }}
                                                                 &rarr;
                                                             @endif
-                                                            {{ $statusLabels[$history->new_status] ?? ucfirst($history->new_status) }}
+                                                            {{ \App\Models\Contract::statusLabel($history->new_status) }}
                                                         </p>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400">
                                                             {{ __('by') }} {{ $history->changedBy?->name ?? __('System') }}

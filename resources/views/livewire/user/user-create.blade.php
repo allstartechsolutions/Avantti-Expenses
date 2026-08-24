@@ -138,7 +138,7 @@
                         >
                             <option value="">{{ __('Select a role') }}</option>
                             @foreach($roles as $role)
-                                <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                                <option value="{{ $role->id }}">{{ $role->getLabel() }}</option>
                             @endforeach
                         </select>
                         @error('role_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

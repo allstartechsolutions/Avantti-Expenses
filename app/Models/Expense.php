@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Models\Concerns\HasPaymentMethodLabel;
 
 class Expense extends Model
 {
+    use HasPaymentMethodLabel;
+
     protected $fillable = [
         'project_id',
         'job_site_id',
@@ -435,6 +438,59 @@ class Expense extends Model
         }
 
         return $this->getPaidInstallmentsCount() . '/' . $this->total_installments;
+    }
+
+    /**
+     * Human label for the expense's status.
+     *
+     * Expense-specific keys on purpose, following Task::getStatusLabel().
+     * The shared words are translated in the masculine for contracts and
+     * quotations ("Pago", "Vencido", "Cancelado") — a *despesa* is feminine,
+     * so an expense screen reading "Pago" is wrong. Giving expenses their own
+     * keys fixes the gender without disturbing the other modules.
+     */
+    /**
+     * Human label for a column name shown in the change history.
+     *
+     * recordChange() can log any changed column, so this leans on the
+     * `attributes` map in the per-locale validation.php rather than duplicating the
+     * schema, and falls back to the humanised column name for anything
+     * unmapped. A couple of fields mean something different on an expense than
+     * they do on a form, so those are overridden first.
+     */
+    public static function fieldLabel(string $field): string
+    {
+        $override = match ($field) {
+            'supplier_id' => __('Vendor'),
+            'catalog_item_id' => __('Item'),
+            default => null,
+        };
+
+        if ($override !== null) {
+            return $override;
+        }
+
+        $key = 'validation.attributes.'.$field;
+        $mapped = __($key);
+
+        return ucfirst($mapped === $key ? str_replace('_', ' ', $field) : $mapped);
+    }
+
+    public static function statusLabel(?string $status): string
+    {
+        return match ($status) {
+            'unpaid' => __('Expense status: unpaid'),
+            'partial' => __('Expense status: partial'),
+            'paid' => __('Expense status: paid'),
+            'overdue' => __('Expense status: overdue'),
+            'cancelled' => __('Expense status: cancelled'),
+            default => ucfirst((string) $status),
+        };
+    }
+
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
     }
 
     /**

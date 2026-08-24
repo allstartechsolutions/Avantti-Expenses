@@ -211,10 +211,10 @@ class Estimate extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'draft' => 'Draft',
-            'sent' => 'Sent',
-            'accepted' => 'Accepted',
-            'declined' => 'Declined',
+            'draft' => __('Draft'),
+            'sent' => __('Sent'),
+            'accepted' => __('Accepted'),
+            'declined' => __('Declined'),
             default => ucfirst($this->status),
         };
     }

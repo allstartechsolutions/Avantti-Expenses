@@ -209,11 +209,11 @@
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatPrecipitation($weather['precip_midnight']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">2 Days</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('2 Days') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatPrecipitation($weather['precip_2_days']) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">3 Days</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('3 Days') }}</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $this->formatPrecipitation($weather['precip_3_days']) }}</p>
                         </div>
                     </div>
@@ -455,7 +455,7 @@
                                 </span>
                                 <div>
                                     <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ $log['contact_company'] }}</h3>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ $log['workers'] ?? 1 }} {{ Str::plural('worker', $log['workers'] ?? 1) }} &bull; {{ $log['hours'] }} hours</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count worker|:count workers', $log['workers'] ?? 1, ['count' => $log['workers'] ?? 1]) }} &bull; {{ trans_choice(':count hour|:count hours', $log['hours'], ['count' => $log['hours']]) }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
@@ -496,7 +496,7 @@
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    {{ count($log['images']) }} {{ Str::plural('image', count($log['images'])) }}
+                                    {{ trans_choice(':count image|:count images', count($log['images']), ['count' => count($log['images'])]) }}
                                 </div>
                                 <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
                                     @foreach($log['images'] as $imageIndex => $image)
@@ -595,7 +595,7 @@
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    {{ count($task['images']) }} {{ Str::plural('image', count($task['images'])) }}
+                                    {{ trans_choice(':count image|:count images', count($task['images']), ['count' => count($task['images'])]) }}
                                 </div>
                                 <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
                                     @foreach($task['images'] as $imageIndex => $image)
@@ -938,7 +938,7 @@
 
                     <!-- Workers -->
                     <div>
-                        <label for="manpower_workers" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"># of Workers *</label>
+                        <label for="manpower_workers" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('# of Workers') }} *</label>
                         <input
                             type="number"
                             min="1"

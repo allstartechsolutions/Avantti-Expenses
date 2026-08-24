@@ -54,14 +54,6 @@ class SubcontractorCreate extends Component
         'longitude' => 'nullable|numeric',
     ];
 
-    protected $validationAttributes = [
-        'company_name' => 'company name',
-        'contact_name' => 'contact name',
-        'contact_email' => 'contact email',
-        'title' => 'title',
-        'postal_code' => 'postal code',
-        'address_2' => 'address line 2',
-    ];
 
     public function mount()
     {

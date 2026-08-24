@@ -8,7 +8,7 @@
                 </svg>
             </div>
             <h2 class="text-xl font-semibold text-slate-900 mb-2">{{ __('Invoice Paid') }}</h2>
-            <p class="text-slate-500">{{ __('Invoice') }} <span class="font-medium">{{ $invoice->invoice_number }}</span> has already been paid in full.</p>
+            <p class="text-slate-500">{!! __('Invoice :number has already been paid in full.', ['number' => '<span class="font-medium">'.e($invoice->invoice_number).'</span>']) !!}</p>
             <p class="text-slate-500 mt-1">{{ __('Thank you!') }}</p>
         </div>
 
@@ -22,13 +22,15 @@
             </div>
             <h2 class="text-xl font-semibold text-slate-900 mb-2">{{ __('Payment Successful') }}</h2>
             <p class="text-slate-500">
-                Your payment of <span class="font-semibold text-slate-900">${{ $paidAmountDisplay }}</span>
-                for invoice <span class="font-medium">{{ $invoice->invoice_number }}</span> has been processed.
+                {!! __('Your payment of :amount for invoice :number has been processed.', [
+                    'amount' => '<span class="font-semibold text-slate-900">$'.e($paidAmountDisplay).'</span>',
+                    'number' => '<span class="font-medium">'.e($invoice->invoice_number).'</span>',
+                ]) !!}
             </p>
             @if($invoice->getBalanceDue() > 0)
                 <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg inline-block">
                     <p class="text-sm text-yellow-800">
-                        Remaining balance: <span class="font-semibold">${{ number_format($invoice->getBalanceDue(), 2) }}</span>
+                        {!! __('Remaining balance: :amount', ['amount' => '<span class="font-semibold">$'.e(number_format($invoice->getBalanceDue(), 2)).'</span>']) !!}
                     </p>
                 </div>
             @endif
@@ -75,7 +77,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        ${{ number_format($invoice->getAmountPaid(), 2) }} already paid
+                        {!! __(':amount already paid', ['amount' => '$'.e(number_format($invoice->getAmountPaid(), 2))]) !!}
                     </div>
                 @endif
             </div>

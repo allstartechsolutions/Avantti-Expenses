@@ -149,7 +149,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Total in Period') }}</p>
             <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($kpis['total'], $currency, $locale) }}</p>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $kpis['count'] }} {{ Str::plural('payment', $kpis['count']) }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count payment|:count payments', $kpis['count'], ['count' => $kpis['count']]) }}</p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Paid') }}</p>

@@ -132,10 +132,10 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-900 dark:text-white">{{ $supplier->email ?? 'N/A' }}</div>
+                                    <div class="text-sm text-slate-900 dark:text-white">{{ $supplier->email ?? __('N/A') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-900 dark:text-white">{{ $supplier->formatted_phone ?? 'N/A' }}</div>
+                                    <div class="text-sm text-slate-900 dark:text-white">{{ $supplier->formatted_phone ?? __('N/A') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">

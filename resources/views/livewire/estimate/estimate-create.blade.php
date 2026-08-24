@@ -344,7 +344,7 @@
                     <select
                         wire:model.live="selectedMessageId"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        <option value="">— No message —</option>
+                        <option value="">{{ __('— No message —') }}</option>
                         @foreach($documentMessages as $msg)
                             <option value="{{ $msg->id }}">
                                 {{ $msg->title }}{{ $msg->is_default ? ' (Default)' : '' }}
@@ -447,7 +447,7 @@
                                             <button type="button" wire:click="selectCatalogItem({{ $ci->id }})" class="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700">
                                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $ci->name }}</div>
                                                 <div class="text-xs text-slate-500">
-                                                    ${{ number_format($ci->current_cost, 2) }} / {{ $ci->usage_unit ?? $ci->purchase_unit ?? 'unit' }}
+                                                    ${{ number_format($ci->current_cost, 2) }} / {{ $ci->usage_unit ?? $ci->purchase_unit ?? __('unit') }}
                                                     @if($ci->is_taxable) &middot; Taxable{{ $ci->taxRate ? ' (' . $ci->taxRate->formatted_rate . ')' : '' }} @endif
                                                 </div>
                                             </button>
@@ -536,7 +536,7 @@
                                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
                                     <option value="">{{ __('None') }}</option>
                                     <option value="percentage">%</option>
-                                    <option value="fixed">$ (Fixed)</option>
+                                    <option value="fixed">{{ __('$ (Fixed)') }}</option>
                                 </select>
                                 @if($item_discount_type)
                                     <div class="relative flex-1">

@@ -35,7 +35,7 @@
                                 <ul class="mt-0.5 text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
                                     @foreach($entry['changes'] as $field => $change)
                                         <li>
-                                            {{ ucfirst(str_replace('_', ' ', $field)) }}:
+                                            {{ \App\Models\Expense::fieldLabel($field) }}:
                                             <span class="line-through">{{ $change['old'] ?? '—' }}</span>
                                             →
                                             <span class="text-slate-700 dark:text-slate-300">{{ $change['new'] ?? '—' }}</span>

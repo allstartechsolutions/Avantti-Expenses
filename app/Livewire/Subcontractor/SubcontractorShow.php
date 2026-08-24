@@ -40,6 +40,18 @@ class SubcontractorShow extends Component
     // Delete modal
     public $showDeleteModal = false;
 
+
+    /**
+     * Only the names that differ from the shared map in
+     * lang/<locale>/validation.php — everything else falls through to it.
+     */
+    public function validationAttributes(): array
+    {
+        return [
+            'employee_email' => __('email'),
+        ];
+    }
+
     protected function rules()
     {
         $rules = [
@@ -61,17 +73,6 @@ class SubcontractorShow extends Component
         return $rules;
     }
 
-    protected $validationAttributes = [
-        'document_type_id' => 'document type',
-        'document_file' => 'document file',
-        'expiration_date' => 'expiration date',
-        'document_notes' => 'notes',
-        'employee_name' => 'name',
-        'employee_title' => 'title',
-        'employee_phone' => 'phone',
-        'employee_email' => 'email',
-        'employee_notes' => 'notes',
-    ];
 
     public function mount(Subcontractor $subcontractor)
     {

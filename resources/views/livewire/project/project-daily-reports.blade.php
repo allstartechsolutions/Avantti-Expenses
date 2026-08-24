@@ -46,7 +46,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="mt-4 text-sm text-white/80">{{ $dailyReports->count() }} {{ Str::plural('report', $dailyReports->count()) }} recorded</p>
+            <p class="mt-4 text-sm text-white/80">{{ trans_choice(':count report|:count reports', $dailyReports->count(), ['count' => $dailyReports->count()]) }} recorded</p>
         </div>
 
         <!-- Daily Reports List -->
@@ -80,10 +80,10 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $report->preparedBy?->name ?? 'Unknown' }}
+                                        {{ $report->preparedBy?->name ?? __('Unknown') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $report->tasks->count() }} {{ Str::plural('task', $report->tasks->count()) }}
+                                        {{ trans_choice(':count task|:count tasks', $report->tasks->count(), ['count' => $report->tasks->count()]) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         @if($report->locked_at)

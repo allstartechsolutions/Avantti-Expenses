@@ -26,11 +26,6 @@ class CatalogCategoryCreate extends Component
         'display_order' => 'integer|min:0',
     ];
 
-    protected $validationAttributes = [
-        'applicable_types' => 'applicable types',
-        'parent_id' => 'parent category',
-        'display_order' => 'display order',
-    ];
 
     public function save()
     {

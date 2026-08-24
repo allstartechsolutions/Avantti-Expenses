@@ -59,7 +59,7 @@
                 </div>
             </div>
             <p class="mt-4 text-sm text-white/80">
-                {{ $financials['expenses_count'] }} {{ Str::plural('expense', $financials['expenses_count']) }} {{ __('recorded') }}
+                {{ trans_choice(':count expense|:count expenses', $financials['expenses_count'], ['count' => $financials['expenses_count']]) }} {{ __('recorded') }}
             </p>
         </div>
 
@@ -169,7 +169,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Expenses') }}</h3>
-            <span class="text-xs text-slate-500 dark:text-slate-400">{{ $expensesDetail->count() }} {{ Str::plural('expense', $expensesDetail->count()) }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count expense|:count expenses', $expensesDetail->count(), ['count' => $expensesDetail->count()]) }}</span>
         </div>
         @if ($expensesDetail->isEmpty())
             <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
@@ -204,7 +204,7 @@
                                             default => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
                                         };
                                     @endphp
-                                    <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $statusClass }}">{{ ucfirst($expense->status) }}</span>
+                                    <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $statusClass }}">{{ $expense->getStatusLabel() }}</span>
                                 </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-white">
                                     {{ Number::currency($expense->total_amount, $currency, $locale) }}
@@ -229,7 +229,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contracts') }}</h3>
-            <span class="text-xs text-slate-500 dark:text-slate-400">{{ $contractsDetail->count() }} {{ Str::plural('contract', $contractsDetail->count()) }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count contract|:count contracts', $contractsDetail->count(), ['count' => $contractsDetail->count()]) }}</span>
         </div>
         @if ($contractsDetail->isEmpty())
             <div class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
@@ -272,7 +272,7 @@
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? '—' }}</td>
                                 <td class="px-6 py-3 whitespace-nowrap text-xs">
                                     <span class="inline-flex px-2 py-0.5 rounded-full font-medium {{ $contractStatusClass }}">
-                                        {{ ucfirst(str_replace('_', ' ', $contract->status)) }}
+                                        {{ $contract->getStatusLabel() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-900 dark:text-white">

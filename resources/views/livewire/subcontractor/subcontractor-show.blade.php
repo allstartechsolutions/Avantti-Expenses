@@ -187,7 +187,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Title/Position') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->title ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->title ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Email -->
@@ -203,7 +203,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Phone Number') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->formatted_phone ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->formatted_phone ?? __('Not provided') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -230,7 +230,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Street Address') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->street ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->street ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Address Line 2 -->
@@ -238,7 +238,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Address Line 2') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->address_2 ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->address_2 ?? __('Not provided') }}</p>
                                 </div>
 
                                 @if($subcontractor->country === 'BR')
@@ -247,7 +247,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Neighborhood (Bairro)') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->neighborhood ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->neighborhood ?? __('Not provided') }}</p>
                                 </div>
                                 @endif
 
@@ -256,7 +256,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('City') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->city ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->city ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- State -->
@@ -264,7 +264,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('State') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->state ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->state ?? __('Not provided') }}</p>
                                 </div>
 
                                 <!-- Postal Code -->
@@ -272,7 +272,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ $subcontractor->country === 'BR' ? 'CEP' : 'Postal Code' }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->postal_code ?? 'Not provided' }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->postal_code ?? __('Not provided') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -516,7 +516,7 @@
                                                 </td>
                                                 <td class="px-4 py-4">
                                                     <div class="text-sm text-slate-900 dark:text-white">{{ $document->created_at->format('M d, Y') }}</div>
-                                                    <div class="text-xs text-slate-500 dark:text-slate-400">by {{ $document->uploadedBy->name ?? 'Unknown' }}</div>
+                                                    <div class="text-xs text-slate-500 dark:text-slate-400">by {{ $document->uploadedBy->name ?? __('Unknown') }}</div>
                                                 </td>
                                                 <td class="px-4 py-4 text-right">
                                                     <div class="flex items-center justify-end space-x-2">

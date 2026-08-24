@@ -274,9 +274,9 @@ class PurchaseRequisition extends Model
         };
     }
 
-    public function getStatusLabel(): string
+    public static function statusLabel(?string $status): string
     {
-        return match ($this->status) {
+        return match ($status) {
             'draft' => __('Draft'),
             'pending' => __('Pending Approval'),
             'approved' => __('Approved'),
@@ -284,8 +284,13 @@ class PurchaseRequisition extends Model
             'quoted' => __('Quoted'),
             'fulfilled' => __('Fulfilled'),
             'cancelled' => __('Cancelled'),
-            default => ucfirst($this->status),
+            default => ucfirst($status),
         };
+    }
+
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
     }
 
     public function getPriorityColor(): string
