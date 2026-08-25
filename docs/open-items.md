@@ -4,6 +4,9 @@ Rewritten **2026-08-21**, after the permissions module was completed and deploye
 eighteen module passes and the three closing phases. Read this first; every finished piece of
 work has its own file (index at the bottom).
 
+Last touched **2026-08-25**: error monitoring (Sentry) added — built, verified locally,
+committed, **not yet deployed**. See §1b.
+
 ---
 
 ## 1. State of the repo
@@ -18,16 +21,19 @@ work has its own file (index at the bottom).
   deployed.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
   outstanding at the *phase* level — every screen that exists, works.
-- **Deploy needs:** `php artisan migrate` (47 additive migrations since `985089c`, listed by
+- **Deploy needs:** `composer install --no-dev` (a new package — Sentry — is now in
+  `composer.json`), `php artisan migrate` (47 additive migrations since `985089c`, listed by
   `git diff --name-only --diff-filter=A 985089c..HEAD -- database/migrations`) then
   `php artisan view:clear`. No migration drops or rewrites a column; the two that touch existing
   tables (`allow_file_uploads_without_an_owner`, `make_meeting_attendance_unmarked_by_default`)
-  only relax a NOT NULL.
+  only relax a NOT NULL. **Plus one new `.env` line, `SENTRY_LARAVEL_DSN` — see §1b.**
 - **The scheduler must be running in production** for the task e-mails, and it is worth checking:
   `routes/console.php` now schedules `tasks:notify-overdue` daily at 07:00 and
   `tasks:send-weekly-digest` hourly (the command itself decides whether this is the configured
   day and hour, so moving the digest in System Settings needs no deploy). Both are idempotent —
-  the notification log stops anyone being mailed twice.
+  the notification log stops anyone being mailed twice. **All four scheduled jobs now carry
+  `->sentryMonitor()`**, so a cron entry that was never added or that quietly stopped raises an
+  alert instead of failing silently — see §1b.
 - **Process rules (user-set):** never commit, never merge, never push — the user does all three.
   Leave finished work in the working tree and report it.
 
@@ -274,6 +280,71 @@ Permissions*.
      after reading.
   2. A control whose action would be refused is not rendered; and every destructive action
      needs a guard, including ones that never had an admin check.
+
+---
+
+### 1b. Error monitoring — Sentry (2026-08-25, committed, NOT yet deployed)
+
+**Committed (`fe325b1`, `3b5ef1a`) and verified end to end on the local install.** A real test
+event reached the Sentry project (`php artisan sentry:test`), and the context middleware was
+exercised against a real project and a real job site. **Nothing is live yet** — the production
+`.env` has no DSN, so on the server it is currently a no-op. See *To deploy it* below.
+
+**Reference doc: [`docs/sentry-monitoring.md`](./sentry-monitoring.md).** Read that before
+changing anything here — the privacy settings in `config/sentry.php` are deliberate and are
+explained there, not in this file.
+
+**What it does.** Reports PHP exceptions, failures inside Livewire components and failures
+inside the scheduled commands, plus full performance tracing. Errors arrive labelled with who
+was on the screen, their role and access scope, and which project or job site they were
+looking at.
+
+**It is optional, the same way R2 is.** With `SENTRY_LARAVEL_DSN` empty the SDK is a complete
+no-op — nothing collected, nothing sent, every screen and the scheduler behave exactly as they
+did before the package existed. An install that is never given a DSN is not degraded.
+
+| | |
+|---|---|
+| Package | `sentry/sentry-laravel` 4.27 (auto-discovered) |
+| Wiring | `Integration::handles($exceptions)` in `bootstrap/app.php` |
+| Context | `app/Http/Middleware/AttachSentryContext.php`, appended last to the `web` group |
+| Config | `config/sentry.php` — published, with the privacy decisions commented in place |
+| Crons | `->sentryMonitor()` on the four jobs in `routes/console.php` |
+| Tests | `phpunit.xml` pins an empty DSN and a `0` trace rate — the suite never reports |
+
+**To deploy it:**
+
+1. `composer install --no-dev` (the package is new).
+2. Add to the server's `.env` — the DSN is at Sentry → Settings → Projects → [project] →
+   Client Keys:
+   ```env
+   SENTRY_LARAVEL_DSN=https://<key>@o<org>.ingest.sentry.io/<project>
+   SENTRY_TRACES_SAMPLE_RATE=1.0
+   ```
+3. `php artisan config:clear` (and `config:cache` if the site caches config).
+4. Add the release tag to the Forge deploy script, before `config:cache`:
+   ```bash
+   sed -i "/^SENTRY_RELEASE=/d" .env
+   echo "SENTRY_RELEASE=$(git rev-parse --short HEAD)" >> .env
+   ```
+5. `php artisan sentry:test` on the server to prove it, then delete the test issue.
+
+**The one thing not to undo.** `max_request_body_size` is set to `'never'` and
+`send_default_pii` to `false`. Sentry's own default for the first is `medium`, which attaches
+the POST body of the failing request — for this application that is expense amounts, payment
+details, client and vendor records leaving the server on every error. **The two options are
+independent**: turning PII off does not stop the body being captured; both are required. SQL
+query *bindings* are off for the same reason, since the bindings are the money.
+
+**Decisions taken, so they are not re-litigated:** backend only (no `@sentry/browser` — Alpine
+and browser JS errors are not covered, and that is a separate change worth making only if
+browser-side bugs start being the ones that hurt); tracing at `1.0`, which is the setting most
+likely to exhaust the quota, so lower `SENTRY_TRACES_SAMPLE_RATE` first if it does — errors are
+sampled separately and always sent in full; a single install, so no per-customer tagging layer
+was built. If the product is sold to a second company, decide then between one Sentry project
+tagged per install and one project each.
+
+**No user-facing strings were added**, so there is nothing owed to `pt_BR.json` for this work.
 
 ---
 
@@ -542,6 +613,8 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 | Quotation rounds — phases 2–8, as built | `docs/quotation-module.md` |
 | File repository (documents module) — plan + build log | `docs/file-repository-plan.md` |
 | Cloudflare R2 setup (bucket, token, CORS) | `docs/deployment-cloudflare-r2.md` |
+| **Error monitoring (Sentry) — what is sent, what is withheld, cron monitors, deploy** | **`docs/sentry-monitoring.md`** |
+| The Forge scheduler — one cron entry, four jobs, the EST caveat | `docs/deployment-scheduler.md` |
 | Income module, incl. received/expected and distribution | `docs/income-module.md` |
 | Income distribution + job site income page changelog | `docs/changelog-2026-08-18-income-distribution.md` |
 | Code review of that work | `docs/code-review-2026-08-18-income-distribution.md` |

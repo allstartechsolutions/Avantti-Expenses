@@ -65,6 +65,12 @@ cron: that would move the schedule back into code.
 All four are `->withoutOverlapping()`, and the task mails are idempotent — the
 `task_notifications` log prevents anybody being mailed twice — so a double run is safe.
 
+All four also carry **`->sentryMonitor()`**, which sends a check-in to Sentry either side of
+every run. See *Watching that it actually runs* below.
+
+**When adding a fifth job, give it `->sentryMonitor()` in the same line it is scheduled on.**
+A job that is not monitored fails silently, which is the whole problem this solves.
+
 ## Timezone — read before trusting the times above
 
 Laravel evaluates scheduled times in `config('app.schedule_timezone')`, falling back to
@@ -100,3 +106,23 @@ so nobody already sent to this week gets a second copy.
 Where the cron is not running, nothing breaks loudly: no digests go out, no overdue mail is
 sent, and R2 slowly accumulates abandoned upload parts. It is silent, so check
 `schedule:list` after any server rebuild.
+
+## Watching that it actually runs
+
+The silence described above is exactly what `->sentryMonitor()` on each of the four jobs is
+for. A crashed command already reports itself as an exception; **a cron entry that was never
+added, or that quietly stopped, throws nothing at all** — the work simply stops happening and
+nobody finds out until a customer asks where their digest went.
+
+Each job now sends a check-in before it starts and another when it finishes, so Sentry knows
+both its expected schedule and its last successful run, and raises a **missed check-in** alert
+when one does not arrive. The monitors create themselves on the first run and appear under
+**Crons** in the Sentry sidebar, each slugged after its command.
+
+This costs nothing on an install without Sentry configured: with `SENTRY_LARAVEL_DSN` empty
+the check-ins are skipped entirely and the scheduler behaves exactly as it did before. Setting
+the DSN is the whole of the setup — see **[`sentry-monitoring.md`](./sentry-monitoring.md)**,
+§4 for the monitors and §1 for turning it on.
+
+`schedule:list` after a server rebuild is still worth doing. The difference is that forgetting
+to is no longer silent.

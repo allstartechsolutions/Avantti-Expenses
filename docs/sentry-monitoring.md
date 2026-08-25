@@ -142,6 +142,9 @@ The monitors create themselves in Sentry on the first run (**Crons** in the side
 slugged after its command. Like everything else here, the check-ins are skipped entirely
 when there is no DSN — the scheduler on an unconfigured install runs exactly as before.
 
+**A job added later needs `->sentryMonitor()` on the same line it is scheduled on.** An
+unmonitored job is back to failing silently, which is the whole point of this.
+
 See `docs/deployment-scheduler.md` for the single Forge cron entry that drives all four.
 
 ---
@@ -191,3 +194,9 @@ group by deploy.
   separate change, worth making only if browser-side bugs start being the ones that hurt.
 - **Sentry is not a log.** It reports what crashed, not what happened. `LOG_CHANNEL` and
   `storage/logs` are unchanged and still the place to look for ordinary application logs.
+- **Nothing here is user-facing**, so this work owes nothing to `en.json` / `pt_BR.json`. The
+  only strings involved are exception messages, which are read by you and not by a customer.
+  A translated `abort()` message still arrives translated, exactly as the user saw it.
+- **This is not a module**, so it has no permission area of its own — there is no screen to
+  guard. The context middleware *reads* the user's role and access scope to label the event;
+  it decides nothing and gates nothing.
