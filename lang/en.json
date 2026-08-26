@@ -2816,5 +2816,13 @@
     "This minute is being published out of order.": "This minute is being published out of order.",
     "A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.": "A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.",
     "Figures as at publication, :date": "Figures as at publication, :date",
-    "comes with the items below": "comes with the items below"
+    "comes with the items below": "comes with the items below",
+    "Clear the agenda": "Clear the agenda",
+    "Take every line off this agenda? The tasks themselves stay open and will be proposed again.": "Take every line off this agenda? The tasks themselves stay open and will be proposed again.",
+    ":count line taken off the agenda. The tasks themselves are untouched and stay open.|:count lines taken off the agenda. The tasks themselves are untouched and stay open.": ":count line taken off the agenda. The tasks themselves are untouched and stay open.|:count lines taken off the agenda. The tasks themselves are untouched and stay open.",
+    "A published minute cannot be deleted. Correct it, or cancel the meeting.": "A published minute cannot be deleted. Correct it, or cancel the meeting.",
+    "You may not delete this meeting.": "You may not delete this meeting.",
+    "Meeting :number deleted. The tasks it discussed are untouched and stay open.": "Meeting :number deleted. The tasks it discussed are untouched and stay open.",
+    "Delete :number? Its :count agenda line goes with it. The tasks it discussed stay open and will be proposed at the next meeting.|Delete :number? Its :count agenda lines go with it. The tasks it discussed stay open and will be proposed at the next meeting.": "Delete :number? Its :count agenda line goes with it. The tasks it discussed stay open and will be proposed at the next meeting.|Delete :number? Its :count agenda lines go with it. The tasks it discussed stay open and will be proposed at the next meeting.",
+    "Delete :number? It has nothing on its agenda.": "Delete :number? It has nothing on its agenda."
 }

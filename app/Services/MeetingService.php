@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Meeting;
 use App\Models\MeetingItem;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -245,6 +246,60 @@ class MeetingService
     /**
      * The live counters the chair reads while the meeting runs.
      */
+    /**
+     * Delete a meeting that never became a record.
+     *
+     * Refused outright once the minute is published — see `Meeting::canDelete()`
+     * for why.
+     *
+     * The meeting row is **soft** deleted so its number is never reissued and
+     * the mistake stays visible in the database; its agenda lines are removed
+     * outright, so this is not an undo — restoring the row by hand would give
+     * back an empty meeting. Nothing in the interface offers a restore.
+     *
+     * Two things are tidied on the way out:
+     *
+     * - **the chain.** A meeting sitting between two others is what they each
+     *   point at; leaving it would break "the meeting this one follows" for the
+     *   one after it. The two neighbours are joined to each other.
+     * - **the tasks stay.** The lines go, but the work they discussed stays
+     *   open and keeps its history — the same promise taking a single line off
+     *   an agenda already makes. Removing the lines also lets the
+     *   `carried_from_item_id` foreign key null itself, so no later minute is
+     *   left pointing at a meeting that no longer exists.
+     */
+    public function delete(Meeting $meeting, User $actor): void
+    {
+        if (! $meeting->canDelete($actor)) {
+            throw new RuntimeException($meeting->isPublished()
+                ? __('A published minute cannot be deleted. Correct it, or cancel the meeting.')
+                : __('You may not delete this meeting.'));
+        }
+
+        DB::transaction(function () use ($meeting, $actor) {
+            $previous = $meeting->previous_meeting_id;
+            $next = $meeting->next_meeting_id;
+
+            Meeting::whereKey($previous)->update([
+                'next_meeting_id' => $next,
+                'next_meeting_date' => $next ? Meeting::whereKey($next)->value('meeting_date') : null,
+                'updated_by' => $actor->id,
+            ]);
+
+            Meeting::whereKey($next)->update([
+                'previous_meeting_id' => $previous,
+                'updated_by' => $actor->id,
+            ]);
+
+            // Anything raised at this meeting outlives it.
+            Task::where('origin_meeting_id', $meeting->id)->update(['origin_meeting_id' => null]);
+
+            $meeting->allItems()->delete();
+            $meeting->update(['updated_by' => $actor->id]);
+            $meeting->delete();
+        });
+    }
+
     public function counters(Meeting $meeting): array
     {
         $items = $meeting->allItems()->with('task')->get();

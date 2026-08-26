@@ -409,6 +409,31 @@ class MeetingAgendaService
     }
 
     /**
+     * Take every line off a draft agenda at once.
+     *
+     * The same promise as removing one: **nothing is closed.** Every task stays
+     * open and is proposed again next time, and the lines of other meetings are
+     * untouched. It is for an agenda built wrongly, where twenty presses of ×
+     * is not a reasonable ask.
+     */
+    public function clear(Meeting $meeting): int
+    {
+        $this->assertBuildable($meeting);
+
+        return DB::transaction(function () use ($meeting) {
+            $lines = MeetingItem::where('meeting_id', $meeting->id);
+            $count = (clone $lines)->count();
+
+            // Children first: the parent foreign key cascades, but deleting in
+            // this order keeps the count honest and the cascade unused.
+            MeetingItem::where('meeting_id', $meeting->id)->whereNotNull('parent_id')->delete();
+            MeetingItem::where('meeting_id', $meeting->id)->whereNull('parent_id')->delete();
+
+            return $count;
+        });
+    }
+
+    /**
      * Move a line up or down among its siblings. The displayed number is
      * computed from position, so this is all reordering needs to touch.
      *

@@ -408,6 +408,28 @@ class MeetingAgenda extends Component
             : __("Back to last meeting's order."));
     }
 
+    /**
+     * Take the whole agenda off at once.
+     *
+     * Nothing is closed: every task stays open and is proposed again next time,
+     * exactly as when a single line is removed.
+     */
+    public function clearAgenda(): void
+    {
+        $this->authorizeEdit();
+
+        $removed = $this->agenda()->clear($this->meeting);
+
+        $this->carrySelected = $this->carryForward->pluck('id')->all();
+        $this->refreshAgenda();
+
+        session()->flash('message', trans_choice(
+            ':count line taken off the agenda. The tasks themselves are untouched and stay open.|:count lines taken off the agenda. The tasks themselves are untouched and stay open.',
+            $removed,
+            ['count' => $removed]
+        ));
+    }
+
     public function removeItem(int $itemId): void
     {
         $this->authorizeEdit();

@@ -4307,5 +4307,13 @@
     "This minute is being published out of order.": "Esta ata está sendo publicada fora de ordem.",
     "A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.": "Uma reunião posterior desta série já tem pauta: :numbers. As tarefas são fotografadas como estão hoje, então esta ata registrará números posteriores à sua própria data.|Reuniões posteriores desta série já têm pauta: :numbers. As tarefas são fotografadas como estão hoje, então esta ata registrará números posteriores à sua própria data.",
     "Figures as at publication, :date": "Números na data da publicação, :date",
-    "comes with the items below": "vem junto com os itens abaixo"
+    "comes with the items below": "vem junto com os itens abaixo",
+    "Clear the agenda": "Limpar a pauta",
+    "Take every line off this agenda? The tasks themselves stay open and will be proposed again.": "Retirar todas as linhas desta pauta? As tarefas continuam abertas e serão propostas novamente.",
+    ":count line taken off the agenda. The tasks themselves are untouched and stay open.|:count lines taken off the agenda. The tasks themselves are untouched and stay open.": ":count linha retirada da pauta. As tarefas em si não foram tocadas e continuam abertas.|:count linhas retiradas da pauta. As tarefas em si não foram tocadas e continuam abertas.",
+    "A published minute cannot be deleted. Correct it, or cancel the meeting.": "Uma ata publicada não pode ser excluída. Corrija-a ou cancele a reunião.",
+    "You may not delete this meeting.": "Você não pode excluir esta reunião.",
+    "Meeting :number deleted. The tasks it discussed are untouched and stay open.": "Reunião :number excluída. As tarefas discutidas nela não foram tocadas e continuam abertas.",
+    "Delete :number? Its :count agenda line goes with it. The tasks it discussed stay open and will be proposed at the next meeting.|Delete :number? Its :count agenda lines go with it. The tasks it discussed stay open and will be proposed at the next meeting.": "Excluir :number? Sua :count linha de pauta vai junto. As tarefas discutidas continuam abertas e serão propostas na próxima reunião.|Excluir :number? Suas :count linhas de pauta vão junto. As tarefas discutidas continuam abertas e serão propostas na próxima reunião.",
+    "Delete :number? It has nothing on its agenda.": "Excluir :number? Não há nada em sua pauta."
 }

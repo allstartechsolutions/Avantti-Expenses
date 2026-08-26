@@ -1,7 +1,9 @@
 # Meetings, Minutes and Tasks — How to Use It
 
 A guide for the people who will run the meetings, not for whoever maintains the code.
-Written 2026-08-20. Screenshots are from a real install with demo data.
+Written 2026-08-20, revised 2026-08-26 for the agenda ordering work
+(`docs/meetings-agenda-order-plan.md`). Screenshots are from a real install with demo data — the
+agenda screenshots predate the location headings described in §5d.
 
 > **A note on wording.** In the English interface this install calls a *project* a **"Job Site"**
 > (that renaming lives in `lang/en.json`). So where this guide says *project*, the screen says
@@ -56,7 +58,7 @@ July's minute — it is the *same task*, appearing again, with its progress and 
 
 ![Meeting series](images/meetings/02-meeting-series.png)
 
-You are telling the system three things:
+You are telling the system four things:
 
 1. **The code** (`OBRA`) — it becomes part of every minute number this series ever issues:
    `OBRA-2026-001`, `OBRA-2026-002`.
@@ -64,6 +66,15 @@ You are telling the system three things:
    week. People outside the company are added by name, company and e-mail; they never need a login.
 3. **The projects it covers** — a new meeting starts pointing at these, which is how their open
    items appear on the agenda without anybody asking.
+4. **Agenda Order** — how agendas built from this series are arranged. Every agenda groups its
+   items by project and job site; this setting decides what happens *inside* each group when items
+   are carried forward:
+   - **Last meeting's order** (the default) — items come back in the order you put them in last
+     time, so this week's agenda reads like last week's.
+   - **Past due first** — the late work rises to the top of its own group, and everything else
+     follows in last meeting's order.
+
+   It is a default, not a lock: either order can be applied to a single agenda from the builder.
 
 > **Why a series matters.** Carry-forward is read *within a series*. Without one, the open items of
 > your site meeting would mix with those of the directors' meeting. A one-off meeting is allowed,
@@ -103,14 +114,27 @@ There are exactly **three ways** something gets onto an agenda.
 ### a. Carry-forward — automatic
 
 The right-hand panel lists everything **still open from earlier meetings of this series**, already
-ticked. Each row shows the owner, the due date (red, with the days late), the progress, and
-**"open since OBRA-2026-001 · 3 meetings"** — how long it has been dragging. The last note written
-on it is quoted underneath.
+ticked, **in the order it will land on the agenda**. Each row shows the owner, the due date (red,
+with the days late), the progress, and **"open since OBRA-2026-001 · 3 meetings"** — how long it
+has been dragging. The last note written on it is quoted underneath.
 
 - **All / Only overdue / None** are shortcuts. "Only overdue" is the usual short agenda.
 - Press **Carry N items forward** and they join the agenda.
 - **Anything left unticked stays open.** It is not closed and not lost — it is simply not on
   *this* agenda, and it will be proposed again next time.
+
+**What comes back, comes back as it was.** Items return grouped by project and job site, and inside
+each group in the order you had them last time — not sorted by date. If you spent time dragging
+last week's agenda into a sensible order, that order is what you get this week.
+
+**A main item and its sub-items travel together.** If you raised *"Safety on site"* and hung four
+action items under it, the whole group comes across whole: the main line still at the top, the four
+still beneath it. That holds even when the main line is not work in its own right — a plain
+*Information* heading with no owner and no date — and even when its own task has been completed
+while the work under it has not. In the panel such a heading has no tick of its own and is labelled
+**comes with the items below**.
+
+Only the **still-open** sub-items come with it. Finished work stays in the minute that recorded it.
 
 ### b. Add a location — brings its open items with it
 
@@ -140,6 +164,35 @@ that moment it is tracked and will carry forward on its own.
 
 Lines can be reordered with the arrows, given sub-items with **+**, and taken off with **×**.
 Taking a line off the agenda **never closes its task**.
+
+### d. Starting over
+
+**Clear the agenda** on the Order line removes every line at once. Like taking off a single line, it
+**closes nothing** — every task stays open and is proposed again immediately, so rebuilding a badly
+built agenda is one press rather than twenty.
+
+One consequence worth knowing: a task whose *only* appearance on any agenda was the one you cleared
+stops being something meetings track. It stays open on its project, but it will no longer be
+proposed on its own — you would add it again from the *"other open tasks here are not on the
+agenda"* drawer.
+
+### e. How the agenda is arranged
+
+The agenda is cut into **location blocks** — one heading per project, and a separate heading for
+each job site. The heading carries the number of lines under it and a pair of arrows that move the
+**whole location** up or down.
+
+- **The row arrows stop at the edge of a block.** Pressing *up* on the first line of a project does
+  nothing, and the button greys out to say so. A line cannot change project by being moved — its
+  location comes from its task — so to move a project earlier you move its heading, not its rows.
+- **Dragging works inside a block.** Drag a line to reorder it among the others of its own location.
+- **Order** above the list applies an arrangement to *this* agenda: **Last meeting's order** or
+  **Past due first**, whichever you want this week regardless of what the series is set to.
+- **Group by location** appears only when a location has ended up split across the agenda. It
+  brings each location's lines back together and leaves your order inside each one alone.
+
+New lines land at the end of **their own location's block**, not at the bottom of the page — so
+raising something for a project listed near the top puts it with that project.
 
 ---
 
@@ -193,9 +246,43 @@ Publishing does four things:
 3. Records who published it and when.
 4. Lets you set the **next meeting date**.
 
+> **Publish in order, and publish promptly.** "As it stands today" means the day you *publish*, not
+> the day of the meeting. Write a minute up a fortnight late and it records the figures of the day
+> you typed it — the ata then says *"Figures as at publication, 26 Aug 2026"* so nobody is misled,
+> but they are still late figures. Two things help:
+>
+> - Building next week's agenda warns you, by name, if an earlier minute of the series has not
+>   gone out yet. Until it is published its figures follow the live tasks, so work you move on
+>   from the new agenda changes what the old draft shows — and what it keeps when you finally
+>   publish it.
+> - The publish dialog warns you if a later meeting of the series already has an agenda. It does
+>   not stop you; writing a minute up late is a fact of life. It just says so out loud.
+
 ![The published minute](images/meetings/06-published-minute.png)
 
-The published minute opens with every item expanded, because a record is read as a document.
+The published minute opens with every item expanded, because a record is read as a document. It
+carries the **same location headings** the agenda was built under, and so does the ata PDF — the
+document reads the way the meeting was run.
+
+### Deleting a meeting
+
+**A published minute can never be deleted.** It has been frozen, filed into the project repository
+and e-mailed to every attendee — removing it would leave the system disagreeing with the document
+people are holding. A published minute that is wrong is **corrected**; a meeting that did not happen
+is **cancelled**, which keeps it in the record with its reason.
+
+**Delete** is offered only on a meeting that never became a record — a draft, or one already
+cancelled — and only to someone holding the *Delete* grant on Meetings. It is for the one case the
+other two do not cover: a meeting created by mistake.
+
+What it does:
+
+- the meeting and its agenda lines go;
+- **the tasks stay open**, including anything raised at that meeting, and appear at the next one;
+- the meeting before and the meeting after are joined to each other, so the chain still reads;
+- its number is never reissued.
+
+It is not an undo. Nothing in the interface restores a deleted meeting.
 
 ### Creating the next meeting
 
@@ -251,6 +338,11 @@ full activity log.
 | **Cancelling a meeting closes nothing.** | Its items stay open and appear at the next one. |
 | **Tasks raised outside a meeting never reach an agenda by themselves.** | The minute is what management committed to, not everyone's to-do list. |
 | **Overdue counts even when Ready.** | Otherwise a task parks in "ready" forever and the report looks healthy. |
+| **A line cannot be moved into another project.** The row arrows stop at the edge of its location block. | A line's location comes from its task, not from where it sits. Move the whole location from its heading instead. |
+| **Closing a main item does not dissolve the group under it.** The main line still comes across, marked as done, with the open work beneath it. | The shape you gave the agenda is part of the record. |
+| **A minute's figures are those of the day it was published**, not the day of the meeting. | Publish promptly and in order; the ata says which day it is quoting when the two differ. |
+| **A published minute cannot be deleted.** Correct it, or cancel the meeting. | It has already been filed and mailed. Deleting it would make the system disagree with the copy in people's inboxes. |
+| **Deleting a meeting closes nothing**, exactly like cancelling. | The work exists whether or not the meeting that raised it does. |
 
 ---
 
@@ -289,10 +381,17 @@ entry, the project tabs and the overview cards all disappear with it.
 
 ## 12. What is not built yet
 
-As of 2026-08-20 the module does **not** yet:
+Corrected 2026-08-26. Since this guide was written the minute PDF, the e-mail to attendees, the
+overdue notice and the weekly digest have all shipped — this section said otherwise and was wrong.
 
-- produce a **PDF of the minute** or e-mail it to attendees;
-- send any **notification** — assignment, closure, overdue or the weekly digest;
-- show a dashboard widget, an all-tasks list or reports.
+Built and in use:
 
-Those are phases 6–8 in `docs/meetings-module-plan.md`.
+- the **ata PDF** (view or download from the published minute) and the **e-mail to attendees** sent
+  when a minute is published;
+- **overdue notices** (`NotifyOverdueTasks`) and the **weekly digest** (`SendWeeklyTaskDigest`).
+
+Still to come, from `docs/meetings-module-plan.md` phase 8:
+
+- a **dashboard widget**, an **all-tasks list** across projects, and the meeting reports.
+
+`MyTasks` covers one person's own list in the meantime.

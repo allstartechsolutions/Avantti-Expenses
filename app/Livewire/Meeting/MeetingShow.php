@@ -490,6 +490,30 @@ class MeetingShow extends Component
         session()->flash('message', __('Meeting cancelled.'));
     }
 
+    /**
+     * Delete a meeting that never became a record.
+     *
+     * For the one case cancelling does not cover: a meeting created by mistake.
+     * A published minute is refused — it has been filed and mailed, so it is
+     * corrected or the meeting is cancelled, never removed.
+     */
+    public function deleteMeeting()
+    {
+        try {
+            $this->meetings()->delete($this->meeting, auth()->user());
+        } catch (\RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
+
+            return null;
+        }
+
+        session()->flash('message', __('Meeting :number deleted. The tasks it discussed are untouched and stay open.', [
+            'number' => $this->meeting->number,
+        ]));
+
+        return $this->redirect(route('meetings.index'), navigate: true);
+    }
+
     public function render()
     {
         return view('livewire.meeting.meeting-show')->layout('components.layouts.app');

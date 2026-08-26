@@ -91,6 +91,23 @@
                 </x-ui.button>
             @endif
 
+            {{--
+                For the case cancelling does not cover: a meeting created by
+                mistake. Never offered on a published minute — that one is
+                corrected, not removed.
+            --}}
+            @if($meeting->canDelete($me))
+                <x-ui.button variant="danger" size="sm" icon="trash" wire:click="deleteMeeting"
+                             wire:confirm="{{ $this->counters['items'] > 0
+                                ? trans_choice(
+                                    'Delete :number? Its :count agenda line goes with it. The tasks it discussed stay open and will be proposed at the next meeting.|Delete :number? Its :count agenda lines go with it. The tasks it discussed stay open and will be proposed at the next meeting.',
+                                    $this->counters['items'],
+                                    ['number' => $meeting->number, 'count' => $this->counters['items']])
+                                : __('Delete :number? It has nothing on its agenda.', ['number' => $meeting->number]) }}">
+                    {{ __('Delete') }}
+                </x-ui.button>
+            @endif
+
             <x-ui.button variant="secondary" size="sm" icon="arrow-left" href="{{ route('meetings.index') }}">{{ __('Back') }}</x-ui.button>
         </div>
     </div>

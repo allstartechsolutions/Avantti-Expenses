@@ -77,6 +77,7 @@ item that belongs to no project.
 | code | string, unique | `OBRA` — used in the meeting number |
 | description | text, nullable | |
 | cadence | enum | `weekly`, `biweekly`, `monthly`, `quarterly`, `ad_hoc` — display + next-date suggestion only, no scheduler |
+| agenda_order | enum | `last_meeting` (default), `overdue_first` — added 2026-08-26. Both group by project / job site; this decides what happens inside a group when items carry forward. See `docs/meetings-agenda-order-plan.md` §2.4 |
 | default_location | string, nullable | |
 | is_active | boolean | |
 | created_by / updated_by | FK users | |
@@ -151,6 +152,11 @@ Seeded from the series members when the meeting is created, then edited on the d
 
 The number (1, 2, 2.1) is **computed from `position` + hierarchy**, never stored — reordering must
 not need a rewrite of every row.
+
+`position` is written when an item is added, not computed when the page renders, so the builder, the
+running minute and the ata all read one stored order. Every write to it is filtered on `meeting_id`
+**and** `parent_id` — a re-sort must never reach another meeting's rows, which is asserted directly
+in `tests/Feature/Meetings/AgendaOrderTest.php`.
 
 `status_at_meeting` matters: a published minute that says "60 %" must keep saying 60 % next month
 when the task is at 90 %.
@@ -322,6 +328,21 @@ attendee" for guests (internal user picker or free-text external name/company/e-
    job site, each row showing: owner avatar + name, due date (red when overdue, with the day count),
    the progress bar, current status, "open since ATA-2026-009 · 3 meetings", and the last note.
    Each row has a checkbox — unchecked rows are simply not on this agenda and remain open.
+
+   **Revised 2026-08-26** (`docs/meetings-agenda-order-plan.md`), after the owner's complaint that
+   carried items came back out of order and out of shape. Ordering by due date, which is what this
+   originally built, discarded the order the chair had dragged the previous agenda into and
+   interleaved the projects. Now:
+
+   - the proposal panel lists rows **in the order they will land**, so the panel and the agenda
+     agree — previously the panel grouped by location while the button added by due date;
+   - items return **grouped by project / job site**, and inside each group in the **previous
+     meeting's order**; due date decides only for work that has never been on an agenda;
+   - a series may instead ask for **past due first**, which lifts the late rows to the top of their
+     own group (`meeting_series.agenda_order`);
+   - **a main item and its sub-items are one group and travel whole.** The main line stands even
+     when it is not open work itself — an information line used as a heading, or an action whose own
+     task is finished while the work under it is not. Only the still-open sub-items come with it.
 2. **Add project / job site.** A picker; the moment a project or job site is added, **all of its
    open meeting-tracked tasks** are pulled in the same way — including ones raised in a different
    series. This is the owner's stated requirement, and it is why tasks are scoped to project/job site
@@ -338,6 +359,14 @@ attendee" for guests (internal user picker or free-text external name/company/e-
 
 Sub-items are added under any item (drag to nest, max 2 levels, matching the task hierarchy).
 Drag to reorder; numbering recomputes live.
+
+**Revised 2026-08-26.** The agenda is cut into **location blocks** with a heading each, carrying a
+count and a control that moves the whole location. Row arrows and dragging both stop at the edge of
+a block — a line cannot change project by being moved, because its location comes from its task.
+New lines land at the end of their own location's block rather than the bottom of the page. An
+**Order** toolbar applies either arrangement to a single agenda, and **Group by location** appears
+when a location has ended up split. Numbering stays continuous 1…n across the whole agenda; the
+headings are visual.
 
 Bulk shortcuts, per the design standard: *select all overdue*, *carry everything from last meeting*,
 *add all job sites of this project*, *push all due dates by one week*.
@@ -418,6 +447,14 @@ Attendance table (present / absent / excused, internal and external). Agenda in 
 discussion and decisions. **Action items table**: number, description, owner, due date, status,
 progress as at the meeting. Open items from previous meetings shown with their age. Next meeting
 date. Revision note when applicable.
+
+**Revised 2026-08-26.** The agenda section carries the same **location headings** as the builder and
+the running minute — the ata is where the complaint about the order came from, so grouping that
+stopped at the screen would not have answered it. The per-line location label was dropped, the
+heading above saying it. When a minute is published on a day other than its meeting date the
+document states **"Figures as at publication, DD MMM YYYY"**: `status_at_meeting` is frozen at
+publication, not on the day of the meeting, and a late write-up therefore records late figures.
+The action-items table stays flat — it is a task list, not the agenda.
 
 ---
 
@@ -570,6 +607,13 @@ meeting screens are worthless without a task system, and the task system is usef
 | 7 ✅ | Notifications — created/assigned, closed, past due, weekly open-tasks digest, `TaskNotifier` + System Settings toggles and per-user opt-out | A second run of either command on the same day mails nobody twice |
 | 8 ⬜ | Dashboard widget, All Tasks filters and CSV, open-items-by-owner and aging reports | |
 | 9 ⬜ | **Review and Improvements** — the standing final phase | Backlog in `docs/review-and-improvements.md` worked, both themes, both locales, phone, docs and pt_BR level with what was built |
+
+**Out of sequence, 2026-08-26 — agenda order and structure.** Owner feedback after phase 7: carried
+items came back sorted by due date, with the projects interleaved and the sub-item structure
+flattened. Planned and built in five steps as `docs/meetings-agenda-order-plan.md`, with its own
+review pass and 41 tests. It amends §5.2, §5.3 and §5.9 above and adds `meeting_series.agenda_order`.
+Phase 9 still owes the module the rest of its backlog; M13–M15 in
+`docs/review-and-improvements.md` are closed by this work, M16–M17 were opened by it.
 
 ---
 

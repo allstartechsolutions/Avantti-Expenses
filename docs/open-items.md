@@ -4,7 +4,11 @@ Rewritten **2026-08-21**, after the permissions module was completed and deploye
 eighteen module passes and the three closing phases. Read this first; every finished piece of
 work has its own file (index at the bottom).
 
-Last touched **2026-08-25**: error monitoring (Sentry) added — built, verified locally,
+Last touched **2026-08-26**: the meetings agenda order and structure work — owner feedback that
+carried items came back sorted by due date and with their groups flattened. Built, tested and
+reviewed; **the working tree is not committed and nothing is deployed**. See §2b.
+
+Before that, **2026-08-25**: error monitoring (Sentry) added — built, verified locally,
 committed, **not yet deployed**. See §1b.
 
 ---
@@ -386,10 +390,61 @@ and the two reports (open items by owner, aging). §5.6 and §5.8 of the plan de
 Note **M6** below: `MyTasks::stats()` runs five counting queries, and the All Tasks page is where
 that shape must become one grouped query rather than being copied.
 
-**Phase 9 — the standing review**, per `CLAUDE.md`. Four backlog rows are still open (M4, M6, M7,
-M10, in `docs/review-and-improvements.md`), and **the screen walk has never been done** — both
-themes, both locales, a phone, with empty / partial / error states and long names. Seven other
-rows (M1, M2, M3, M5, M8, M9, M11) were worked on 2026-08-20; M12 is the owner's *won't fix*.
+**Phase 9 — the standing review**, per `CLAUDE.md`. Backlog rows still open: **M4, M6, M7, M10**
+and now **M16, M17** in `docs/review-and-improvements.md`. Seven rows (M1, M2, M3, M5, M8, M9, M11)
+were worked on 2026-08-20 and three more (M13, M14, M15) on 2026-08-26; M12 is the owner's
+*won't fix*.
+
+**The screen walk is still owed** — a real browser, both themes, a phone. The 2026-08-26 pass
+covered what can be asserted from rendered output (both locales, empty state, long names,
+overflow classes, company-level lines) but nobody has looked at the module with their eyes.
+
+### 2b-i. Agenda order and structure — built 2026-08-26, NOT COMMITTED
+
+Owner feedback on the agenda: *the items moved to the next one are out of the order and not on the
+same structure as the one before — they are organized by due date first.* Both halves were true.
+
+Plan and full findings: **`docs/meetings-agenda-order-plan.md`**. Tests:
+`tests/Feature/Meetings/AgendaOrderTest.php` (41). Demo data:
+`php artisan db:seed --class=DemoAgendaOrderSeeder` — safe to re-run, builds its own DEMO series
+and removes its previous run first.
+
+What it changed, in five lines:
+
+1. Agendas **group by project / job site** and keep the **previous meeting's order** inside each
+   group; due date decides only for work never on an agenda. A series may ask for **past due
+   first** instead (`meeting_series.agenda_order`, new column).
+2. **A main item and its sub-items are one group and travel whole** — the main line stands even
+   when it is an information heading with no task, or an action whose own task is finished.
+3. Positions are **stored** when items are added, so the builder, the running minute and the ata
+   read one order. Location headings render on all three.
+4. **Level 1 of the snapshot problem**: a minute's figures are frozen at *publication*, not on the
+   meeting date. A banner warns when an earlier minute is unpublished, the publish dialog warns
+   when publishing out of order, and the ata states the as-at date. Level 2 (reconstructing from
+   `TaskActivity`) declined — see M17.
+5. Three pre-existing defects closed on the way: ten unguarded `MeetingAgenda` actions (M14), a
+   line that could be hung off another meeting's item (M15), and an N+1 in the carry panel.
+
+**Also built 2026-08-26, from the same round of feedback — deleting a meeting and clearing an
+agenda** (M18). Neither existed. `meetings.delete` was declared and grantable but only guarded
+deleting an empty *series*, so the grant did not mean what its name says on the Meetings area; and
+`Meeting` had `SoftDeletes` wired to nothing. A **draft or cancelled** meeting can now be deleted —
+**never a published minute**, which is corrected or whose meeting is cancelled — and the agenda
+builder gained **Clear the agenda**. Tests: `tests/Feature/Meetings/MeetingDeletionTest.php`.
+
+**Before this goes out:**
+
+- `php artisan migrate` on the target — the series form and the ordering both read `agenda_order`.
+- Two behaviour changes to tell the chairs: **row arrows now stop at a location boundary** (whole
+  blocks move from their heading), and **publishing out of date order now warns**.
+- **`meetings.delete` now does more than it did.** It used to allow deleting an unused meeting
+  series and nothing else; it now also allows deleting a draft or cancelled meeting. Check who
+  holds it before this ships.
+- Existing published minutes **render** differently — headings appear, the per-row location label
+  is gone. Not a line of their content or order moved; nothing was backfilled.
+- The pt_BR strings were written by Claude and have not been read by a native speaker.
+- Decide whether **`DemoAgendaOrderSeeder`** belongs in the production repo. It only runs when
+  invoked by name, but it creates a DEMO series and nine tasks wherever it is pointed.
 
 ### 2c. Quotations — phase 9
 
@@ -602,6 +657,7 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 | **That work's deploy-facing changelog** | `docs/changelog-2026-08-20-costcodes-changeorders.md` |
 | **Meetings / minutes / tasks — plan + build log (phases 0–7 done)** | `docs/meetings-module-plan.md` |
 | **Meetings — the user guide, also published in-app** | `docs/meetings-module-guide.md` |
+| **Meetings — agenda order and structure (2026-08-26, uncommitted)** | `docs/meetings-agenda-order-plan.md` |
 | **Documentation module (the in-app library)** | `docs/documentation-module.md` |
 | **Review and Improvements — the standing final phase + the whole backlog** | `docs/review-and-improvements.md` |
 | **Permissions — HOW TO DO IT FOR A NEW MODULE** | **`docs/permissions-for-new-modules.md`** |

@@ -274,6 +274,22 @@ class Meeting extends Model
     }
 
     /**
+     * A meeting can be deleted while it is not yet a record.
+     *
+     * **A published minute never can.** It has been frozen, filed into the
+     * project repository and e-mailed to every attendee — deleting it would
+     * leave the system disagreeing with the document people are holding. A
+     * published minute that is wrong is *corrected* (`canRevise`); a meeting
+     * that did not happen is *cancelled*, which keeps it in the record with its
+     * reason. Deleting is only for the one this does not cover: a meeting
+     * created by mistake.
+     */
+    public function canDelete(?User $user): bool
+    {
+        return ! $this->isPublished() && $this->allows($user, 'meetings.delete');
+    }
+
+    /**
      * Every action item needs somebody's name against it and a date, or the
      * minute promises something nobody owns.
      */

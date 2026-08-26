@@ -123,6 +123,13 @@
                             {{ __('Past due first') }}
                         </button>
 
+                        <span class="text-slate-300 dark:text-slate-600">·</span>
+                        <button type="button" wire:click="clearAgenda"
+                                wire:confirm="{{ __('Take every line off this agenda? The tasks themselves stay open and will be proposed again.') }}"
+                                class="text-xs text-red-600 hover:underline dark:text-red-400">
+                            {{ __('Clear the agenda') }}
+                        </button>
+
                         @if($this->isInterleaved)
                             <span class="text-slate-300 dark:text-slate-600">·</span>
                             <button type="button" wire:click="tidyAgenda"
