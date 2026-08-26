@@ -102,13 +102,17 @@ class MeetingAgenda extends Component
     #[Computed]
     public function items(): Collection
     {
-        return $this->meeting->items()
+        $roots = $this->meeting->items()
             ->with([
                 'task.owner', 'task.assignees', 'project', 'jobSite',
                 'children.task.owner', 'children.project', 'children.jobSite',
-                'carriedFrom.meeting',
+                // A sub-item wears the same "from :number" badge as a root, and
+                // was fetching its own earlier line to draw it.
+                'carriedFrom.meeting', 'children.carriedFrom.meeting',
             ])
             ->get();
+
+        return MeetingItem::linkParents($roots);
     }
 
     /**
@@ -172,15 +176,20 @@ class MeetingAgenda extends Component
     #[Computed]
     public function scopeCandidates(): Collection
     {
-        return $this->scopesOnAgenda->mapWithKeys(function (array $scope) {
-            $key = $scope['project_id'].'-'.($scope['job_site_id'] ?? 'p');
+        $scopes = $this->scopesOnAgenda->keyBy(
+            fn (array $scope) => $this->agenda()->scopeKey($scope['project_id'], $scope['job_site_id'])
+        );
 
-            return [$key => $scope + $this->agenda()->scopeCandidates(
-                $this->meeting,
-                $scope['project_id'],
-                $scope['job_site_id']
-            )];
-        })->filter(fn (array $scope) => $scope['tracked']->isNotEmpty() || $scope['direct']->isNotEmpty());
+        // One read for the whole agenda. Asked a location at a time, this was
+        // two task reads and their eager loads each, so the screen got dearer
+        // with every project the meeting covered.
+        $found = $this->agenda()->scopeCandidatesFor($this->meeting, $scopes->values());
+
+        $empty = ['tracked' => collect(), 'direct' => collect()];
+
+        return $scopes
+            ->map(fn (array $scope, string $key) => $scope + ($found[$key] ?? $empty))
+            ->filter(fn (array $scope) => $scope['tracked']->isNotEmpty() || $scope['direct']->isNotEmpty());
     }
 
     #[Computed]

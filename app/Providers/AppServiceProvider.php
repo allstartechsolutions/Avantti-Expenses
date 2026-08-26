@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\ModuleAccess;
 use App\Models\User;
 use App\Services\AbilityCatalog;
+use App\Services\MeetingAgendaService;
 use App\Services\PermissionResolver;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
@@ -16,9 +18,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Which modules are switched on is memoised for the life of this
+        // application, so the answer is not fetched from the cache store —
+        // which is the database — once per permission decision.
+        ModuleAccess::flushEnabled();
+
         // One resolver per request: it memoises the answers it has already
         // given, and the memberships it loaded to give them.
         $this->app->singleton(PermissionResolver::class);
+
+        // Likewise the agenda service: it memoises how the earlier meetings of
+        // a series were ordered, which the sort asks for once per location on
+        // the agenda. Resolved fresh each time, that cache never survived long
+        // enough to be read — the agenda screen was rebuilding it four times.
+        //
+        // `scoped` rather than `singleton` so a long-lived worker starts each
+        // request with an empty one.
+        $this->app->scoped(MeetingAgendaService::class);
     }
 
     /**

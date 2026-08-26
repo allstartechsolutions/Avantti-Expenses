@@ -34,10 +34,17 @@ trait RaisesAgendaItems
     public string $item_task_owner_id = '';
     public string $item_task_due_date = '';
 
+    /**
+     * The same list the task form offers, asked for once.
+     *
+     * Both this and `ManagesTasks::selectableProjects()` are on every screen
+     * that raises an agenda item, and they were running the identical query
+     * twice a render.
+     */
     #[Computed]
     public function projects(): Collection
     {
-        return Project::orderBy('project_name')->get(['id', 'project_name']);
+        return $this->selectableProjects;
     }
 
     #[Computed]

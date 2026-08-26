@@ -1,7 +1,9 @@
 {{--
     One line of the minute as an accordion: the header carries enough to run
     the meeting from (who, when, where it stands), and the body opens only for
-    the item being taken. Expects: $item, $editable.
+    the item being taken. Expects: $item, $editable, and the component's own
+    $meeting — which is this item's meeting, so it is read from there rather
+    than fetched back off every row.
 
     Alpine state (open / toggle / isOpen) lives on the container in
     meeting-show.blade.php, so "expand all" can reach every row.
@@ -17,6 +19,10 @@
         'blue' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
     ];
     $snapshot = $item->status_at_meeting ?? [];
+    // How many notes the task HAS, not how many were loaded: only the newest
+    // few are read. Falls back to counting for any caller that loaded them all.
+    $shown = App\Livewire\Meeting\MeetingShow::NOTES_SHOWN;
+    $noteCount = $task?->notes_count ?? $task?->notes->count() ?? 0;
     // Something already written is worth seeing at a glance while collapsed.
     $hasContent = filled($item->discussion) || filled($item->decision);
 @endphp
@@ -81,7 +87,7 @@
                             {{ $task->due_date->format($dateFormat) }}
                         </span>
                     @endif
-                    <span>{{ $item->meeting->isPublished() ? ($snapshot['progress'] ?? $task->progress) : $task->progress }}%</span>
+                    <span>{{ $meeting->isPublished() ? ($snapshot['progress'] ?? $task->progress) : $task->progress }}%</span>
                 @endif
             </span>
         </span>
@@ -177,14 +183,14 @@
                 @endif
 
                 <!-- What has already been recorded against this task -->
-                @if($task->notes->isNotEmpty())
+                @if($noteCount > 0)
                     <div class="mt-3 border-t border-slate-200 dark:border-slate-600 pt-3">
                         <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                            {{ trans_choice(':count note|:count notes', $task->notes->count(), ['count' => $task->notes->count()]) }}
+                            {{ trans_choice(':count note|:count notes', $noteCount, ['count' => $noteCount]) }}
                         </p>
 
                         <div class="mt-2 space-y-2">
-                            @foreach($task->notes->take(4) as $note)
+                            @foreach($task->notes->take($shown) as $note)
                                 <div class="text-xs" wire:key="item-note-{{ $note->id }}">
                                     <p class="flex flex-wrap items-center gap-2 text-slate-500 dark:text-slate-400">
                                         <span class="font-medium text-slate-700 dark:text-slate-200">{{ $note->user?->name }}</span>
@@ -202,10 +208,10 @@
                                 </div>
                             @endforeach
 
-                            @if($task->notes->count() > 4)
+                            @if($noteCount > $shown)
                                 <button type="button" wire:click="viewTask({{ $task->id }})"
                                         class="text-xs text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                    {{ __('See all :count notes', ['count' => $task->notes->count()]) }}
+                                    {{ __('See all :count notes', ['count' => $noteCount]) }}
                                 </button>
                             @endif
                         </div>

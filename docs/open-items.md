@@ -9,7 +9,7 @@ carried items came back sorted by due date and with their groups flattened. Buil
 reviewed; **the working tree is not committed and nothing is deployed**. See §2b.
 
 Before that, **2026-08-25**: error monitoring (Sentry) added — built, verified locally,
-committed, **not yet deployed**. See §1b.
+committed, and **since deployed; it is live in production** (owner-confirmed 2026-08-26). See §1b.
 
 ---
 
@@ -25,12 +25,14 @@ committed, **not yet deployed**. See §1b.
   deployed.
 - **Nothing is half-built.** The two modules with work outstanding (meetings, quotations) are
   outstanding at the *phase* level — every screen that exists, works.
-- **Deploy needs:** `composer install --no-dev` (a new package — Sentry — is now in
-  `composer.json`), `php artisan migrate` (47 additive migrations since `985089c`, listed by
+- **Deploy needs:** `composer install --no-dev` (Sentry is in `composer.json`; it is already
+  installed on the server as of the 2026-08-26 deploy, so this only matters for a fresh
+  install or a new package), `php artisan migrate` (47 additive migrations since `985089c`, listed by
   `git diff --name-only --diff-filter=A 985089c..HEAD -- database/migrations`) then
   `php artisan view:clear`. No migration drops or rewrites a column; the two that touch existing
   tables (`allow_file_uploads_without_an_owner`, `make_meeting_attendance_unmarked_by_default`)
-  only relax a NOT NULL. **Plus one new `.env` line, `SENTRY_LARAVEL_DSN` — see §1b.**
+  only relax a NOT NULL. The `SENTRY_LARAVEL_DSN` line this list used to call for is **already
+  on the server** — Sentry went live 2026-08-26. See §1b.
 - **The scheduler must be running in production** for the task e-mails, and it is worth checking:
   `routes/console.php` now schedules `tasks:notify-overdue` daily at 07:00 and
   `tasks:send-weekly-digest` hourly (the command itself decides whether this is the configured
@@ -287,12 +289,22 @@ Permissions*.
 
 ---
 
-### 1b. Error monitoring — Sentry (2026-08-25, committed, NOT yet deployed)
+### 1b. Error monitoring — Sentry (2026-08-25, committed; DEPLOYED and live)
 
-**Committed (`fe325b1`, `3b5ef1a`) and verified end to end on the local install.** A real test
-event reached the Sentry project (`php artisan sentry:test`), and the context middleware was
-exercised against a real project and a real job site. **Nothing is live yet** — the production
-`.env` has no DSN, so on the server it is currently a no-op. See *To deploy it* below.
+**Committed (`fe325b1`, `3b5ef1a`), verified end to end on the local install, and since
+DEPLOYED — the owner confirmed it is live in production on 2026-08-26.** A real test event
+reached the Sentry project (`php artisan sentry:test`), and the context middleware was
+exercised against a real project and a real job site.
+
+Production is therefore reporting real errors now. The steps under *To deploy it* below are
+kept as the record of what a fresh install needs; which of the optional ones (the release tag
+in the Forge script, step 4) were actually taken has not been verified from this side — check
+the server before assuming a Sentry issue carries a release.
+
+Local development reports too: `.env` here carries a real DSN and `config/sentry.php` leaves
+`SENTRY_ENVIRONMENT` unset, so the SDK falls back to `APP_ENV`
+(`ServiceProvider.php:301-303`). Dev events land tagged `local` and production events
+`production` — **they are already separable, and no `SENTRY_ENVIRONMENT` line is needed.**
 
 **Reference doc: [`docs/sentry-monitoring.md`](./sentry-monitoring.md).** Read that before
 changing anything here — the privacy settings in `config/sentry.php` are deliberate and are
@@ -400,6 +412,27 @@ covered what can be asserted from rendered output (both locales, empty state, lo
 overflow classes, company-level lines) but nobody has looked at the module with their eyes.
 
 ### 2b-i. Agenda order and structure — built 2026-08-26, NOT COMMITTED
+
+**Defect found and fixed the same day, via Sentry — `MANAGERPRO-BR-8`.**
+*ErrorException: Undefined array key 248*, thrown out of
+`MeetingAgendaService::groupIntoUnits()` when **"Add all tracked items"** was pressed on a
+location. Caught on the local install (`environment: local`), never reached a real user.
+
+`carryForward()` looks each task's earlier line up in `$lines`, which is built only from **the
+previous meetings of this series**. But the tracked list offered for a location is every open
+task this company has discussed *anywhere*, so a task tracked on another series has no such
+line — and at the **first meeting of a series there are none at all**, which made
+`addAllTracked()` and `addScope()` fail for every task, every time. The author's `?->` shows
+the null was expected; a collection *offset* warns and returns null instead of just returning
+null, and Laravel turns the warning into an exception, so `?->` never got its chance.
+
+One-line fix — `$lines[$task->id]` → `$lines->get($task->id)`. Regression test:
+`AgendaOrderTest::test_adding_a_locations_tracked_work_survives_a_task_this_series_has_never_discussed`.
+Verified against the real local database in a rolled-back transaction, both with the fix (no
+exception) and with the line put back (the exact reported error).
+
+**The Sentry issue is still open** — the fix is uncommitted and undeployed. Resolve it after
+deploy, or put `Fixes MANAGERPRO-BR-8` in the commit message to close it automatically.
 
 Owner feedback on the agenda: *the items moved to the next one are out of the order and not on the
 same structure as the one before — they are organized by due date first.* Both halves were true.

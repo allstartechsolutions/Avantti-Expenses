@@ -130,6 +130,35 @@ class MeetingItem extends Model
     }
 
     /**
+     * Close the loop on a loaded agenda: every sub-item is handed the parent it
+     * already came from, and told it has no sub-items of its own.
+     *
+     * Both ends were costing a query a row. `number()` walks upwards, so a
+     * sub-item whose `parent` is not set goes and fetches the row the caller is
+     * already holding; and the screens ask a sub-item whether it has children,
+     * which the agenda never lets it have — `assertOwnParent()` refuses any
+     * parent that is not itself a root, so an agenda is exactly two levels deep.
+     *
+     * @param  \Illuminate\Support\Collection<int, self>  $roots
+     * @return \Illuminate\Support\Collection<int, self>
+     */
+    public static function linkParents(\Illuminate\Support\Collection $roots): \Illuminate\Support\Collection
+    {
+        foreach ($roots as $root) {
+            if (! $root->relationLoaded('children')) {
+                continue;
+            }
+
+            foreach ($root->children as $child) {
+                $child->setRelation('parent', $root);
+                $child->setRelation('children', new \Illuminate\Database\Eloquent\Collection);
+            }
+        }
+
+        return $roots;
+    }
+
+    /**
      * The displayed number — 1, 2, 2.1 — computed from the position chain
      * rather than stored, so reordering the agenda does not rewrite rows.
      */

@@ -88,6 +88,61 @@ class MeetingAgendaService
     }
 
     /**
+     * The same answer as `scopeCandidates()`, for every location at once.
+     *
+     * Asked one location at a time — which is how the agenda screen asked it —
+     * this costs two task reads and their eager loads per location, so a
+     * meeting covering five projects paid five times over. A meeting spanning
+     * several projects is the ordinary case, not the extreme one.
+     *
+     * The two populations are told apart in memory rather than by a second
+     * query: `meetingTracked()` and `direct()` ask whether a task has any
+     * meeting line at all, and `withCount()` has already counted them.
+     *
+     * @param  Collection<int, array{project_id:?int, job_site_id:?int}>  $scopes
+     * @return Collection<string, array{tracked: Collection<int, Task>, direct: Collection<int, Task>}>
+     */
+    public function scopeCandidatesFor(Meeting $meeting, Collection $scopes): Collection
+    {
+        if ($scopes->isEmpty()) {
+            return collect();
+        }
+
+        // A location named by project takes everything on that project, its job
+        // sites included; a location named by job site takes only that site.
+        // Both halves are asked for together and separated afterwards.
+        $projectIds = $scopes->whereNull('job_site_id')->pluck('project_id')->filter()->unique()->values();
+        $jobSiteIds = $scopes->pluck('job_site_id')->filter()->unique()->values();
+
+        $tasks = Task::query()
+            ->open()
+            ->where(fn (Builder $q) => $q
+                ->when($projectIds->isNotEmpty(), fn (Builder $q) => $q->orWhereIn('project_id', $projectIds))
+                ->when($jobSiteIds->isNotEmpty(), fn (Builder $q) => $q->orWhereIn('job_site_id', $jobSiteIds)))
+            ->whereDoesntHave('meetingItems', fn (Builder $q) => $q->where('meeting_id', $meeting->id))
+            ->with(['project', 'jobSite', 'owner'])
+            ->withCount('meetingItems')
+            ->get();
+
+        $keys = $this->orderKeys($meeting);
+
+        return $scopes->mapWithKeys(function (array $scope) use ($tasks, $meeting, $keys) {
+            $here = $scope['job_site_id'] !== null
+                ? $tasks->where('job_site_id', $scope['job_site_id'])
+                : $tasks->where('project_id', $scope['project_id']);
+
+            [$tracked, $direct] = $here->partition(
+                fn (Task $task) => ($task->meeting_items_count ?? 0) > 0
+            );
+
+            return [$this->scopeKey($scope['project_id'], $scope['job_site_id']) => [
+                'tracked' => $this->sortCandidates($meeting, $tracked->values(), $keys),
+                'direct' => $this->sortCandidates($meeting, $direct->values(), $keys),
+            ]];
+        });
+    }
+
+    /**
      * The locations a meeting would normally cover: whatever its series says,
      * plus anything already on this agenda.
      *
@@ -261,7 +316,15 @@ class MeetingAgendaService
         $units = collect();
 
         foreach ($sorted as $task) {
-            $mainId = $lines[$task->id]?->parent_id;
+            // `get()` rather than `[$task->id]`: a collection offset on a
+            // missing key warns and returns null, and Laravel turns that
+            // warning into an exception — so the `?->` below never got its
+            // chance. A task can genuinely have no earlier line here: the
+            // tracked list offered for a location is everything this company
+            // has discussed anywhere, and `$lines` only knows the previous
+            // meetings of THIS series. At the first meeting of a series there
+            // are none at all.
+            $mainId = $lines->get($task->id)?->parent_id;
 
             // Head of a group: its own line has sub-items coming across.
             if ($mainId === null && $heads->has($task->id)) {
@@ -734,12 +797,23 @@ class MeetingAgendaService
         $tasks = [];
         $tier = 0;
 
-        foreach ($this->previousMeetingsNewestFirst($meeting) as $previous) {
-            if ($previous->all_items_count === 0) {
-                continue;
-            }
+        $earlier = $this->previousMeetingsNewestFirst($meeting)
+            ->filter(fn (Meeting $previous) => $previous->all_items_count > 0);
 
-            $items = MeetingItem::where('meeting_id', $previous->id)->orderBy('position')->get();
+        if ($earlier->isEmpty()) {
+            return $this->orderKeyCache[$meeting->id] = ['groups' => $groups, 'tasks' => $tasks];
+        }
+
+        // One read for the whole series. Read a meeting at a time, this was a
+        // query per earlier meeting every time the agenda sorted — and a
+        // weekly series a year old has fifty of them.
+        $byMeeting = MeetingItem::whereIn('meeting_id', $earlier->modelKeys())
+            ->orderBy('position')
+            ->get()
+            ->groupBy('meeting_id');
+
+        foreach ($earlier as $previous) {
+            $items = $byMeeting->get($previous->id) ?? collect();
             $roots = $items->whereNull('parent_id')->keyBy('id');
 
             foreach ($items as $item) {
@@ -944,8 +1018,16 @@ class MeetingAgendaService
         });
     }
 
+    /** Answered once per meeting: the series behind it does not move mid-request. */
+    protected array $previousIdCache = [];
+
     /** Every earlier meeting of the same series, cancelled ones excluded. */
     protected function previousMeetingIds(Meeting $meeting): Collection
+    {
+        return $this->previousIdCache[$meeting->id] ??= $this->findPreviousMeetingIds($meeting);
+    }
+
+    protected function findPreviousMeetingIds(Meeting $meeting): Collection
     {
         if (! $meeting->meeting_series_id) {
             // A one-off meeting carries forward from the meeting it was

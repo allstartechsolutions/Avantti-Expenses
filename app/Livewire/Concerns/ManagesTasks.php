@@ -36,6 +36,17 @@ trait ManagesTasks
 
     // The form.
     public ?int $editingTaskId = null;
+
+    /**
+     * Whether the task form is on screen.
+     *
+     * A modal is rendered whether or not it is open, so the form was building
+     * its "project" and "assignee" pickers — every project, every active
+     * person — on every render of every screen that includes it, closed. The
+     * dialog itself still renders always: the listener that opens it lives on
+     * the wrapper, and only what is inside waits to be asked for.
+     */
+    public bool $showTaskForm = false;
     public ?int $task_parent_id = null;
     public string $task_title = '';
     public string $task_description = '';
@@ -123,10 +134,17 @@ trait ManagesTasks
             ->get(['id', 'name', 'email']);
     }
 
+    /**
+     * Filtered, not just guarded: a confined person was being offered the name
+     * of every project in the company in the picker, including the ones they
+     * cannot open. `saveTask()` already refuses the ones they may not write to.
+     */
     #[Computed]
     public function selectableProjects(): Collection
     {
-        return Project::orderBy('project_name')->get(['id', 'project_name']);
+        return Project::visibleTo(auth()->user())
+            ->orderBy('project_name')
+            ->get(['id', 'project_name']);
     }
 
     #[Computed]
@@ -205,6 +223,8 @@ trait ManagesTasks
             $this->task_job_site_id = $this->taskContextJobSite()?->id;
         }
 
+        $this->showTaskForm = true;
+
         $this->dispatch('open-modal', 'task-form-modal');
     }
 
@@ -227,6 +247,8 @@ trait ManagesTasks
         $this->task_priority = $task->priority;
         $this->task_start_date = $task->start_date?->format('Y-m-d') ?? '';
         $this->task_due_date = $task->due_date?->format('Y-m-d') ?? '';
+
+        $this->showTaskForm = true;
 
         $this->dispatch('open-modal', 'task-form-modal');
     }
@@ -292,6 +314,8 @@ trait ManagesTasks
     public function closeTaskForm(): void
     {
         $this->resetTaskForm();
+        $this->showTaskForm = false;
+
         $this->dispatch('close-modal', 'task-form-modal');
     }
 

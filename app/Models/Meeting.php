@@ -289,20 +289,12 @@ class Meeting extends Model
         return ! $this->isPublished() && $this->allows($user, 'meetings.delete');
     }
 
-    /**
-     * Every action item needs somebody's name against it and a date, or the
-     * minute promises something nobody owns.
-     */
-    public function actionItemsMissingOwnerOrDate(): \Illuminate\Support\Collection
-    {
-        return $this->allItems()
-            ->where('type', 'action')
-            ->with('task')
-            ->get()
-            ->filter(fn (MeetingItem $item) => $item->task === null
-                || $item->task->owner_id === null
-                || $item->task->due_date === null);
-    }
+    // `actionItemsMissingOwnerOrDate()` stood here and was removed on 26 Aug
+    // 2026: it duplicated `MeetingService::unownedActionItems()` and had never
+    // been called from anywhere, in any commit. The rule it described — an
+    // action item needs an owner and a date before the minute is published —
+    // is enforced by the service, which is where publishing reads it. The body
+    // is kept in docs/review-and-improvements.md if it is ever wanted back.
 
     // =========================================================================
     // DISPLAY HELPERS

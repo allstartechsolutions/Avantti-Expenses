@@ -37,12 +37,17 @@ class MeetingService
      *
      * @return Collection<int, MeetingItem>
      */
-    public function unownedActionItems(Meeting $meeting): Collection
+    /**
+     * @param  Collection<int, MeetingItem>|null  $items  Every line, already
+     *         loaded with its task — the screen has them; publishing does not
+     *         and reads them fresh, which is what it wants anyway.
+     */
+    public function unownedActionItems(Meeting $meeting, ?Collection $items = null): Collection
     {
-        return $meeting->allItems()
+        $items ??= $meeting->allItems()->with('task')->get();
+
+        return $items
             ->where('type', 'action')
-            ->with('task')
-            ->get()
             ->filter(fn (MeetingItem $item) => $item->task === null
                 || $item->task->owner_id === null
                 || $item->task->due_date === null);
@@ -300,9 +305,14 @@ class MeetingService
         });
     }
 
-    public function counters(Meeting $meeting): array
+    /**
+     * @param  Collection<int, MeetingItem>|null  $items  As above: the screen
+     *         passes the lines it is already rendering rather than making the
+     *         same two queries a third time.
+     */
+    public function counters(Meeting $meeting, ?Collection $items = null): array
     {
-        $items = $meeting->allItems()->with('task')->get();
+        $items ??= $meeting->allItems()->with('task')->get();
         $actions = $items->where('type', 'action');
 
         return [

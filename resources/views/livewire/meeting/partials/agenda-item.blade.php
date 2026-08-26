@@ -139,7 +139,7 @@
 
         <button type="button"
                 wire:click="removeItem({{ $item->id }})"
-                wire:confirm="{{ $item->children()->exists()
+                wire:confirm="{{ $item->children->isNotEmpty()
                     ? __('Take this off the agenda? Its sub-items go with it. No task is closed or deleted.')
                     : __('Take this off the agenda? The task itself stays open and will be proposed again.') }}"
                 class="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"

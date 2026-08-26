@@ -1070,6 +1070,52 @@ class AgendaOrderTest extends TestCase
      *
      * @return array<int, MeetingItem>
      */
+    /*
+    |---------------------------------------------------------------------------
+    | Adding a location's tracked work
+    |---------------------------------------------------------------------------
+    */
+
+    /**
+     * "Add all tracked items" on a location, at the first meeting of a series.
+     *
+     * Reported by Sentry as `MANAGERPRO-BR-8` on 2026-08-26: *Undefined array
+     * key 248*, thrown out of `groupIntoUnits()`. `carryForward()` looks up the
+     * line each task came from among **the previous meetings of this series** —
+     * but the tracked list offered for a location is every task this company
+     * has ever discussed anywhere, so a task tracked on another series, or any
+     * task at all when this is the first meeting, has no such line and the
+     * lookup fell over instead of returning nothing.
+     */
+    public function test_adding_a_locations_tracked_work_survives_a_task_this_series_has_never_discussed(): void
+    {
+        // Discussed somewhere else entirely, so it counts as meeting-tracked.
+        $elsewhere = $this->makeMeeting('2026-08-05');
+        $tracked = $this->makeTask($this->alpha, 'Tracked elsewhere', '2026-09-01');
+        $this->putOnAgenda($elsewhere, [$tracked]);
+
+        // A brand-new series, whose first meeting has nothing behind it.
+        $fresh = MeetingSeries::create([
+            'name' => 'Another Review',
+            'code' => 'OTHER',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $first = Meeting::create([
+            'meeting_series_id' => $fresh->id,
+            'number' => 'OTHER-20260819',
+            'title' => 'First of its series',
+            'meeting_date' => '2026-08-19',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $added = app(MeetingAgendaService::class)
+            ->carryForward($first, collect([$tracked]), $this->admin);
+
+        $this->assertSame(1, $added, 'The tracked task did not make it onto the agenda.');
+        $this->assertSame(['Tracked elsewhere'], $this->titles($first));
+    }
+
     protected function putOnAgenda(Meeting $meeting, array $tasks, ?MeetingItem $parent = null): array
     {
         $start = MeetingItem::where('meeting_id', $meeting->id)

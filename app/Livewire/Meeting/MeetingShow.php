@@ -57,20 +57,42 @@ class MeetingShow extends Component
     /** The cancel prompt. */
     public string $cancelReason = '';
 
+    /**
+     * How many of a task's notes the minute shows before offering the rest.
+     *
+     * The eager load and the partial read the same number, so the "see all"
+     * link appears exactly when something is being held back.
+     */
+    public const NOTES_SHOWN = 4;
+
     public function mount(Meeting $meeting): void
     {
         $this->authorizeAbility('meetings.view');
 
-        $this->meeting = $meeting->load(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy', 'cancelledBy']);
+        $this->meeting = $meeting->load(self::HEADER_RELATIONS);
 
         $this->fillEditableText();
         $this->summary = (string) $meeting->summary;
         $this->nextMeetingDate = $meeting->next_meeting_date?->toDateString() ?? '';
     }
 
+    /**
+     * Everything the page frame reads, in one go.
+     *
+     * The corrections panel, the "filed as" line and the links to the meeting
+     * either side were each being fetched a row at a time as the Blade reached
+     * them.
+     */
+    protected const HEADER_RELATIONS = [
+        'series', 'chair', 'secretary', 'attendees.user', 'publishedBy', 'cancelledBy',
+        'revisions.revisedBy', 'document', 'previousMeeting', 'nextMeeting',
+    ];
+
     protected function fillEditableText(): void
     {
-        foreach ($this->meeting->allItems()->get() as $item) {
+        // Read from the collection the page is about to render rather than
+        // fetching the same rows again for their ids alone.
+        foreach ($this->flatItems() as $item) {
             $this->discussion[$item->id] = (string) $item->discussion;
             $this->decision[$item->id] = (string) $item->decision;
             $this->itemNote[$item->id] = '';
@@ -101,15 +123,32 @@ class MeetingShow extends Component
     #[Computed]
     public function items(): Collection
     {
-        return $this->meeting->items()
+        $roots = $this->meeting->items()
             ->with([
                 'task.owner', 'task.assignees', 'task.subtasks',
+                // The guards on a task ask the permission resolver which
+                // project it belongs to; without these it goes and finds the
+                // project itself, once per task, before its own cache can help.
+                'task.project', 'task.jobSite',
+                // The panel shows the newest few and says how many there are,
+                // so only that many are read — a task carried through twenty
+                // meetings was dragging every note it had ever collected onto
+                // the screen to display four. The total comes from the count.
+                'task' => fn ($query) => $query->withCount('notes'),
+                'task.notes' => fn ($query) => $query->limit(self::NOTES_SHOWN),
                 'task.notes.user', 'task.notes.meeting',
-                'children.task.notes.user', 'children.task.notes.meeting',
                 'project', 'jobSite', 'carriedFrom.meeting',
                 'children.task.owner', 'children.project', 'children.jobSite', 'children.carriedFrom.meeting',
             ])
             ->get();
+
+        return MeetingItem::linkParents($roots);
+    }
+
+    /** Every line of the agenda, sub-items included, from what is already loaded. */
+    protected function flatItems(): Collection
+    {
+        return $this->items->flatMap(fn (MeetingItem $item) => collect([$item])->concat($item->children));
     }
 
     /** The minute cut into location blocks, so it reads the way the agenda did. */
@@ -122,7 +161,7 @@ class MeetingShow extends Component
     #[Computed]
     public function counters(): array
     {
-        return $this->meetings()->counters($this->meeting);
+        return $this->meetings()->counters($this->meeting, $this->flatItems());
     }
 
     /** Attendees with a usable address — who the minute will actually reach. */
@@ -148,7 +187,7 @@ class MeetingShow extends Component
     #[Computed]
     public function unownedActions(): Collection
     {
-        return $this->meetings()->unownedActionItems($this->meeting);
+        return $this->meetings()->unownedActionItems($this->meeting, $this->flatItems());
     }
 
     // =========================================================================
@@ -317,7 +356,7 @@ class MeetingShow extends Component
             $this->meeting->update(['next_meeting_date' => $this->nextMeetingDate]);
         }
 
-        $this->meeting = $this->meeting->fresh(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy']);
+        $this->meeting = $this->meeting->fresh(self::HEADER_RELATIONS);
         unset($this->items, $this->counters, $this->unownedActions);
 
         $this->dispatch('close-modal', 'publish-modal');
@@ -355,7 +394,7 @@ class MeetingShow extends Component
 
         $result = $distributor->distribute($this->meeting, auth()->user());
 
-        $this->meeting = $this->meeting->fresh(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy']);
+        $this->meeting = $this->meeting->fresh(self::HEADER_RELATIONS);
 
         session()->flash('message', $result['failed'] > 0
             ? __('Sent to :sent attendee(s); :failed could not be reached — check the log for the addresses.', [
@@ -445,7 +484,7 @@ class MeetingShow extends Component
         $this->revising = false;
         $this->revisionReason = '';
         $this->revisionBaseline = [];
-        $this->meeting = $this->meeting->fresh(['series', 'chair', 'secretary', 'attendees.user', 'publishedBy']);
+        $this->meeting = $this->meeting->fresh(self::HEADER_RELATIONS);
 
         session()->flash('message', __('Correction recorded. It is shown on the minute.'));
     }
@@ -483,7 +522,7 @@ class MeetingShow extends Component
         }
 
         $this->cancelReason = '';
-        $this->meeting = $this->meeting->fresh(['series', 'chair', 'secretary', 'attendees.user', 'cancelledBy']);
+        $this->meeting = $this->meeting->fresh(self::HEADER_RELATIONS);
 
         $this->dispatch('close-modal', 'cancel-meeting-modal');
 

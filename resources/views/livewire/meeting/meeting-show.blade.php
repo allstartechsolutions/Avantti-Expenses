@@ -440,9 +440,24 @@
         </div>
     </div>
 
-    @include('livewire.meeting.partials.publish-modal')
-    @include('livewire.meeting.partials.revision-modal')
-    @include('livewire.meeting.partials.cancel-meeting-modal')
+    {{--
+        Each one only where its button is. A modal is rendered whether or not
+        it is on screen, and the publish dialog counts unowned actions, looks
+        for later meetings of the series and works out where the minute will be
+        filed — all of it queried on every published minute, for a dialog that
+        can never be opened again.
+    --}}
+    @if($meeting->isDraft() && $meeting->canEdit($me))
+        @include('livewire.meeting.partials.publish-modal')
+    @endif
+
+    @if($meeting->isPublished() && $meeting->canRevise($me))
+        @include('livewire.meeting.partials.revision-modal')
+    @endif
+
+    @if($meeting->canCancel($me))
+        @include('livewire.meeting.partials.cancel-meeting-modal')
+    @endif
     @include('livewire.task.partials.detail-modal')
     @include('livewire.task.partials.form-modal')
     @include('livewire.task.partials.reason-modal')

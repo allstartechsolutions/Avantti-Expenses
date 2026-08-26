@@ -1,15 +1,20 @@
 {{--
     Task form — full page, shared by My Tasks, the project and job-site task
     pages, and the meeting screens.
---}}
-@php
-    $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
-    $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
-    $card = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5';
-    $parent = $task_parent_id ? App\Models\Task::find($task_parent_id) : null;
-@endphp
 
+    The dialog is always on the page — the listener that opens it lives on the
+    wrapper — but its contents wait until the form is actually open. The
+    project and assignee pickers are a query each, and they were being built on
+    every render of every screen that includes this, closed.
+--}}
 <x-ui.modal name="task-form-modal" maxWidth="full" layer="top">
+    @if($showTaskForm)
+    @php
+        $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
+        $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
+        $card = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5';
+        $parent = $task_parent_id ? App\Models\Task::find($task_parent_id) : null;
+    @endphp
     <form wire:submit="saveTask" class="flex min-h-screen flex-col">
         <!-- Header -->
         <div class="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -189,4 +194,5 @@
             </div>
         </div>
     </form>
+    @endif
 </x-ui.modal>

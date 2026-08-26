@@ -268,7 +268,7 @@ Improvements** (see `docs/meetings-module-plan.md`).
 | M7 | **A note can be edited for 30 minutes** (`TaskNote::canEdit()`) but no screen offers it yet — the timeline shows an "edited" marker that nothing can currently set. Either wire the edit control in phase 2 or drop the marker. | open |
 | M8 | ~~Deleting a task is not implemented~~ | **done** 2026-08-20 — admin-only, refused for anything in a published minute. See below. |
 | M9 | ~~The agenda reorders with up/down buttons, not drag-and-drop~~ | **done** 2026-08-20 — drag added, buttons kept. See below. |
-| M10 | **`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda.** Fine for the three or four locations a real meeting covers; if a meeting ever spans twenty, this wants one grouped query. | open |
+| M10 | ~~`MeetingAgenda::scopeCandidates()` runs two queries per location on the agenda~~ | **done** 2026-08-26 — `scopeCandidatesFor()` reads every location's open tasks in one query and tells tracked from direct off the count already loaded; the ranking is built once for the whole series. Measured 1 → 10 locations: **15, 19, 23, 31, 51 queries → a flat 12**. Held by `MeetingScreenQueriesTest::test_the_agenda_costs_the_same_however_many_locations_it_covers`. |
 | M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
 | M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
 | M5 | ~~Attendance defaults to `present`~~ | **done** 2026-08-20 — it starts blank. See below. |
@@ -1169,3 +1169,108 @@ Reviewed and **kept as is** at the owner's direction. 36 blades render through `
 so English screens and CSV exports show "Job Site" where the data means a project. That is the
 intended vocabulary for this install, not a translation bug — do not change the key.
 Full context in `docs/pt-br-translation-audit.md`.
+
+---
+
+## Meeting screens — query cost (26 Aug 2026)
+
+Both meeting screens were profiled against the local database with a query listener, every
+repeated query traced to its source line, and the fixes landed. A ten-line meeting, warm:
+
+| Screen | Before | After |
+|---|---|---|
+| `meetings.show`, published | 130 | 41 |
+| `meetings.show`, draft | 109 | 42 |
+| `meetings.agenda`, draft | 127 | 42 |
+
+Both screens are now **flat in all three dimensions**: the count does not move when the agenda
+grows from three lines to thirty, when the series has been running twelve weeks instead of
+two, or when the meeting covers ten projects instead of one. All three are locked down by
+`tests/Feature/Meetings/MeetingScreenQueriesTest.php`, which compares two meetings rather than
+asserting a magic number, so they stay true on any machine.
+
+The location dimension was missed on the first pass and fixed straight after — see M10. Worth
+knowing when measuring this again: a `DB::listen()` registered inside a loop is never removed,
+and closures bound `use (&$count)` in one scope all share the counter, so every later render
+is counted several times over. Two of the figures first reported here were inflated that way.
+Give each measurement its own method call, as `sqlWhileRendering()` does.
+
+What was wrong, in the order it cost the most:
+
+1. **`ModuleAccess::isEnabled()` on the database cache store** — 54 reads of the `cache` table
+   per render for nine distinct modules. Now memoised for the life of the application. This
+   was **every screen in the app**, not only these two.
+2. **`MeetingItem::number()`** fetched the parent of every sub-item, and the screens asked a
+   sub-item whether it had children of its own. `linkParents()` ties both ends of the eager
+   load together — an agenda is exactly two levels deep, which `assertOwnParent()` enforces.
+3. **`MeetingAgendaService` was not a container binding**, so `$orderKeyCache` — commented as
+   "computed once per service instance" — never survived, and `scopeCandidates()` resolves the
+   service once per location. `orderKeys()` also read one meeting at a time. Bound `scoped`,
+   `previousMeetingIds()` memoised, and the item read folded into one `whereIn`.
+4. **The publish dialog was built on published minutes** and the task form on every screen
+   that includes it, closed. Both are now rendered where they can be opened.
+5. **The same agenda was read four times** on the minute — `mount()`, `counters()`,
+   `unownedActions()` and `items()`. `counters()` and `unownedActionItems()` now accept the
+   collection the screen already holds; publishing still reads fresh, which is what it wants.
+6. **`Task::canChangeProgress()`** sent the permission resolver to find the task's project,
+   once per task, before its own cache could help. `task.project` / `task.jobSite` eager loaded.
+
+### Left open, deliberately
+
+- **`assignableUsers()` offers every active person** as a task owner, unfiltered. Narrowing it
+  to people with a membership on the task's project is probably right, but it would change who
+  can be given work — an owner's decision, not a clean-up. `selectableProjects()` *was*
+  filtered with `visibleTo()` in the same change, because that one is not a narrowing: a
+  confined person picking a project they cannot reach was already refused by `saveTask()`, so
+  the picker was offering an option that could only 403, and leaking project names doing it.
+
+That is now the **only** item left open from this pass.
+
+### Closed after the fact
+
+**`task.notes` — done 2026-08-26.** Limited to `MeetingShow::NOTES_SHOWN` (4) with
+`withCount('notes')` beside it, so the heading and the "see all" link still print the real
+total. Twenty notes on a task now put four rows in memory instead of twenty. Laravel renders
+the limit as `row_number() over (partition by task_id order by created_at desc)`; the same
+window-function trick was already in `carryForwardCandidates()` and already running in
+production, so no new database requirement. `children.task.notes.*` was dropped outright —
+sub-items never render notes, so it was two queries and a pile of rows loaded for nothing.
+
+Held by `MeetingScreenQueriesTest::test_a_tasks_notes_are_read_a_few_at_a_time_and_still_counted_in_full`,
+which checks the count stays honest **and that the four are the newest four** — reading the
+wrong end of the list would be a worse bug than the one being fixed. Worth knowing if you write
+a similar test: `created_at` is not fillable on `TaskNote`, so passing it to `create()` is
+silently dropped and every note lands on the same timestamp, which makes an ordering assertion
+pass or fail at random. Set it with `forceFill()->saveQuietly()`.
+### Removed — `Meeting::actionItemsMissingOwnerOrDate()` (26 Aug 2026)
+
+**Deleted.** Verified dead before removing: across *every commit in the repository's history*,
+the name appears in `app/Models/Meeting.php` and nowhere else — no caller has ever existed in
+any committed state, and there is no dynamic dispatch on `$meeting` anywhere in `app/`,
+`resources/` or `routes/` that could reach it by name. It duplicated
+`MeetingService::unownedActionItems()`, which is what `publish()` and the publish dialog
+actually call.
+
+Kept here so it can be put back without digging through git. It sat between `canDelete()` and
+the display helpers:
+
+```php
+/**
+ * Every action item needs somebody's name against it and a date, or the
+ * minute promises something nobody owns.
+ */
+public function actionItemsMissingOwnerOrDate(): \Illuminate\Support\Collection
+{
+    return $this->allItems()
+        ->where('type', 'action')
+        ->with('task')
+        ->get()
+        ->filter(fn (MeetingItem $item) => $item->task === null
+            || $item->task->owner_id === null
+            || $item->task->due_date === null);
+}
+```
+
+If something ever does need this, call `app(MeetingService::class)->unownedActionItems($meeting)`
+rather than restoring the copy — it is the same query and it takes an already-loaded collection
+when the caller has one.
