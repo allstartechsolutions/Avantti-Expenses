@@ -275,6 +275,7 @@ Improvements** (see `docs/meetings-module-plan.md`).
 | M13 | ~~Carrying items forward threw away the previous agenda's order and structure~~ | **done** 2026-08-26 — agendas group by location and keep the previous meeting's order inside each group; a main item and its sub-items travel as one group. `docs/meetings-agenda-order-plan.md`, 41 tests in `tests/Feature/Meetings/AgendaOrderTest.php`. See below. |
 | M14 | ~~`MeetingAgenda`'s ten action methods had no per-action authorisation~~ | **done** 2026-08-26 — `mount()` authorised opening the page and Livewire does not run it again, so a grant taken away mid-session left every `wire:click` working. All ten now call `authorizeEdit()`. |
 | M15 | ~~A line could be hung off another meeting's item~~ | **done** 2026-08-26 — `openItemForm()` read the parent with an unscoped `MeetingItem::find()` and `addItem()` passed `parent_id` straight to the insert, so a crafted id could attach a line of this agenda to a **published** meeting's item, and a third nesting level could be built. `assertOwnParent()` closes both. |
+| M18 | ~~No way to delete a meeting, and no way to clear an agenda~~ | **done** 2026-08-26 — `meetings.delete` existed as a grant but only guarded deleting an empty *series*, and `Meeting` had `SoftDeletes` wired to nothing. A draft or cancelled meeting can now be deleted (never a published minute), and the agenda builder has **Clear the agenda**. See below. |
 | M16 | **`MeetingShow.php:405` reads `MeetingItem::find()` unscoped.** Only to print a line number in a revision change-log, and the id comes from the component's own form array — but it is the one id-without-ownership left in the module. | open |
 | M17 | **A minute's figures are frozen at publication, not on the meeting date.** A minute written up a fortnight late records owners, dates and progress from publication day. Level 1 was built — a banner when an earlier minute is unpublished, a warning when publishing out of order, and an "as at publication" line on the ata — but the figures are still late ones. Level 2 (reconstructing the meeting-day state from `TaskActivity`) was declined pending an audit that every write path in `TaskService` logs. | open |
 
@@ -309,6 +310,37 @@ content and order are untouched.
 **Three carry paths existed, not two.** `MeetingService::scheduleFollowUp()` also carried one task
 at a time, so scheduling the next meeting from a minute lost the structure exactly as the builder
 did. It uses the batch now.
+
+## M18 — deleting a meeting, clearing an agenda (done 2026-08-26)
+
+**What was missing.** Noticed by the owner: nothing in the module could remove a meeting or empty an
+agenda. Worse than a missing button — `meetings.delete` was **declared and grantable**
+(`config/permissions.php`), but the only thing it guarded was deleting a meeting *series* that had
+never held a meeting. Anyone who granted it on the Meetings area expecting it to mean "may delete a
+meeting" was misled. `Meeting` already had `use SoftDeletes` and the table already had the column;
+the plumbing was built and never wired up.
+
+**Cancel was the only exit**, and it is the right answer for "the meeting did not happen" — it keeps
+the meeting in the record with its reason and closes none of its items. It is the wrong answer for
+"I created this by mistake".
+
+**What was built.**
+
+| | |
+|---|---|
+| `Meeting::canDelete()` | Not published, plus `meetings.delete`. A published minute is frozen, filed and mailed — deleting it would leave the system disagreeing with the copy in people's inboxes. |
+| `MeetingService::delete()` | Soft-deletes the meeting so its number is never reissued; removes its lines outright. **Not an undo** — restoring the row by hand would give back an empty meeting, and nothing in the interface offers it. |
+| The chain | The meeting before and after are joined to each other, so "the meeting this one follows" still answers. |
+| The tasks | Stay open. `origin_meeting_id` is nulled, and removing the lines lets the `carried_from_item_id` foreign key null itself, so no later minute points at a meeting that is gone. |
+| `MeetingAgendaService::clear()` | Empties a draft agenda in one action, with the same promise a single removal makes: nothing is closed. |
+
+**One consequence worth knowing**, and it is asserted in the tests rather than left to be
+discovered: a task whose *only* agenda line was the one cleared stops being meeting-tracked. It
+stays open on its project but is no longer proposed on its own, and goes back to the "not on the
+agenda" drawer. That follows from tracked-ness being "has this ever been on an agenda" — there is
+no separate flag to keep.
+
+Tests: `tests/Feature/Meetings/MeetingDeletionTest.php` (11).
 
 ## M11 — the editor-output sweep (done 2026-08-20)
 
