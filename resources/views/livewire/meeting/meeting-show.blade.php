@@ -236,7 +236,10 @@
                         @foreach($this->itemBlocks as $blockIndex => $block)
                             <div wire:key="minute-block-{{ $blockIndex }}-{{ $block['key'] }}">
                                 <div class="flex items-center gap-2 bg-slate-50 px-6 py-2 dark:bg-slate-700/40">
-                                    <span class="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    {{-- min-w-0: a flex child will not shrink below its content
+                                         without it, so a long "Project › Job Site" would push the
+                                         row wide instead of ellipsising. --}}
+                                    <span class="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                         {{ $block['label'] }}
                                     </span>
                                     <span class="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-600 dark:text-slate-300">

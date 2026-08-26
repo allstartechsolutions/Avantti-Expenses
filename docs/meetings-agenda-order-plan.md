@@ -100,6 +100,35 @@ read differently.
 - "Overdue" is `Task::isOverdue()` — open, dated, and due before today. Rows with no date and
   non-task lines (information, decision) keep their place below the lifted block.
 
+### 2.7 A main item and its sub-items are one group
+
+Raised by the owner on 26 Aug 2026, after seeing the first build: *they create one main item and
+add a bunch of sub items — the main item needs to stand, and the group needs to stay the same.*
+
+The unit of carry-forward was a **task**, and that was wrong. Two consequences, both of which
+dissolved a group the chair had deliberately built:
+
+- **A main item with no task of its own never came across at all.** `carryForwardCandidates()`
+  returns tasks, so an information line used as a heading — *"Safety on site"* with five action
+  sub-items under it — was never a candidate. Its sub-items arrived as five loose top-level lines
+  and the heading was gone.
+- **A main item whose own task was closed was dropped and its children "promoted"** to top level.
+  That promotion was deliberate and it was a mistake: closing the main task does not dissolve the
+  group.
+
+The unit of carry is now the **line**, not the task:
+
+1. **The main line always stands.** If anything under it is still open and coming across, it comes
+   too — whatever its type, and whether or not its own task is finished.
+2. **It comes with its task attached** when it had one, so a finished heading reads as finished
+   with the remaining work beneath it, rather than as a statusless line.
+3. **Only the still-open sub-items come with it.** Finished work stays in the minute that recorded
+   it — the same rule that has always governed carry-forward.
+4. **The panel shows the group**, main line at its head with its sub-items indented beneath. A main
+   line that is not itself open work carries no tick and is labelled *comes with the items below*.
+5. **Carrying twice does not duplicate the group** — a second press joins the group already on the
+   agenda rather than starting a second copy of it.
+
 ### 2.5 Group and row movement
 
 - Row up/down arrows **stop at the edge of a location block**. Previously they swapped with
@@ -199,7 +228,7 @@ that audit in hand.
 | 2 ✅ | Group-aware positions: `move()` boundary guard + `canMove()`, `moveGroup()`, `regroup()`, `applyOrder()`; `reorder()` rewritten to touch only its own block | **Done 26 Aug 2026** — 11 further tests in the same file |
 | 3 ✅ | Agenda builder view: headings with count and move controls, per-block drag, order toolbar, series setting | **Done 26 Aug 2026** — 4 further tests; pt_BR added in the same change |
 | 4 ✅ | Minute screen and ata PDF headings; Level 1 snapshot banner, publish warning and as-at line; pt_BR strings in the same change | **Done 26 Aug 2026** — 5 further tests |
-| 5 | Review pass: both themes, both locales, phone, long project names, empty and partial states; the cross-meeting immutability test | Per the module review standard |
+| 5 ✅ | Review pass: both themes, both locales, phone, long project names, empty and partial states; the cross-meeting immutability test | **Done 26 Aug 2026** — 41 tests; findings below |
 
 ### Notes from step 1
 
@@ -260,6 +289,28 @@ that audit in hand.
   HTML rather than the compressed bytes of a rendered PDF. It is what dompdf is handed anyway.
 - The location is no longer repeated on each PDF line either, for the same reason as on screen —
   the heading directly above says it.
+
+### What the review pass found
+
+- **Two overflow bugs.** The minute screen's location heading had `truncate` on a bare flex child,
+  which does nothing — a flex item will not shrink below its content without `min-w-0`, so a long
+  *Project › Job Site* pushed the row wide on a phone. The carry panel's main-item title had no
+  break point at all in a narrow column. Both fixed, and a test asserts the heading can shrink.
+- **Ten unguarded action methods** on `MeetingAgenda` — see M14 in `docs/review-and-improvements.md`.
+  Pre-existing; closed here with a test that revokes a grant after mount and calls all eight
+  reachable actions.
+- **An N+1 in the carry panel.** `history()` ran a query per proposed row. The candidates now
+  eager-load their meeting history and `history()` reads it when it is there: nine rows cost 20
+  queries in total, and the count no longer grows with the rows.
+- **Both locales verified by rendering**, not by eye: the builder is asserted to show the
+  Portuguese strings and none of the English ones.
+- **The empty state** was checked to still point at the carry panel rather than show a blank card,
+  and the order toolbar is correctly absent when there is nothing to order.
+- **A single-location agenda keeps its heading.** It looks redundant, but the per-row location
+  label was removed in step 3 — dropping the heading too would leave the agenda showing no
+  location at all. Consistency here is not a preference, it is the only place the location appears.
+- **Company-level ("General") lines** were checked as a block like any other, including that the
+  `null, null` scope survives the round trip from the browser to `moveGroup()`.
 
 ## 6. Behaviour changes to announce
 

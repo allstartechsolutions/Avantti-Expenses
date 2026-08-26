@@ -64,6 +64,19 @@ class MeetingAgenda extends Component
         return app(MeetingAgendaService::class);
     }
 
+    /**
+     * Every action that changes the agenda asks again.
+     *
+     * `mount()` authorises opening the page, and Livewire does not run it again
+     * for the calls that follow — so a grant taken away mid-session, or a
+     * `wire:click` replayed by hand, would otherwise still land. Hiding a
+     * button is not protection.
+     */
+    protected function authorizeEdit(): void
+    {
+        abort_unless($this->meeting->canEdit(auth()->user()), 403);
+    }
+
     // =========================================================================
     // WHAT IS PROPOSED
     // =========================================================================
@@ -74,11 +87,16 @@ class MeetingAgenda extends Component
         return $this->agenda()->carryForwardCandidates($this->meeting);
     }
 
-    /** Carry-forward rows grouped the way they are read: by location. */
+    /**
+     * The proposed items as they will land: by location, and inside that as the
+     * groups they belong to — a main item with its sub-items under it.
+     */
     #[Computed]
     public function carryForwardByScope(): Collection
     {
-        return $this->carryForward->groupBy(fn (Task $task) => $task->getScopeLabel());
+        return $this->agenda()
+            ->carryForwardUnits($this->meeting, $this->carryForward)
+            ->groupBy(fn (array $unit) => $unit['scope']->getScopeLabel());
     }
 
     #[Computed]
@@ -224,6 +242,8 @@ class MeetingAgenda extends Component
      */
     public function addSelectedCarry(): void
     {
+        $this->authorizeEdit();
+
         $added = $this->agenda()->carryForward(
             $this->meeting,
             $this->carryForward->whereIn('id', $this->carrySelected),
@@ -255,6 +275,8 @@ class MeetingAgenda extends Component
      */
     public function addScope(): void
     {
+        $this->authorizeEdit();
+
         $this->validate([
             'addProjectId' => ['required', 'integer', 'exists:projects,id'],
             'addJobSiteId' => ['nullable', 'integer', 'exists:job_sites,id'],
@@ -284,6 +306,8 @@ class MeetingAgenda extends Component
 
     public function addTaskToAgenda(int $taskId): void
     {
+        $this->authorizeEdit();
+
         $task = Task::findOrFail($taskId);
 
         $this->agenda()->addTask($this->meeting, $task, auth()->user());
@@ -294,6 +318,8 @@ class MeetingAgenda extends Component
 
     public function addAllTracked(string $scopeKey): void
     {
+        $this->authorizeEdit();
+
         $scope = $this->scopeCandidates[$scopeKey] ?? null;
 
         if (! $scope) {
@@ -326,12 +352,16 @@ class MeetingAgenda extends Component
      */
     public function reorderItems(array $orderedIds, ?int $parentId = null): void
     {
+        $this->authorizeEdit();
+
         $this->agenda()->reorder($this->meeting, $orderedIds, $parentId);
         $this->refreshAgenda();
     }
 
     public function moveItem(int $itemId, string $direction): void
     {
+        $this->authorizeEdit();
+
         $this->agenda()->move($this->ownItem($itemId), $direction);
         $this->refreshAgenda();
     }
@@ -343,6 +373,8 @@ class MeetingAgenda extends Component
      */
     public function moveGroup(?int $projectId, ?int $jobSiteId, string $direction): void
     {
+        $this->authorizeEdit();
+
         $this->agenda()->moveGroup($this->meeting, $projectId, $jobSiteId, $direction);
         $this->refreshAgenda();
     }
@@ -350,6 +382,8 @@ class MeetingAgenda extends Component
     /** Bring each location's lines back together, leaving their order alone. */
     public function tidyAgenda(): void
     {
+        $this->authorizeEdit();
+
         $this->agenda()->regroup($this->meeting);
         $this->refreshAgenda();
 
@@ -362,6 +396,8 @@ class MeetingAgenda extends Component
      */
     public function sortAgenda(string $mode): void
     {
+        $this->authorizeEdit();
+
         abort_unless(in_array($mode, ['last_meeting', 'overdue_first'], true), 400);
 
         $this->agenda()->applyOrder($this->meeting, $mode);
@@ -374,6 +410,8 @@ class MeetingAgenda extends Component
 
     public function removeItem(int $itemId): void
     {
+        $this->authorizeEdit();
+
         $item = $this->ownItem($itemId);
 
         $this->agenda()->removeItem($item);

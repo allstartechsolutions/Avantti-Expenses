@@ -2815,5 +2815,6 @@
     "Its owners, dates and progress follow the live tasks until it goes out, so anything changed here changes what it shows — and what it keeps once published. Publish it first.": "Its owners, dates and progress follow the live tasks until it goes out, so anything changed here changes what it shows — and what it keeps once published. Publish it first.",
     "This minute is being published out of order.": "This minute is being published out of order.",
     "A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.": "A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.",
-    "Figures as at publication, :date": "Figures as at publication, :date"
+    "Figures as at publication, :date": "Figures as at publication, :date",
+    "comes with the items below": "comes with the items below"
 }

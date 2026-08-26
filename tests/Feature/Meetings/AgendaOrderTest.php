@@ -187,7 +187,7 @@ class AgendaOrderTest extends TestCase
         $this->assertSame('1.1', $children[0]->number());
     }
 
-    public function test_a_sub_item_is_promoted_when_its_parent_does_not_come_along(): void
+    public function test_a_finished_main_item_still_stands_over_its_open_sub_items(): void
     {
         $first = $this->makeMeeting('2026-08-12');
 
@@ -199,15 +199,101 @@ class AgendaOrderTest extends TestCase
         $this->putOnAgenda($first, [$child], $parentItem);
         $this->putOnAgenda($first, [$after]);
 
-        // The parent is closed, so only the child and the row after it carry.
+        // The heading's own work is done; what sits under it is not.
         $parent->update(['status' => 'completed']);
 
         $second = $this->makeMeeting('2026-08-19', $first);
         $this->carry($second);
 
-        // Promoted, and it keeps the parent's slot rather than falling to the end.
-        $this->assertSame(['Rebar', 'Roof'], $this->titles($second));
-        $this->assertNull($second->items()->first()->parent_id);
+        // The main item stands, in its own slot, with the open work beneath it.
+        $this->assertSame(['Foundation', 'Roof'], $this->titles($second));
+
+        $foundation = $second->items()->first();
+        $this->assertSame(['Rebar'], $foundation->children()->pluck('title')->all());
+
+        // Carried with its task attached, so the minute says the heading is done.
+        $this->assertSame($parent->id, $foundation->task_id);
+        $this->assertSame($parentItem->id, $foundation->carried_from_item_id);
+    }
+
+    public function test_a_main_item_that_is_not_a_task_at_all_still_comes_across(): void
+    {
+        $first = $this->makeMeeting('2026-08-12');
+
+        // A heading raised to hang work under — no task of its own.
+        $heading = MeetingItem::create([
+            'meeting_id' => $first->id,
+            'position' => 0,
+            'project_id' => $this->alpha->id,
+            'type' => 'information',
+            'title' => 'Safety on site',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $one = $this->makeTask($this->alpha, 'Replace the edge protection', '2026-09-01');
+        $two = $this->makeTask($this->alpha, 'Toolbox talk overdue', '2026-08-01');
+        $this->putOnAgenda($first, [$one, $two], $heading);
+
+        $second = $this->makeMeeting('2026-08-19', $first);
+        $this->carry($second);
+
+        // Previously the heading vanished and its two lines arrived loose.
+        $this->assertSame(['Safety on site'], $this->titles($second));
+
+        $carried = $second->items()->first();
+        $this->assertSame('information', $carried->type);
+        $this->assertNull($carried->task_id);
+        $this->assertSame($heading->id, $carried->carried_from_item_id);
+        $this->assertSame(
+            ['Replace the edge protection', 'Toolbox talk overdue'],
+            $carried->children()->pluck('title')->all()
+        );
+    }
+
+    public function test_only_the_open_sub_items_come_with_the_group(): void
+    {
+        $first = $this->makeMeeting('2026-08-12');
+
+        $parent = $this->makeTask($this->alpha, 'Foundation', '2026-09-01');
+        $done = $this->makeTask($this->alpha, 'Excavation', '2026-08-05');
+        $open = $this->makeTask($this->alpha, 'Rebar', '2026-09-10');
+
+        $parentItem = $this->putOnAgenda($first, [$parent])[0];
+        $this->putOnAgenda($first, [$done, $open], $parentItem);
+
+        $done->update(['status' => 'completed']);
+
+        $second = $this->makeMeeting('2026-08-19', $first);
+        $this->carry($second);
+
+        // Finished work stays in the minute that recorded it.
+        $this->assertSame(['Rebar'], $second->items()->first()->children()->pluck('title')->all());
+    }
+
+    public function test_carrying_twice_does_not_duplicate_the_group(): void
+    {
+        $first = $this->makeMeeting('2026-08-12');
+
+        $parent = $this->makeTask($this->alpha, 'Foundation', '2026-09-01');
+        $one = $this->makeTask($this->alpha, 'Rebar', '2026-09-10');
+        $two = $this->makeTask($this->alpha, 'Inspection', '2026-09-11');
+
+        $parentItem = $this->putOnAgenda($first, [$parent])[0];
+        $this->putOnAgenda($first, [$one], $parentItem);
+        $this->putOnAgenda($first, [$two], $parentItem);
+
+        $parent->update(['status' => 'completed']);
+
+        $second = $this->makeMeeting('2026-08-19', $first);
+
+        // Two presses of the button, one sub-item each — the second must join
+        // the group already there rather than start a second copy of it.
+        $agenda = app(MeetingAgendaService::class);
+        $agenda->carryForward($second, collect([$one]), $this->admin);
+        $agenda->carryForward($second, collect([$two]), $this->admin);
+
+        $this->assertSame(['Foundation'], $this->titles($second));
+        $this->assertSame(['Rebar', 'Inspection'], $second->items()->first()->children()->pluck('title')->all());
     }
 
     /*
@@ -379,6 +465,38 @@ class AgendaOrderTest extends TestCase
             $this->titles($meeting)
         );
         $this->assertSame([0, 1, 2, 3], $meeting->items()->pluck('position')->all());
+    }
+
+    public function test_a_company_level_line_is_a_block_like_any_other(): void
+    {
+        $meeting = $this->makeMeeting('2026-08-19');
+
+        $agenda = app(MeetingAgendaService::class);
+        $this->putOnAgenda($meeting, [$this->makeTask($this->alpha, 'Alpha one', '2026-09-01')]);
+
+        // No project at all — "General". Its heading, its block, its controls.
+        $agenda->addItem($meeting, [
+            'type' => 'information',
+            'title' => 'Company insurance renewal',
+        ], $this->admin);
+
+        $blocks = $agenda->blocksFrom($meeting->items()->with(['project', 'jobSite'])->get());
+        $this->assertSame(['Alpha', 'General'], $blocks->pluck('label')->all());
+
+        // The nulls have to survive the round trip from the browser.
+        $agenda->moveGroup($meeting, null, null, 'up');
+        $this->assertSame(['Company insurance renewal', 'Alpha one'], $this->titles($meeting));
+
+        // And a second General line joins the block rather than the page end.
+        $agenda->addItem($meeting, [
+            'type' => 'decision',
+            'title' => 'Approve the renewal',
+        ], $this->admin);
+
+        $this->assertSame(
+            ['Company insurance renewal', 'Approve the renewal', 'Alpha one'],
+            $this->titles($meeting)
+        );
     }
 
     public function test_moving_the_first_or_last_location_does_nothing(): void
@@ -613,6 +731,41 @@ class AgendaOrderTest extends TestCase
             ->assertSet('meeting.id', $meeting->id);
     }
 
+    public function test_the_picker_shows_a_main_item_over_its_sub_items(): void
+    {
+        $first = $this->makeMeeting('2026-08-12');
+
+        $heading = MeetingItem::create([
+            'meeting_id' => $first->id,
+            'position' => 0,
+            'project_id' => $this->alpha->id,
+            'type' => 'information',
+            'title' => 'Safety on site',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $child = $this->makeTask($this->alpha, 'Toolbox talk overdue', '2026-08-01');
+        $this->putOnAgenda($first, [$child], $heading);
+        $this->putOnAgenda($first, [$this->makeTask($this->alpha, 'Standalone', '2026-09-01')]);
+
+        $second = $this->makeMeeting('2026-08-19', $first);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $second]);
+
+        $units = $component->instance()->carryForwardByScope->first();
+
+        // The heading is shown with its child beneath, not as a loose line.
+        $this->assertSame('Safety on site', $units[0]['main']->title);
+        $this->assertNull($units[0]['task']);
+        $this->assertSame(['Toolbox talk overdue'], $units[0]['children']->pluck('title')->all());
+
+        $this->assertNull($units[1]['main']);
+        $this->assertSame('Standalone', $units[1]['task']->title);
+
+        $component->assertSee('Safety on site')->assertSee('comes with the items below');
+    }
+
     public function test_the_builder_moves_a_location_and_tidies_an_interleaved_agenda(): void
     {
         $meeting = $this->makeMeeting('2026-08-19');
@@ -658,6 +811,47 @@ class AgendaOrderTest extends TestCase
         }
     }
 
+    public function test_every_action_asks_again_after_a_grant_is_taken_away(): void
+    {
+        $role = \App\Models\Role::create(['name' => 'chair-'.uniqid()]);
+        $role->syncAbilities(['meetings.view', 'meetings.edit']);
+
+        $user = User::factory()->create(['role_id' => $role->id]);
+        app(\App\Services\PermissionResolver::class)->flush();
+
+        $meeting = $this->makeMeeting('2026-08-19');
+        $item = $this->putOnAgenda($meeting, [$this->makeTask($this->alpha, 'One', '2026-09-01')])[0];
+
+        $resolver = app(\App\Services\PermissionResolver::class);
+
+        foreach ([
+            ['tidyAgenda', []],
+            ['sortAgenda', ['overdue_first']],
+            ['moveGroup', [$this->alpha->id, null, 'up']],
+            ['moveItem', [$item->id, 'up']],
+            ['removeItem', [$item->id]],
+            ['reorderItems', [[$item->id]]],
+            ['addSelectedCarry', []],
+            ['addTaskToAgenda', [$item->task_id]],
+        ] as [$action, $args]) {
+            // Opened while they still held the grant …
+            $role->syncAbilities(['meetings.view', 'meetings.edit']);
+            $resolver->flush();
+
+            $component = Livewire::actingAs($user)
+                ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $meeting]);
+
+            // … and taken away underneath them. Livewire does not run mount()
+            // again, so without a guard on each action this would still land.
+            $role->syncAbilities(['meetings.view']);
+            $resolver->flush();
+
+            $component->call($action, ...$args)->assertStatus(403);
+        }
+
+        $this->assertNotNull($item->fresh(), 'The line survived every refused call.');
+    }
+
     public function test_the_builder_refuses_a_sort_mode_it_does_not_know(): void
     {
         $meeting = $this->makeMeeting('2026-08-19');
@@ -666,6 +860,65 @@ class AgendaOrderTest extends TestCase
             ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $meeting])
             ->call('sortAgenda', 'whatever')
             ->assertStatus(400);
+    }
+
+    public function test_the_builder_reads_in_pt_br(): void
+    {
+        $this->app->setLocale('pt_BR');
+
+        $meeting = $this->makeMeeting('2026-08-19');
+        $this->putOnAgenda($meeting, [
+            $this->makeTask($this->alpha, 'Alpha one', '2026-09-01'),
+            $this->makeTask($this->beta, 'Beta one', '2026-09-02'),
+            $this->makeTask($this->alpha, 'Alpha two', '2026-09-03'),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $meeting])
+            ->assertSee('Ordem')
+            ->assertSee('Ordem da reunião anterior', false)
+            ->assertSee('Vencidos primeiro')
+            // The agenda is interleaved, so the tidy control shows too.
+            ->assertSee('Agrupar por local')
+            ->assertSee('Mover este local para cima')
+            ->assertDontSee("Last meeting's order")
+            ->assertDontSee('Group by location');
+    }
+
+    public function test_an_empty_agenda_still_says_what_to_do(): void
+    {
+        $first = $this->makeMeeting('2026-08-12');
+        $this->putOnAgenda($first, [$this->makeTask($this->alpha, 'Waiting', '2026-09-01')]);
+
+        $second = $this->makeMeeting('2026-08-19', $first);
+
+        // Nothing on it yet, but something is proposed — the empty state has to
+        // point at the panel rather than show a blank card.
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $second])
+            ->assertSee('The agenda is empty')
+            ->assertSee('waiting to be carried forward')
+            // No order controls on an agenda with nothing to order.
+            ->assertDontSee('Group by location');
+    }
+
+    public function test_a_long_location_name_cannot_widen_the_page(): void
+    {
+        $long = $this->makeProject('Consórcio Rodoviário Interestadual do Vale do Paranapanema Trecho Norte');
+        $meeting = $this->makeMeeting('2026-08-19');
+        $this->putOnAgenda($meeting, [$this->makeTask($long, 'One', '2026-09-01')]);
+
+        $html = Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Meeting\MeetingAgenda::class, ['meeting' => $meeting])
+            ->html();
+
+        // The heading ellipsises instead of pushing the row wide; a flex child
+        // needs min-w-0 as well as truncate before it will shrink at all.
+        $this->assertMatchesRegularExpression(
+            '/class="[^"]*min-w-0[^"]*"[^>]*>\s*<span class="[^"]*truncate/',
+            $html,
+            'The location heading must be able to shrink.'
+        );
     }
 
     /*

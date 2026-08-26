@@ -229,9 +229,21 @@ class DemoAgendaOrderSeeder extends Seeder
         $this->line($meeting, $tasks['rebar'], $actor, 0, $foundation);
         $this->line($meeting, $tasks['inspection'], $actor, 1, $foundation);
 
-        // Job site: on time above late.
-        $this->line($meeting, $tasks['windows'], $actor, 2);
-        $this->line($meeting, $tasks['scaffold'], $actor, 3);
+        // Job site: a main item that is not a task at all, used as a heading to
+        // hang work under. It has to stand on the next agenda with its
+        // sub-items still beneath it — before this it vanished and they arrived
+        // loose. See docs/meetings-agenda-order-plan.md §2.7.
+        $safety = $meeting->allItems()->create([
+            'position' => 2,
+            'project_id' => $tasks['windows']->project_id,
+            'job_site_id' => $tasks['windows']->job_site_id,
+            'type' => 'information',
+            'title' => 'Safety on site',
+            'created_by' => $actor->id,
+        ]);
+
+        $this->line($meeting, $tasks['windows'], $actor, 0, $safety);
+        $this->line($meeting, $tasks['scaffold'], $actor, 1, $safety);
 
         // Second project: the same again.
         $this->line($meeting, $tasks['power'], $actor, 4);

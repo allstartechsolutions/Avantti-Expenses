@@ -272,6 +272,43 @@ Improvements** (see `docs/meetings-module-plan.md`).
 | M11 | ~~Editor output printed unescaped~~ | **done** 2026-08-20 — swept. See below. |
 | M12 | **The English locale renames Project → "Job Site" but leaves "Job Site" untranslated**, so any screen offering both reads "Job Site" twice — visible in the meetings module's *Add a Location* panel and the agenda item form. `lang/en.json` already maps `Projects → Job Sites`, `# Job Sites → # Lots` and `Job Site(s) → Lot(s)`, so the intended vocabulary is Project→Job Site and Job Site→Lot; the plain `Job Site` key is simply missing. Adding it would correct **33 call sites across 20 files** (estimates, invoices, budgets, reports, payments, meetings) in one go, which is why it was not done as a side effect of writing the user guide. **Owner decided 2026-08-20: do not touch the EN translation.** The user guide therefore explains the vocabulary as the screens actually read it. | won't fix |
 | M5 | ~~Attendance defaults to `present`~~ | **done** 2026-08-20 — it starts blank. See below. |
+| M13 | ~~Carrying items forward threw away the previous agenda's order and structure~~ | **done** 2026-08-26 — agendas group by location and keep the previous meeting's order inside each group; a main item and its sub-items travel as one group. `docs/meetings-agenda-order-plan.md`, 41 tests in `tests/Feature/Meetings/AgendaOrderTest.php`. See below. |
+| M14 | ~~`MeetingAgenda`'s ten action methods had no per-action authorisation~~ | **done** 2026-08-26 — `mount()` authorised opening the page and Livewire does not run it again, so a grant taken away mid-session left every `wire:click` working. All ten now call `authorizeEdit()`. |
+| M15 | ~~A line could be hung off another meeting's item~~ | **done** 2026-08-26 — `openItemForm()` read the parent with an unscoped `MeetingItem::find()` and `addItem()` passed `parent_id` straight to the insert, so a crafted id could attach a line of this agenda to a **published** meeting's item, and a third nesting level could be built. `assertOwnParent()` closes both. |
+| M16 | **`MeetingShow.php:405` reads `MeetingItem::find()` unscoped.** Only to print a line number in a revision change-log, and the id comes from the component's own form array — but it is the one id-without-ownership left in the module. | open |
+| M17 | **A minute's figures are frozen at publication, not on the meeting date.** A minute written up a fortnight late records owners, dates and progress from publication day. Level 1 was built — a banner when an earlier minute is unpublished, a warning when publishing out of order, and an "as at publication" line on the ata — but the figures are still late ones. Level 2 (reconstructing the meeting-day state from `TaskActivity`) was declined pending an audit that every write path in `TaskService` logs. | open |
+
+## M13 — agenda order and structure (done 2026-08-26)
+
+**The complaint**, from the owner: *the items moved to the next one are out of the order and not
+on the same structure as the one before — they are organized by due date first.* Both halves were
+true, and the second half turned out to be the worse of the two.
+
+**What was wrong.** `carryForwardCandidates()` sorted by due date and nothing else, so the order a
+chair had dragged the previous agenda into was discarded and the projects came out interleaved.
+The panel displayed rows grouped by location while the button added them from the ungrouped
+due-date list, so what the chair saw was not what they got. And the unit of carry was a **task**,
+which dissolved every group: a main item with no task of its own was never a candidate at all, and
+a main item whose task had been closed was dropped with its sub-items "promoted" to top level.
+
+**What was built** — five steps, `docs/meetings-agenda-order-plan.md`:
+
+| | |
+|---|---|
+| Order | Locations in the previous meeting's order; inside each, the previous meeting's order, then due date for anything never on an agenda. Optionally past due first, per series. |
+| Structure | A main item and its sub-items are one group and travel whole. The main line stands whatever its type or status. |
+| Position | Written when items are added, not sorted at render, so the builder, the minute and the ata read one stored order. |
+| Movement | Rows stop at the edge of their location block; whole blocks move from their heading; drag is per block; a tidy action regroups an interleaved draft. |
+| Document | The same headings on the running minute and the ata. |
+
+**Two behaviour changes to announce**: row up/down arrows now stop at a location boundary
+(previously they walked the whole agenda), and publishing a minute out of date order now warns.
+Existing published minutes render with headings and without the per-row location label — their
+content and order are untouched.
+
+**Three carry paths existed, not two.** `MeetingService::scheduleFollowUp()` also carried one task
+at a time, so scheduling the next meeting from a minute lost the structure exactly as the builder
+did. It uses the batch now.
 
 ## M11 — the editor-output sweep (done 2026-08-20)
 

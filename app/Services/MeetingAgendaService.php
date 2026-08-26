@@ -54,7 +54,7 @@ class MeetingAgendaService
             ->open()
             ->whereHas('meetingItems', fn (Builder $q) => $q->whereIn('meeting_id', $previousMeetings))
             ->whereDoesntHave('meetingItems', fn (Builder $q) => $q->where('meeting_id', $meeting->id))
-            ->with(['project', 'jobSite', 'owner', 'notes' => fn ($q) => $q->limit(1)])
+            ->with(['project', 'jobSite', 'owner', 'notes' => fn ($q) => $q->limit(1), 'meetingItems.meeting'])
             ->withCount('meetingItems')
             ->get();
 
@@ -154,61 +154,205 @@ class MeetingAgendaService
             return 0;
         }
 
-        $keys = $this->orderKeys($meeting);
-        $sorted = $this->sortCandidates($meeting, $tasks, $keys);
+        $sorted = $this->sortCandidates($meeting, $tasks);
         $previousIds = $this->previousMeetingIds($meeting)->all();
-        $selected = $sorted->pluck('id')->all();
 
-        // A line whose parent is not coming with it is promoted to the top
-        // level. It keeps the parent's old slot, because the sort ranked it by
-        // the parent's position — it does not fall to the end of the group.
-        $isRoot = function (Task $task) use ($keys, $selected): bool {
-            $parentTaskId = $keys['tasks'][$task->id]['parent_task'] ?? null;
+        // The line each task came from, most recent first sighting winning.
+        // The *line* is the unit of carry, not the task: it is what knows which
+        // main item the work sat under.
+        $lines = MeetingItem::whereIn('meeting_id', $previousIds)
+            ->whereIn('task_id', $sorted->pluck('id'))
+            ->orderBy('id')
+            ->get()
+            ->keyBy('task_id');
 
-            return $parentTaskId === null || ! in_array($parentTaskId, $selected, true);
-        };
+        $mains = MeetingItem::whereIn('id', $lines->pluck('parent_id')->filter()->unique())
+            ->with(['task', 'project', 'jobSite'])
+            ->get()
+            ->keyBy('id');
 
+        $units = $this->groupIntoUnits($sorted, $lines, $mains);
         $created = 0;
 
-        DB::transaction(function () use ($meeting, $sorted, $keys, $actor, $previousIds, $isRoot, &$created) {
-            $lines = [];
+        DB::transaction(function () use ($meeting, $units, $actor, $previousIds, &$created) {
+            // One block of positions per location, so a group lands whole and
+            // in its own project's run.
+            $byScope = $units->groupBy(fn (array $unit) => $this->scopeKey(
+                $unit['scope']->project_id,
+                $unit['scope']->job_site_id
+            ));
 
-            // Roots first, one block of positions per location.
-            $byScope = $sorted->filter($isRoot)
-                ->groupBy(fn (Task $task) => $this->scopeKey($task->project_id, $task->job_site_id));
+            foreach ($byScope as $scopeUnits) {
+                $scope = $scopeUnits->first()['scope'];
+                $at = $this->openPositions($meeting, $scope->project_id, $scope->job_site_id, $scopeUnits->count());
 
-            foreach ($byScope as $scopeTasks) {
-                $first = $scopeTasks->first();
-                $at = $this->openPositions($meeting, $first->project_id, $first->job_site_id, $scopeTasks->count());
+                foreach ($scopeUnits->values() as $offset => $unit) {
+                    $head = $this->createUnitHead($meeting, $unit, $actor, $at + $offset, $previousIds, $created);
 
-                foreach ($scopeTasks->values() as $offset => $task) {
-                    $lines[$task->id] = $this->createTaskItem($meeting, $task, $actor, null, $at + $offset, $previousIds);
-                    $created++;
+                    foreach ($unit['children'] as $index => $child) {
+                        $this->createTaskItem($meeting, $child, $actor, $head, $index, $previousIds);
+                        $created++;
+                    }
                 }
-            }
-
-            // Then the children, under the line their parent just got. They
-            // arrive in the order the sort put them, so nextPosition numbers
-            // them 0, 1, 2 the way they read last month.
-            foreach ($sorted as $task) {
-                if (isset($lines[$task->id])) {
-                    continue;
-                }
-
-                $parent = $lines[$keys['tasks'][$task->id]['parent_task'] ?? null] ?? null;
-
-                if ($parent === null) {
-                    continue;
-                }
-
-                $lines[$task->id] = $this->createTaskItem(
-                    $meeting, $task, $actor, $parent, $this->nextPosition($meeting, $parent->id), $previousIds
-                );
-                $created++;
             }
         });
 
         return $created;
+    }
+
+    /**
+     * The carry-forward candidates as the groups they will land as.
+     *
+     * The panel shows what the button will do, so a main item and its sub-items
+     * are read together there too — including a main item that is not itself
+     * open work and therefore has no tick of its own: it comes because its
+     * sub-items do.
+     *
+     * @param  Collection<int, Task>|null  $candidates
+     * @return Collection<int, array{scope: MeetingItem|Task, main: ?MeetingItem, task: ?Task, children: Collection<int, Task>}>
+     */
+    public function carryForwardUnits(Meeting $meeting, ?Collection $candidates = null): Collection
+    {
+        $candidates ??= $this->carryForwardCandidates($meeting);
+
+        if ($candidates->isEmpty()) {
+            return collect();
+        }
+
+        $previousIds = $this->previousMeetingIds($meeting)->all();
+
+        $lines = MeetingItem::whereIn('meeting_id', $previousIds)
+            ->whereIn('task_id', $candidates->pluck('id'))
+            ->orderBy('id')
+            ->get()
+            ->keyBy('task_id');
+
+        $mains = MeetingItem::whereIn('id', $lines->pluck('parent_id')->filter()->unique())
+            ->with(['task', 'project', 'jobSite'])
+            ->get()
+            ->keyBy('id');
+
+        return $this->groupIntoUnits($candidates, $lines, $mains);
+    }
+
+    /**
+     * Gather the tasks into what actually goes onto the agenda.
+     *
+     * A main item and the sub-items under it are **one group**, and the group
+     * travels whole. The main line stands even when it is not itself a piece of
+     * open work — an information line used as a heading, or an action whose own
+     * task is finished while the work under it is not. Promoting the sub-items
+     * and dropping the heading, which is what this used to do, loses the shape
+     * the chair gave the agenda.
+     *
+     * @param  Collection<int, Task>  $sorted            candidates, already in landing order
+     * @param  Collection<int, MeetingItem>  $lines      previous line, keyed by task id
+     * @param  Collection<int, MeetingItem>  $mains      previous main lines, keyed by id
+     * @return Collection<int, array{scope: MeetingItem|Task, main: ?MeetingItem, task: ?Task, children: Collection<int, Task>}>
+     */
+    protected function groupIntoUnits(Collection $sorted, Collection $lines, Collection $mains): Collection
+    {
+        // Which main line, if any, each task belongs under. A task whose own
+        // line is the head of a group is the head of that group rather than a
+        // line of its own.
+        $heads = $mains->filter(fn (MeetingItem $main) => $main->task_id !== null)
+            ->keyBy('task_id');
+
+        $units = collect();
+
+        foreach ($sorted as $task) {
+            $mainId = $lines[$task->id]?->parent_id;
+
+            // Head of a group: its own line has sub-items coming across.
+            if ($mainId === null && $heads->has($task->id)) {
+                $main = $heads[$task->id];
+
+                $units->offsetExists('line:'.$main->id) or $units->put('line:'.$main->id, [
+                    'scope' => $main, 'main' => $main, 'task' => null, 'children' => collect(),
+                ]);
+
+                $unit = $units['line:'.$main->id];
+                $unit['task'] = $task;
+                $units->put('line:'.$main->id, $unit);
+
+                continue;
+            }
+
+            // A sub-item: it joins its main line's group, creating it if this
+            // is the first of the group to be reached.
+            if ($mainId !== null && $mains->has($mainId)) {
+                $main = $mains[$mainId];
+
+                $units->offsetExists('line:'.$main->id) or $units->put('line:'.$main->id, [
+                    'scope' => $main,
+                    'main' => $main,
+                    // Filled in when the main line's own task is reached, which
+                    // only happens while that task is still open.
+                    'task' => null,
+                    'children' => collect(),
+                ]);
+
+                $units['line:'.$main->id]['children']->push($task);
+
+                continue;
+            }
+
+            // A line of its own.
+            $units->put('task:'.$task->id, [
+                'scope' => $task, 'main' => null, 'task' => $task, 'children' => collect(),
+            ]);
+        }
+
+        return $units->values();
+    }
+
+    /**
+     * The top line of a group, or a standalone line.
+     *
+     * When the main line is not itself open work it is copied across as it
+     * stood — its title, its type, and its task if it had one, so a finished
+     * heading reads as finished with the remaining work beneath it.
+     */
+    protected function createUnitHead(
+        Meeting $meeting,
+        array $unit,
+        User $actor,
+        int $position,
+        array $previousIds,
+        int &$created,
+    ): MeetingItem {
+        // Already on this agenda — carried by an earlier press, or added by
+        // hand. Its sub-items join what is there rather than starting a second
+        // copy of the same group.
+        $existing = $unit['main'] === null ? null : $meeting->allItems()
+            ->where(fn ($q) => $q
+                ->where('carried_from_item_id', $unit['main']->id)
+                ->when($unit['main']->task_id, fn ($q, $taskId) => $q->orWhere('task_id', $taskId)))
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        if ($unit['task'] !== null) {
+            $created++;
+
+            return $this->createTaskItem($meeting, $unit['task'], $actor, null, $position, $previousIds);
+        }
+
+        $main = $unit['main'];
+        $created++;
+
+        return $meeting->allItems()->create([
+            'position' => $position,
+            'project_id' => $main->project_id,
+            'job_site_id' => $main->job_site_id,
+            'type' => $main->type,
+            'title' => $main->task?->title ?? $main->title,
+            'task_id' => $main->task_id,
+            'carried_from_item_id' => $main->id,
+            'created_by' => $actor->id,
+        ]);
     }
 
     /**
@@ -953,7 +1097,12 @@ class MeetingAgendaService
      */
     public function history(Task $task): array
     {
-        $first = $task->meetingItems()->with('meeting')->orderBy('id')->first();
+        // The panel asks this once per proposed row. When the caller has
+        // already loaded the history — which `carryForwardCandidates()` does —
+        // reading it costs nothing instead of a query a row.
+        $first = $task->relationLoaded('meetingItems')
+            ? $task->meetingItems->sortBy('id')->first()
+            : $task->meetingItems()->with('meeting')->orderBy('id')->first();
 
         return [
             'first_meeting' => $first?->meeting?->number,

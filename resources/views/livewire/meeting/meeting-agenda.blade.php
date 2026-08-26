@@ -370,52 +370,34 @@
                     </div>
 
                     <div class="max-h-[32rem] overflow-y-auto divide-y divide-slate-200 dark:divide-slate-700">
-                        @foreach($this->carryForwardByScope as $scopeLabel => $tasks)
+                        @foreach($this->carryForwardByScope as $scopeLabel => $units)
                             <div class="px-6 py-3">
                                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ $scopeLabel }}</p>
 
-                                @foreach($tasks as $task)
-                                    @php $history = app(App\Services\MeetingAgendaService::class)->history($task); @endphp
-                                    <label class="mt-2 flex cursor-pointer items-start gap-3 rounded-lg p-2 hover:bg-slate-50 dark:hover:bg-slate-700/40" wire:key="carry-{{ $task->id }}">
-                                        <input type="checkbox"
-                                               wire:click="toggleCarry({{ $task->id }})"
-                                               @checked(in_array($task->id, $carrySelected, true))
-                                               class="mt-1 rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189]">
-
-                                        <span class="min-w-0 flex-1">
-                                            <span class="flex flex-wrap items-center gap-2">
-                                                <span class="font-mono text-xs text-slate-400">{{ $task->code() }}</span>
-                                                <span class="text-sm text-slate-800 dark:text-slate-100">{{ $task->title }}</span>
-                                                <x-task-status-badge :task="$task" />
+                                {{--
+                                    A main item and the sub-items under it are one
+                                    group and travel together. A main item that is
+                                    not open work itself has no tick of its own —
+                                    it comes because its sub-items do.
+                                --}}
+                                @foreach($units as $unit)
+                                    @if($unit['task'])
+                                        @include('livewire.meeting.partials.carry-row', ['task' => $unit['task'], 'indent' => false])
+                                    @elseif($unit['main'])
+                                        <div class="mt-3 flex flex-wrap items-center gap-2" wire:key="carry-main-{{ $unit['main']->id }}">
+                                            <span class="min-w-0 break-words text-sm font-medium text-slate-700 dark:text-slate-200">{{ $unit['main']->title }}</span>
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                                                {{ $unit['main']->getTypeLabel() }}
                                             </span>
-
-                                            <span class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                                                <span>{{ $task->owner?->name }}</span>
-                                                @if($task->due_date)
-                                                    <span class="{{ $task->isOverdue() ? 'font-semibold text-red-600 dark:text-red-400' : '' }}">
-                                                        {{ $task->due_date->format($dateFormat) }}
-                                                        @if($task->isOverdue())
-                                                            · {{ trans_choice(':count day late|:count days late', $task->daysOverdue(), ['count' => $task->daysOverdue()]) }}
-                                                        @endif
-                                                    </span>
-                                                @endif
-                                                <span>{{ $task->progress }}%</span>
+                                            <span class="text-xs text-slate-400 dark:text-slate-500">
+                                                {{ __('comes with the items below') }}
                                             </span>
+                                        </div>
+                                    @endif
 
-                                            @if($history['first_meeting'])
-                                                <span class="mt-1 block text-xs text-slate-400 dark:text-slate-500">
-                                                    {{ __('open since :number', ['number' => $history['first_meeting']]) }}
-                                                    · {{ trans_choice(':count meeting|:count meetings', $history['meetings'], ['count' => $history['meetings']]) }}
-                                                </span>
-                                            @endif
-
-                                            @if($task->notes->isNotEmpty())
-                                                <span class="mt-1 block truncate text-xs italic text-slate-400 dark:text-slate-500">
-                                                    “{{ \Illuminate\Support\Str::limit($task->notes->first()->body, 70) }}”
-                                                </span>
-                                            @endif
-                                        </span>
-                                    </label>
+                                    @foreach($unit['children'] as $child)
+                                        @include('livewire.meeting.partials.carry-row', ['task' => $child, 'indent' => true])
+                                    @endforeach
                                 @endforeach
                             </div>
                         @endforeach
