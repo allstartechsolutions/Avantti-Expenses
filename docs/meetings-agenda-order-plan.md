@@ -312,6 +312,38 @@ that audit in hand.
 - **Company-level ("General") lines** were checked as a block like any other, including that the
   `null, null` scope survives the round trip from the browser to `moveGroup()`.
 
+### What escaped the review pass — `MANAGERPRO-BR-8`
+
+Caught by Sentry the same day, from the local install, before any real user reached it.
+*ErrorException: Undefined array key 248*, out of `groupIntoUnits()`:
+
+```php
+$mainId = $lines[$task->id]?->parent_id;   // was
+$mainId = $lines->get($task->id)?->parent_id;   // is
+```
+
+`carryForward()` looks each task's earlier line up in `$lines`, built from **the previous
+meetings of this series**. That is right for the carry-forward panel, whose candidates all come
+from those meetings — which is why every test here passed. It is wrong for the other two
+callers: `addAllTracked()` and `addScope()` pass the *tracked* list for a location, which is
+every open task this company has discussed **anywhere**. A task tracked on another series has
+no line in `$lines`, and at the **first meeting of a series there are none at all** — so
+"Add all tracked items" failed for every task, every time, on any new series.
+
+The `?->` shows the null was expected. A collection *offset* on a missing key does not return
+null: it emits a PHP warning, which Laravel turns into an exception, so the `?->` never got
+its chance. `->get()` returns null the way the author intended.
+
+**The lesson for the next pass here:** step 1's tests all drive `carryForward()` through the
+carry-forward panel, where `$lines` is always populated by construction. The two callers that
+feed it a *different* population were never exercised. When a method is reachable from more
+than one screen, the review has to walk each entry point, not the method.
+
+Regression test:
+`AgendaOrderTest::test_adding_a_locations_tracked_work_survives_a_task_this_series_has_never_discussed`.
+Verified against the real local database in a rolled-back transaction, both with the fix and
+with the old line restored.
+
 ## 6. Behaviour changes to announce
 
 Both are narrowings of something that works today, and are recorded here rather than shipped

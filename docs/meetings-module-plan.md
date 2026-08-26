@@ -611,9 +611,18 @@ meeting screens are worthless without a task system, and the task system is usef
 **Out of sequence, 2026-08-26 — agenda order and structure.** Owner feedback after phase 7: carried
 items came back sorted by due date, with the projects interleaved and the sub-item structure
 flattened. Planned and built in five steps as `docs/meetings-agenda-order-plan.md`, with its own
-review pass and 41 tests. It amends §5.2, §5.3 and §5.9 above and adds `meeting_series.agenda_order`.
+review pass and 42 tests. It amends §5.2, §5.3 and §5.9 above and adds `meeting_series.agenda_order`.
 Phase 9 still owes the module the rest of its backlog; M13–M15 in
 `docs/review-and-improvements.md` are closed by this work, M16–M17 were opened by it.
+
+**Out of sequence, 2026-08-26 — the query cost of both screens.** A ten-line minute was taking
+130 queries and the agenda 127. Both are now **41 and flat**: the count does not move as the
+agenda grows from three lines to thirty, as the series runs from two meetings to twelve, or as
+the meeting covers ten projects instead of one. All three are held by
+`tests/Feature/Meetings/MeetingScreenQueriesTest.php`. The findings, the measurements and what
+was deliberately left are in `docs/review-and-improvements.md`; M10 is closed by this work. One
+app-wide fix came out of it — `ModuleAccess::isEnabled()` was costing 54 reads of the `cache`
+table per render on **every** screen in the application, not just these two.
 
 ---
 
@@ -622,6 +631,16 @@ Phase 9 still owes the module the rest of its backlog; M13–M15 in
 1. **Task visibility for `employee` users** — assumed: an employee sees tasks they own or are
    assigned to, plus everything on projects they can already see; no private flag in v1. If the owner
    wants an `is_internal` flag like documents have, it is one boolean and a scope.
+
+   ⚠️ **The first half of that assumption is not what the code does** (found 2026-08-26). A
+   *confined* employee — one whose `access_scope`, or whose role's, is `assigned` — does **not**
+   see a task they own if they hold no membership on its project: `Task::visibleTo()` filters it
+   out of My Tasks and `tasks.view` refuses the detail view. The owner picker offers them
+   anyway, so work can be assigned into a void with no error anywhere. Whether that is live or
+   dormant turns on two queries against production. Written up in full, with the options and a
+   recommendation, at
+   [`docs/to-review/2026-08-26-task-assignment-confinement-gap.md`](./to-review/2026-08-26-task-assignment-confinement-gap.md).
+   **Settle it before treating this assumption as true.**
 2. **`documents.project_id` nullability** — a company-level meeting (no project) has no repository to
    file its PDF into. Assumed for v1: those PDFs stay as `file_uploads` on the meeting, and only
    project/job-site meetings file into the repository. Making `project_id` nullable to get a company

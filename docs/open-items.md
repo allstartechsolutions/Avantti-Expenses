@@ -452,7 +452,7 @@ Owner feedback on the agenda: *the items moved to the next one are out of the or
 same structure as the one before — they are organized by due date first.* Both halves were true.
 
 Plan and full findings: **`docs/meetings-agenda-order-plan.md`**. Tests:
-`tests/Feature/Meetings/AgendaOrderTest.php` (41). Demo data:
+`tests/Feature/Meetings/AgendaOrderTest.php` (42). Demo data:
 `php artisan db:seed --class=DemoAgendaOrderSeeder` — safe to re-run, builds its own DEMO series
 and removes its previous run first.
 

@@ -9,6 +9,45 @@ and — when tracing is on — how long each request took and which queries it r
 collected, nothing is sent, and every screen behaves exactly as it did before the package
 was added. An install that has not been given a DSN is not degraded in any way.
 
+**Status: live in production since 2026-08-26.** Local development reports too — this repo's
+`.env` carries a real DSN — and the two are told apart automatically: `config/sentry.php`
+leaves `SENTRY_ENVIRONMENT` unset, so the SDK falls back to `APP_ENV`
+(`ServiceProvider.php:301-303`). Dev events arrive tagged `local`, production `production`.
+There is no `SENTRY_ENVIRONMENT` line to add.
+
+---
+
+## 0. Reading the errors from a Claude Code session
+
+Sentry's own MCP server is registered for this project, so issues can be read and triaged
+without leaving the terminal:
+
+```bash
+claude mcp add --transport http sentry https://mcp.sentry.dev/mcp   # once, local scope
+```
+
+then `/mcp` to authenticate in the browser. Grant read-only unless you want issues resolved
+and commented on from here too. **MCP servers load when a session starts**, so a server added
+mid-session only appears after `claude --continue`.
+
+Putting `Fixes <ISSUE-ID>` in a commit message closes that issue automatically on deploy —
+better than resolving it by hand, because the issue then points at the commit that fixed it.
+
+### The trap: do not let your own tooling file issues
+
+Any ad-hoc script that boots the app — `require bootstrap/app.php`, a profiling harness, a
+one-off repro — gets the **real** Sentry client, so every exception thrown while iterating on
+that script is filed as a genuine-looking issue. This happened on 2026-08-26 and produced four
+junk issues before anyone noticed. Always:
+
+```bash
+SENTRY_LARAVEL_DSN= php path/to/scratch.php
+```
+
+Laravel's Dotenv is immutable, so an env var already set in the shell beats `.env` and
+`config('sentry.dsn')` comes out empty — the documented no-op. `php artisan test` is already
+safe (`phpunit.xml` pins an empty DSN); `php artisan tinker` is **not**.
+
 ---
 
 ## 1. Turning it on

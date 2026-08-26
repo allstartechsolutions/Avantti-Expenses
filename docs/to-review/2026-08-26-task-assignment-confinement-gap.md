@@ -30,6 +30,14 @@ Why: `Task::scopeVisibleTo()` (`app/Models/Task.php`) gives a confined user only
 through it, and `tasks.view` is refused for the same reason, so both the list and the detail
 view agree the task is not theirs to see. The picker never asked.
 
+## It also contradicts a written assumption
+
+`docs/meetings-module-plan.md` §11, open decision 1, states: *"an employee sees tasks they own
+or are assigned to, plus everything on projects they can already see."* The first half is not
+what the code does — a confined employee does **not** see a task they own if the project is not
+theirs. That section now carries a pointer back here, but the assumption should be either made
+true or rewritten once this is settled.
+
 ## Who counts as confined
 
 `User::effectiveAccessScope()` — the user's own `access_scope`, else their **role's**, else
