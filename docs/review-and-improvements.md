@@ -1217,12 +1217,17 @@ What was wrong, in the order it cost the most:
 
 ### Left open, deliberately
 
-- **`assignableUsers()` offers every active person** as a task owner, unfiltered. Narrowing it
-  to people with a membership on the task's project is probably right, but it would change who
-  can be given work — an owner's decision, not a clean-up. `selectableProjects()` *was*
-  filtered with `visibleTo()` in the same change, because that one is not a narrowing: a
-  confined person picking a project they cannot reach was already refused by `saveTask()`, so
-  the picker was offering an option that could only 403, and leaking project names doing it.
+- **`assignableUsers()` offers every active person** as a task owner, unfiltered — so a
+  confined person can be handed work that does not appear in their My Tasks and that they get
+  a 403 opening. Verified, not theoretical. It needs one fact from production and one decision,
+  so it is written up in full at
+  **[`docs/to-review/2026-08-26-task-assignment-confinement-gap.md`](./to-review/2026-08-26-task-assignment-confinement-gap.md)**
+  rather than summarised here.
+
+  `selectableProjects()` *was* filtered with `visibleTo()` in the same change, because that one
+  is not a narrowing: a confined person picking a project they cannot reach was already refused
+  by `saveTask()`, so the picker was offering an option that could only 403, and leaking
+  project names doing it.
 
 That is now the **only** item left open from this pass.
 

@@ -364,6 +364,20 @@ tagged per install and one project each.
 
 ---
 
+## 1c. Questions waiting on you — `docs/to-review/`
+
+New folder, 2026-08-26. Things found while building something else that need a decision from
+the owner, or a fact only production can supply, before anybody can act on them. Each file is
+written to be picked up cold: what is wrong (demonstrated, not asserted), how to check whether
+it still matters, the options with their costs, and a recommendation.
+
+**Open right now: one.** `assignableUsers()` offers every active person as a task owner, so a
+confined person can be handed work they cannot see — no error, nothing in the log. Whether it
+is live or dormant turns on two SQL queries against production, both in the file. See
+[`docs/to-review/README.md`](./to-review/README.md).
+
+---
+
 ## 2. Next up
 
 Three modules are each sitting on their standing final phase, plus one feature phase.
