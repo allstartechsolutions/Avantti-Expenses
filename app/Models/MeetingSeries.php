@@ -26,6 +26,7 @@ class MeetingSeries extends Model
         'code',
         'description',
         'cadence',
+        'agenda_order',
         'default_location',
         'is_active',
         'created_by',
@@ -34,6 +35,7 @@ class MeetingSeries extends Model
 
     protected $attributes = [
         'cadence' => 'weekly',
+        'agenda_order' => 'last_meeting',
         'is_active' => true,
     ];
 
@@ -98,6 +100,37 @@ class MeetingSeries extends Model
             'quarterly' => __('Quarterly'),
             'ad_hoc' => __('As needed'),
             default => ucfirst($this->cadence),
+        };
+    }
+
+    /**
+     * How agendas built from this series are ordered.
+     *
+     * Both modes group by project / job site and keep the previous meeting's
+     * order inside each group; 'overdue_first' additionally lifts the late
+     * rows to the top of their own group. See
+     * docs/meetings-agenda-order-plan.md §2.4.
+     */
+    public function putsOverdueFirst(): bool
+    {
+        return $this->agenda_order === 'overdue_first';
+    }
+
+    public function getAgendaOrderLabel(): string
+    {
+        return static::agendaOrderLabel($this->agenda_order);
+    }
+
+    /**
+     * Beside the instance method so a form's options and a filter value can be
+     * labelled without a series in hand.
+     */
+    public static function agendaOrderLabel(?string $value): string
+    {
+        return match ($value) {
+            'last_meeting' => __("Last meeting's order"),
+            'overdue_first' => __("Past due first, then last meeting's order"),
+            default => (string) $value,
         };
     }
 

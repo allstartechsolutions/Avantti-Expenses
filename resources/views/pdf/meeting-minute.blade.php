@@ -103,7 +103,23 @@
 {{-- The agenda, as taken --}}
 <div style="font-size: 8pt; font-weight: bold; color: #3F5189; text-transform: uppercase; margin-bottom: 4px;">{{ __('Agenda') }}</div>
 
-@forelse($items as $item)
+{{--
+    Owners, dates and progress are photographed when the minute is published,
+    not on the day of the meeting. When the two are not the same day, the
+    document says which one it is quoting.
+--}}
+@if($meeting->published_at && ! $meeting->published_at->isSameDay($meeting->meeting_date))
+    <div style="font-size: 7pt; color: #94a3b8; margin-bottom: 6px;">
+        {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->format($dateFormat)]) }}
+    </div>
+@endif
+
+@forelse($blocks as $block)
+<div style="font-size: 7.5pt; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin: 8px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">
+    {{ $block['label'] }}
+</div>
+
+@foreach($block['items'] as $item)
     @php $snapshot = $item->status_at_meeting ?? []; @endphp
 
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px; {{ $item->parent_id ? 'margin-left: 18px; width: 96%;' : '' }}">
@@ -114,7 +130,6 @@
                     <span style="font-weight: bold;">{{ $item->title }}</span>
                     <span style="font-size: 7pt; color: #64748b;">
                         [{{ $item->getTypeLabel() }}]
-                        @if($item->getScopeLabel() !== __('General')) · {{ $item->getScopeLabel() }} @endif
                         @if($item->isCarriedForward()) · {{ __('from :number', ['number' => $item->carriedFrom?->meeting?->number]) }} @endif
                         @unless($item->discussed) · {{ __('not discussed') }} @endunless
                     </span>
@@ -142,6 +157,7 @@
             </td>
         </tr>
     </table>
+@endforeach
 @empty
     <div style="border: 1px solid #e2e8f0; padding: 6px 8px; color: #94a3b8; margin-bottom: 12px;">{{ __('Nothing on the agenda') }}</div>
 @endforelse

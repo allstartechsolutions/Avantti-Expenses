@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\Meeting;
+use App\Services\MeetingAgendaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as PdfWrapper;
 use Illuminate\Support\Str;
@@ -23,6 +24,17 @@ class MeetingMinuteRenderer
         $pdf->setPaper('letter', 'portrait');
 
         return $pdf;
+    }
+
+    /**
+     * The minute as HTML, which is what dompdf is handed.
+     *
+     * Useful on its own: asserting on the document's wording means reading this
+     * rather than the compressed bytes of a rendered PDF.
+     */
+    public function html(Meeting $meeting): string
+    {
+        return view('pdf.meeting-minute', $this->data($meeting))->render();
     }
 
     public function bytes(Meeting $meeting): string
@@ -45,18 +57,26 @@ class MeetingMinuteRenderer
             'attendees.user', 'revisions.revisedBy', 'nextMeeting',
         ]);
 
+        $roots = $meeting->items()
+            ->with(['task.owner', 'project', 'jobSite', 'carriedFrom.meeting', 'children.task.owner', 'children.project', 'children.jobSite', 'children.carriedFrom.meeting'])
+            ->get();
+
         // Parents and their children in reading order, so the PDF numbers read
         // 1, 1.1, 2 the way the screen does.
-        $items = $meeting->items()
-            ->with(['task.owner', 'project', 'jobSite', 'carriedFrom.meeting', 'children.task.owner', 'children.project', 'children.jobSite', 'children.carriedFrom.meeting'])
-            ->get()
-            ->flatMap(fn ($item) => collect([$item])->concat($item->children));
+        $flatten = fn ($items) => collect($items)->flatMap(fn ($item) => collect([$item])->concat($item->children));
+
+        // Under the same location headings the agenda was built with: the ata
+        // is where the complaint about the order came from, so grouping that
+        // stopped at the screen would not have answered it.
+        $blocks = app(MeetingAgendaService::class)->blocksFrom($roots)
+            ->map(fn (array $block) => ['label' => $block['label'], 'items' => $flatten($block['items'])]);
 
         $company = Company::first();
 
         return [
             'meeting' => $meeting,
-            'items' => $items,
+            'items' => $flatten($roots),
+            'blocks' => $blocks,
             'company' => $company,
             'logoData' => $this->logo($company),
         ];

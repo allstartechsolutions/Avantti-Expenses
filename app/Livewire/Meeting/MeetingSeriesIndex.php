@@ -37,6 +37,7 @@ class MeetingSeriesIndex extends Component
     public string $code = '';
     public string $description = '';
     public string $cadence = 'weekly';
+    public string $agenda_order = 'last_meeting';
     public string $default_location = '';
     public bool $is_active = true;
 
@@ -122,6 +123,7 @@ class MeetingSeriesIndex extends Component
         $this->code = $series->code;
         $this->description = (string) $series->description;
         $this->cadence = $series->cadence;
+        $this->agenda_order = $series->agenda_order;
         $this->default_location = (string) $series->default_location;
         $this->is_active = (bool) $series->is_active;
 
@@ -184,6 +186,7 @@ class MeetingSeriesIndex extends Component
             ],
             'description' => ['nullable', 'string', 'max:2000'],
             'cadence' => ['required', 'in:weekly,biweekly,monthly,quarterly,ad_hoc'],
+            'agenda_order' => ['required', 'in:last_meeting,overdue_first'],
             'default_location' => ['nullable', 'string', 'max:255'],
             'members' => ['array'],
             'members.*.user_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -218,6 +221,7 @@ class MeetingSeriesIndex extends Component
                     'code' => $code,
                     'description' => $this->description ?: null,
                     'cadence' => $this->cadence,
+                    'agenda_order' => $this->agenda_order,
                     'default_location' => $this->default_location ?: null,
                     'is_active' => $this->is_active,
                     'created_by' => $this->editingId ? MeetingSeries::find($this->editingId)?->created_by : auth()->id(),
@@ -307,6 +311,7 @@ class MeetingSeriesIndex extends Component
     {
         $this->reset(['editingId', 'name', 'code', 'description', 'default_location', 'members', 'scopes']);
         $this->cadence = 'weekly';
+        $this->agenda_order = 'last_meeting';
         $this->is_active = true;
         $this->resetValidation();
     }

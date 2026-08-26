@@ -91,10 +91,16 @@ trait RaisesAgendaItems
         abort_unless($this->meeting->isDraft() && $this->meeting->canEdit(auth()->user()), 403);
 
         $this->resetItemForm();
-        $this->item_parent_id = $parentId;
 
-        // A sub-item belongs where its parent belongs.
-        if ($parentId && $parent = MeetingItem::find($parentId)) {
+        // A sub-item belongs where its parent belongs — and only to a line of
+        // this meeting: an id from the browser proves nothing about ownership.
+        $parent = $parentId
+            ? MeetingItem::where('meeting_id', $this->meeting->id)->whereNull('parent_id')->find($parentId)
+            : null;
+
+        $this->item_parent_id = $parent?->id;
+
+        if ($parent) {
             $this->item_project_id = (string) ($parent->project_id ?? '');
             $this->item_job_site_id = (string) ($parent->job_site_id ?? '');
         }

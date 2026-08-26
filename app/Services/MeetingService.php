@@ -163,10 +163,10 @@ class MeetingService
             $meeting->update(['next_meeting_id' => $next->id, 'next_meeting_date' => $date]);
 
             // Everything still open comes across, so the follow-up opens with
-            // the work rather than an empty page.
-            foreach ($this->agenda->carryForwardCandidates($next) as $task) {
-                $this->agenda->addTask($next, $task, $actor);
-            }
+            // the work rather than an empty page — in one call, because the
+            // order and the nesting only survive if the whole set is carried
+            // together. See docs/meetings-agenda-order-plan.md §2.
+            $this->agenda->carryForward($next, $this->agenda->carryForwardCandidates($next), $actor);
 
             return $next->fresh();
         });

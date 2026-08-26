@@ -93,6 +93,40 @@ class MeetingAgenda extends Component
             ->get();
     }
 
+    /**
+     * The agenda cut into location blocks, in the order it is taken.
+     *
+     * Runs of the same location rather than a plain grouping, so an agenda
+     * that is still interleaved shows honestly as interleaved — and the tidy
+     * button is offered exactly when it would do something.
+     *
+     * @return Collection<int, array{key:string, label:string, project_id:?int, job_site_id:?int, items:Collection<int, MeetingItem>}>
+     */
+    #[Computed]
+    public function itemBlocks(): Collection
+    {
+        return $this->agenda()->blocksFrom($this->items);
+    }
+
+    /**
+     * Earlier minutes of this series still sitting in draft.
+     *
+     * Their figures follow the live tasks until they are published, so work
+     * moved on from this agenda changes what they show.
+     */
+    #[Computed]
+    public function unpublishedEarlier(): Collection
+    {
+        return $this->agenda()->unpublishedEarlierMeetings($this->meeting);
+    }
+
+    /** True when a location's lines are split across more than one run. */
+    #[Computed]
+    public function isInterleaved(): bool
+    {
+        return $this->itemBlocks->pluck('key')->unique()->count() < $this->itemBlocks->count();
+    }
+
     /** Locations already on the agenda, plus whatever the series covers. */
     #[Computed]
     public function scopesOnAgenda(): Collection
@@ -184,21 +218,25 @@ class MeetingAgenda extends Component
         $this->carrySelected = $this->carryForward->filter->isOverdue()->pluck('id')->all();
     }
 
+    /**
+     * The whole ticked set goes over in one call: the order and the nesting
+     * only survive if the service can see every task at once.
+     */
     public function addSelectedCarry(): void
     {
-        $tasks = $this->carryForward->whereIn('id', $this->carrySelected);
-
-        foreach ($tasks as $task) {
-            $this->agenda()->addTask($this->meeting, $task, auth()->user());
-        }
+        $added = $this->agenda()->carryForward(
+            $this->meeting,
+            $this->carryForward->whereIn('id', $this->carrySelected),
+            auth()->user()
+        );
 
         $this->carrySelected = [];
         $this->refreshAgenda();
 
         session()->flash('message', trans_choice(
             ':count item carried onto the agenda.|:count items carried onto the agenda.',
-            $tasks->count(),
-            ['count' => $tasks->count()]
+            $added,
+            ['count' => $added]
         ));
     }
 
@@ -228,11 +266,7 @@ class MeetingAgenda extends Component
             $this->addJobSiteId ? (int) $this->addJobSiteId : null
         );
 
-        foreach ($candidates['tracked'] as $task) {
-            $this->agenda()->addTask($this->meeting, $task, auth()->user());
-        }
-
-        $added = $candidates['tracked']->count();
+        $added = $this->agenda()->carryForward($this->meeting, $candidates['tracked'], auth()->user());
         $left = $candidates['direct']->count();
 
         $this->addProjectId = '';
@@ -266,9 +300,7 @@ class MeetingAgenda extends Component
             return;
         }
 
-        foreach ($scope['tracked'] as $task) {
-            $this->agenda()->addTask($this->meeting, $task, auth()->user());
-        }
+        $this->agenda()->carryForward($this->meeting, $scope['tracked'], auth()->user());
 
         $this->refreshAgenda();
     }
@@ -300,18 +332,65 @@ class MeetingAgenda extends Component
 
     public function moveItem(int $itemId, string $direction): void
     {
-        $this->agenda()->move(MeetingItem::findOrFail($itemId), $direction);
+        $this->agenda()->move($this->ownItem($itemId), $direction);
         $this->refreshAgenda();
+    }
+
+    /**
+     * Move a whole location above or below its neighbour — how the order of
+     * the projects themselves is changed, now that a single row stops at the
+     * edge of its own block.
+     */
+    public function moveGroup(?int $projectId, ?int $jobSiteId, string $direction): void
+    {
+        $this->agenda()->moveGroup($this->meeting, $projectId, $jobSiteId, $direction);
+        $this->refreshAgenda();
+    }
+
+    /** Bring each location's lines back together, leaving their order alone. */
+    public function tidyAgenda(): void
+    {
+        $this->agenda()->regroup($this->meeting);
+        $this->refreshAgenda();
+
+        session()->flash('message', __('Each location\'s items are back together.'));
+    }
+
+    /**
+     * Re-sort the agenda the way a freshly carried one would have landed.
+     * The series decides the default; this switches one draft either way.
+     */
+    public function sortAgenda(string $mode): void
+    {
+        abort_unless(in_array($mode, ['last_meeting', 'overdue_first'], true), 400);
+
+        $this->agenda()->applyOrder($this->meeting, $mode);
+        $this->refreshAgenda();
+
+        session()->flash('message', $mode === 'overdue_first'
+            ? __('Past due first, within each location.')
+            : __("Back to last meeting's order."));
     }
 
     public function removeItem(int $itemId): void
     {
-        $item = MeetingItem::findOrFail($itemId);
+        $item = $this->ownItem($itemId);
 
         $this->agenda()->removeItem($item);
         $this->refreshAgenda();
 
         session()->flash('message', __('Taken off the agenda. The task itself is untouched and stays open.'));
+    }
+
+    /**
+     * A line, proved to belong to this meeting.
+     *
+     * `findOrFail()` proves the row exists, not that it is ours: an id from the
+     * browser must never be acted on without checking where it belongs.
+     */
+    protected function ownItem(int $itemId): MeetingItem
+    {
+        return MeetingItem::where('meeting_id', $this->meeting->id)->findOrFail($itemId);
     }
 
     protected function afterItemRaised(\App\Models\MeetingItem $item): void
@@ -321,7 +400,9 @@ class MeetingAgenda extends Component
 
     protected function refreshAgenda(): void
     {
-        unset($this->items, $this->counts, $this->carryForward, $this->carryForwardByScope,
+        unset($this->items, $this->itemBlocks, $this->isInterleaved, $this->counts,
+            $this->unpublishedEarlier,
+            $this->carryForward, $this->carryForwardByScope,
             $this->scopesOnAgenda, $this->scopeCandidates);
     }
 

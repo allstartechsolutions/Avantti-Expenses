@@ -63,6 +63,17 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="{{ $label }}">{{ __('Agenda Order') }}</label>
+                    <select wire:model="agenda_order" class="{{ $field }}">
+                        <option value="last_meeting">{{ App\Models\MeetingSeries::agendaOrderLabel('last_meeting') }}</option>
+                        <option value="overdue_first">{{ App\Models\MeetingSeries::agendaOrderLabel('overdue_first') }}</option>
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {{ __('Every agenda groups its items by project and job site. This sets what happens inside each group when items are carried forward.') }}
+                    </p>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="{{ $label }}">{{ __('Usual Location') }}</label>

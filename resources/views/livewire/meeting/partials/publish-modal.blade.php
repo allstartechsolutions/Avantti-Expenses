@@ -39,6 +39,27 @@
                 </div>
             </dl>
 
+            {{--
+                The photograph is taken now, not on the day of the meeting. When
+                a later meeting of the series has already been prepared, "now"
+                is after work has moved on, and this minute keeps those later
+                figures for good.
+            --}}
+            @if($this->laterMeetings->isNotEmpty())
+                <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-300">
+                        {{ __('This minute is being published out of order.') }}
+                    </p>
+                    <p class="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                        {{ trans_choice(
+                            'A later meeting of this series already has an agenda: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.|Later meetings of this series already have agendas: :numbers. Tasks are photographed as they stand today, so this minute will record figures from after its own date.',
+                            $this->laterMeetings->count(),
+                            ['numbers' => $this->laterMeetings->pluck('number')->join(', ')]
+                        ) }}
+                    </p>
+                </div>
+            @endif
+
             @if($this->counters['unmarked'] > 0)
                 <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
                     <p class="text-sm text-amber-800 dark:text-amber-300">

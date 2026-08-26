@@ -1,6 +1,10 @@
-{{-- One line of the agenda being built. Expects: $item, $depth --}}
+{{-- One line of the agenda being built. Expects: $item, $depth, $canUp, $canDown --}}
 @php
     $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
+    // The arrows stop at the edge of the location block: a line cannot change
+    // project by being moved, so the whole block moves from its heading instead.
+    $canUp = $canUp ?? true;
+    $canDown = $canDown ?? true;
     $task = $item->task;
     $typePalette = [
         'gray' => 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
@@ -76,8 +80,6 @@
         </div>
 
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-            <span>{{ $item->getScopeLabel() }}</span>
-
             @if($task)
                 <span>{{ $task->owner?->name }}</span>
 
@@ -118,16 +120,18 @@
         @endif
 
         <button type="button" wire:click="moveItem({{ $item->id }}, 'up')"
-                class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700"
-                title="{{ __('Move up') }}">
+                @disabled(! $canUp)
+                class="rounded p-1 text-slate-400 enabled:hover:bg-slate-100 enabled:hover:text-slate-700 disabled:opacity-30 dark:enabled:hover:bg-slate-700"
+                title="{{ $canUp ? __('Move up') : __('Already first in this location — move the whole location from its heading.') }}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
             </svg>
         </button>
 
         <button type="button" wire:click="moveItem({{ $item->id }}, 'down')"
-                class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700"
-                title="{{ __('Move down') }}">
+                @disabled(! $canDown)
+                class="rounded p-1 text-slate-400 enabled:hover:bg-slate-100 enabled:hover:text-slate-700 disabled:opacity-30 dark:enabled:hover:bg-slate-700"
+                title="{{ $canDown ? __('Move down') : __('Already last in this location — move the whole location from its heading.') }}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>

@@ -39,6 +39,41 @@
         </div>
     @endif
 
+    {{--
+        An earlier minute of this series has not gone out yet. Its figures are
+        not frozen until it is published, so anything moved on from this agenda
+        changes what that one shows — and what it will keep once published.
+    --}}
+    @if($this->unpublishedEarlier->isNotEmpty())
+        <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+            <div class="flex items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 004.99 19z"/>
+                </svg>
+                <div class="min-w-0 text-sm text-amber-800 dark:text-amber-300">
+                    <p class="font-medium">
+                        {{ trans_choice(
+                            'An earlier minute of this series has not been published.|:count earlier minutes of this series have not been published.',
+                            $this->unpublishedEarlier->count(),
+                            ['count' => $this->unpublishedEarlier->count()]
+                        ) }}
+                    </p>
+                    <p class="mt-1">
+                        {{ __('Its owners, dates and progress follow the live tasks until it goes out, so anything changed here changes what it shows — and what it keeps once published. Publish it first.') }}
+                    </p>
+                    <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                        @foreach($this->unpublishedEarlier as $earlier)
+                            <a href="{{ route('meetings.show', $earlier) }}"
+                               class="font-mono text-xs underline hover:no-underline">
+                                {{ $earlier->number }} · {{ $earlier->meeting_date->format($dateFormat) }}
+                            </a>
+                        @endforeach
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Where the agenda stands -->
     <div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
         @foreach([
@@ -69,6 +104,42 @@
                     <x-ui.button variant="primary" size="sm" icon="plus" wire:click="openItemForm">{{ __('Raise an Item') }}</x-ui.button>
                 </div>
 
+                @if($this->items->isNotEmpty())
+                    {{--
+                        The order is stored, not applied when the page renders,
+                        so what is on screen is what the minute and the ata will
+                        say. These put it back when dragging has wandered.
+                    --}}
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-700/20">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ __('Order') }}</span>
+
+                        <button type="button" wire:click="sortAgenda('last_meeting')"
+                                class="text-xs text-[#3F5189] dark:text-[#4A5A96] hover:underline">
+                            {{ __("Last meeting's order") }}
+                        </button>
+                        <span class="text-slate-300 dark:text-slate-600">·</span>
+                        <button type="button" wire:click="sortAgenda('overdue_first')"
+                                class="text-xs text-[#3F5189] dark:text-[#4A5A96] hover:underline">
+                            {{ __('Past due first') }}
+                        </button>
+
+                        @if($this->isInterleaved)
+                            <span class="text-slate-300 dark:text-slate-600">·</span>
+                            <button type="button" wire:click="tidyAgenda"
+                                    class="text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline">
+                                {{ __('Group by location') }}
+                            </button>
+                            <span class="text-xs text-slate-400 dark:text-slate-500">
+                                {{ __('A location is split across the agenda.') }}
+                            </span>
+                        @elseif($meeting->series)
+                            <span class="ml-auto text-xs text-slate-400 dark:text-slate-500">
+                                {{ __('This series: :order', ['order' => $meeting->series->getAgendaOrderLabel()]) }}
+                            </span>
+                        @endif
+                    </div>
+                @endif
+
                 @if($showItemForm && ! $item_parent_id && ! $editingItemId)
                     @include('livewire.meeting.partials.item-form')
                 @endif
@@ -91,50 +162,100 @@
                         works with a keyboard and on a phone, where dragging
                         inside a scrolling list fights the scroll.
 
-                        Plain HTML5 drag events — no library. The browser sends
-                        the order it now shows and the server keeps only the ids
-                        that belong to this agenda.
+                        Plain HTML5 drag events — no library. Each location has
+                        its own x-data, so a drag only ever collects the rows of
+                        its own block: a line cannot change project by being
+                        dragged, because its location comes from its task.
                     --}}
-                    <div class="divide-y divide-slate-200 dark:divide-slate-700"
-                         x-data="{
-                             dragging: null,
-                             over: null,
-                             start(id) { this.dragging = id },
-                             enter(id) { if (this.dragging && id !== this.dragging) this.over = id },
-                             end() { this.dragging = null; this.over = null },
-                             drop(targetId) {
-                                 if (! this.dragging || this.dragging === targetId) { this.end(); return }
+                    <div class="divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach($this->itemBlocks as $blockIndex => $block)
+                            <div wire:key="block-{{ $blockIndex }}-{{ $block['key'] }}">
+                                <!-- Which project or job site the lines below belong to -->
+                                <div class="flex items-center justify-between gap-3 bg-slate-50 px-6 py-2 dark:bg-slate-700/40">
+                                    <div class="flex min-w-0 items-center gap-2">
+                                        <span class="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            {{ $block['label'] }}
+                                        </span>
+                                        <span class="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-600 dark:text-slate-300">
+                                            {{ $block['items']->count() }}
+                                        </span>
+                                    </div>
 
-                                 const rows = [...$el.querySelectorAll('[data-agenda-row]')]
-                                     .map(el => parseInt(el.dataset.agendaRow, 10));
+                                    <div class="flex shrink-0 items-center gap-1">
+                                        <button type="button"
+                                                wire:click="moveGroup({{ $block['project_id'] ?? 'null' }}, {{ $block['job_site_id'] ?? 'null' }}, 'up')"
+                                                @disabled($blockIndex === 0)
+                                                class="rounded p-1 text-slate-400 enabled:hover:bg-slate-200 enabled:hover:text-slate-700 disabled:opacity-30 dark:enabled:hover:bg-slate-600"
+                                                title="{{ __('Move this location up') }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button"
+                                                wire:click="moveGroup({{ $block['project_id'] ?? 'null' }}, {{ $block['job_site_id'] ?? 'null' }}, 'down')"
+                                                @disabled($blockIndex === $this->itemBlocks->count() - 1)
+                                                class="rounded p-1 text-slate-400 enabled:hover:bg-slate-200 enabled:hover:text-slate-700 disabled:opacity-30 dark:enabled:hover:bg-slate-600"
+                                                title="{{ __('Move this location down') }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                 const from = rows.indexOf(this.dragging);
-                                 const to = rows.indexOf(targetId);
-                                 if (from === -1 || to === -1) { this.end(); return }
+                                <div class="divide-y divide-slate-200 dark:divide-slate-700"
+                                     x-data="{
+                                         dragging: null,
+                                         over: null,
+                                         start(id) { this.dragging = id },
+                                         enter(id) { if (this.dragging && id !== this.dragging) this.over = id },
+                                         end() { this.dragging = null; this.over = null },
+                                         drop(targetId) {
+                                             if (! this.dragging || this.dragging === targetId) { this.end(); return }
 
-                                 rows.splice(to, 0, ...rows.splice(from, 1));
-                                 $wire.reorderItems(rows, null);
-                                 this.end();
-                             },
-                         }">
-                        @foreach($this->items as $item)
-                            @include('livewire.meeting.partials.agenda-item', ['item' => $item, 'depth' => 0])
+                                             const rows = [...$el.querySelectorAll('[data-agenda-row]')]
+                                                 .map(el => parseInt(el.dataset.agendaRow, 10));
 
-                            @if($showItemForm && $editingItemId === $item->id)
-                                @include('livewire.meeting.partials.item-form')
-                            @endif
+                                             const from = rows.indexOf(this.dragging);
+                                             const to = rows.indexOf(targetId);
+                                             if (from === -1 || to === -1) { this.end(); return }
 
-                            @foreach($item->children as $child)
-                                @include('livewire.meeting.partials.agenda-item', ['item' => $child, 'depth' => 1])
+                                             rows.splice(to, 0, ...rows.splice(from, 1));
+                                             $wire.reorderItems(rows, null);
+                                             this.end();
+                                         },
+                                     }">
+                                    @foreach($block['items'] as $index => $item)
+                                        @include('livewire.meeting.partials.agenda-item', [
+                                            'item' => $item,
+                                            'depth' => 0,
+                                            'canUp' => $index > 0,
+                                            'canDown' => $index < $block['items']->count() - 1,
+                                        ])
 
-                                @if($showItemForm && $editingItemId === $child->id)
-                                    @include('livewire.meeting.partials.item-form')
-                                @endif
-                            @endforeach
+                                        @if($showItemForm && $editingItemId === $item->id)
+                                            @include('livewire.meeting.partials.item-form')
+                                        @endif
 
-                            @if($showItemForm && ! $editingItemId && $item_parent_id === $item->id)
-                                @include('livewire.meeting.partials.item-form')
-                            @endif
+                                        @foreach($item->children as $childIndex => $child)
+                                            @include('livewire.meeting.partials.agenda-item', [
+                                                'item' => $child,
+                                                'depth' => 1,
+                                                'canUp' => $childIndex > 0,
+                                                'canDown' => $childIndex < $item->children->count() - 1,
+                                            ])
+
+                                            @if($showItemForm && $editingItemId === $child->id)
+                                                @include('livewire.meeting.partials.item-form')
+                                            @endif
+                                        @endforeach
+
+                                        @if($showItemForm && ! $editingItemId && $item_parent_id === $item->id)
+                                            @include('livewire.meeting.partials.item-form')
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
                         @endforeach
                     </div>
                 @endif

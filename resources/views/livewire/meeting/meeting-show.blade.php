@@ -221,9 +221,35 @@
                         @endif
                     </div>
                 @else
+                    @if($meeting->published_at && ! $meeting->published_at->isSameDay($meeting->meeting_date))
+                        <div class="px-6 py-2 text-xs text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                            {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->format($dateFormat)]) }}
+                        </div>
+                    @endif
+
+                    {{--
+                        The same location headings the agenda was built under.
+                        The minute is what the agenda becomes, so it has to read
+                        the same way round.
+                    --}}
                     <div class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @foreach($this->items as $item)
-                            @include('livewire.meeting.partials.minute-item', ['item' => $item, 'editable' => $editable])
+                        @foreach($this->itemBlocks as $blockIndex => $block)
+                            <div wire:key="minute-block-{{ $blockIndex }}-{{ $block['key'] }}">
+                                <div class="flex items-center gap-2 bg-slate-50 px-6 py-2 dark:bg-slate-700/40">
+                                    <span class="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        {{ $block['label'] }}
+                                    </span>
+                                    <span class="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-600 dark:text-slate-300">
+                                        {{ $block['items']->count() }}
+                                    </span>
+                                </div>
+
+                                <div class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    @foreach($block['items'] as $item)
+                                        @include('livewire.meeting.partials.minute-item', ['item' => $item, 'editable' => $editable])
+                                    @endforeach
+                                </div>
+                            </div>
                         @endforeach
                     </div>
                 @endif

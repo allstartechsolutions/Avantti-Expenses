@@ -112,6 +112,13 @@ class MeetingShow extends Component
             ->get();
     }
 
+    /** The minute cut into location blocks, so it reads the way the agenda did. */
+    #[Computed]
+    public function itemBlocks(): Collection
+    {
+        return app(\App\Services\MeetingAgendaService::class)->blocksFrom($this->items);
+    }
+
     #[Computed]
     public function counters(): array
     {
@@ -123,6 +130,19 @@ class MeetingShow extends Component
     public function minuteRecipients(): Collection
     {
         return app(MeetingMinuteDistributor::class)->recipients($this->meeting);
+    }
+
+    /**
+     * Later meetings of this series that already have an agenda.
+     *
+     * Publishing now photographs the tasks as they stand *today*, which is
+     * after those meetings were prepared — so the figures this minute keeps are
+     * later than its own date. Allowed, but said out loud.
+     */
+    #[Computed]
+    public function laterMeetings(): Collection
+    {
+        return app(\App\Services\MeetingAgendaService::class)->laterMeetingsWithItems($this->meeting);
     }
 
     #[Computed]
