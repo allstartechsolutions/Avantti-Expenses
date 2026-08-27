@@ -18,6 +18,30 @@
         </include>
     </source>
     <php>
+        <!--
+            The whole suite runs in one process, so memory is cumulative rather
+            than per test. At 256M (the CLI default here) it completed until the
+            collaboration module added ~145 cases, after which whichever PDF
+            test ran late enough died inside dompdf, which allocates heavily.
+            Nothing leaks; there is simply more suite than there was.
+        -->
+        <ini name="memory_limit" value="512M"/>
+        <!--
+            Pinned, because `config/app.php` reads APP_COUNTRY from .env and a
+            developer's own .env then decides what the suite asserts. This was
+            found the hard way: the collaboration tests assert country-dependent
+            output (document number prefixes, which PDF template renders, date
+            formats) and were passing only because a cached config happened to
+            say US while .env said BR.
+
+            US is the baseline because it is `env('APP_COUNTRY', 'US')`'s own
+            default. Any test that cares about the other market sets it
+            explicitly with config(['app.country' => 'BR']) and says why.
+        -->
+        <env name="APP_COUNTRY" value="US"/>
+        <!-- Pinned for the same reason: a developer's .env must not decide
+             which language the assertions are written against. -->
+        <env name="APP_LOCALE" value="en"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

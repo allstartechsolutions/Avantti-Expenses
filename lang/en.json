@@ -2391,6 +2391,8 @@
     "Runs one job site: daily reports, expenses, requisitions and site documents. No monetary totals.": "Runs one job site: daily reports, expenses, requisitions and site documents. No monetary totals.",
     "Works on one job site: files the daily report and keys in expenses. Sees nothing else.": "Works on one job site: files the daily report and keys in expenses. Sees nothing else.",
     "An outsider following one job site: documents and daily reports, with no monetary figures.": "An outsider following one job site: documents and daily reports, with no monetary figures.",
+    "Projetista (external)": "Projetista (external)",
+    "An outside designer or supplier: answers RFIs and reviews approvals on one project, with no monetary figures and no cost or schedule impact.": "An outside designer or supplier: answers RFIs and reviews approvals on one project, with no monetary figures and no cost or schedule impact.",
 
     "_team_tab": "========== Team Tab ==========",
     "Team": "Team",
@@ -2684,6 +2686,57 @@
     "Freeze the minutes": "Freeze the minutes",
     "Manage meeting series": "Manage meeting series",
     "Lock the budget": "Lock the budget",
+    "Answer an RFI": "Answer an RFI",
+    "Close an RFI": "Close an RFI",
+    "See cost and schedule impact": "See cost and schedule impact",
+    "E-mail to the distribution list": "E-mail to the distribution list",
+    "Correct a closed RFI": "Correct a closed RFI",
+    "Submit a revision": "Submit a revision",
+    "Record a response": "Record a response",
+    "Generate approvals from the budget": "Generate approvals from the budget",
+    "Manage approval packages": "Manage approval packages",
+    "Approvals": "Approvals",
+    "RFIs": "RFIs",
+
+    "_collaboration": "========== Collaboration (RFIs and Approvals) ==========",
+    "Collaboration": "Collaboration",
+    "All RFIs": "All RFIs",
+    "All Approvals": "All Approvals",
+
+    "_collaboration_engine": "========== Collaboration — response codes, activity, signatures ==========",
+
+    "_rfi": "========== RFIs ==========",
+
+    "Anyone": "Anyone",
+    "Overdue only": "Overdue only",
+    "Clear filters": "Clear filters",
+    "Due": "Due",
+    ":count day|:count days": ":count day|:count days",
+
+    "Details": "Details",
+    "Not set": "Not set",
+    "Last updated": "Last updated",
+
+    "E-mail": "E-mail",
+    "subject": "subject",
+    "question": "question",
+
+    "Company": "Company",
+    "Their firm, if they are not staff here": "Their firm, if they are not staff here",
+    "company": "company",
+    "_approval": "========== Approvals ==========",
+
+
+    "Type": "Type",
+
+    "type": "type",
+    "supplier": "supplier",
+    "valid until": "valid until",
+
+    "Apply": "Apply",
+
+
+
 
     "_expense_status": "========== Expense Status (feminine — see Expense::getStatusLabel) ==========",
     "Expense status: unpaid": "Unpaid",

@@ -106,6 +106,11 @@ class JobSiteShow extends Component
         }
 
         $this->authorizeTab($this->activeTab);
+
+        // "Create change order" on an RFI arrives here carrying ?fromRfi=.
+        if ($this->activeTab === 'changeorders') {
+            $this->applyChangeOrderQueryIntent();
+        }
     }
 
     public function setActiveTab($tab)

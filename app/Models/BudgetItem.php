@@ -18,11 +18,14 @@ class BudgetItem extends Model
         'budgeted_amount',
         'sort_order',
         'is_default',
+        'requires_approval',
+        'default_approval_type',
     ];
 
     protected $casts = [
         'sort_order' => 'integer',
         'is_default' => 'boolean',
+        'requires_approval' => 'boolean',
     ];
 
     /**

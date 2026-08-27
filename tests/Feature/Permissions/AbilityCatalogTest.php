@@ -156,17 +156,26 @@ class AbilityCatalogTest extends TestCase
 
     public function test_the_catalogue_still_reports_which_areas_are_unswept(): void
     {
-        // As of F2 that is none of them and the legacy bridge is deleted, so
-        // the loop below has nothing to walk. The reporting stays: a module
-        // added later starts unswept, the permission matrix marks it "not
-        // enforced yet", and this is what tells it so.
-        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
+        // As of F2 the legacy bridge is deleted. The reporting stays, and is
+        // what a module added later leans on: it starts unswept, and the
+        // permission matrix marks it "not enforced yet" until its pass is done.
+        // AREAS_UNDER_CONSTRUCTION is exactly that set — empty it and this goes
+        // back to proving the whole catalogue is enforced.
+        $this->assertSame(
+            self::AREAS_UNDER_CONSTRUCTION,
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
 
         config()->set('permissions.areas.expenses.swept', false);
         AbilityCatalog::flush();
 
         try {
-            $this->assertSame(['expenses'], array_values(AbilityCatalog::unsweptAreas()));
+            // Catalogue order, so expenses comes before the areas still
+            // being built further down the file.
+            $this->assertSame(
+                array_merge(['expenses'], self::AREAS_UNDER_CONSTRUCTION),
+                array_values(AbilityCatalog::unsweptAreas()),
+            );
             $this->assertFalse(AbilityCatalog::isSwept('expenses'));
             $this->assertFalse(AbilityCatalog::isSwept('expenses.view'));
         } finally {

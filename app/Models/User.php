@@ -32,6 +32,9 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        // The firm somebody belongs to, when it is not this one — an external
+        // projetista signs as their practice, not as the customer.
+        'company_name',
         'password',
         'role_id',
         'notification_preferences',

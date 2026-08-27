@@ -38,6 +38,15 @@ trait ManagesChangeOrders
     public $co_description = '';
     public $co_amount = '';
     public $co_file = null;
+
+    /**
+     * The RFI this change order is being raised from, if it is.
+     *
+     * Set from `?fromRfi=` when somebody arrives via "Create change order" on
+     * an RFI, and consumed once on save — the two records are linked there,
+     * with the answer copied across as its justification.
+     */
+    public $co_fromRfi = null;
     public $existingFilePath = null;
 
     /** @var array<int, array{budget_item_id: int, code_display: string, description: string, amount: mixed}> */
@@ -123,6 +132,27 @@ trait ManagesChangeOrders
     // MODAL
     // =========================================================================
 
+    /**
+     * Arriving from an RFI's "Create change order" button.
+     *
+     * A query parameter rather than a session flash: the reader can land on
+     * this page, look at something else and come back, and the intent should
+     * either still be in the URL or be gone.
+     *
+     * Called from each component's own `mount()` rather than through a
+     * `mountManagesChangeOrders()` hook — Livewire unpacks the component's
+     * mount parameters into trait hooks, so a hook taking none blows up on
+     * every screen that uses this trait.
+     */
+    public function applyChangeOrderQueryIntent(): void
+    {
+        $fromRfi = (int) request()->query('fromRfi');
+
+        if ($fromRfi > 0 && $this->allowsAbility('change-orders.create', $this->changeOrderScope())) {
+            $this->openChangeOrderFromRfi($fromRfi);
+        }
+    }
+
     public function openChangeOrderCreateModal(): void
     {
         $this->authorizeAbility('change-orders.create', $this->changeOrderScope());
@@ -135,6 +165,47 @@ trait ManagesChangeOrders
         $this->showChangeOrderModal = true;
 
         $this->dispatch('open-modal', 'change-order-modal');
+    }
+
+    /**
+     * Open the form already carrying what the RFI knows.
+     *
+     * Pre-filled, never created: the guardrail is that every money-touching
+     * artifact is confirmed by a person, so this fills the fields in and waits
+     * (docs/RFI-Submittals-modules.md, guardrails).
+     */
+    public function openChangeOrderFromRfi(int $rfiId): void
+    {
+        $this->authorizeAbility('change-orders.create', $this->changeOrderScope());
+
+        // The id came from a URL: it has to be an RFI on this project, and one
+        // this person may read.
+        $rfi = \App\Models\Rfi::query()
+            ->visibleTo(Auth::user())
+            ->where('project_id', $this->changeOrderProjectId())
+            ->find($rfiId);
+
+        if (! $rfi) {
+            $this->openChangeOrderCreateModal();
+
+            return;
+        }
+
+        $this->openChangeOrderCreateModal();
+
+        $this->co_fromRfi = $rfi->id;
+        $this->co_job_site_id = $rfi->job_site_id;
+        $this->co_title = $rfi->number.' — '.$rfi->subject;
+        $this->co_description = $rfi->answer
+            ? __('collaboration.help.as_answered_on_rfi', ['number' => $rfi->number])."\n\n".$rfi->answer
+            : $rfi->question;
+
+        // Only if they may see it — the estimate is behind `rfis.view_impact`,
+        // and pre-filling it here would walk it around that grant.
+        if ($rfi->cost_impact_amount !== null
+            && $this->allowsAbility('rfis.view_impact', $rfi->jobSite ?? $rfi->project)) {
+            $this->co_amount = (string) $rfi->cost_impact_amount;
+        }
     }
 
     public function openChangeOrderEditModal(int $changeOrderId): void
@@ -458,7 +529,9 @@ trait ManagesChangeOrders
             'file_path' => $filePath,
         ];
 
-        DB::transaction(function () use ($data) {
+        // Returned, so what follows can act on the record that was written —
+        // it is created inside the closure and would otherwise be out of scope.
+        $changeOrder = DB::transaction(function () use ($data) {
             if ($this->changeOrderModalMode === 'edit' && $this->editingChangeOrder) {
                 $changeOrder = ChangeOrder::where('project_id', $this->changeOrderProjectId())
                     ->findOrFail($this->editingChangeOrder);
@@ -470,7 +543,20 @@ trait ManagesChangeOrders
 
             $this->applyChangeOrderStatus($changeOrder);
             $this->syncChangeOrderLines($changeOrder);
+
+            return $changeOrder;
         });
+
+        // Tie it back to the RFI it was raised from, copying the answer that
+        // justified it.
+        if ($this->co_fromRfi && $this->changeOrderModalMode !== 'edit') {
+            $rfi = \App\Models\Rfi::query()
+                ->where('project_id', $this->changeOrderProjectId())
+                ->find($this->co_fromRfi);
+
+            $rfi?->linkChangeOrder($changeOrder);
+            $this->co_fromRfi = null;
+        }
 
         session()->flash('message', $this->changeOrderModalMode === 'edit'
             ? __('Change order updated successfully!')

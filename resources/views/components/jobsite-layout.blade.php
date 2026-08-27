@@ -11,7 +11,7 @@
         ['label' => $jobSite->project->project_name, 'url' => route('projects.overview', $jobSite->project)],
         ['label' => __('Job Sites'), 'url' => route('projects.jobsites', $jobSite->project)],
         ['label' => $jobSite->job_site_name, 'url' => route('jobsites.overview', $jobSite)],
-        ['label' => ucwords(str_replace('-', ' ', $active))]
+        ['label' => app(\App\Services\Navigation::class)->tabLabel($active)]
     ]" />
 
     {{-- Page Header --}}

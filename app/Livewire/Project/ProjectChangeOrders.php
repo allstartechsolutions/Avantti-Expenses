@@ -23,6 +23,9 @@ class ProjectChangeOrders extends Component
         $this->authorizeAbility('change-orders.view', $project);
 
         $this->project = $project;
+
+        // "Create change order" on an RFI arrives here carrying ?fromRfi=.
+        $this->applyChangeOrderQueryIntent();
     }
 
     protected function changeOrderProjectId(): int

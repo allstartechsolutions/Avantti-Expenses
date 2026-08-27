@@ -64,6 +64,28 @@ return [
         ],
     ],
 
+    // Declared before 'projects' for the same reason as 'meetings': the module
+    // check stops at the first matching prefix, and 'projects.*' would
+    // otherwise claim projects.rfis and projects.approvals.
+    //
+    // RFIs and approvals are one switch, not two. They are one feature — a
+    // question asked of an outside party and an answer tracked back — built on
+    // one engine (collaboration_number_sequences, response codes, the activity
+    // log), and a customer running one without the other would still carry
+    // every shared table. See docs/RFI-Submittals-modules.md.
+    'collaboration' => [
+        'name' => 'Collaboration',
+        'description' => 'RFIs and approvals (aprovações) — the question-and-answer and submittal cycles run with projetistas, fornecedores and fiscalização.',
+        'route_prefixes' => [
+            'projects.rfis',
+            'jobsites.rfis',
+            'projects.approvals',
+            'jobsites.approvals',
+            'rfis.*',
+            'approvals.*',
+        ],
+    ],
+
     'projects' => [
         'name' => 'Projects',
         'description' => 'Project management including job sites, expenses, daily reports, budgets, and purchase orders.',

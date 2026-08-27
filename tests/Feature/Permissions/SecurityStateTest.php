@@ -147,12 +147,12 @@ class SecurityStateTest extends TestCase
 
         $this->assertSame(
             [
-                'access', 'budget', 'catalog', 'change-orders', 'clients', 'company',
+                'access', 'approvals', 'budget', 'catalog', 'change-orders', 'clients', 'company',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
                 'meetings', 'payments', 'project',
                 'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
-                'requisitions', 'settings', 'tasks', 'team', 'users', 'vendors',
+                'requisitions', 'rfis', 'settings', 'tasks', 'team', 'users', 'vendors',
             ],
             $swept,
             'An area is marked swept. Move its cases in this file from "not enforced" to "enforced".',
@@ -237,8 +237,12 @@ class SecurityStateTest extends TestCase
         }
 
         // Nothing is left on the bridge, because there is no bridge: F2 swept
-        // the documentation library and deleted the branch.
-        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
+        // the documentation library and deleted the branch. What is unswept is
+        // only what is still being built, and it has no screens to leave open.
+        $this->assertSame(
+            self::AREAS_UNDER_CONSTRUCTION,
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
     }
 
     public function test_no_unguarded_money_screen_is_left(): void
@@ -310,9 +314,19 @@ class SecurityStateTest extends TestCase
         // While modules were still being converted, this screen carried a
         // notice saying so — a screen that lets somebody configure access which
         // is not switched on has to admit it, or it promises what the code does
-        // not do. Every module is converted, so the notice has taken itself
-        // down. The case is kept, inverted, because a notice that failed to
-        // disappear would be the same fault the other way round.
+        // not do. Every module is converted, so the notice took itself down at
+        // F2 and the partial behind it is now deleted outright.
+        //
+        // It could not simply be left dormant. It keyed off `unsweptAreas()`,
+        // and it told the reader that an unswept area "keeps its old rules, and
+        // every signed-in person can still reach it". That was true of a module
+        // waiting on the bridge; it is false of an area declared for a module
+        // still being built, which has no screens and no old rules to keep. The
+        // first such module would have resurrected the notice saying something
+        // untrue — the same fault the notice existed to prevent.
+        $this->assertFileDoesNotExist(
+            resource_path('views/livewire/team/partials/rollout-notice.blade.php'),
+        );
         foreach ([
             route('projects.team', $this->project),
             route('jobsites.team', $this->jobSite),

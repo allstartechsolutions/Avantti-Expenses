@@ -14,9 +14,47 @@ This project uses Laravel's built-in JSON-based localization. The locale is set 
 
 ```
 lang/
-├── en.json       # Organizational comment keys only (structural reference)
-└── pt_BR.json    # Comment keys + all actual Portuguese translations
+├── en.json                  # Organizational comment keys + EN values from the Projects module on
+├── pt_BR.json               # Comment keys + all actual Portuguese translations
+├── en/
+│   ├── collaboration.php    # The RFI / approvals module's own vocabulary
+│   ├── navigation.php       # Menu and tab-bar wording
+│   └── validation.php       # Shared validation messages and field names
+└── pt_BR/
+    ├── collaboration.php
+    ├── navigation.php
+    └── validation.php
 ```
+
+Most strings are **JSON keys** — the English sentence is the key. Two kinds of string live in
+**PHP files** beside them instead, addressed by a dotted key (`__('navigation.tabs.expenses')`):
+
+| File | Why it is not in the JSON |
+|---|---|
+| `navigation.php` | Menu wording is revised more often than anything else, and revising it inside a five-thousand-line JSON file is how a tab ends up half-renamed. One key per tab and per group, in two small files that can be read end to end. **Added 27 Aug 2026 with the grouped tab bar.** |
+| `collaboration.php` | A module's own vocabulary, where a word that looks generic is not: `Due` had been fixed as *A Pagar* by the payment screens, where it means something payable, while an RFI's *Due* is a deadline. A key here cannot be repurposed by another module |
+| `validation.php` | Laravel's own convention — the shared message and attribute maps (see the Validation section below) |
+
+**The rule for new work:** a string that belongs to one module's vocabulary, or that will be
+reworded often, gets a per-module PHP file. Genuinely universal chrome — *Cancel*, *Save*,
+*Actions*, *Attachments* — stays in the JSON so the same button does not end up with two
+translations.
+
+### Menu and tab labels — `lang/*/navigation.php`
+
+Keyed by the tab or group key from `config/permissions.php`:
+
+```php
+'groups' => ['procurement' => 'Suprimentos', 'field' => 'Obra', …],
+'tabs'   => ['purchase-orders' => 'Ordens de Compra', …],
+```
+
+`Navigation::label()` reads them and **falls back to the English `name` in the config** when a
+key is missing — so a new tab is never rendered as a raw `navigation.tabs.…` string, but it is
+also not flagged. A tab living on that fallback is untranslated work that looks finished.
+`NavigationTest` pins a few of the labels in both locales for exactly that reason.
+
+See `docs/sidebar-navigation.md` for the bar itself.
 
 ### `en.json` — English (Structural + Project Modules)
 
@@ -224,6 +262,11 @@ When translating a new module:
 5. **Add translations to `pt_BR.json`** — comment keys + all translated Portuguese strings
 6. **Validate JSON** — run `json_decode()` on both files to ensure valid JSON
 7. **Test** — verify the page renders correctly in both locales
+
+**Decide first whether the string belongs in the JSON at all.** Menu and tab wording goes in
+`lang/en/navigation.php` + `lang/pt_BR/navigation.php`; a module with its own vocabulary gets
+its own pair of files (`collaboration.php` is the worked example). Steps 4–6 then become: add
+the key to **both** PHP files and `php -l` them. Everything else in the list is unchanged.
 
 ## EN Customization (Client-Specific Wording)
 

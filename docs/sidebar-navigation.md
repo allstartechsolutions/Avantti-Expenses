@@ -1,183 +1,163 @@
-# Sidebar Navigation
+# Navigation — the sidebar and the two tab bars
 
-This document explains how the sidebar navigation works and how to add new menu items.
+Every menu in the application is **generated from `config/permissions.php`** by
+`App\Services\Navigation`. There is no menu list in any Blade file. An entry appears because
+the catalogue declares it, its module is switched on, and this person holds its ability —
+never because a template remembered to show it, and never because one forgot to hide it.
 
----
-
-## File Locations
-
-| File | Purpose |
-|------|---------|
-| `resources/views/components/layouts/app.blade.php` | Main layout with Alpine.js state for submenus |
-| `resources/views/components/layouts/inc/sidebar.blade.php` | Sidebar component with menu items |
-| `resources/views/components/layouts/inc/header.blade.php` | Header bar with search, fullscreen, settings icon |
-
----
-
-## How Submenus Work
-
-The sidebar uses Alpine.js to manage submenu state. The `activeSubmenu` variable controls which submenu is currently open.
-
-### State Initialization (app.blade.php)
-
-The `activeSubmenu` is initialized based on the current route:
-
-```blade
-<body x-data="{
-    sidebarOpen: false,
-    sidebarCollapsed: false,
-    activeSubmenu: @js(
-        request()->routeIs('company.*') || request()->routeIs('users.*')
-            ? 'company'
-            : (request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('cost-codes.*')
-                ? 'projects'
-                : (request()->routeIs('catalog.*')
-                    ? 'catalog'
-                    : null))
-    ),
-    toggleSubmenu(menu) {
-        this.activeSubmenu = this.activeSubmenu === menu ? null : menu;
-    }
-}">
-```
-
-### Key Points
-
-1. **Submenu stays open** when navigating to any page within that submenu's routes
-2. **Route matching** uses Laravel's `request()->routeIs()` with wildcard patterns
-3. **Toggle function** allows clicking the menu to expand/collapse
+> **This document was rewritten on 27 Aug 2026.** It previously described hand-written markup
+> in `sidebar.blade.php` and told you to add menu items by copying `<a>` tags into it. That
+> markup was deleted by the permissions module's E3 pass (see `docs/permissions-module.md`),
+> and the tab bar was grouped on 27 Aug 2026. The old instructions would now silently do
+> nothing.
 
 ---
 
-## Adding a New Menu Item
+## The three menus
 
-### Option 1: Simple Link (No Submenu)
+| Menu | Built by | Rendered by |
+|---|---|---|
+| Left sidebar | `Navigation::sidebar($user)` | `layouts/inc/sidebar.blade.php` → `x-layouts.inc.nav.group` / `.item` |
+| Top-bar icons | `Navigation::header($user)` | `layouts/inc/header.blade.php` |
+| Project / job-site tab bar | `Navigation::projectTabBar()` / `jobSiteTabBar()` | `x-project-nav` / `x-jobsite-nav` → `x-ui.tab-bar` |
 
-Add directly to sidebar.blade.php:
-
-```blade
-<!-- My Feature -->
-<a href="{{ route('my-feature.index') }}"
-   class="flex items-center px-2.5 py-2.5 mb-1 text-sm font-medium {{ request()->routeIs('my-feature.*') ? 'text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' }} rounded-lg group">
-    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <!-- SVG path here -->
-    </svg>
-    <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>My Feature</span>
-</a>
-```
-
-### Option 2: Add to Existing Submenu
-
-1. **Update the submenu button** in sidebar.blade.php to include new routes in the active check:
-
-```blade
-<button @click="toggleSubmenu('projects')"
-        class="... {{ request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('my-new-feature.*') ? 'text-[#3F5189]...' : '...' }} ...">
-```
-
-2. **Add the submenu item** inside the submenu div:
-
-```blade
-<a href="{{ route('my-new-feature.index') }}"
-   class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('my-new-feature.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <!-- SVG path here -->
-    </svg>
-    My New Feature
-</a>
-```
-
-3. **Update activeSubmenu initialization** in app.blade.php to include the new route:
-
-```blade
-activeSubmenu: @js(
-    request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('my-new-feature.*')
-        ? 'projects'
-        : ...
-),
-```
-
-### Option 3: Create New Submenu
-
-1. **Add the submenu button** in sidebar.blade.php:
-
-```blade
-<!-- My Section -->
-<div class="mb-1">
-    <button @click="toggleSubmenu('mysection')"
-            class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium {{ request()->routeIs('feature-a.*') || request()->routeIs('feature-b.*') ? 'text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 group">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <!-- SVG path here -->
-            </svg>
-            <span x-show="!sidebarCollapsed || sidebarOpen" x-cloak>My Section</span>
-        </div>
-        <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu !== 'mysection'" x-cloak
-             class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-        <svg x-show="(!sidebarCollapsed || sidebarOpen) && activeSubmenu === 'mysection'" x-cloak
-             class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-    </button>
-
-    <!-- My Section Submenu -->
-    <div x-show="activeSubmenu === 'mysection' && (!sidebarCollapsed || sidebarOpen)" x-cloak
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 transform scale-95"
-         x-transition:enter-end="opacity-100 transform scale-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 transform scale-100"
-         x-transition:leave-end="opacity-0 transform scale-95"
-         class="ml-8 mt-2 space-y-1">
-
-        <a href="{{ route('feature-a.index') }}"
-           class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('feature-a.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <!-- SVG path -->
-            </svg>
-            Feature A
-        </a>
-
-        <a href="{{ route('feature-b.index') }}"
-           class="flex items-center px-3 py-2 text-sm {{ request()->routeIs('feature-b.*') ? 'text-[#3F5189] dark:text-[#4A5A96] font-medium' : 'text-slate-600 dark:text-slate-300' }} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <!-- SVG path -->
-            </svg>
-            Feature B
-        </a>
-    </div>
-</div>
-```
-
-2. **Update activeSubmenu initialization** in app.blade.php:
-
-```blade
-activeSubmenu: @js(
-    request()->routeIs('company.*') || request()->routeIs('users.*')
-        ? 'company'
-        : (request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('cost-codes.*')
-            ? 'projects'
-            : (request()->routeIs('catalog.*')
-                ? 'catalog'
-                : (request()->routeIs('feature-a.*') || request()->routeIs('feature-b.*')
-                    ? 'mysection'
-                    : null)))
-),
-```
+All three return the same shape: an ordered list of `['type' => 'item', …]` and
+`['type' => 'group', …, 'items' => [...]]`. **Groups and flat items share one ordering
+space**, so a group's `order` is compared against an item's `order`; a test enforces that no
+two claim the same number.
 
 ---
 
-## Current Menu Structure
+## Where the declarations live
+
+| Section of `config/permissions.php` | Holds |
+|---|---|
+| `groups` | The collapsible **sidebar** groups: name, icon, order, and the route patterns that light one up |
+| `menu` | The sidebar and top-bar entries: label, group, order, route, **ability**, active patterns, icon. `header: true` puts an entry in the top bar instead of the sidebar |
+| `tab_groups` | The four dropdowns of the **tab bar**: name, icon, order |
+| `tabs` | The 17 project / job-site tabs: ability, icon, `group`, and a route + order **per level**. `job_site_route` is null for a project-only tab (Job Sites) |
+
+**Labels come from `lang/en/navigation.php` and `lang/pt_BR/navigation.php`**, keyed by the
+tab or group key — not from the global JSON. Menu wording is revised more often than anything
+else, and revising it inside a five-thousand-line file is how a tab ends up half-renamed. A
+key that is missing there falls back to the English `name` in the config, so nothing is ever
+rendered as a raw `navigation.tabs.…` string — but a tab living only on that fallback is
+untranslated, which is unfinished work.
+
+---
+
+## The project / job-site tab bar
+
+Seventeen tabs on a project and fifteen on a job site was one row that scrolled sideways on a
+laptop and could not be read on a phone. Since 27 Aug 2026 the bar is **three flat tabs and
+four dropdowns**:
 
 ```
-MENU
-├── Dashboard (simple link)
-├── Company (submenu)
-│   ├── Settings
-│   └── Users
-├── Projects (submenu)
+Visão Geral | Locais | Financeiro ▾ | Suprimentos ▾ | Colaboração ▾ | Obra ▾ | Equipe
+```
+
+| Group | pt_BR | Tabs |
+|---|---|---|
+| — (flat) | | Overview · Job Sites *(project only)* · Team |
+| `financial` | **Financeiro** | Budget, Expenses, Income, Report |
+| `procurement` | **Suprimentos** | Requisitions, Quotations, Purchase Orders, Contracts, Change Orders |
+| `collaboration` | **Colaboração** | Documents, RFIs, Approvals |
+| `field` | **Obra** | Daily Reports, Tasks |
+
+Three behaviours worth knowing before changing it:
+
+1. **The grouping is presentation only.** `projectTabs()` / `jobSiteTabs()` filter first —
+   route exists, module on, ability held on *this* project or site — and `tabBar()` only
+   arranges what survived. A tab somebody may not open never reaches a group, so no dropdown
+   can expose one. The tab bar is a convenience; the guard on the route or component is the
+   boundary.
+2. **A group left holding one visible tab is flattened back into a plain tab**, and a group
+   left holding none disappears. A customer without the collaboration module sees *Documents*
+   as a tab rather than a dropdown that opens onto a single line.
+3. **The open tab lights up its group**, and from `md` up the button also shows the open
+   tab's name (`Suprimentos / Cotações`), so the bar still says where you are with every
+   dropdown closed. The breadcrumb above it uses `Navigation::tabLabel()`.
+
+The bar **wraps** on a narrow screen rather than scrolling sideways: a dropdown panel inside
+an `overflow-x-auto` strip is clipped by it.
+
+### Two Portuguese decisions
+
+- **No group is called *Solicitações*.** That word already belongs to *Solicitações de
+  Compra* (Requisitions), and a group of that name holding *Solicitações de Informação*
+  would confuse the two.
+- ***Obra*** is the work itself — daily reports and tasks. It does not collide with
+  *Locais* (Job Sites), which stays a flat tab of its own.
+
+---
+
+## Adding to a menu
+
+### A sidebar entry
+
+1. Declare the ability's area in `config/permissions.php` (see
+   `docs/permissions-for-new-modules.md` — nothing exists until it is declared).
+2. Add an entry to `menu`: `key`, `name`, `group` (or omit for a top-level item), `order`,
+   `route`, `ability`, `active` patterns, `icon`.
+3. Add the label to both `lang/*/navigation.php` files if the wording is not already there.
+
+No Blade file changes. `AbilityCatalogTest` will fail if the entry names an ability that does
+not exist, a route that does not exist, an undeclared group, or an order already taken.
+
+### A project / job-site tab
+
+1. Add an entry to `tabs`: `key`, `name`, `ability`, **`group`**, `project_route` +
+   `project_order`, `job_site_route` + `job_site_order` (null for project-only), `icon`.
+2. Add the label to **both** `navigation.php` files.
+3. Guard the route or the component — the tab being hidden is not protection.
+
+Per the parity rule (`docs/project-jobsite-parity-rule.md`), a tab should exist at both
+levels unless there is a reason it cannot.
+
+---
+
+## How the sidebar submenus open
+
+The sidebar keeps one open group at a time in Alpine state, initialised from the current
+route so the group you are inside is already open on load:
+
+```blade
+<body x-data="{ sidebarOpen: false, sidebarCollapsed: false, activeSubmenu: @js(...), toggleSubmenu(menu) { … } }">
+```
+
+When the sidebar is collapsed to the icon rail, a group opens as a **flyout** instead
+(`railFlyout` in `x-layouts.inc.nav.group`), anchored beside the rail and repositioned on
+scroll via the `rail-reposition` event.
+
+---
+
+## Styling reference
+
+| Element | Active class |
+|---|---|
+| Sidebar link (active) | `text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]` |
+| Sidebar link (inactive) | `text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700` |
+| Sidebar group button (active) | `text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700` |
+| Sidebar group item (active) | `text-[#3F5189] dark:text-[#4A5A96] font-medium` |
+| Tab / group button (active) | `border-[#3F5189] text-[#3F5189] dark:border-[#4A5A96] dark:text-[#4A5A96]` |
+| Tab / group button (inactive) | `border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400` |
+| Dropdown item (active) | `bg-slate-100 font-medium text-[#3F5189] dark:bg-slate-700/60 dark:text-[#8FA0DC]` |
+
+Icons: sidebar `w-5 h-5 mr-3`, sidebar submenu item `w-4 h-4 mr-2`, tab `h-5 w-5`, chevron
+`w-4 h-4`.
+
+---
+
+## The menu as declared today
+
+```
+SIDEBAR
+├── Dashboard
+├── Company
+│   ├── Company Info
+│   ├── Users
+│   └── Roles & Access
+├── Projects
 │   ├── All Projects
 │   ├── Subcontractors
 │   ├── Clients
@@ -185,51 +165,44 @@ MENU
 │   ├── Payments
 │   ├── Contract Payments
 │   └── Payment Batches
-├── Catalog (submenu)
+├── Catalog
 │   ├── All Items
 │   ├── Categories
 │   └── Suppliers
-├── Estimates (simple link)
-└── Invoices (simple link)
+├── Estimates
+├── Invoices
+├── Meetings
+│   ├── Minutes
+│   ├── My Tasks
+│   └── Meeting Series
+├── Reports
+│   ├── Sales Tax Report
+│   ├── Accounts Payable
+│   ├── Company Financials
+│   ├── Expense Report
+│   ├── Payment Schedule
+│   └── Payment Details
+└── Documentation
 
-HEADER (right side icons)
+HEADER
 ├── Search Projects
 ├── Messages
 ├── Fullscreen toggle
-└── Settings (gear icon → system-settings.index)
+└── Settings (declared in `menu` with `header: true`, and shown only to people who can open it)
 
 USER DROPDOWN (sidebar bottom)
-├── Profile (→ profile page)
+├── Profile
 └── Logout
 ```
 
----
-
-## Styling Reference
-
-### Active States
-
-| Element | Active Class |
-|---------|--------------|
-| Simple link (active) | `text-white bg-gradient-to-r from-[#3F5189] to-[#4A5A96]` |
-| Simple link (inactive) | `text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700` |
-| Submenu button (active) | `text-[#3F5189] dark:text-[#4A5A96] bg-slate-100 dark:bg-slate-700` |
-| Submenu button (inactive) | `text-slate-600 dark:text-slate-300` |
-| Submenu item (active) | `text-[#3F5189] dark:text-[#4A5A96] font-medium` |
-| Submenu item (inactive) | `text-slate-600 dark:text-slate-300` |
-
-### Icons
-
-- Main menu icons: `w-5 h-5 mr-3`
-- Submenu item icons: `w-4 h-4 mr-2`
-- Chevron icons: `w-4 h-4`
+**Nobody sees all of that.** The list above is what is *declared*; what is *rendered* is
+whatever survives the three conditions. `NavigationTest` pins the result for each role, group
+by group, and is the file to change — deliberately — when a menu should differ.
 
 ---
 
-## Checklist for Adding New Menu Items
+## Related
 
-1. [ ] Add route(s) to `routes/web.php`
-2. [ ] Add menu item to `sidebar.blade.php`
-3. [ ] If submenu: Update `activeSubmenu` in `app.blade.php` to include new routes
-4. [ ] If submenu: Update parent button's active class condition
-5. [ ] Test navigation and active state highlighting
+- `docs/permissions-module.md` — how the menus came to be generated (E3), and the tests
+- `docs/permissions-for-new-modules.md` — the checklist a new module follows
+- `docs/translation-system.md` — why menu wording lives in its own lang file

@@ -6,6 +6,7 @@ use App\Models\JobSite;
 use App\Models\ModuleAccess;
 use App\Models\Project;
 use App\Models\User;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -130,7 +131,14 @@ class Navigation
     |---------------------------------------------------------------------------
     */
 
-    /** @return array<int, array> */
+    /**
+     * The flat, ordered list of tabs this person may open on a project.
+     *
+     * This is the source the grouped bar is built from, and it is what the
+     * tests pin. Screens render `projectTabBar()`.
+     *
+     * @return array<int, array>
+     */
     public function projectTabs(?User $user, Project $project): array
     {
         return $this->tabs($user, $project, 'project');
@@ -140,6 +148,84 @@ class Navigation
     public function jobSiteTabs(?User $user, JobSite $jobSite): array
     {
         return $this->tabs($user, $jobSite, 'job_site');
+    }
+
+    /**
+     * The same tabs, arranged into the bar that is actually rendered.
+     *
+     * @return array<int, array>
+     */
+    public function projectTabBar(?User $user, Project $project, ?string $active = null): array
+    {
+        return $this->tabBar($this->projectTabs($user, $project), $active);
+    }
+
+    /** @return array<int, array> */
+    public function jobSiteTabBar(?User $user, JobSite $jobSite, ?string $active = null): array
+    {
+        return $this->tabBar($this->jobSiteTabs($user, $jobSite), $active);
+    }
+
+    /**
+     * Fold a flat tab list into flat entries and dropdown groups.
+     *
+     * Same shape as `sidebar()`:
+     *
+     * [
+     *   ['type' => 'item',  'key' => 'overview',  'name' => …, 'route' => …, 'icon' => …, 'active' => bool],
+     *   ['type' => 'group', 'key' => 'financial', 'name' => …, 'icon' => …, 'active' => bool, 'items' => [...]],
+     * ]
+     *
+     * A group nobody can see is already gone — its tabs never arrived. A group
+     * left holding one tab is flattened back into the bar: a dropdown that
+     * opens onto a single line is a worse click than the tab itself.
+     *
+     * @param  array<int, array>  $tabs
+     * @return array<int, array>
+     */
+    protected function tabBar(array $tabs, ?string $active): array
+    {
+        $groups = config('permissions.tab_groups', []);
+        $built = [];
+
+        foreach ($tabs as $tab) {
+            $tab['active'] = $active !== null && $tab['key'] === $active;
+            $groupKey = $tab['group'] ?? null;
+
+            if ($groupKey === null || ! isset($groups[$groupKey])) {
+                $built[] = ['type' => 'item', 'order' => $tab['order']] + $tab;
+
+                continue;
+            }
+
+            if (! isset($built[$groupKey])) {
+                $group = $groups[$groupKey];
+
+                $built[$groupKey] = [
+                    'type' => 'group',
+                    'key' => $groupKey,
+                    'name' => $this->label("navigation.groups.{$groupKey}", $group['name']),
+                    'icon' => $group['icon'] ?? null,
+                    'order' => $group['order'] ?? 999,
+                    'active' => false,
+                    'items' => [],
+                ];
+            }
+
+            $built[$groupKey]['items'][] = $tab;
+            $built[$groupKey]['active'] = $built[$groupKey]['active'] || $tab['active'];
+        }
+
+        foreach ($built as $key => $entry) {
+            if ($entry['type'] === 'group' && count($entry['items']) === 1) {
+                $only = $entry['items'][0];
+                $built[$key] = ['type' => 'item', 'order' => $entry['order']] + $only;
+            }
+        }
+
+        usort($built, fn ($a, $b) => $a['order'] <=> $b['order']);
+
+        return array_values($built);
     }
 
     protected function tabs(?User $user, Project|JobSite $scope, string $level): array
@@ -161,7 +247,8 @@ class Navigation
 
             $tabs[] = [
                 'key' => $tab['key'],
-                'name' => $tab['name'],
+                'name' => $this->label("navigation.tabs.{$tab['key']}", $tab['name']),
+                'group' => $tab['group'] ?? null,
                 'route' => $route,
                 'icon' => $tab['icon'] ?? null,
                 'ability' => $tab['ability'],
@@ -179,6 +266,32 @@ class Navigation
     | The three conditions
     |---------------------------------------------------------------------------
     */
+
+    /**
+     * The label of one tab on its own, for breadcrumbs and page headings.
+     *
+     * The breadcrumbs used to print `ucwords(str_replace('-', ' ', $active))`,
+     * which is why a Brazilian user reading "Ordens de Compra" in the bar got
+     * "Purchase Orders" in the breadcrumb above it.
+     */
+    public function tabLabel(string $key): string
+    {
+        return $this->label("navigation.tabs.{$key}", ucwords(str_replace('-', ' ', $key)));
+    }
+
+    /**
+     * A menu label, read from lang/{locale}/navigation.php.
+     *
+     * The menus keep their wording in their own small file rather than in the
+     * global JSON, so renaming a tab is two lines in two readable files. A key
+     * that has not been written yet falls back to the English `name` in
+     * config/permissions.php, which still goes through the JSON translator —
+     * so nothing is ever rendered as a raw `navigation.tabs.…` string.
+     */
+    protected function label(string $key, string $fallback): string
+    {
+        return Lang::has($key) ? __($key) : __($fallback);
+    }
 
     protected function allowed(?User $user, string $ability, string $route, mixed $scope = null): bool
     {

@@ -5,6 +5,10 @@ namespace App\Services;
 use App\Models\DocArticle;
 use App\Models\FileUpload;
 use App\Models\Meeting;
+use App\Models\Approval;
+use App\Models\ApprovalRevision;
+use App\Models\Rfi;
+use App\Models\RfiReply;
 use App\Models\Task;
 use App\Models\TaskNote;
 use App\Models\User;
@@ -37,6 +41,16 @@ class FileUploadService
         'task_note' => TaskNote::class,
         'meeting' => Meeting::class,
         'doc_article' => DocArticle::class,
+        'rfi' => Rfi::class,
+        // A reply carries its own files — a projetista answers with a
+        // marked-up prancha, and it belongs to that reply rather than
+        // to the SI as a whole.
+        'rfi_reply' => RfiReply::class,
+        'approval' => Approval::class,
+        // Each round carries what was submitted for it, so a revision is a
+        // target in its own right — the files of revision 0 must not appear to
+        // be the files of revision 1.
+        'approval_revision' => ApprovalRevision::class,
     ];
 
     /** Where documentation images live in the bucket. */
@@ -86,6 +100,21 @@ class FileUploadService
             $target instanceof DocArticle => $resolver->allows($user, 'documentation.create')
                 || $resolver->allows($user, 'documentation.edit'),
             $target instanceof Task, $target instanceof TaskNote => true,
+            // An RFI's attachments follow the RFI: whoever may raise or edit
+            // one on that project may put the drawing against it. Scoped to
+            // the record, so a grant on one project is not a grant on another.
+            $target instanceof Rfi => $resolver->allows($user, 'rfis.create', $target)
+                || $resolver->allows($user, 'rfis.edit', $target),
+            // Answering is what puts a file on a reply.
+            $target instanceof RfiReply => $target->rfi !== null
+                && $resolver->allows($user, 'rfis.answer', $target->rfi),
+            // An approval's files follow the approval; a revision's follow the
+            // approval it belongs to, and submitting is what puts them there.
+            $target instanceof Approval => $resolver->allows($user, 'approvals.create', $target)
+                || $resolver->allows($user, 'approvals.edit', $target),
+            $target instanceof ApprovalRevision => $target->approval !== null
+                && ($resolver->allows($user, 'approvals.submit', $target->approval)
+                    || $resolver->allows($user, 'approvals.edit', $target->approval)),
             default => false,
         };
     }
@@ -266,6 +295,22 @@ class FileUploadService
             $target instanceof TaskNote => 'tasks/'.($target->task?->uuid ?? 'unknown').'/notes/'.$target->id,
             $target instanceof Meeting => 'meetings/'.$target->id,
             $target instanceof DocArticle => self::LIBRARY_PREFIX.'/articles/'.$target->id,
+            // Keyed under the project and the record, which is what makes a
+            // stray object in the bucket traceable to what it belonged to.
+            //
+            // These are NOT served by FileController: they live on the
+            // `file_uploads` side, and `RfiShow::downloadFile()` /
+            // `ApprovalShow::downloadFile()` are the only way out — both check
+            // the file belongs to that record and that the reader may open it.
+            // `FileController::ALLOWED_DIRECTORIES` deliberately does not list
+            // `rfis/` or `approvals/`, so a path guess there is refused rather
+            // than falling through to a weaker check.
+            $target instanceof Rfi => 'rfis/'.$target->project_id.'/'.$target->id,
+            $target instanceof RfiReply => 'rfis/'.($target->rfi?->project_id ?? 'unknown')
+                .'/'.$target->rfi_id.'/replies/'.$target->id,
+            $target instanceof Approval => 'approvals/'.$target->project_id.'/'.$target->id,
+            $target instanceof ApprovalRevision => 'approvals/'.($target->approval?->project_id ?? 'unknown')
+                .'/'.$target->approval_id.'/rev-'.$target->id,
             default => throw new RuntimeException('Unsupported upload target.'),
         };
 

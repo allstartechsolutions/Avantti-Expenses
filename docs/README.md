@@ -93,6 +93,7 @@
 
 ### Quality
 
+- **[Changelog 2026-08-27 — nav grouping](./changelog-2026-08-27-nav-grouping.md)** - The project / job-site tab bar grouped into four dropdowns, menu wording moved to `lang/*/navigation.php`, and the untranslated breadcrumb fixed
 - **[Changelog 2026-08-24](./changelog-2026-08-24.md)** - Branding (ManagerPro mark), the Forge scheduler entry, and the pt_BR translation sweep
 - **[pt_BR translation audit](./pt-br-translation-audit.md)** - 24 Aug 2026 sweep of every module: 773 unwrapped user-facing strings, the six patterns behind most of them, and a suggested order of work
 
@@ -106,8 +107,8 @@
 
 16. **[Project-Level Resources](./project-level-resources.md)** - Dual foreign key pattern for project/job site resources
 17. **[Project & Job Site Parity Rule](./project-jobsite-parity-rule.md)** - Mandatory parity between project and job site levels
-18. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components
-19. **[Sidebar Navigation](./sidebar-navigation.md)** - Sidebar navigation structure
+18. **[JobSite Tabs to Pages Migration](./jobsite-tabs-to-pages.md)** - Migration from monolithic tabs to separate page components (historical; five job-site pages still route to `JobSiteShow`)
+19. **[Navigation](./sidebar-navigation.md)** - The sidebar, the top bar and the grouped project / job-site tab bar: all generated from `config/permissions.php`, labels in `lang/*/navigation.php`
 20. **[Project Manager Field](./project-manager-field.md)** - Optional project manager assignment from active users
 21. **[Job Site Supervisor Field](./jobsite-supervisor-field.md)** - Optional supervisor assignment with change history tracking
 

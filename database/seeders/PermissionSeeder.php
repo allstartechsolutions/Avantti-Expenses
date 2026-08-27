@@ -116,6 +116,18 @@ class PermissionSeeder extends Seeder
         'reports.expenses', 'reports.payment_schedule', 'reports.payment_details',
         'settings.view', 'settings.edit', 'settings.manage_modules',
 
+        // --- Collaboration (RFIs and approvals), new in this module ---------
+        // Nothing is being reproduced here: neither area existed before, so no
+        // grant is being widened or narrowed. These three follow the rules the
+        // rest of the file already applies.
+        //
+        // The two deletes are the same rule as every other delete above.
+        'rfis.delete',
+        'approvals.delete',
+        // Correcting an RFI after it has closed and been mailed out. Identical
+        // in kind to meetings.revise, and held the same way.
+        'rfis.revise',
+
         // --- new, no counterpart today: start closed ------------------------
         // The permission module itself — never granted by a seed.
         'access.view', 'access.manage',
@@ -170,6 +182,23 @@ class PermissionSeeder extends Seeder
         // spelled `is_admin || is_manager` until the bridge came out. An
         // employee keeps every task of their own, and the ones they raised.
         'tasks.edit_any',
+
+        // --- Collaboration (RFIs and approvals), new in this module ---------
+        // Closing an RFI freezes its answer, the same weight meetings.freeze
+        // carries. An employee raises and answers; somebody else closes.
+        'rfis.close',
+        // Recording the coded response is the decision that ends a revision
+        // cycle — the same reasoning as change-orders.approve: an employee
+        // submits the revision, somebody else decides on it.
+        'approvals.respond',
+        // Reads the orçamento line by line to pre-check what needs approving,
+        // and creates records in bulk.
+        'approvals.seed',
+        // The same rule as meetings.manage_series.
+        'approvals.manage_packages',
+        // Both of these mail a document to people outside the company.
+        'rfis.distribute',
+        'approvals.distribute',
     ];
 
     /**
@@ -328,6 +357,11 @@ class PermissionSeeder extends Seeder
                     'documents.share', 'documents.see_internal',
                     'tasks.view', 'tasks.create', 'tasks.edit', 'tasks.close',
                     'meetings.view', 'meetings.create', 'meetings.edit', 'meetings.freeze',
+                    'rfis.view', 'rfis.create', 'rfis.edit', 'rfis.answer',
+                    'rfis.close', 'rfis.view_impact', 'rfis.export', 'rfis.distribute',
+                    'approvals.view', 'approvals.create', 'approvals.edit',
+                    'approvals.submit', 'approvals.respond', 'approvals.seed',
+                    'approvals.manage_packages', 'approvals.export', 'approvals.distribute',
                     'daily-reports.view', 'daily-reports.create', 'daily-reports.edit',
                     'budget.view', 'budget.create', 'budget.edit',
                     'project-report.view', 'project-report.export',
@@ -384,6 +418,30 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            // The projetista, the fornecedor, the fiscalização — the outside
+            // party who answers the question or reviews the sample. In Brazil
+            // this is normally who an RFI is addressed to, so the module is
+            // not much use without this template.
+            //
+            // Note what is NOT in the list: `rfis.view_impact`. Whether a
+            // question carries a cost or a delay is the company's business,
+            // not the designer's, and leaving the ability out is what keeps it
+            // that way — no view conditional to forget in a later refactor.
+            // `can_see_money => false` covers the figures; this covers the fact.
+            'projetista-project' => [
+                'name' => 'Projetista (external)',
+                'description' => 'An outside designer or supplier: answers RFIs and reviews approvals on one project, with no monetary figures and no cost or schedule impact.',
+                'level' => 'project',
+                'is_guest' => true,
+                'can_see_money' => false,
+                'abilities' => [
+                    'project.view',
+                    'rfis.view', 'rfis.answer',
+                    'approvals.view', 'approvals.respond',
+                    'documents.view',
+                ],
+            ],
+
             'site-supervisor' => [
                 'name' => 'Site Supervisor',
                 'description' => 'Runs one job site: daily reports, expenses, requisitions and site documents. No monetary totals.',
@@ -399,6 +457,10 @@ class PermissionSeeder extends Seeder
                     'documents.view', 'documents.create',
                     'tasks.view', 'tasks.create', 'tasks.edit', 'tasks.close',
                     'meetings.view',
+                    // Raises the questions and submits the samples; does not
+                    // close an RFI or record a response on either.
+                    'rfis.view', 'rfis.create', 'rfis.view_impact',
+                    'approvals.view', 'approvals.submit',
                 ],
             ],
 

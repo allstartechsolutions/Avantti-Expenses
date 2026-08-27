@@ -740,7 +740,6 @@
     "Default": "Padrão",
     "Cost Code Grid": "Planilha de Códigos de Custo",
     "Cost Grid": "Planilha de Custos",
-    "Budgeted": "Orçado",
     "Contracted": "Contratado",
     "Contract Paid": "Pago em Contratos",
     "Total Committed": "Total Comprometido",
@@ -2678,7 +2677,7 @@
     "Plans & Drawings": "Plantas e Desenhos",
     "Permits & Licenses": "Alvarás e Licenças",
     "Submittals & Shop Drawings": "Submittals e Desenhos de Fabricação",
-    "RFIs": "RFIs",
+    "RFIs": "Solicitações de Informação (SI)",
     "Safety": "Segurança",
     "Photos": "Fotos",
     "Invoices & Financial": "Notas Fiscais e Financeiro",
@@ -3849,6 +3848,8 @@
     "Runs one job site: daily reports, expenses, requisitions and site documents. No monetary totals.": "Toca um local de obra: diários, despesas, requisições e documentos do local. Sem totais financeiros.",
     "Works on one job site: files the daily report and keys in expenses. Sees nothing else.": "Trabalha em um local de obra: preenche o diário e lança despesas. Não vê mais nada.",
     "An outsider following one job site: documents and daily reports, with no monetary figures.": "Alguém de fora acompanhando um local de obra: documentos e diários, sem valores financeiros.",
+    "Projetista (external)": "Projetista (externo)",
+    "An outside designer or supplier: answers RFIs and reviews approvals on one project, with no monetary figures and no cost or schedule impact.": "Alguém de fora que projeta ou fornece: responde RFIs e analisa aprovações em um projeto, sem valores financeiros e sem impacto de custo ou prazo.",
 
     "_team_tab": "========== Aba Equipe ==========",
     "Team": "Equipe",
@@ -4177,6 +4178,41 @@
     "Freeze the minutes": "Congelar a ata",
     "Manage meeting series": "Gerenciar séries de reuniões",
     "Lock the budget": "Bloquear o orçamento",
+    "Answer an RFI": "Responder uma SI",
+    "Close an RFI": "Encerrar uma SI",
+    "See cost and schedule impact": "Ver impacto de custo e prazo",
+    "E-mail to the distribution list": "Enviar por e-mail à lista de distribuição",
+    "Correct a closed RFI": "Corrigir uma SI encerrada",
+    "Submit a revision": "Enviar uma revisão",
+    "Record a response": "Registrar uma resposta",
+    "Generate approvals from the budget": "Gerar aprovações do orçamento",
+    "Manage approval packages": "Gerenciar pacotes de aprovação",
+    "Approvals": "Aprovações",
+
+    "_collaboration": "========== Collaboration (RFIs and Approvals) ==========",
+    "Collaboration": "Colaboração",
+    "All RFIs": "Todas as SIs",
+    "All Approvals": "Todas as Aprovações",
+
+    "_collaboration_engine": "========== Collaboration — response codes, activity, signatures ==========",
+
+    "_rfi": "========== RFIs ==========",
+
+
+
+    "question": "pergunta",
+
+    "Their firm, if they are not staff here": "A empresa dela, se não for da equipe daqui",
+    "company": "empresa",
+    "_approval": "========== Approvals ==========",
+
+
+
+    "supplier": "fornecedor",
+
+
+
+
 
     "_expense_status": "========== Expense Status (feminine — see Expense::getStatusLabel) ==========",
     "Expense status: unpaid": "Não paga",

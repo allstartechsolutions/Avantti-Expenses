@@ -15,10 +15,13 @@ class CostCode extends Model
         'name',
         'description',
         'sort_order',
+        'requires_approval',
+        'default_approval_type',
     ];
 
     protected $casts = [
         'sort_order' => 'integer',
+        'requires_approval' => 'boolean',
     ];
 
     public function template(): BelongsTo

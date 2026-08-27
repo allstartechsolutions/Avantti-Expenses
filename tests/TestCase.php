@@ -6,5 +6,22 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    //
+    /**
+     * Areas declared in the catalogue whose permission pass is not finished.
+     *
+     * `swept => false` used to mean "falls back to the old role checks"; that
+     * branch was deleted at F2 and the flag now only marks an area *not
+     * enforced yet* in the permission matrix, so nobody hands out a grant that
+     * does nothing. A module built after the bridge came out still spends a few
+     * phases here: its abilities exist so the screens can be written against
+     * them, and it flips once every action of it is guarded and filtered.
+     *
+     * The invariant the permission suite guards is "nothing is unswept by
+     * accident", so the tests assert against this list rather than against an
+     * empty array. It is empty again: `rfis` flipped at the end of phase 4 of
+     * docs/RFI-Submittals-modules.md and `approvals` at the end of phase 5, so
+     * the assertions are once more proving that the whole catalogue is
+     * enforced. The constant stays for the next module built this way.
+     */
+    protected const AREAS_UNDER_CONSTRUCTION = [];
 }

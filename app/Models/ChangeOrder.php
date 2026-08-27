@@ -61,6 +61,19 @@ class ChangeOrder extends Model
     ];
 
     /**
+     * The RFI this change order was raised from, when it came out of one.
+     *
+     * The link lives on `rfis.change_order_id`, so this reads back through it
+     * rather than adding a column here: an aditivo is a first-class record
+     * that mostly has nothing to do with RFIs, and should not carry a column
+     * for every module that may point at it.
+     */
+    public function rfi(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Rfi::class, 'change_order_id');
+    }
+
+    /**
      * Get/Set amount as dollars (stored as signed cents). Negative is a
      * deductive change order.
      */

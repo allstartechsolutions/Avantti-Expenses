@@ -49,6 +49,15 @@ When enhancing a feature (e.g., adding a new filter, a new column, export functi
 
 > **Note:** Job Site pages are being migrated from tabs to standalone page components (see `docs/jobsite-tabs-to-pages.md`). Update this table as migration progresses.
 
+### 5. The nav bar itself
+
+The two tab bars are one declaration in `config/permissions.php` rendered by one component
+(`x-ui.tab-bar`), so a change to one level reaches the other by construction. Since the bar
+was grouped on 27 Aug 2026 the two per-level orders also agree — they had differed only about
+where Change Orders sat. A tab added at one level and not the other is now a visible asymmetry
+in `tabs`: `job_site_route` is null, and only *Job Sites* has a reason to be. See
+`docs/sidebar-navigation.md`.
+
 ---
 
 ## Database Pattern

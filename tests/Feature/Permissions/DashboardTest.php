@@ -458,8 +458,12 @@ class DashboardTest extends TestCase
         $this->assertTrue(AbilityCatalog::isSwept('dashboard.view'));
 
         // It was the last module pass; F2 then swept the documentation library
-        // and deleted the bridge, so nothing is unswept any more.
-        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
+        // and deleted the bridge. Nothing is unswept but the areas still being
+        // built, and no area of a shipped module is among them.
+        $this->assertSame(
+            self::AREAS_UNDER_CONSTRUCTION,
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
     }
 
     public function test_the_overview_is_held_back_from_both_seeded_roles(): void

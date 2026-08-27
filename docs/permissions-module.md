@@ -401,7 +401,8 @@ declaration.
 |---|---|
 | `groups` | The five collapsible sidebar groups, with their icon and the route patterns that light them up. Groups and top-level items share **one ordering space**, which a test enforces |
 | `menu` | 26 sidebar and header entries: label, group, order, route, **ability**, active patterns, icon. `header: true` puts an entry in the top bar instead |
-| `tabs` | The 14 project / job-site tabs, each with its ability, its icon, and a route and order **per level** — the two bars order themselves differently today and both orders are kept. `job_site_route` is null for a project-only tab (Job Sites) |
+| `tabs` | The 17 project / job-site tabs, each with its ability, its icon, its `group`, and a route and order **per level**. `job_site_route` is null for a project-only tab (Job Sites) |
+| `tab_groups` | The four dropdowns of the tab bar — Financial, Procurement, Collaboration, Field — with their icon and order. Groups and flat tabs share one ordering space, as in the sidebar |
 
 One area can own several entries — Catalog owns *All Items* and *Categories* — and an entry
 can name any ability of its area: *Meeting Series* is a meetings entry gated on
@@ -410,9 +411,49 @@ can name any ability of its area: *Meeting Series* is a meetings entry gated on
 Areas no longer carry navigation metadata at all. The consequence worth stating: **a module
 cannot appear in the menu without declaring the ability that opens it.**
 
+### The tab bar is grouped (27 Aug 2026)
+
+Seventeen tabs on a project and fifteen on a job site was one row that scrolled sideways on
+a laptop and could not be read on a phone. The bar is now **three flat tabs and four
+dropdowns**, declared in `tab_groups` and rendered by `x-ui.tab-bar` (one component, used by
+both `x-project-nav` and `x-jobsite-nav`):
+
+| | Holds |
+|---|---|
+| Flat | Overview · Job Sites (project only) · Team |
+| **Financial** / *Financeiro* | Budget, Expenses, Income, Report |
+| **Procurement** / *Suprimentos* | Requisitions, Quotations, Purchase Orders, Contracts, Change Orders |
+| **Collaboration** / *Colaboração* | Documents, RFIs, Approvals |
+| **Field** / *Obra* | Daily Reports, Tasks |
+
+Three things about it that are not obvious from the config:
+
+- **The grouping is presentation only.** `projectTabs()` / `jobSiteTabs()` still decide who
+  sees what; `projectTabBar()` / `jobSiteTabBar()` only arrange what is left. A tab that was
+  filtered out never reaches a group.
+- **A group left holding one visible tab is flattened back into the bar.** A customer
+  without the collaboration module gets *Documents* as a plain tab rather than a dropdown
+  that opens onto one line. A group left holding none is gone entirely.
+- **The two per-level orders now agree.** They differed only about where change orders
+  belonged, which the grouping settled; the pair of keys stays in config so a level can
+  differ again.
+
+The labels live in `lang/en/navigation.php` and `lang/pt_BR/navigation.php` rather than in
+the global JSON — menu wording is revised often, and revising it in a five-thousand-line
+file is how a tab ends up half-renamed. A key missing there falls back to the English `name`
+in `config/permissions.php`, so a new tab is never rendered as a raw `navigation.tabs.…`
+string. Two Portuguese decisions worth keeping: no group is called *Solicitações* (the word
+belongs to Solicitações de Compra, and a group of that name holding SI would confuse the
+two), and *Obra* is the work itself, which does not collide with *Locais*.
+
+The same file fixed a bug above the bar: the breadcrumb printed
+`ucwords(str_replace('-', ' ', $active))`, so a Brazilian reading *Ordens de Compra* in the
+bar got *Purchase Orders* in the breadcrumb over it. It calls `tabLabel()` now.
+
 ### `App\Services\Navigation`
 
-`sidebar($user)`, `header($user)`, `projectTabs($user, $project)`, `jobSiteTabs($user, $jobSite)`.
+`sidebar($user)`, `header($user)`, `projectTabs($user, $project)`, `jobSiteTabs($user, $jobSite)`,
+`projectTabBar(...)`, `jobSiteTabBar(...)`, `tabLabel($key)`.
 
 An entry survives three conditions: its route exists, its module is switched on for this
 customer, and the person holds its ability — through the resolver, so the legacy bridge
@@ -466,11 +507,14 @@ the employee one.
 
 ### Tests
 
-`NavigationTest` — 10 cases. The centrepiece is the menu each role sees, written out group
+`NavigationTest` — 16 cases. The centrepiece is the menu each role sees, written out group
 by group as it was before the rewrite; plus the gear, a switched-off module taking its
 entries and its tabs with it, an empty group disappearing, a guest seeing nothing at all,
-both tab bars in their own order, a site supervisor's job-site tabs once the relevant areas
-are swept, and the project and job-site pages rendering their bars end to end.
+both tab bars in their order, a site supervisor's job-site tabs once the relevant areas
+are swept, and the project and job-site pages rendering their bars end to end. The grouped
+bar adds five: its shape at both levels, the open tab lighting up its group, a group left
+with one visible tab flattening back into a tab, a group nobody can see not being rendered,
+and the labels coming from `lang/en/navigation.php` and its pt_BR twin.
 
 `AbilityCatalogTest` gained three: every menu entry names a real ability, an existing route,
 a declared group and an icon; every tab names an ability that can actually be granted at

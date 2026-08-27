@@ -55,6 +55,15 @@ translated, 40 missing.** So the real missing-key count is 47, not 7. The access
 currently render `Approve or reject`, `Award a round`, `Merge duplicates`, `Lock the budget`
 and 36 others in English.
 
+> **Partly closed, 27 Aug 2026.** The 17 tab labels and the 4 tab-group labels of the project
+> / job-site bar were the worst of this blind spot, and they now live as literal keys in
+> `lang/en/navigation.php` and `lang/pt_BR/navigation.php`, where a diff can see them
+> (`docs/changelog-2026-08-27-nav-grouping.md`). The blind spot itself is unchanged: the ~40
+> **ability** labels in `config/permissions.php` are still read through `__($variable)` and
+> still English — that is P38 in `docs/review-and-improvements.md`. `Navigation::label()`
+> falling back to the config `name` means a *new* tab can slip back into this silently, so a
+> new tab's two `navigation.php` lines are part of the same change that adds it.
+
 ## The six patterns worth fixing first
 
 Ordered by findings-per-edit, not by count.

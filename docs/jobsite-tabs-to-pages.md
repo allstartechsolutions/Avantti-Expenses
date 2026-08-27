@@ -1,5 +1,13 @@
 # JobSite: Tabs to Pages Migration
 
+> **Historical — a session log from Feb 2026.** Two things have moved since. The nav is no
+> longer a hand-written list in `jobsite-nav.blade.php`: it is generated from
+> `config/permissions.php` by `App\Services\Navigation`, and since 27 Aug 2026 it is
+> **grouped** into four dropdowns (`docs/sidebar-navigation.md`). And the migration itself is
+> unfinished — `jobsites.expenses`, `change-orders`, `purchase-orders`, `daily-reports` and
+> `budget` still route to `JobSiteShow`, which reads the URL segment in `mount()` to pick its
+> tab. The "Next Steps" at the bottom are still the next steps.
+
 ## Overview
 
 Refactoring the JobSite detail view from a single monolithic component with tabs (`JobSiteShow`) to separate page components with their own routes — matching the pattern already used for Projects.

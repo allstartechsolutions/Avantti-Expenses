@@ -128,10 +128,12 @@ class PermissionSeederTest extends TestCase
 
     public function test_system_templates_are_created_for_both_levels_including_guests(): void
     {
-        $this->assertSame(7, PermissionTemplate::where('is_system', true)->count());
+        // 8 since the collaboration module added "Projetista (external)",
+        // which is also the third guest template.
+        $this->assertSame(8, PermissionTemplate::where('is_system', true)->count());
         $this->assertTrue(PermissionTemplate::forLevel('project')->forStaff()->exists());
         $this->assertTrue(PermissionTemplate::forLevel('job_site')->forStaff()->exists());
-        $this->assertSame(2, PermissionTemplate::forGuests()->count());
+        $this->assertSame(3, PermissionTemplate::forGuests()->count());
 
         // A guest template must never carry money or a company-wide ability.
         foreach (PermissionTemplate::forGuests()->with('abilityRows')->get() as $guest) {

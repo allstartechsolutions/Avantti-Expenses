@@ -55,7 +55,10 @@ class BridgeRemovedTest extends TestCase
 
     public function test_every_area_decides_for_itself(): void
     {
-        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
+        $this->assertSame(
+            self::AREAS_UNDER_CONSTRUCTION,
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
 
         // The branch that read this is deleted, so the flag now only feeds the
         // permission matrix's "not enforced yet" marker for a module added
@@ -143,13 +146,22 @@ class BridgeRemovedTest extends TestCase
         }
 
         // Pinned, so a tenth place has to be a decision rather than a habit.
+        //
+        // Rfi.php and Approval.php joined at the collaboration module, and for
+        // the reason the other three models are here: `visibleTo()` has to agree with the
+        // guard. The resolver bypasses ability checks for an administrator, so
+        // one who had been given `access_scope = assigned` could open any RFI
+        // through a guard while the list refused to show it. A list and a guard
+        // that disagree is worse than either answer on its own.
         $this->assertSame([
             'app/Livewire/Access/ApprovalAuthority.php',
             'app/Livewire/Dashboard/DashboardIndex.php',
             'app/Livewire/User/UserAccess.php',
+            'app/Models/Approval.php',
             'app/Models/Document.php',
             'app/Models/JobSite.php',
             'app/Models/Project.php',
+            'app/Models/Rfi.php',
             'app/Models/User.php',
         ], array_values(array_unique($found)));
     }

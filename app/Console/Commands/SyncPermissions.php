@@ -86,8 +86,15 @@ class SyncPermissions extends Command
     }
 
     /**
-     * Where the build is up to. The unswept areas are the modules that still
-     * run on their old role checks (docs/permissions-module-plan.md §9.1).
+     * Where the build is up to.
+     *
+     * `unswept` once meant "still runs on the old role checks"
+     * (docs/permissions-module-plan.md §9.1). That bridge was deleted at F2 and
+     * the set it described is permanently empty. What is left in it now is an
+     * area declared for a module still being built: its abilities exist so the
+     * screens can be written against them, and it flips when every action of it
+     * is guarded and every list of it filtered. Nothing is reachable in the
+     * meantime, so the wording says declared-not-enforced, not "on the bridge".
      */
     protected function report(): void
     {
@@ -104,7 +111,7 @@ class SyncPermissions extends Command
         ));
 
         if ($unswept !== []) {
-            $this->line('<comment>Still on the legacy bridge:</comment> '.implode(', ', $unswept));
+            $this->line('<comment>Declared, not enforced yet:</comment> '.implode(', ', $unswept));
         }
 
         $this->line(sprintf(

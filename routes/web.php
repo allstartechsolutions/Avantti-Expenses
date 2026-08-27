@@ -27,6 +27,13 @@ use App\Livewire\Project\ProjectIndex;
 use App\Livewire\Project\ProjectShow;
 use App\Livewire\Project\ProjectOverview;
 use App\Livewire\Project\ProjectDocuments;
+use App\Livewire\Approval\ApprovalForm;
+use App\Livewire\Approval\ApprovalSeedFromBudget;
+use App\Livewire\Approval\ApprovalShow;
+use App\Livewire\Project\ProjectApprovals;
+use App\Livewire\Project\ProjectRfis;
+use App\Livewire\Rfi\RfiForm;
+use App\Livewire\Rfi\RfiShow;
 use App\Livewire\Project\ProjectExpenses;
 use App\Livewire\Project\ProjectIncome;
 use App\Livewire\Project\ProjectJobSites;
@@ -38,6 +45,8 @@ use App\Livewire\JobSite\JobSiteFinancialReport;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteContracts;
 use App\Livewire\JobSite\JobSiteDocuments;
+use App\Livewire\JobSite\JobSiteApprovals;
+use App\Livewire\JobSite\JobSiteRfis;
 use App\Livewire\JobSite\JobSiteIncome;
 use App\Livewire\JobSite\JobSiteQuotations;
 use App\Livewire\JobSite\JobSiteRequisitions;
@@ -62,6 +71,7 @@ use App\Http\Controllers\DocumentationFileController;
 use App\Http\Controllers\DocumentationImageController;
 use App\Http\Controllers\DocumentationUploadController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\CollaborationPdfController;
 use App\Http\Controllers\MeetingMinutePdfController;
 use App\Livewire\Documentation\DocumentationArticle;
 use App\Livewire\Documentation\DocumentationForm;
@@ -506,6 +516,51 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:meetings.view')->name('meetings.minute.pdf.download');
     Route::get('meetings/{meeting}/minute/pdf/view', [MeetingMinutePdfController::class, 'stream'])
         ->middleware('ability:meetings.view')->name('meetings.minute.pdf.view');
+
+    // RFIs — a formal question to the projetista or the owner, with the answer
+    // tracked back. Both components guard on `rfis.view` against the record
+    // they are opened on, so no `ability:` middleware here.
+    // See docs/RFI-Submittals-modules.md phase 3.
+    Route::get('projects/{project}/rfis', ProjectRfis::class)->name('projects.rfis');
+    Route::get('job-sites/{jobSite}/rfis', JobSiteRfis::class)->name('jobsites.rfis');
+    // Raising one. Scoped by the record it will belong to, so the guard has
+    // something to answer against before the RFI exists.
+    Route::get('projects/{project}/rfis/create', RfiForm::class)->name('projects.rfis.create');
+    Route::get('job-sites/{jobSite}/rfis/create', RfiForm::class)->name('jobsites.rfis.create');
+    Route::get('rfis/{rfi}/edit', RfiForm::class)->name('rfis.edit');
+
+    // Approvals (aprovações) — the submittal cycle. Both components guard on
+    // `approvals.view` against the record they are opened on.
+    // See docs/RFI-Submittals-modules.md phase 5.
+    Route::get('projects/{project}/approvals', ProjectApprovals::class)->name('projects.approvals');
+    Route::get('job-sites/{jobSite}/approvals', JobSiteApprovals::class)->name('jobsites.approvals');
+
+    // Raising one. Scoped by the record it will belong to, so the guard has
+    // something to answer against before the approval exists.
+    Route::get('projects/{project}/approvals/create', ApprovalForm::class)->name('projects.approvals.create');
+    Route::get('job-sites/{jobSite}/approvals/create', ApprovalForm::class)->name('jobsites.approvals.create');
+    Route::get('approvals/{approval}/edit', ApprovalForm::class)->name('approvals.edit');
+
+    // "Gerar aprovações do orçamento" — proposes drafts from the budget lines.
+    // See docs/RFI-Submittals-modules.md phase 6.
+    Route::get('projects/{project}/approvals/from-budget', ApprovalSeedFromBudget::class)
+        ->name('projects.approvals.seed');
+
+    // One approval in full: every round of it, and who was asked.
+    Route::get('approvals/{approval}', ApprovalShow::class)->name('approvals.show');
+
+    // The printed sheet. Guarded inside the controller against the document's
+    // own project — `ability:` middleware resolves a project or job-site route
+    // parameter, and these carry the document instead, so naming the bare
+    // ability here would be a weaker check than the screen's.
+    Route::get('rfis/{rfi}/pdf', [CollaborationPdfController::class, 'rfi'])->name('rfis.pdf.download');
+    Route::get('rfis/{rfi}/pdf/view', [CollaborationPdfController::class, 'rfiStream'])->name('rfis.pdf.view');
+    Route::get('approvals/{approval}/pdf', [CollaborationPdfController::class, 'approval'])->name('approvals.pdf.download');
+    Route::get('approvals/{approval}/pdf/view', [CollaborationPdfController::class, 'approvalStream'])->name('approvals.pdf.view');
+
+    // One RFI in full. Guarded in mount() against the RFI's own project or job
+    // site, never against a scope the request supplied.
+    Route::get('rfis/{rfi}', RfiShow::class)->name('rfis.show');
 
     // Document repository (file repository for projects and job sites)
     Route::get('projects/{project}/documents', ProjectDocuments::class)->name('projects.documents');

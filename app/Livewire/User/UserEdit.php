@@ -20,6 +20,7 @@ class UserEdit extends Component
     public $name = '';
     public $email = '';
     public $phone = '';
+    public $company_name = '';
     public $role_id = '';
     public $status = '';
 
@@ -36,6 +37,7 @@ class UserEdit extends Component
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user->id)],
             'phone' => 'nullable|string|max:20',
+            'company_name' => 'nullable|string|max:255',
             'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:active,inactive,suspended',
             'accessScope' => 'nullable|in:,company,assigned',
@@ -48,6 +50,7 @@ class UserEdit extends Component
             'name' => __('name'),
             'email' => __('email address'),
             'phone' => __('phone number'),
+            'company_name' => __('company'),
             'role_id' => __('role'),
             'status' => __('status'),
             'accessScope' => __('project access'),
@@ -63,6 +66,7 @@ class UserEdit extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->phone = $user->phone;
+        $this->company_name = $user->company_name ?? '';
         $this->role_id = $user->role_id;
         $this->status = $user->status->value;
     }
@@ -90,6 +94,7 @@ class UserEdit extends Component
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'company_name' => $this->company_name ?: null,
             'role_id' => $this->role_id,
             'status' => $this->status,
             // A guest is confined by definition and has no say in the matter.

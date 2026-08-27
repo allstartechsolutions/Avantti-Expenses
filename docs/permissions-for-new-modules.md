@@ -64,6 +64,16 @@ If the module has a sidebar entry or a project tab, declare it in the same file'
 `tabs` blocks. `Navigation` builds both from the catalogue, so an entry appears because its
 ability is held and its module is on — never because a Blade file remembered to hide it.
 
+A new tab needs two more things beyond its route and ability:
+
+- **A `group`** — one of the four in `tab_groups` (`financial`, `procurement`,
+  `collaboration`, `field`), or `null` to sit flat in the bar beside Overview and Team. Only
+  a tab that belongs to no group at all stays flat; the bar is grouped precisely so that it
+  does not grow a nineteenth flat tab.
+- **Its label in `lang/en/navigation.php` and `lang/pt_BR/navigation.php`**, keyed by the tab
+  key. Without the pt_BR line the tab silently falls back to English, which reads as
+  translated and is not.
+
 ---
 
 ## 2. Seed it — `database/seeders/PermissionSeeder.php`

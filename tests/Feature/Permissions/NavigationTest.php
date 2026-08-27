@@ -192,20 +192,165 @@ class NavigationTest extends TestCase
         [$project, $jobSite] = $this->makeProjectAndSite();
         $employee = $this->user('employee');
 
+        // Same tabs as before the bar was grouped; the order is now the order
+        // of the groups, so that the flat list and the rendered bar agree.
         $this->assertSame(
-            ['overview', 'jobsites', 'expenses', 'income', 'requisitions', 'quotations',
-                'purchase-orders', 'change-orders', 'contracts', 'documents', 'tasks',
-                'daily-reports', 'budget', 'report'],
+            ['overview', 'jobsites', 'budget', 'expenses', 'income', 'report', 'requisitions',
+                'quotations', 'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis',
+                'approvals', 'daily-reports', 'tasks'],
             array_column($this->nav->projectTabs($employee, $project), 'key'),
         );
 
-        // The job-site bar has its own order, and no Job Sites tab.
+        // The job-site bar is the same bar without the Job Sites tab: the two
+        // orders disagreed only about where change orders belonged, and the
+        // grouping settled that.
         $this->assertSame(
-            ['overview', 'expenses', 'income', 'change-orders', 'contracts', 'requisitions',
-                'quotations', 'purchase-orders', 'documents', 'tasks', 'daily-reports',
-                'budget', 'report'],
+            ['overview', 'budget', 'expenses', 'income', 'report', 'requisitions', 'quotations',
+                'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
+                'daily-reports', 'tasks'],
             array_column($this->nav->jobSiteTabs($employee, $jobSite), 'key'),
         );
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | The grouped bar
+    |---------------------------------------------------------------------------
+    | Seventeen tabs in one row became three flat tabs and four dropdowns. The
+    | grouping is presentation only: `projectTabs()` above still decides who
+    | sees what, and these tests pin how what is left is arranged.
+    */
+
+    /** @return array<int, string> */
+    protected function describeBar(array $bar): array
+    {
+        return array_map(
+            fn ($entry) => $entry['type'] === 'group'
+                ? $entry['key'].': '.implode(', ', array_column($entry['items'], 'key'))
+                : $entry['key'],
+            $bar,
+        );
+    }
+
+    public function test_the_bar_is_three_flat_tabs_and_four_dropdowns(): void
+    {
+        [$project, $jobSite] = $this->makeProjectAndSite();
+        $admin = $this->user('admin');
+
+        $this->assertSame(
+            [
+                'overview',
+                'jobsites',
+                'financial: budget, expenses, income, report',
+                'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
+                'collaboration: documents, rfis, approvals',
+                'field: daily-reports, tasks',
+                'team',
+            ],
+            $this->describeBar($this->nav->projectTabBar($admin, $project)),
+        );
+
+        $this->assertSame(
+            [
+                'overview',
+                'financial: budget, expenses, income, report',
+                'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
+                'collaboration: documents, rfis, approvals',
+                'field: daily-reports, tasks',
+                'team',
+            ],
+            $this->describeBar($this->nav->jobSiteTabBar($admin, $jobSite)),
+        );
+    }
+
+    public function test_the_open_tab_lights_up_its_group(): void
+    {
+        [$project] = $this->makeProjectAndSite();
+
+        $bar = collect($this->nav->projectTabBar($this->user('admin'), $project, 'quotations'));
+
+        $procurement = $bar->firstWhere('key', 'procurement');
+        $this->assertTrue($procurement['active']);
+        $this->assertTrue(collect($procurement['items'])->firstWhere('key', 'quotations')['active']);
+
+        // and nothing else is lit
+        $this->assertFalse($bar->firstWhere('key', 'financial')['active']);
+        $this->assertFalse($bar->firstWhere('key', 'overview')['active']);
+    }
+
+    public function test_a_group_left_with_one_tab_is_flattened_back_into_the_bar(): void
+    {
+        [$project] = $this->makeProjectAndSite();
+        $admin = $this->user('admin');
+
+        // A customer without the collaboration module has no RFIs and no
+        // approvals, which leaves Documents alone in its group.
+        ModuleAccess::create([
+            'module_key' => 'collaboration',
+            'module_name' => 'Collaboration',
+            'is_enabled' => false,
+            'is_core' => false,
+            'created_by' => $admin->id,
+        ]);
+        ModuleAccess::clearCache('collaboration');
+        app(PermissionResolver::class)->flush();
+
+        $bar = $this->describeBar($this->nav->projectTabBar($admin, $project));
+
+        // Documents is a tab again rather than a dropdown that opens onto a
+        // single line, and it keeps the place its group had.
+        $this->assertContains('documents', $bar);
+        $this->assertNotContains('collaboration: documents', $bar);
+        $this->assertSame(
+            [
+                'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
+                'documents',
+                'field: daily-reports, tasks',
+            ],
+            array_slice($bar, 3, 3),
+        );
+    }
+
+    public function test_a_group_nobody_can_see_is_not_rendered(): void
+    {
+        [$project, $jobSite] = $this->makeProjectAndSite();
+
+        // The employee holds no team ability and no collaboration abilities on
+        // a job site they are not a member of; neither may leave an empty
+        // heading behind.
+        $bar = $this->describeBar($this->nav->jobSiteTabBar($this->user('employee'), $jobSite));
+
+        $this->assertNotContains('team', $bar);
+
+        foreach ($bar as $line) {
+            $this->assertStringNotContainsString(': ,', $line);
+            $this->assertNotSame('financial', $line);
+        }
+    }
+
+    public function test_the_tab_and_group_labels_come_from_the_navigation_lang_file(): void
+    {
+        [$project] = $this->makeProjectAndSite();
+        $admin = $this->user('admin');
+
+        $names = fn () => collect($this->nav->projectTabBar($admin, $project))
+            ->mapWithKeys(fn ($entry) => [$entry['key'] => $entry['name']]);
+
+        $english = $names();
+        $this->assertSame('Procurement', $english['procurement']);
+        $this->assertSame('Job Sites', $english['jobsites']);
+
+        $this->app->setLocale('pt_BR');
+
+        $portuguese = $names();
+        $this->assertSame('Suprimentos', $portuguese['procurement']);
+        $this->assertSame('Obra', $portuguese['field']);
+        $this->assertSame('Locais', $portuguese['jobsites']);
+
+        // …and the breadcrumb above the bar says the same word the tab does.
+        $this->assertSame('Ordens de Compra', $this->nav->tabLabel('purchase-orders'));
+
+        $this->app->setLocale('en');
     }
 
     public function test_the_team_tab_appears_only_for_people_who_hold_it(): void

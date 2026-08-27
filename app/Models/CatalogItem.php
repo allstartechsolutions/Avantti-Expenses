@@ -29,10 +29,13 @@ class CatalogItem extends Model
         'is_taxable',
         'tax_rate_id',
         'created_by',
+        'requires_approval',
+        'default_approval_type',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'requires_approval' => 'boolean',
         'is_taxable' => 'boolean',
         'units_per_purchase' => 'decimal:2',
         'created_at' => 'datetime',

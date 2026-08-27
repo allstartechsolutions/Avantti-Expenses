@@ -40,6 +40,7 @@ class Project extends Model implements PermissionScope
         'status',
         'created_by',
         'project_manager_id',
+        'approval_seed_threshold',
     ];
 
     protected $casts = [

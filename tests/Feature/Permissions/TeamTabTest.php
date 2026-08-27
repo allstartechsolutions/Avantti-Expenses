@@ -203,9 +203,9 @@ class TeamTabTest extends TestCase
 
         // The rows are the project's tabs, in the order the tab bar uses them.
         $this->assertSame(
-            ['project', 'expenses', 'income', 'requisitions', 'quotations', 'purchase-orders',
-                'change-orders', 'contracts', 'documents', 'tasks', 'daily-reports', 'budget',
-                'project-report', 'team'],
+            ['project', 'budget', 'expenses', 'income', 'project-report', 'requisitions', 'quotations',
+                'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
+                'daily-reports', 'tasks', 'team'],
             array_column($tabbed['areas'], 'key'),
         );
 
@@ -228,12 +228,13 @@ class TeamTabTest extends TestCase
 
         $tabbed = collect($component->get('matrix'))->firstWhere('key', 'tabs');
 
-        // The two bars are ordered differently today, and each editor follows
-        // its own: Change Orders and Contracts come before Requisitions here.
+        // The editor follows the bar it belongs to. Since the bars were grouped
+        // the two orders agree, so this is the project list without Job Sites —
+        // the pair of orders is kept in config so a level may differ again.
         $this->assertSame(
-            ['project', 'expenses', 'income', 'change-orders', 'contracts', 'requisitions',
-                'quotations', 'purchase-orders', 'documents', 'tasks', 'daily-reports',
-                'budget', 'project-report', 'team'],
+            ['project', 'budget', 'expenses', 'income', 'project-report', 'requisitions', 'quotations',
+                'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
+                'daily-reports', 'tasks', 'team'],
             array_column($tabbed['areas'], 'key'),
         );
 

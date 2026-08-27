@@ -251,6 +251,12 @@ class Budget extends Model
     /**
      * Apply a cost code template to this budget.
      * Copies all cost codes from the template with $0.00 amounts.
+     *
+     * `requires_approval` and `default_approval_type` are copied across with
+     * the rest. They have to be: a budget item carries no `cost_code_id` back
+     * to the library row it came from, so a flag left behind on `cost_codes`
+     * could never be read from the budget line that needs it
+     * (docs/rfi-aprovacoes-discovery.md item 4).
      */
     public function applyTemplate(CostCodeTemplate $template): void
     {
@@ -269,6 +275,8 @@ class Budget extends Model
                 'description' => $parentCode->description,
                 'budgeted_amount' => 0,
                 'sort_order' => $parentCode->sort_order,
+                'requires_approval' => $parentCode->requires_approval,
+                'default_approval_type' => $parentCode->default_approval_type,
             ]);
             $parentMap[$parentCode->id] = $newItem->id;
         }
@@ -283,6 +291,8 @@ class Budget extends Model
                 'description' => $childCode->description,
                 'budgeted_amount' => 0,
                 'sort_order' => $childCode->sort_order,
+                'requires_approval' => $childCode->requires_approval,
+                'default_approval_type' => $childCode->default_approval_type,
             ]);
         }
     }

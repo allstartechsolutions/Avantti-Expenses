@@ -9,7 +9,7 @@
     <x-ui.breadcrumb :items="[
         ['label' => __('Projects'), 'url' => route('projects.index')],
         ['label' => $project->project_name, 'url' => route('projects.overview', $project)],
-        ['label' => ucwords(str_replace('-', ' ', $active))]
+        ['label' => app(\App\Services\Navigation::class)->tabLabel($active)]
     ]" />
 
     {{-- Page Header --}}

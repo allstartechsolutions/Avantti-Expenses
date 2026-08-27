@@ -405,14 +405,59 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The groups of the project and job-site tab bar
+    |---------------------------------------------------------------------------
+    | Seventeen tabs in one scrolling row was a row nobody could read, so the
+    | bar is grouped: three tabs stay flat (Overview, Job Sites, Team) and the
+    | rest live in these four dropdowns. Groups and flat tabs share one ordering
+    | space, exactly like the sidebar — `order` here is compared against
+    | `project_order` / `job_site_order` in `tabs` below.
+    |
+    | A group whose tabs this person cannot see is not rendered at all, and a
+    | group left with a single visible tab is flattened back into the bar rather
+    | than shown as a dropdown that opens onto one line.
+    |
+    | The labels are read from lang/en/navigation.php and its pt_BR twin —
+    | `name` here is the fallback and the English wording, never a translation.
+    */
+
+    'tab_groups' => [
+        'financial' => [
+            'name' => 'Financial',
+            'order' => 30,
+            'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+        ],
+        'procurement' => [
+            'name' => 'Procurement',
+            'order' => 40,
+            'icon' => 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z',
+        ],
+        'collaboration' => [
+            'name' => 'Collaboration',
+            'order' => 50,
+            'icon' => 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+        ],
+        'field' => [
+            'name' => 'Field',
+            'order' => 60,
+            'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+        ],
+    ],
+
+
+    /*
+    |---------------------------------------------------------------------------
     | The project and job-site tabs
     |---------------------------------------------------------------------------
-    | The two nav bars, written out once, in the order each of them uses today —
-    | they differ, and both orders are kept. `App\Services\Navigation` renders
+    | The two nav bars, written out once. `App\Services\Navigation` renders
     | them, dropping any tab whose module is switched off or whose ability the
-    | person does not hold on that project or job site.
+    | person does not hold on that project or job site, and placing what is left
+    | into the groups declared above.
     |
-    | `job_site_route` is null for a tab that only exists at project level.
+    | `job_site_route` is null for a tab that only exists at project level. The
+    | two orders were kept separate while the bars were flat and disagreed about
+    | where change orders belonged; grouping settled that, so they now match —
+    | the pair of keys stays because a level may need to differ again.
     */
 
     'tabs' => [
@@ -420,6 +465,7 @@ return [
             'key' => 'overview',
             'name' => 'Overview',
             'ability' => 'project.view',
+            'group' => null,
             'project_route' => 'projects.overview',
             'project_order' => 10,
             'job_site_route' => 'jobsites.overview',
@@ -430,6 +476,7 @@ return [
             'key' => 'jobsites',
             'name' => 'Job Sites',
             'ability' => 'project.view',
+            'group' => null,
             'project_route' => 'projects.jobsites',
             'project_order' => 20,
             'job_site_route' => null,
@@ -437,135 +484,169 @@ return [
             'icon' => 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
         ],
         [
+            'key' => 'budget',
+            'name' => 'Budget',
+            'ability' => 'budget.view',
+            'group' => 'financial',
+            'project_route' => 'projects.budget',
+            'project_order' => 31,
+            'job_site_route' => 'jobsites.budget',
+            'job_site_order' => 31,
+            'icon' => 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+        ],
+        [
             'key' => 'expenses',
             'name' => 'Expenses',
             'ability' => 'expenses.view',
+            'group' => 'financial',
             'project_route' => 'projects.expenses',
-            'project_order' => 30,
+            'project_order' => 32,
             'job_site_route' => 'jobsites.expenses',
-            'job_site_order' => 20,
-            'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+            'job_site_order' => 32,
+            'icon' => 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
         ],
         [
             'key' => 'income',
             'name' => 'Income',
             'ability' => 'income.view',
+            'group' => 'financial',
             'project_route' => 'projects.income',
-            'project_order' => 40,
+            'project_order' => 33,
             'job_site_route' => 'jobsites.income',
-            'job_site_order' => 30,
+            'job_site_order' => 33,
             'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+        ],
+        [
+            'key' => 'report',
+            'name' => 'Report',
+            'ability' => 'project-report.view',
+            'group' => 'financial',
+            'project_route' => 'projects.report',
+            'project_order' => 34,
+            'job_site_route' => 'jobsites.report',
+            'job_site_order' => 34,
+            'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
         ],
         [
             'key' => 'requisitions',
             'name' => 'Requisitions',
             'ability' => 'requisitions.view',
+            'group' => 'procurement',
             'project_route' => 'projects.requisitions',
-            'project_order' => 50,
+            'project_order' => 41,
             'job_site_route' => 'jobsites.requisitions',
-            'job_site_order' => 60,
+            'job_site_order' => 41,
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
         ],
         [
             'key' => 'quotations',
             'name' => 'Quotations',
             'ability' => 'quotations.view',
+            'group' => 'procurement',
             'project_route' => 'projects.quotations',
-            'project_order' => 60,
+            'project_order' => 42,
             'job_site_route' => 'jobsites.quotations',
-            'job_site_order' => 70,
+            'job_site_order' => 42,
             'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2',
         ],
         [
             'key' => 'purchase-orders',
             'name' => 'Purchase Orders',
             'ability' => 'purchase-orders.view',
+            'group' => 'procurement',
             'project_route' => 'projects.purchase-orders',
-            'project_order' => 70,
+            'project_order' => 43,
             'job_site_route' => 'jobsites.purchase-orders',
-            'job_site_order' => 80,
-            'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        ],
-        [
-            'key' => 'change-orders',
-            'name' => 'Change Orders',
-            'ability' => 'change-orders.view',
-            'project_route' => 'projects.change-orders',
-            'project_order' => 80,
-            'job_site_route' => 'jobsites.change-orders',
-            'job_site_order' => 40,
-            'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'job_site_order' => 43,
+            'icon' => 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z',
         ],
         [
             'key' => 'contracts',
             'name' => 'Contracts',
             'ability' => 'contracts.view',
+            'group' => 'procurement',
             'project_route' => 'projects.contracts',
-            'project_order' => 90,
+            'project_order' => 44,
             'job_site_route' => 'jobsites.contracts',
-            'job_site_order' => 50,
-            'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'job_site_order' => 44,
+            'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+        ],
+        [
+            'key' => 'change-orders',
+            'name' => 'Change Orders',
+            'ability' => 'change-orders.view',
+            'group' => 'procurement',
+            'project_route' => 'projects.change-orders',
+            'project_order' => 45,
+            'job_site_route' => 'jobsites.change-orders',
+            'job_site_order' => 45,
+            'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
         ],
         [
             'key' => 'documents',
             'name' => 'Documents',
             'ability' => 'documents.view',
+            'group' => 'collaboration',
             'project_route' => 'projects.documents',
-            'project_order' => 100,
+            'project_order' => 51,
             'job_site_route' => 'jobsites.documents',
-            'job_site_order' => 90,
+            'job_site_order' => 51,
             'icon' => 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
         ],
         [
-            'key' => 'tasks',
-            'name' => 'Tasks',
-            'ability' => 'tasks.view',
-            'project_route' => 'projects.tasks',
-            'project_order' => 110,
-            'job_site_route' => 'jobsites.tasks',
-            'job_site_order' => 100,
-            'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+            'key' => 'rfis',
+            'name' => 'RFIs',
+            'ability' => 'rfis.view',
+            'group' => 'collaboration',
+            'project_route' => 'projects.rfis',
+            'project_order' => 52,
+            'job_site_route' => 'jobsites.rfis',
+            'job_site_order' => 52,
+            'icon' => 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+        ],
+        [
+            'key' => 'approvals',
+            'name' => 'Approvals',
+            'ability' => 'approvals.view',
+            'group' => 'collaboration',
+            'project_route' => 'projects.approvals',
+            'project_order' => 53,
+            'job_site_route' => 'jobsites.approvals',
+            'job_site_order' => 53,
+            'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
         ],
         [
             'key' => 'daily-reports',
             'name' => 'Daily Reports',
             'ability' => 'daily-reports.view',
+            'group' => 'field',
             'project_route' => 'projects.daily-reports',
-            'project_order' => 120,
+            'project_order' => 61,
             'job_site_route' => 'jobsites.daily-reports',
-            'job_site_order' => 110,
+            'job_site_order' => 61,
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
         ],
         [
-            'key' => 'budget',
-            'name' => 'Budget',
-            'ability' => 'budget.view',
-            'project_route' => 'projects.budget',
-            'project_order' => 130,
-            'job_site_route' => 'jobsites.budget',
-            'job_site_order' => 120,
-            'icon' => 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+            'key' => 'tasks',
+            'name' => 'Tasks',
+            'ability' => 'tasks.view',
+            'group' => 'field',
+            'project_route' => 'projects.tasks',
+            'project_order' => 62,
+            'job_site_route' => 'jobsites.tasks',
+            'job_site_order' => 62,
+            'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
         ],
         [
             'key' => 'team',
             'name' => 'Team',
             'ability' => 'team.view',
+            'group' => null,
             'project_route' => 'projects.team',
-            'project_order' => 150,
+            'project_order' => 70,
             'job_site_route' => 'jobsites.team',
-            'job_site_order' => 150,
+            'job_site_order' => 70,
             'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-        ],
-
-        [
-            'key' => 'report',
-            'name' => 'Report',
-            'ability' => 'project-report.view',
-            'project_route' => 'projects.report',
-            'project_order' => 140,
-            'job_site_route' => 'jobsites.report',
-            'job_site_order' => 130,
-            'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
         ],
     ],
     /*
@@ -1024,6 +1105,63 @@ return [
                 // module, and it is logged. Was a hard-coded `is_admin`.
                 'revise' => ['name' => 'Correct a published minute', 'sensitive' => true],
                 'manage_series' => ['name' => 'Manage meeting series'],
+            ],
+        ],
+
+        // A formal question put to the projetista or the owner, with the answer
+        // tracked back. In Brazil the person answering is normally external, so
+        // this is one of the few areas a guest holds by design — the
+        // "Projetista (external)" template in PermissionSeeder is built on it.
+        //
+        // `money => true` since an RFI carries an estimated cost impact. Two
+        // separate protections, and both are wanted:
+        //
+        //   `view_impact` hides the *fact* that a question costs anything, and
+        //   is what keeps it from an outside projetista.
+        //
+        //   `can_see_money` masks the figure for somebody who may know there
+        //   is a cost but not what it is — a site supervisor, say.
+        //
+        // `revise` is the same shape as `meetings.revise`, for the same reason:
+        // an answer is frozen once the RFI closes, and correcting one that has
+        // already been sent out is the narrowest thing in the module.
+        'rfis' => [
+            'name' => 'RFIs',
+            'module' => 'collaboration',
+            'levels' => ['global', 'project', 'job_site'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit', 'delete',
+                'answer' => ['name' => 'Answer an RFI'],
+                'close' => ['name' => 'Close an RFI'],
+                'view_impact' => ['name' => 'See cost and schedule impact'],
+                'export' => ['name' => 'Export and print'],
+                'distribute' => ['name' => 'E-mail to the distribution list', 'sensitive' => true],
+                'revise' => ['name' => 'Correct a closed RFI', 'sensitive' => true],
+            ],
+        ],
+
+        // Aprovações — the submittal cycle. Materials, samples, shop drawings
+        // and the laudos e certificados that carry most of the weight in BR.
+        //
+        // `money => true` because an approval hangs off a budget line, and the
+        // screen that generates approvals from the orçamento lists those lines
+        // with their values.
+        'approvals' => [
+            'name' => 'Approvals',
+            'module' => 'collaboration',
+            'levels' => ['global', 'project', 'job_site'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit', 'delete',
+                'submit' => ['name' => 'Submit a revision'],
+                'respond' => ['name' => 'Record a response'],
+                'seed' => ['name' => 'Generate approvals from the budget'],
+                'manage_packages' => ['name' => 'Manage approval packages'],
+                'export' => ['name' => 'Export and print'],
+                'distribute' => ['name' => 'E-mail to the distribution list', 'sensitive' => true],
             ],
         ],
 

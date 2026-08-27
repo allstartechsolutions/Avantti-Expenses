@@ -18,6 +18,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CatalogCategorySeeder::class,
+            // Reference data for the collaboration module. Also applied by its
+            // own migration, so an existing install gets it on deploy without
+            // anybody remembering to seed.
+            CollaborationResponseCodeSeeder::class,
         ]);
 
         // Create default admin user

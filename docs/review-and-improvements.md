@@ -1279,3 +1279,147 @@ public function actionItemsMissingOwnerOrDate(): \Illuminate\Support\Collection
 If something ever does need this, call `app(MeetingService::class)->unownedActionItems($meeting)`
 rather than restoring the copy — it is the same query and it takes an already-loaded collection
 when the caller has one.
+
+---
+
+## Collaboration module (RFIs + Aprovações) — parked during phase 1, 2026-08-26
+
+Plan: `docs/RFI-Submittals-modules.md`. Discovery: `docs/rfi-aprovacoes-discovery.md`. These
+are worked in **phase 8, Review and Improvements**, unless a phase picks one up sooner.
+
+### C1 — module names and descriptions are shown untranslated *(pre-existing, all 12 modules)*
+
+**Status:** open.
+
+`resources/views/livewire/system-settings/module-access-settings.blade.php:24` and `:28` render
+`$module->module_name` and `$module->description` straight out of the `module_access` table.
+Both columns hold the English strings copied from `config/modules.php` when the module's
+migration ran, so a pt_BR install reads "Collaboration — RFIs and approvals (aprovações)…",
+"Documents — File repository for projects and job sites…", and so on for all twelve.
+
+This is not new and the collaboration module did not introduce it — it is the same shape as
+**P38** (catalogue ability names with no pt_BR): a `__($variable)` case, invisible to a key
+diff, which is exactly the trap `docs/pt-br-translation-audit.md` warns about. Found while
+adding the collaboration module because its strings were the first new ones since the sweep.
+
+**The fix is not simply wrapping the two echoes.** The values are *data*, seeded per install
+and editable in principle, so `__()` on a database column would only work while the column
+still matches a key in the JSON files. Either (a) stop storing the label and read
+`config('modules.'.$module->module_key)` for display, wrapping that in `__()` and adding the
+24 keys — the config is the source of truth and the columns are a stale copy of it; or (b)
+accept the columns as the source of truth and add a translation lookup keyed on `module_key`.
+(a) is the smaller change and matches how `config/permissions.php` area names already work.
+
+**Do it with P38** — same class of bug, same files, one pass.
+
+### C2 — the team tab's rollout notice was deleted, not disabled *(done, 2026-08-26)*
+
+`resources/views/livewire/team/partials/rollout-notice.blade.php` keyed off
+`AbilityCatalog::unsweptAreas()` and told the reader that an unswept area "keeps its old
+rules, and every signed-in person can still reach it", under the heading "This team list does
+not restrict anybody yet."
+
+True while modules were waiting on the legacy bridge. False afterwards: the bridge was deleted
+at F2, and an area that is unswept now is one declared for a module still being *built* — no
+routes, no screens, nothing anyone can reach. Declaring `rfis` and `approvals` would have
+resurrected the notice on every project and job-site team tab, saying something untrue about
+30 modules that are fully enforced — the precise fault the notice existed to prevent.
+
+Deleted, along with its two `@include`s in `project-team.blade.php` and
+`job-site-team.blade.php`. `SecurityStateTest::test_the_team_tab_no_longer_says_it_restricts_nobody`
+now asserts the file is gone, with the reasoning in the test.
+
+The same wording problem, smaller blast radius, was fixed in `SyncPermissions::report()`:
+"Still on the legacy bridge:" now reads "Declared, not enforced yet:".
+
+### C3 — nav entries are declared with their routes, not in phase 1 *(decision, 2026-08-26)*
+
+`docs/permissions-for-new-modules.md` §1 says to declare the menu entry and project tab
+alongside the area. For a module built over several phases that collides with
+`AbilityCatalogTest::test_every_menu_entry_is_wired_to_something_real`, which asserts every
+declared entry points at a route that exists — a good test that catches route-name typos and
+should not be weakened for the convenience of declaring nav early.
+
+So the `collaboration` sidebar group, the two menu entries and the two tabs land in the phase
+that creates their routes: **RFIs in phase 3, Approvals in phase 5**. The area declarations,
+which nothing else depends on, stayed in phase 1.
+
+Worth a line in `permissions-for-new-modules.md` §1 during F3, since the next multi-phase
+module will hit the same thing.
+
+### C4 — the suite had never been run as a BR install *(found 27 Aug 2026)*
+
+**Status:** open. **Not caused by the collaboration module**, but found by it.
+
+`config/app.php` reads `APP_COUNTRY` and `APP_LOCALE` from `.env`, and `phpunit.xml` pinned
+neither. So what the suite asserted depended on the developer's own `.env` — and on a machine
+whose `.env` says `APP_COUNTRY=BR` / `APP_LOCALE=pt_BR`, it had been passing only because a
+**cached** config happened to say US.
+
+Both are now pinned in `phpunit.xml` (US / en, matching `env('APP_COUNTRY', 'US')`'s own
+default), so the baseline is deterministic. Tests that care about the other market set it
+explicitly and say why.
+
+**What that exposed:** running the suite the way this product is actually deployed —
+
+```bash
+APP_COUNTRY=BR APP_LOCALE=pt_BR php artisan test
+```
+
+— gives **29 failures outside the collaboration module** (plus the 3 pre-existing
+`RegistrationTest` / `ExampleTest` ones). They are in meetings, dashboard, permissions, budget
+and the task screens. The collaboration module passes both ways: 288 tests, US and BR.
+
+None of the 29 look like product faults on inspection; they are assertions written against
+English wording and US date/number formats. But that is the point — **the configuration every
+Brazilian customer runs is the one the suite does not check**, so a real BR-only regression
+would not be caught. Two things worth doing, in this order:
+
+1. Make the failing 29 country-neutral, the way the collaboration ones were: assert the shape
+   (`assertStringEndsWith('-001', …)`) where the market is incidental, and state both markets
+   where it is the subject.
+2. Then run BR as a second pass in whatever CI exists, so it stays true.
+
+**Two traps found while doing this to the collaboration tests**, both of which will recur:
+
+- A fixture must not be named after a word the interface itself uses. `assertDontSee('Geral')`
+  failed under pt_BR because the location dropdown says "Projeto (Geral)" — the test was
+  right, the fixture name was not.
+- Locale and market are **separate settings**. A BR install read in English is a real
+  configuration, and a test asserting Portuguese wording has to set the locale, not the country.
+
+### C5 — things noticed after the code review, for phase 8 *(27 Aug 2026)*
+
+**Status:** open. None of these block anything; they are what was noticed and deliberately not
+chased at the time.
+
+**Distribution is sent synchronously.** `CollaborationDistributor` renders the PDF and talks to
+SMTP inside the request, so eight recipients means eight round trips while somebody watches a
+spinner. `queue()` would fix it, but the flash message can currently say *"1 endereço não pôde
+ser alcançado"* precisely because the failure happens inline; queued, the user gets "enviado"
+and the failure only reaches the log. The owner explicitly asked for this to be **left as it
+is** — they have a system receiving the mail locally. Do not change it without asking again.
+
+**`MAIL_FROM_ADDRESS` is still `hello@example.com`** on this install — Laravel's placeholder.
+Fine locally; a real SMTP host will reject or spam-file it. A deployment matter, not a code one.
+
+**Create-time uploads go through PHP.** The `x-ui.file-uploader` component pushes bytes straight
+to R2 with presigned URLs, but it needs a `targetId` — and an RFI has none until it is saved.
+The forms therefore collect files with Livewire and stream them server-side after the insert
+(`storeLocal()`, which despite its name writes to whichever disk is configured, R2 included).
+Attaching in the same step was a hard requirement; the cost is that a large drawing passes
+through the web process on create. The fix, if it ever matters, is to save a draft first and
+hand its id to the uploader.
+
+**Attachments cannot be added to a reply after the fact.** Files are attached when replying;
+editing a reply changes only its text. Nobody has asked for more.
+
+**`Approval` has no reply equivalent.** RFIs got replies as records; approvals still carry their
+conversation in `approval_revisions.comments`, which is a different shape and probably right —
+but the two modules now express "what was said" differently, and that is worth a look with both
+screens open.
+
+**`docs/rfi-aprovacoes-discovery.md` still lists three open questions** (§ Open questions). Two
+are settled by what was built — the RFI links to `ChangeOrder`, and the budget flag is copied
+forward onto `budget_items`. FVS/FVM staying out of scope has still never been confirmed
+explicitly.

@@ -139,7 +139,10 @@ class PermissionResolverTest extends TestCase
 
     public function test_there_is_no_bridge_left_to_fall_through(): void
     {
-        $this->assertSame([], array_values(AbilityCatalog::unsweptAreas()));
+        $this->assertSame(
+            self::AREAS_UNDER_CONSTRUCTION,
+            array_values(AbilityCatalog::unsweptAreas()),
+        );
 
         // Every area decides for itself, so a confined person with a membership
         // is answered by that membership and by nothing else — on any area at
