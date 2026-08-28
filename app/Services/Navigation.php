@@ -117,6 +117,7 @@ class Navigation
                 'icon' => $entry['icon'] ?? null,
                 'ability' => $entry['ability'],
                 'active' => $this->matchesRoute($entry['active'] ?? [$entry['route']]),
+                'badge' => $this->badge($user, $entry),
             ];
         }
 
@@ -314,6 +315,31 @@ class Navigation
     }
 
     /** @param  array<int, string>  $patterns */
+    /**
+     * The number on a menu entry, when it declares one.
+     *
+     * `badge` in the catalogue names a callable — `[Class::class, 'method']` —
+     * which is handed the signed-in user and answers with a count. It stays in
+     * config with everything else about the menu, so a badge cannot end up
+     * disagreeing with the entry it belongs to.
+     *
+     * Null and zero both mean "render nothing": a badge that reads 0 is a
+     * worse signal than no badge, because it draws the eye to say there is
+     * nothing to see.
+     */
+    protected function badge(?User $user, array $entry): ?int
+    {
+        $callable = $entry['badge'] ?? null;
+
+        if (! $callable || ! $user) {
+            return null;
+        }
+
+        $count = (int) call_user_func($callable, $user);
+
+        return $count > 0 ? $count : null;
+    }
+
     protected function matchesRoute(array $patterns): bool
     {
         return $patterns !== [] && request()->routeIs(...$patterns);

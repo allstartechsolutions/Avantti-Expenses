@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -33,6 +35,10 @@ class Quotation extends Model
         'converted_type',
         'converted_id',
         'created_by',
+        'assigned_to',
+        'assigned_at',
+        'due_notified_at',
+        'overdue_notified_at',
     ];
 
     protected $casts = [
@@ -40,11 +46,25 @@ class Quotation extends Model
         'responses_due_at' => 'date',
         'awarded_at' => 'datetime',
         'is_split_award' => 'boolean',
+        'assigned_at' => 'datetime',
+        'due_notified_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
     ];
 
     protected static function boot()
     {
         parent::boot();
+
+        // Pushing the response deadline re-arms both warnings. Done here
+        // rather than at the call sites because there are several of them —
+        // the form, the send screen — and a stamp left behind by any one of
+        // them would silently disarm the reminder for good.
+        static::saving(function (Quotation $quotation) {
+            if ($quotation->dueWarningsShouldReArm()) {
+                $quotation->due_notified_at = null;
+                $quotation->overdue_notified_at = null;
+            }
+        });
 
         static::deleting(function (Quotation $quotation) {
             $quotation->attachments->each->delete();
@@ -123,6 +143,23 @@ class Quotation extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** The one person answerable for getting the prices in. */
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /**
+     * Everyone else working the round. The owner is an implicit collaborator
+     * and is deliberately not duplicated here.
+     */
+    public function assignees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'quotation_assignees')
+            ->withPivot(['assigned_by', 'assigned_at'])
+            ->withTimestamps();
     }
 
     // =========================================================================
@@ -479,5 +516,163 @@ class Quotation extends Model
     public function scopeOpen($query)
     {
         return $query->whereNotIn('status', ['converted', 'cancelled']);
+    }
+
+    /**
+     * Narrow a cross-project list to what this person may open.
+     *
+     * The requisition and quotation screens have always been reached through a
+     * project or job-site route, whose middleware does the confining. The
+     * purchasing queue has no project of its own, so there is no route to
+     * guard and the list itself has to filter — a guard answers "may you open
+     * this record?", only a filter answers "which records may you see?".
+     *
+     * Same shape as Rfi::visibleTo, deliberately: two lists that mean the same
+     * thing should not be read two different ways. Note there is no
+     * `whereNull('project_id')` branch — unlike a task, one of these always
+     * belongs to a project.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->is_admin || ! $user->isConfined()) {
+            return $query;
+        }
+
+        $projectIds = [];
+        $jobSiteIds = [];
+
+        foreach (app(\App\Services\PermissionResolver::class)->membershipsOf($user) as $membership) {
+            if ($membership->scopeable_type === Project::class) {
+                $projectIds[] = $membership->scopeable_id;
+            } elseif ($membership->scopeable_type === JobSite::class) {
+                $jobSiteIds[] = $membership->scopeable_id;
+            }
+        }
+
+        return $query->where(function (Builder $q) use ($projectIds, $jobSiteIds) {
+            $q->whereIn('project_id', $projectIds)
+                ->orWhereIn('job_site_id', $jobSiteIds);
+        });
+    }
+
+
+    /** Rounds a person owns or collaborates on. */
+    public function scopeWorkedBy($query, int $userId)
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->where('assigned_to', $userId)
+                ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $userId));
+        });
+    }
+
+    // =========================================================================
+    // ASSIGNMENT
+    // =========================================================================
+
+    /**
+     * Whether ownership can still usefully change hands.
+     *
+     * A converted or cancelled round is finished work; naming somebody on it
+     * says something that is not true.
+     */
+    public function canBeAssigned(): bool
+    {
+        return ! in_array($this->status, ['converted', 'cancelled'], true);
+    }
+
+    /** The owner plus the collaborators — everyone with work here. */
+    public function workers(): \Illuminate\Support\Collection
+    {
+        return collect([$this->assignedTo])
+            ->concat($this->assignees)
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    public function isWorkedBy(?User $user): bool
+    {
+        return $user !== null && $this->workers()->contains('id', $user->id);
+    }
+
+    public function getOwnerName(): string
+    {
+        return $this->assignedTo?->name ?? __('Unassigned');
+    }
+
+    /**
+     * Record a change of owner on the existing history.
+     *
+     * Same convention the requisition uses: `old_status` and `new_status` are
+     * written equal, which is what marks the row as an assignment rather than
+     * a status move, and the two names go in the reason.
+     */
+    public function recordAssignment(User $user, ?User $previous, ?User $current): void
+    {
+        // Booleans, not the models themselves: match (true) compares strictly.
+        $reason = match (true) {
+            $current !== null && $previous !== null => __('Reassigned from :old to :new.', ['old' => $previous->name, 'new' => $current->name]),
+            $current !== null => __('Assigned to :new.', ['new' => $current->name]),
+            $previous !== null => __('Unassigned from :old.', ['old' => $previous->name]),
+            default => __('Assignment cleared.'),
+        };
+
+        $this->statusHistories()->create([
+            'old_status' => $this->status,
+            'new_status' => $this->status,
+            'changed_by' => $user->id,
+            'reason' => $reason,
+        ]);
+    }
+
+    /** Somebody joined or left the round's working party. */
+    public function recordCollaboratorChange(User $user, User $subject, bool $added): void
+    {
+        $this->statusHistories()->create([
+            'old_status' => $this->status,
+            'new_status' => $this->status,
+            'changed_by' => $user->id,
+            'reason' => $added
+                ? __(':name joined the round.', ['name' => $subject->name])
+                : __(':name was taken off the round.', ['name' => $subject->name]),
+        ]);
+    }
+
+    /**
+     * Whether the response deadline has moved since the warnings went out.
+     *
+     * A stamp that survived the change would silently disarm the reminder for
+     * good, so pushing the date re-arms both.
+     */
+    public function dueWarningsShouldReArm(): bool
+    {
+        // A record being inserted has no previous deadline, so nothing can have
+        // moved — and on an insert every attribute reads as dirty, which would
+        // otherwise wipe stamps that were set in the same breath.
+        if (! $this->exists) {
+            return false;
+        }
+
+        // Deliberately NOT gated on the in-memory stamps. A model instance
+        // loaded before the reminder command ran still believes both are null,
+        // and would then leave the stored stamps behind — disarming the
+        // warning for good. Whether the deadline moved is the only question
+        // that matters; clearing an already-null stamp costs nothing.
+        if (! $this->isDirty('responses_due_at')) {
+            return false;
+        }
+
+        // `isDirty` alone is not enough: the column is cast to `date`, and a
+        // value that was set from a Carbon carrying a time reads as changed on
+        // the very next save even though the deadline did not move. Compare
+        // the dates themselves, which is what "the deadline moved" means.
+        $original = $this->getOriginal('responses_due_at');
+
+        return ($original ? \Illuminate\Support\Carbon::parse($original)->toDateString() : null)
+            !== $this->responses_due_at?->toDateString();
     }
 }

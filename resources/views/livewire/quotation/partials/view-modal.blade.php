@@ -245,6 +245,21 @@
                         <div class="{{ $card }}">
                             <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">{{ __('Record') }}</h3>
                             <dl class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2">
+                                    <dt class="{{ $factLabel }}">{{ __('Worked By') }}</dt>
+                                    <dd class="{{ $factValue }}">
+                                        @if($viewingQuotation->assignedTo)
+                                            {{ $viewingQuotation->assignedTo->name }}
+                                            @if($viewingQuotation->assignees->isNotEmpty())
+                                                <span class="block text-xs text-slate-500 dark:text-slate-400">
+                                                    {{ __('with :names', ['names' => $viewingQuotation->assignees->pluck('name')->join(', ')]) }}
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="text-amber-700 dark:text-amber-400">{{ __('Unassigned') }}</span>
+                                        @endif
+                                    </dd>
+                                </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Created By') }}</dt>
                                     <dd class="{{ $factValue }}">{{ $viewingQuotation->createdBy?->name ?? '—' }}</dd>
@@ -260,6 +275,79 @@
                             </dl>
                         </div>
 
+                        @if($canAssign && $viewingQuotation->canBeAssigned())
+                            <div class="{{ $card }}">
+                                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ __('Who works it') }}</h3>
+
+                                @if($eligibleWorkers->isEmpty())
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                                        {{ __('Nobody here can work a quotation round yet. Add somebody to this team with the "Create" permission on Quotations.') }}
+                                    </p>
+                                @else
+                                    <label for="round-owner" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Owner') }}</label>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                        <select id="round-owner" wire:model="roundOwnerId"
+                                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                            <option value="">{{ __('Nobody yet') }}</option>
+                                            @foreach($eligibleWorkers as $worker)
+                                                <option value="{{ $worker->id }}">{{ $worker->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-ui.button variant="primary" icon="save" wire:click="assignRound({{ $viewingQuotation->id }})">
+                                            {{ __('Save') }}
+                                        </x-ui.button>
+                                    </div>
+                                    @error('roundOwnerId') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ __('One person answerable for the round. When the scope itself divides, raise two rounds instead — one owner each.') }}
+                                    </p>
+
+                                    <div class="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('More hands') }}</p>
+
+                                        @if($viewingQuotation->assignees->isNotEmpty())
+                                            <ul class="mb-3 space-y-2">
+                                                @foreach($viewingQuotation->assignees as $collaborator)
+                                                    <li class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 dark:bg-slate-900/40 px-3 py-2"
+                                                        wire:key="collaborator-{{ $collaborator->id }}">
+                                                        <span class="text-sm text-slate-900 dark:text-white">{{ $collaborator->name }}</span>
+                                                        <button type="button"
+                                                                wire:click="removeCollaborator({{ $viewingQuotation->id }}, {{ $collaborator->id }})"
+                                                                class="text-xs text-red-600 dark:text-red-400 hover:underline">
+                                                            {{ __('Take off') }}
+                                                        </button>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+                                                {{ __('Only the owner is on this round.') }}
+                                            </p>
+                                        @endif
+
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                            <select wire:model="roundCollaboratorId"
+                                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                <option value="">{{ __('Add somebody…') }}</option>
+                                                @foreach($eligibleWorkers as $worker)
+                                                    @continue($worker->id === $viewingQuotation->assigned_to)
+                                                    @continue($viewingQuotation->assignees->contains('id', $worker->id))
+                                                    <option value="{{ $worker->id }}">{{ $worker->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <x-ui.button variant="secondary" icon="plus" wire:click="addCollaborator({{ $viewingQuotation->id }})">
+                                                {{ __('Add') }}
+                                            </x-ui.button>
+                                        </div>
+                                        @error('roundCollaboratorId') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                            {{ __('Being on a round is a work list, not a permission: somebody added here still needs the grant to price it.') }}
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
                         <div class="{{ $card }}">
                             <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ __('History') }}</h3>
                             @if($viewingQuotation->statusHistories->count() > 0)
@@ -269,9 +357,13 @@
                                             <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#3F5189] dark:bg-[#4A5A96]"></span>
                                             <div>
                                                 <p class="text-sm text-slate-900 dark:text-white">
-                                                    {{ $history->old_status
-                                                        ? __(':old to :new', ['old' => \App\Models\Quotation::statusLabel($history->old_status), 'new' => \App\Models\Quotation::statusLabel($history->new_status)])
-                                                        : __('Created as :status', ['status' => \App\Models\Quotation::statusLabel($history->new_status)]) }}
+                                                    {{-- Equal statuses mark an assignment row rather than a
+                                                         status move; the names are in the reason below. --}}
+                                                    {{ match (true) {
+                                                        $history->old_status === null => __('Created as :status', ['status' => \App\Models\Quotation::statusLabel($history->new_status)]),
+                                                        $history->old_status === $history->new_status => __('Assignment changed'),
+                                                        default => __(':old to :new', ['old' => \App\Models\Quotation::statusLabel($history->old_status), 'new' => \App\Models\Quotation::statusLabel($history->new_status)]),
+                                                    } }}
                                                 </p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
                                                     {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->format('M d, Y H:i') }}

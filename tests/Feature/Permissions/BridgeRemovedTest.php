@@ -145,14 +145,16 @@ class BridgeRemovedTest extends TestCase
             }
         }
 
-        // Pinned, so a tenth place has to be a decision rather than a habit.
+        // Pinned, so the next place has to be a decision rather than a habit.
         //
-        // Rfi.php and Approval.php joined at the collaboration module, and for
-        // the reason the other three models are here: `visibleTo()` has to agree with the
-        // guard. The resolver bypasses ability checks for an administrator, so
-        // one who had been given `access_scope = assigned` could open any RFI
-        // through a guard while the list refused to show it. A list and a guard
-        // that disagree is worse than either answer on its own.
+        // Rfi.php and Approval.php joined at the collaboration module, and
+        // PurchaseRequisition.php and Quotation.php at the procurement
+        // assignment module — all four for the reason the other models are
+        // here: `visibleTo()` has to agree with the guard. The resolver
+        // bypasses ability checks for an administrator, so one who had been
+        // given `access_scope = assigned` could open any record through a
+        // guard while the list refused to show it. A list and a guard that
+        // disagree is worse than either answer on its own.
         $this->assertSame([
             'app/Livewire/Access/ApprovalAuthority.php',
             'app/Livewire/Dashboard/DashboardIndex.php',
@@ -161,6 +163,8 @@ class BridgeRemovedTest extends TestCase
             'app/Models/Document.php',
             'app/Models/JobSite.php',
             'app/Models/Project.php',
+            'app/Models/PurchaseRequisition.php',
+            'app/Models/Quotation.php',
             'app/Models/Rfi.php',
             'app/Models/User.php',
         ], array_values(array_unique($found)));

@@ -48,6 +48,11 @@
                     <option value="material">{{ __('Material') }}</option>
                     <option value="service">{{ __('Service') }}</option>
                 </select>
+                <select wire:model.live="assignmentFilter" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">{{ __('Anyone working it') }}</option>
+                    <option value="mine">{{ __('Assigned to me') }}</option>
+                    <option value="unassigned">{{ __('Unassigned') }}</option>
+                </select>
                 @if($this->hasFilters())
                     <button type="button" wire:click="clearFilters" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                         {{ __('Clear filters') }}
@@ -146,6 +151,8 @@
     @include('livewire.quotation.partials.form-modal', [
         'contextName' => $project->project_name,
         'showJobSitePicker' => true,
+        'canAssign' => auth()->user()->can('quotations.assign', $project),
+        'eligibleWorkers' => auth()->user()->can('quotations.assign', $project) ? $this->eligibleWorkers() : collect(),
     ])
 
     @include('livewire.quotation.partials.send-modal')
@@ -174,5 +181,11 @@
             )
             ? app(\App\Services\PermissionResolver::class)->approvalLimit(auth()->user(), $viewingQuotation)
             : null,
+        'canAssign' => $viewingQuotation
+            ? auth()->user()->can('quotations.assign', $viewingQuotation)
+            : auth()->user()->can('quotations.assign', $project),
+        'eligibleWorkers' => $viewingQuotation
+            ? $this->eligibleWorkers($viewingQuotation)
+            : collect(),
     ])
 </x-project-layout>

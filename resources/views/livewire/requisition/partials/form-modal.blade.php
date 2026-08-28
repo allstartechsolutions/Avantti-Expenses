@@ -1,6 +1,6 @@
 {{--
     Requisition form — full page, shared by the project and job-site levels.
-    Expects: $contextName, $showJobSitePicker, $jobSites, $users,
+    Expects: $contextName, $showJobSitePicker, $jobSites, $users, $canAssign, $eligibleBuyers,
              $catalogSuggestions, $budgetItemSuggestions
 --}}
 @php
@@ -118,6 +118,35 @@
                             @error('req_requested_by_name') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>
                     </div>
+
+                    @if($canAssign)
+                        {{-- A suggestion, not the hand-off. The person raising this rarely
+                             knows who buys steel this month; the approver does, and the
+                             approve dialog asks again with this pre-filled. --}}
+                        <div class="{{ $card }} space-y-4">
+                            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Who quotes it') }}</h3>
+
+                            @if($eligibleBuyers->isEmpty())
+                                <p class="text-sm text-slate-500 dark:text-slate-400">
+                                    {{ __('Nobody here can raise a quotation round yet, so this will start unassigned.') }}
+                                </p>
+                            @else
+                                <div>
+                                    <label class="{{ $label }}">{{ __('Suggested Buyer') }}</label>
+                                    <select wire:model="req_assigned_buyer_id" class="{{ $field }}">
+                                        <option value="">{{ __('Let the approver decide') }}</option>
+                                        @foreach($eligibleBuyers as $buyer)
+                                            <option value="{{ $buyer->id }}">{{ $buyer->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ __('Nobody is told anything yet — the hand-off happens when the requisition is approved.') }}
+                                    </p>
+                                    @error('req_assigned_buyer_id') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="{{ $card }} space-y-3">
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Budget Item') }}</h3>

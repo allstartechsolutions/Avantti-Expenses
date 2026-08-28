@@ -25,3 +25,12 @@ Schedule::command('tasks:notify-overdue')->dailyAt('07:00')->withoutOverlapping(
 // Hourly, and the command decides whether this is the configured day and hour —
 // so moving the digest in System Settings takes effect without a deploy.
 Schedule::command('tasks:send-weekly-digest')->hourly()->withoutOverlapping()->sentryMonitor();
+
+// Purchasing reminders (docs/procurement-assignment-plan.md phase 5). The
+// stall nudge repeats every N days while a requisition is still not being
+// quoted; the deadline warnings go out once each per round. Both are
+// idempotent — the notification log stops anybody being mailed twice — so a
+// double run is safe, and both are `sentryMonitor()`ed because a dead cron on
+// a customer's server is otherwise completely silent.
+Schedule::command('procurement:notify-stalled')->dailyAt('07:05')->withoutOverlapping()->sentryMonitor();
+Schedule::command('procurement:notify-due')->dailyAt('07:10')->withoutOverlapping()->sentryMonitor();

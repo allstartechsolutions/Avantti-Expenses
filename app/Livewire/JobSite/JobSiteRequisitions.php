@@ -27,12 +27,14 @@ class JobSiteRequisitions extends Component
     public $statusFilter = '';
     public $typeFilter = '';
     public $priorityFilter = '';
+    public $assignmentFilter = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
         'typeFilter' => ['except' => ''],
         'priorityFilter' => ['except' => ''],
+        'assignmentFilter' => ['except' => ''],
     ];
 
     public function mount(JobSite $jobSite)
@@ -72,12 +74,18 @@ class JobSiteRequisitions extends Component
         $this->resetPage();
     }
 
+    public function updatedAssignmentFilter()
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters()
     {
         $this->search = '';
         $this->statusFilter = '';
         $this->typeFilter = '';
         $this->priorityFilter = '';
+        $this->assignmentFilter = '';
         $this->resetPage();
     }
 
@@ -86,13 +94,14 @@ class JobSiteRequisitions extends Component
         return $this->search !== ''
             || $this->statusFilter !== ''
             || $this->typeFilter !== ''
-            || $this->priorityFilter !== '';
+            || $this->priorityFilter !== ''
+            || $this->assignmentFilter !== '';
     }
 
     public function render()
     {
         $query = $this->scopedQuery()
-            ->with(['jobSite', 'requestedBy', 'createdBy', 'budgetItem', 'quotations'])
+            ->with(['jobSite', 'requestedBy', 'createdBy', 'budgetItem', 'quotations', 'assignedBuyer'])
             ->withCount('items');
 
         if ($this->search) {
@@ -129,6 +138,14 @@ class JobSiteRequisitions extends Component
             $query->where('priority', $this->priorityFilter);
         }
 
+        // "Mine" is the buyer's own queue; "unassigned" is the bucket that
+        // stops a null default becoming a silent hole.
+        if ($this->assignmentFilter === 'mine') {
+            $query->where('assigned_buyer_id', auth()->id());
+        } elseif ($this->assignmentFilter === 'unassigned') {
+            $query->whereNull('assigned_buyer_id');
+        }
+
         $requisitions = $query
             // Urgent first, then normal, then low. Written as a CASE rather
             // than FIELD(), which is MySQL-only and made these two screens
@@ -142,6 +159,8 @@ class JobSiteRequisitions extends Component
             'pending' => $this->scopedQuery()->where('status', 'pending')->count(),
             'approved' => $this->scopedQuery()->where('status', 'approved')->count(),
             'urgent_open' => $this->scopedQuery()->open()->where('priority', 'urgent')->count(),
+            'unassigned' => $this->scopedQuery()->whereIn('status', ['approved', 'quoted'])->whereNull('assigned_buyer_id')->count(),
+            'mine' => $this->scopedQuery()->where('assigned_buyer_id', auth()->id())->open()->count(),
             'overdue' => $this->scopedQuery()->open()->whereNotNull('needed_by')->whereDate('needed_by', '<', now())->count(),
         ];
 

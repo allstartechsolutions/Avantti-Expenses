@@ -26,12 +26,14 @@ class ProjectQuotations extends Component
     public $statusFilter = '';
     public $typeFilter = '';
     public $locationFilter = '';
+    public $assignmentFilter = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
         'typeFilter' => ['except' => ''],
         'locationFilter' => ['except' => ''],
+        'assignmentFilter' => ['except' => ''],
     ];
 
     public function mount(Project $project)
@@ -79,6 +81,7 @@ class ProjectQuotations extends Component
         $this->statusFilter = '';
         $this->typeFilter = '';
         $this->locationFilter = '';
+        $this->assignmentFilter = '';
         $this->resetPage();
     }
 
@@ -87,13 +90,14 @@ class ProjectQuotations extends Component
         return $this->search !== ''
             || $this->statusFilter !== ''
             || $this->typeFilter !== ''
-            || $this->locationFilter !== '';
+            || $this->locationFilter !== ''
+            || $this->assignmentFilter !== '';
     }
 
     public function render()
     {
         $query = Quotation::where('project_id', $this->project->id)
-            ->with(['jobSite', 'createdBy', 'requisition', 'quotationVendors.items'])
+            ->with(['jobSite', 'createdBy', 'requisition', 'quotationVendors.items', 'assignedTo', 'assignees'])
             ->withCount('items');
 
         if ($this->search) {
@@ -129,6 +133,14 @@ class ProjectQuotations extends Component
             $query->whereNull('job_site_id');
         } elseif ($this->locationFilter) {
             $query->where('job_site_id', $this->locationFilter);
+        }
+
+        // "Mine" is the owner's and collaborator's own queue; "unassigned" is
+        // the bucket that stops a round quietly belonging to nobody.
+        if ($this->assignmentFilter === 'mine') {
+            $query->workedBy(auth()->id());
+        } elseif ($this->assignmentFilter === 'unassigned') {
+            $query->whereNull('assigned_to');
         }
 
         $quotations = $query->orderBy('created_at', 'desc')->paginate(15);

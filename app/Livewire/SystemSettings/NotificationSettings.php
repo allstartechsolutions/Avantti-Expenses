@@ -21,12 +21,25 @@ class NotificationSettings extends Component
     public int $digestDay = 1;
     public int $digestHour = 7;
 
+    // Purchasing — how hard the reminders push.
+    public int $awaitingDays = NotificationSetting::DEFAULT_AWAITING_DAYS;
+    public int $awaitingMaxReminders = NotificationSetting::DEFAULT_AWAITING_REMINDERS;
+    public int $stallDays = NotificationSetting::DEFAULT_STALL_DAYS;
+    public int $stallMaxReminders = NotificationSetting::DEFAULT_STALL_REMINDERS;
+    public int $dueLeadDays = NotificationSetting::DEFAULT_DUE_LEAD_DAYS;
+
     public function mount(): void
     {
         $this->authorizeAbility('settings.view');
 
         $this->digestDay = NotificationSetting::digestDay();
         $this->digestHour = NotificationSetting::digestHour();
+
+        $this->awaitingDays = NotificationSetting::awaitingDays();
+        $this->awaitingMaxReminders = NotificationSetting::awaitingMaxReminders();
+        $this->stallDays = NotificationSetting::stallDays();
+        $this->stallMaxReminders = NotificationSetting::stallMaxReminders();
+        $this->dueLeadDays = NotificationSetting::dueLeadDays();
     }
 
     #[Computed]
@@ -71,6 +84,53 @@ class NotificationSettings extends Component
         unset($this->settings);
 
         session()->flash('message', __('The digest schedule was saved.'));
+    }
+
+    /**
+     * The two purchasing reminders that carry a number.
+     *
+     * Saved together because they are one decision — how hard the system
+     * pushes — rather than three unrelated fields.
+     */
+    public function saveProcurementOptions(): void
+    {
+        $this->authorizeAbility('settings.edit');
+
+        $this->validate([
+            'awaitingDays' => ['required', 'integer', 'min:1', 'max:90'],
+            'awaitingMaxReminders' => ['required', 'integer', 'min:1', 'max:20'],
+            'stallDays' => ['required', 'integer', 'min:1', 'max:90'],
+            'stallMaxReminders' => ['required', 'integer', 'min:1', 'max:20'],
+            'dueLeadDays' => ['required', 'integer', 'min:1', 'max:60'],
+        ], [], [
+            'awaitingDays' => __('days before chasing a decision'),
+            'awaitingMaxReminders' => __('decision chases at most'),
+            'stallDays' => __('days before the first nudge'),
+            'stallMaxReminders' => __('nudges at most'),
+            'dueLeadDays' => __('days of warning before responses are due'),
+        ]);
+
+        NotificationSetting::firstOrCreate(['key' => NotificationSetting::REQUISITION_AWAITING])
+            ->update([
+                'options' => ['days' => $this->awaitingDays, 'max_reminders' => $this->awaitingMaxReminders],
+                'updated_by' => auth()->id(),
+            ]);
+
+        NotificationSetting::firstOrCreate(['key' => NotificationSetting::REQUISITION_STALLED])
+            ->update([
+                'options' => ['days' => $this->stallDays, 'max_reminders' => $this->stallMaxReminders],
+                'updated_by' => auth()->id(),
+            ]);
+
+        NotificationSetting::firstOrCreate(['key' => NotificationSetting::QUOTATION_DUE_SOON])
+            ->update([
+                'options' => ['lead_days' => $this->dueLeadDays],
+                'updated_by' => auth()->id(),
+            ]);
+
+        unset($this->settings);
+
+        session()->flash('message', __('The reminder settings were saved.'));
     }
 
     public function days(): array

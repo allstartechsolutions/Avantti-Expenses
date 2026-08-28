@@ -33,6 +33,13 @@
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'notifications' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
                     {{ __('Notifications') }}
                 </button>
+                @can('assignment-defaults.view')
+                <button
+                    wire:click="switchTab('assignments')"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'assignments' ? 'border-[#3F5189] text-[#3F5189] dark:text-[#4A5A96] dark:border-[#4A5A96]' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                    {{ __('Assignments') }}
+                </button>
+                @endcan
             </nav>
         </div>
     </div>
@@ -46,5 +53,7 @@
         <livewire:system-settings.module-access-settings />
     @elseif($activeTab === 'notifications')
         <livewire:system-settings.notification-settings />
+    @elseif($activeTab === 'assignments' && auth()->user()->can('assignment-defaults.view'))
+        <livewire:assignment.default-assignments-panel context-type="global" />
     @endif
 </div>

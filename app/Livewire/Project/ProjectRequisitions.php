@@ -28,6 +28,7 @@ class ProjectRequisitions extends Component
     public $typeFilter = '';
     public $priorityFilter = '';
     public $locationFilter = '';
+    public $assignmentFilter = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -35,6 +36,7 @@ class ProjectRequisitions extends Component
         'typeFilter' => ['except' => ''],
         'priorityFilter' => ['except' => ''],
         'locationFilter' => ['except' => ''],
+        'assignmentFilter' => ['except' => ''],
     ];
 
     public function mount(Project $project)
@@ -80,6 +82,11 @@ class ProjectRequisitions extends Component
         $this->resetPage();
     }
 
+    public function updatedAssignmentFilter()
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters()
     {
         $this->search = '';
@@ -87,6 +94,7 @@ class ProjectRequisitions extends Component
         $this->typeFilter = '';
         $this->priorityFilter = '';
         $this->locationFilter = '';
+        $this->assignmentFilter = '';
         $this->resetPage();
     }
 
@@ -96,13 +104,14 @@ class ProjectRequisitions extends Component
             || $this->statusFilter !== ''
             || $this->typeFilter !== ''
             || $this->priorityFilter !== ''
-            || $this->locationFilter !== '';
+            || $this->locationFilter !== ''
+            || $this->assignmentFilter !== '';
     }
 
     public function render()
     {
         $query = PurchaseRequisition::where('project_id', $this->project->id)
-            ->with(['jobSite', 'requestedBy', 'createdBy', 'budgetItem', 'quotations'])
+            ->with(['jobSite', 'requestedBy', 'createdBy', 'budgetItem', 'quotations', 'assignedBuyer'])
             ->withCount('items');
 
         if ($this->search) {
@@ -145,6 +154,14 @@ class ProjectRequisitions extends Component
             $query->where('job_site_id', $this->locationFilter);
         }
 
+        // "Mine" is the buyer's own queue; "unassigned" is the bucket that
+        // stops a null default becoming a silent hole.
+        if ($this->assignmentFilter === 'mine') {
+            $query->where('assigned_buyer_id', auth()->id());
+        } elseif ($this->assignmentFilter === 'unassigned') {
+            $query->whereNull('assigned_buyer_id');
+        }
+
         $requisitions = $query
             // Urgent first, then normal, then low. Written as a CASE rather
             // than FIELD(), which is MySQL-only and made these two screens
@@ -160,6 +177,8 @@ class ProjectRequisitions extends Component
             'pending' => $base()->where('status', 'pending')->count(),
             'approved' => $base()->where('status', 'approved')->count(),
             'urgent_open' => $base()->open()->where('priority', 'urgent')->count(),
+            'unassigned' => $base()->whereIn('status', ['approved', 'quoted'])->whereNull('assigned_buyer_id')->count(),
+            'mine' => $base()->where('assigned_buyer_id', auth()->id())->open()->count(),
             'overdue' => $base()->open()->whereNotNull('needed_by')->whereDate('needed_by', '<', now())->count(),
         ];
 

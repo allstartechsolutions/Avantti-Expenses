@@ -41,7 +41,9 @@ class NavigationTest extends TestCase
             'Dashboard',
             // Roles & Access joined the Company group in E4.
             'Company: Company Info, Users, Roles & Access',
-            'Projects: All Projects, Subcontractors, Clients, Cost Codes, Payments, Contract Payments, Payment Batches',
+            // My Quotations joined at phase 6 of the procurement assignment
+            // module: the buying queue, gated on `quotations.view`.
+            'Projects: All Projects, Subcontractors, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',
@@ -52,7 +54,7 @@ class NavigationTest extends TestCase
         'manager' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, Clients, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Subcontractors, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',
@@ -62,7 +64,7 @@ class NavigationTest extends TestCase
         'employee' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, Clients, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Subcontractors, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',

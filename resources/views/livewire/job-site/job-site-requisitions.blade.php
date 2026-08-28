@@ -41,6 +41,11 @@
                     <option value="normal">{{ __('Normal') }}</option>
                     <option value="low">{{ __('Low') }}</option>
                 </select>
+                <select wire:model.live="assignmentFilter" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">{{ __('Anyone quoting') }}</option>
+                    <option value="mine">{{ __('Assigned to me') }}</option>
+                    <option value="unassigned">{{ __('Unassigned') }}</option>
+                </select>
                 @if($this->hasFilters())
                     <button type="button" wire:click="clearFilters" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                         {{ __('Clear filters') }}
@@ -121,6 +126,8 @@
         'contextName' => $jobSite->project?->project_name.' — '.$jobSite->job_site_name,
         'showJobSitePicker' => false,
         'jobSites' => collect(),
+        'canAssign' => auth()->user()->can('requisitions.assign', $jobSite),
+        'eligibleBuyers' => auth()->user()->can('requisitions.assign', $jobSite) ? $this->eligibleBuyers() : collect(),
     ])
 
     @include('livewire.requisition.partials.view-modal', [
@@ -130,6 +137,12 @@
         'selfApproval' => $viewingRequisition
             && $this->isSelfApproval($viewingRequisition)
             && ! auth()->user()->can('requisitions.approve_own', $viewingRequisition),
+        'canAssign' => $viewingRequisition
+            ? auth()->user()->can('requisitions.assign', $viewingRequisition)
+            : auth()->user()->can('requisitions.assign', $jobSite),
+        'eligibleBuyers' => $viewingRequisition
+            ? $this->eligibleBuyers($viewingRequisition)
+            : collect(),
         'quotationsRoute' => route('jobsites.quotations', $jobSite).'?requisition='.($viewingRequisition->id ?? ''),
     ])
 </x-jobsite-layout>

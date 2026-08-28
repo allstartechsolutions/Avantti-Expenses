@@ -18,10 +18,16 @@ abstract class TestCase extends BaseTestCase
      *
      * The invariant the permission suite guards is "nothing is unswept by
      * accident", so the tests assert against this list rather than against an
-     * empty array. It is empty again: `rfis` flipped at the end of phase 4 of
-     * docs/RFI-Submittals-modules.md and `approvals` at the end of phase 5, so
-     * the assertions are once more proving that the whole catalogue is
-     * enforced. The constant stays for the next module built this way.
+     * empty array. `rfis` flipped at the end of phase 4 of
+     * docs/RFI-Submittals-modules.md and `approvals` at the end of phase 5.
+     *
+     * `assignment-defaults` is here from phase 1 of
+     * docs/procurement-assignment-plan.md: the panels are guarded and the
+     * defaults resolve, but the requisition and quotation screens that consume
+     * them arrive in phases 2 and 4, so the area is not finished being spent.
+     * It flips at phase 7.
      */
-    protected const AREAS_UNDER_CONSTRUCTION = [];
+    protected const AREAS_UNDER_CONSTRUCTION = [
+        'assignment-defaults',
+    ];
 }

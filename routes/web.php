@@ -83,6 +83,7 @@ use App\Livewire\Meeting\MeetingIndex;
 use App\Livewire\Meeting\MeetingSeriesIndex;
 use App\Livewire\Meeting\MeetingShow;
 use App\Livewire\Project\ProjectTasks;
+use App\Livewire\Quotation\MyQuotations;
 use App\Livewire\Task\MyTasks;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\SharedDocumentController;
@@ -489,6 +490,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('documentation/assets/{path}', DocumentationImageController::class)
         ->where('path', '.*')->name('documentation.asset');
     Route::get('documentation/{slug}', DocumentationArticle::class)->name('documentation.show');
+
+    // The buying queue (docs/procurement-assignment-plan.md phase 6). Like My
+    // Tasks it is a cross-project list, so it is filtered rather than guarded
+    // by a scope — see PurchaseRequisition::visibleTo() and
+    // Quotation::visibleTo(). The grant still has to be held.
+    Route::get('quotations/mine', MyQuotations::class)
+        ->middleware('ability:quotations.view')->name('quotations.mine');
 
     // Meetings, minutes and tasks (docs/meetings-module-plan.md)
     // My Tasks is a cross-project list, so it is filtered rather than guarded

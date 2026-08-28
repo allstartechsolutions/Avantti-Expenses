@@ -17,6 +17,7 @@
                         @if($showLocation)
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
                         @endif
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Worked By') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Proposals') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Responses Due') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Items') }}</th>
@@ -56,6 +57,20 @@
                                     @endif
                                 </td>
                             @endif
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if($quotation->assignedTo)
+                                    <span class="text-slate-900 dark:text-white">{{ $quotation->assignedTo->name }}</span>
+                                    @if($quotation->relationLoaded('assignees') && $quotation->assignees->isNotEmpty())
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ trans_choice('+:count more|+:count more', $quotation->assignees->count(), ['count' => $quotation->assignees->count()]) }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                                        {{ __('Unassigned') }}
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span class="text-slate-900 dark:text-white font-medium">{{ $quotation->respondedCount() }}</span>
                                 <span class="text-slate-500 dark:text-slate-400">/ {{ $quotation->invitedCount() }}</span>

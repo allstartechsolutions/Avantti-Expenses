@@ -18,6 +18,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Location') }}</th>
                         @endif
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Requested By') }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Quoted By') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Needed By') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Items') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Status') }}</th>
@@ -69,6 +70,24 @@
                             @endif
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                                 {{ $requisition->getRequesterName() }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if($requisition->assignedBuyer)
+                                    <span class="text-slate-900 dark:text-white">{{ $requisition->assignedBuyer->name }}</span>
+                                    {{-- Days waiting is the number that makes a stall visible
+                                         before the reminder mail goes out. --}}
+                                    @if($requisition->isAwaitingItsRound() && $requisition->assigned_at)
+                                        <div class="text-xs {{ ($requisition->daysSinceAssigned() ?? 0) >= 7 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-500 dark:text-slate-400' }}">
+                                            {{ trans_choice(':count day waiting|:count days waiting', $requisition->daysSinceAssigned() ?? 0, ['count' => $requisition->daysSinceAssigned() ?? 0]) }}
+                                        </div>
+                                    @endif
+                                @elseif(in_array($requisition->status, ['approved', 'quoted'], true))
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                                        {{ __('Unassigned') }}
+                                    </span>
+                                @else
+                                    <span class="text-slate-400 dark:text-slate-500">—</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 @if($requisition->needed_by)

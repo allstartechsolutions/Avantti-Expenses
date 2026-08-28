@@ -293,6 +293,20 @@ return [
             'active' => ['meetings.*'],
             'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
         ],
+        // The buying queue: what one person has been asked to price. It has no
+        // project of its own, so its list filters rather than being guarded —
+        // see MyQuotations and PurchaseRequisition::visibleTo().
+        [
+            'key' => 'my-quotations',
+            'name' => 'My Quotations',
+            'group' => 'projects',
+            'order' => 45,
+            'route' => 'quotations.mine',
+            'ability' => 'quotations.view',
+            'active' => ['quotations.mine'],
+            'badge' => [\App\Livewire\Quotation\MyQuotations::class, 'navBadge'],
+            'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2',
+        ],
         [
             'key' => 'my-tasks',
             'name' => 'My Tasks',
@@ -940,6 +954,12 @@ return [
                     'name' => 'Approve their own requisitions',
                     'sensitive' => true,
                 ],
+                // Handing the requisition to whoever will run the cotação.
+                // Held apart from `approve` because the two are not the same
+                // act: approving says the company will buy this, assigning
+                // says who goes and gets the prices. A procurement lead who
+                // may not approve spend still shares the work out.
+                'assign' => ['name' => 'Assign who quotes it'],
                 'duplicate' => ['name' => 'Duplicate into a new draft'],
             ],
         ],
@@ -977,6 +997,31 @@ return [
                     'limited' => true,
                     'sensitive' => true,
                 ],
+                // Who owns the round and who else is on it. Held apart from
+                // `edit` for the same reason `requisitions.assign` is held
+                // apart from `approve`: deciding who does the work is not the
+                // same act as doing it. Note that being put on a round grants
+                // nothing — a collaborator without `edit` sees it and cannot
+                // price it, which is correct.
+                'assign' => ['name' => 'Assign who works the round'],
+            ],
+        ],
+
+        // Who work falls to here when nobody says otherwise — the buyer who
+        // runs a cotação today, RFI ball-in-court and approval reviewers next.
+        // Its own area rather than an action on `team`, because naming the
+        // person every approved requisition is handed to is a scheduling
+        // decision, not the same act as granting somebody access. The panel
+        // sits on the Team page; the install-wide tier is a System Settings tab.
+        'assignment-defaults' => [
+            'name' => 'Assignment defaults',
+            'module' => 'projects',
+            'levels' => ['global', 'project', 'job_site'],
+            'money' => false,
+            'swept' => false,
+            'actions' => [
+                'view' => ['name' => 'See who work falls to by default'],
+                'edit' => ['name' => 'Change who work falls to by default'],
             ],
         ],
 

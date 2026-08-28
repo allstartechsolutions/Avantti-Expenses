@@ -134,6 +134,19 @@ class PermissionSeeder extends Seeder
         // Company-wide "may add anyone to any project". Project templates hand
         // out team.view / team.invite per project instead (M1).
         'team.view', 'team.invite', 'team.manage',
+        // New in the procurement-assignment module. Naming the person every
+        // approved requisition is handed to is a scheduling decision, and it
+        // has no counterpart in the old rules — so these start closed at the
+        // role level and reach people through the project templates below,
+        // which is where "the manager of THIS project decides" belongs.
+        'assignment-defaults.view', 'assignment-defaults.edit',
+        // Handing one requisition to a buyer, and sharing out a round. Same
+        // reasoning, and neither is implied by the grant beside it: approving
+        // says the company will buy this, assigning says who goes and gets the
+        // prices, and a procurement lead who may not approve spend still
+        // shares the work out among their own people.
+        'requisitions.assign',
+        'quotations.assign',
         // New in this module; who may freeze a budget is decided in M6.
         'budget.lock',
         // New in this module; who may reverse a payment is decided in M11.
@@ -344,9 +357,12 @@ class PermissionSeeder extends Seeder
                     'income.view', 'income.create', 'income.edit', 'income.distribute',
                     'requisitions.view', 'requisitions.create', 'requisitions.edit',
                     'requisitions.submit', 'requisitions.approve', 'requisitions.duplicate',
+                    'requisitions.assign',
+                    'assignment-defaults.view', 'assignment-defaults.edit',
                     'quotations.view', 'quotations.create', 'quotations.edit',
                     'quotations.create_standalone',
                     'quotations.award', 'quotations.convert', 'quotations.convert_contract',
+                    'quotations.assign',
                     'purchase-orders.view', 'purchase-orders.create', 'purchase-orders.edit',
                     'purchase-orders.approve', 'purchase-orders.receive',
                     'change-orders.view', 'change-orders.create', 'change-orders.edit',
@@ -377,7 +393,10 @@ class PermissionSeeder extends Seeder
                     'project.view',
                     'requisitions.view', 'requisitions.create', 'requisitions.edit',
                     'requisitions.submit', 'requisitions.duplicate',
+                    'requisitions.assign',
+                    'assignment-defaults.view',
                     'quotations.view', 'quotations.create', 'quotations.edit',
+                    'quotations.assign',
                     'purchase-orders.view', 'purchase-orders.create', 'purchase-orders.edit',
                     'purchase-orders.receive',
                     'contracts.view',

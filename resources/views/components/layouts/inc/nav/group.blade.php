@@ -51,7 +51,12 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"></path>
                 </svg>
-                {{ __($item['name']) }}
+                <span class="flex-1">{{ __($item['name']) }}</span>
+                @if(($item['badge'] ?? null))
+                    <span class="ml-2 shrink-0 rounded-full bg-[#3F5189] px-2 py-0.5 text-xs font-semibold text-white">
+                        {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
+                    </span>
+                @endif
             </a>
         @endforeach
     </div>

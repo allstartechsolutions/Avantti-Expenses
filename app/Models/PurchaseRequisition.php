@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,12 +30,15 @@ class PurchaseRequisition extends Model
         'reviewed_by',
         'reviewed_at',
         'review_notes',
+        'assigned_buyer_id',
+        'assigned_at',
         'created_by',
     ];
 
     protected $casts = [
         'needed_by' => 'date',
         'reviewed_at' => 'datetime',
+        'assigned_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -103,6 +107,12 @@ class PurchaseRequisition extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** Whoever was told to go and quote this one. */
+    public function assignedBuyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_buyer_id');
+    }
+
     // =========================================================================
     // NUMBERING
     // =========================================================================
@@ -149,6 +159,36 @@ class PurchaseRequisition extends Model
         $this->statusHistories()->create([
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
+            'changed_by' => $user->id,
+            'reason' => $reason,
+        ]);
+    }
+
+    /**
+     * Record a change of buyer on the existing history.
+     *
+     * No new table: the status histories already carry who did it and when,
+     * and the reason line is where the two names go. `old_status` and
+     * `new_status` are equal, which is what marks the row as an assignment
+     * rather than a status move — the history renders it as such.
+     *
+     * A reassignment nobody can see afterwards is how "I thought you were
+     * doing it" happens, which is the whole reason this is written down.
+     */
+    public function recordAssignment(User $user, ?User $previous, ?User $current): void
+    {
+        // Booleans, not the models themselves: match (true) compares
+        // strictly, so a bare `$current` — an object — would never match.
+        $reason = match (true) {
+            $current !== null && $previous !== null => __('Reassigned from :old to :new.', ['old' => $previous->name, 'new' => $current->name]),
+            $current !== null => __('Assigned to :new.', ['new' => $current->name]),
+            $previous !== null => __('Unassigned from :old.', ['old' => $previous->name]),
+            default => __('Assignment cleared.'),
+        };
+
+        $this->statusHistories()->create([
+            'old_status' => $this->status,
+            'new_status' => $this->status,
             'changed_by' => $user->id,
             'reason' => $reason,
         ]);
@@ -257,6 +297,80 @@ class PurchaseRequisition extends Model
     }
 
     // =========================================================================
+    // ASSIGNMENT
+    // =========================================================================
+
+    /**
+     * Whether the buyer can still usefully be changed.
+     *
+     * A rejected or cancelled requisition is nobody's work, and a fulfilled
+     * one is finished work — reassigning either says something that is not
+     * true. A draft can carry a suggestion, which is what the raise form's
+     * select is; it only becomes an instruction on approval.
+     */
+    public function canBeAssigned(): bool
+    {
+        return in_array($this->status, ['draft', 'pending', 'approved', 'quoted'], true);
+    }
+
+    /**
+     * Approved, handed to somebody, and still without a round: the state the
+     * whole module exists to make visible.
+     */
+    public function isAwaitingItsRound(): bool
+    {
+        return $this->status === 'approved' && ! $this->isAlreadyQuoted();
+    }
+
+    /** How long the buyer has been sitting on it. Null when never assigned. */
+    public function daysSinceAssigned(): ?int
+    {
+        return $this->assigned_at?->startOfDay()->diffInDays(now()->startOfDay());
+    }
+
+    public function getAssignedBuyerName(): string
+    {
+        return $this->assignedBuyer?->name ?? __('Unassigned');
+    }
+
+    /**
+     * When it was last sent for approval.
+     *
+     * Read from the history rather than a column: the move to `pending` is
+     * already recorded there with its time, and a requisition pulled back to
+     * draft and sent again should be waiting from the *second* submission, not
+     * the first. A `submitted_at` column would have to remember to be reset.
+     */
+    public function submittedAt(): ?\Illuminate\Support\Carbon
+    {
+        $at = $this->statusHistories()
+            ->where('new_status', 'pending')
+            ->max('created_at');
+
+        return $at ? \Illuminate\Support\Carbon::parse($at) : null;
+    }
+
+    /** How long it has been sitting unanswered. Null when never submitted. */
+    public function daysAwaitingDecision(): ?int
+    {
+        $at = $this->submittedAt();
+
+        return $at ? (int) $at->startOfDay()->diffInDays(now()->startOfDay()) : null;
+    }
+
+    /**
+     * Whoever asked for it — the person to tell when it is decided.
+     *
+     * The named requester first, then whoever keyed it in. Office staff often
+     * raise a requisition on behalf of somebody on site, and it is the person
+     * it is *for* who is waiting on the answer.
+     */
+    public function decisionRecipient(): ?User
+    {
+        return $this->requestedBy ?? $this->createdBy;
+    }
+
+    // =========================================================================
     // DISPLAY HELPERS
     // =========================================================================
 
@@ -359,4 +473,46 @@ class PurchaseRequisition extends Model
     {
         return $query->whereIn('status', ['draft', 'pending', 'approved', 'quoted']);
     }
+
+    /**
+     * Narrow a cross-project list to what this person may open.
+     *
+     * The requisition and quotation screens have always been reached through a
+     * project or job-site route, whose middleware does the confining. The
+     * purchasing queue has no project of its own, so there is no route to
+     * guard and the list itself has to filter — a guard answers "may you open
+     * this record?", only a filter answers "which records may you see?".
+     *
+     * Same shape as Rfi::visibleTo, deliberately: two lists that mean the same
+     * thing should not be read two different ways. Note there is no
+     * `whereNull('project_id')` branch — unlike a task, one of these always
+     * belongs to a project.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->is_admin || ! $user->isConfined()) {
+            return $query;
+        }
+
+        $projectIds = [];
+        $jobSiteIds = [];
+
+        foreach (app(\App\Services\PermissionResolver::class)->membershipsOf($user) as $membership) {
+            if ($membership->scopeable_type === Project::class) {
+                $projectIds[] = $membership->scopeable_id;
+            } elseif ($membership->scopeable_type === JobSite::class) {
+                $jobSiteIds[] = $membership->scopeable_id;
+            }
+        }
+
+        return $query->where(function (Builder $q) use ($projectIds, $jobSiteIds) {
+            $q->whereIn('project_id', $projectIds)
+                ->orWhereIn('job_site_id', $jobSiteIds);
+        });
+    }
+
 }

@@ -7,6 +7,7 @@ use App\Models\CatalogItem;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\PurchaseRequisition;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,6 +42,16 @@ trait ManagesRequisitions
     // Review
     public $reviewNotes = '';
 
+    /**
+     * Who runs the cotação. Two properties because the two moments are
+     * different acts: `req_assigned_buyer_id` on the raise form is a
+     * suggestion the requester may leave blank, `reviewAssignedBuyerId` in
+     * the approve dialog is the hand-off itself — the intended moment.
+     */
+    public $req_assigned_buyer_id = '';
+
+    public $reviewAssignedBuyerId = '';
+
     abstract protected function contextProject(): Project;
 
     abstract protected function contextJobSite(): ?JobSite;
@@ -55,6 +66,7 @@ trait ManagesRequisitions
 
         $this->resetForm();
         $this->req_requested_by = (string) auth()->id();
+        $this->req_assigned_buyer_id = (string) ($this->resolvedDefaultBuyer()?->id ?? '');
         $this->itemRows = [$this->blankItemRow()];
         $this->dispatch('open-modal', 'requisition-form-modal');
     }
@@ -85,6 +97,7 @@ trait ManagesRequisitions
         $this->req_priority = $requisition->priority;
         $this->req_requested_by = (string) ($requisition->requested_by ?? '');
         $this->req_requested_by_name = $requisition->requested_by_name ?? '';
+        $this->req_assigned_buyer_id = (string) ($requisition->assigned_buyer_id ?? '');
         $this->setBudgetItem($requisition->budget_item_id);
 
         $this->itemRows = $requisition->items->map(fn ($item) => [
@@ -121,6 +134,7 @@ trait ManagesRequisitions
         $this->req_priority = 'normal';
         $this->req_requested_by = '';
         $this->req_requested_by_name = '';
+        $this->req_assigned_buyer_id = '';
         $this->req_budget_item_id = null;
         $this->req_budget_item_label = '';
         $this->budgetItemSearch = '';
@@ -297,6 +311,7 @@ trait ManagesRequisitions
             'req_job_site_id' => 'nullable|exists:job_sites,id',
             'req_requested_by' => 'nullable|exists:users,id',
             'req_requested_by_name' => 'nullable|string|max:255',
+            'req_assigned_buyer_id' => 'nullable|exists:users,id',
             'itemRows' => 'required|array|min:1',
             'itemRows.*.item_name' => 'nullable|string|max:255',
             'itemRows.*.description' => 'nullable|string',
@@ -312,6 +327,7 @@ trait ManagesRequisitions
             'req_job_site_id' => __('location'),
             'req_requested_by' => __('requester'),
             'req_requested_by_name' => __('requester name'),
+            'req_assigned_buyer_id' => __('assigned buyer'),
             'req_uploads.*' => __('file'),
         ]);
 
@@ -359,6 +375,30 @@ trait ManagesRequisitions
             'requested_by_name' => $validated['req_requested_by_name'] ?: null,
         ];
 
+        // The buyer on the raise form is a SUGGESTION, and only somebody who
+        // may assign gets to make it — otherwise the field is a way around the
+        // grant. `assigned_at` stays null here: this is not a hand-off yet,
+        // and phase 5 counts stalled days from the moment it becomes one.
+        if ($this->allowsAbility('requisitions.assign', $this->requisitionScope())) {
+            $buyerId = $validated['req_assigned_buyer_id'] ?: null;
+
+            // Eligible *where this is landing*, which the Location picker may
+            // just have changed.
+            $target = $jobSiteId
+                ? JobSite::where('project_id', $this->contextProject()->id)->find($jobSiteId)
+                : $this->contextProject();
+
+            $eligible = app(\App\Services\BuyerDirectory::class)->for($target);
+
+            if ($buyerId !== null && ! $eligible->contains('id', (int) $buyerId)) {
+                $this->addError('req_assigned_buyer_id', __('That person cannot raise a quotation round here.'));
+
+                return;
+            }
+
+            $data['assigned_buyer_id'] = $buyerId;
+        }
+
         $user = auth()->user();
 
         $requisition = DB::transaction(function () use ($data, $items, $mode, $user) {
@@ -400,6 +440,13 @@ trait ManagesRequisitions
                 'original_name' => $upload->getClientOriginalName(),
                 'uploaded_by' => $user->id,
             ]);
+        }
+
+        // Submitting is the moment somebody has to be asked for a decision.
+        // A draft asks nobody, which is what a draft is.
+        if ($mode === 'pending') {
+            app(\App\Services\ProcurementNotifier::class)
+                ->requisitionSubmitted($requisition->fresh(), $user);
         }
 
         session()->flash('message', $this->editingRequisitionId
@@ -473,7 +520,17 @@ trait ManagesRequisitions
 
         $this->viewingRequisitionId = $requisition->id;
         $this->reviewNotes = '';
-        $this->resetErrorBag('reviewNotes');
+
+        // The approve dialog opens with somebody already in the select: what
+        // the requester suggested, or failing that the default for this
+        // location. The approver confirms or changes it — approve and hand off
+        // in one act, which is the moment they actually know who buys steel
+        // this month.
+        $this->reviewAssignedBuyerId = (string) (
+            $requisition->assigned_buyer_id ?? $this->resolvedDefaultBuyer()?->id ?? ''
+        );
+
+        $this->resetErrorBag(['reviewNotes', 'reviewAssignedBuyerId']);
         $this->dispatch('open-modal', 'requisition-view-modal');
     }
 
@@ -536,6 +593,9 @@ trait ManagesRequisitions
         $requisition->update(['status' => 'pending']);
         $requisition->recordStatusChange(auth()->user(), 'draft', 'pending');
 
+        app(\App\Services\ProcurementNotifier::class)
+            ->requisitionSubmitted($requisition->fresh(), auth()->user());
+
         session()->flash('message', __('Requisition submitted for approval.'));
     }
 
@@ -551,18 +611,57 @@ trait ManagesRequisitions
 
         $notes = trim((string) $this->reviewNotes) ?: null;
 
+        // Approving and handing off are two acts on one button, so they are
+        // two questions. Somebody who may approve but not assign still
+        // approves — the requisition simply lands in the unassigned bucket.
+        $buyerId = null;
+        $mayAssign = $this->allowsAbility('requisitions.assign', $requisition);
+
+        if ($mayAssign) {
+            $buyerId = $this->reviewAssignedBuyerId !== '' ? (int) $this->reviewAssignedBuyerId : null;
+
+            if ($buyerId !== null && ! $this->eligibleBuyers($requisition)->contains('id', $buyerId)) {
+                $this->addError('reviewAssignedBuyerId', __('That person cannot raise a quotation round here.'));
+
+                return;
+            }
+        } else {
+            // Not theirs to change: keep whatever the requisition already
+            // carried rather than silently clearing it.
+            $buyerId = $requisition->assigned_buyer_id;
+        }
+
+        $buyer = $buyerId ? User::find($buyerId) : null;
+
         $requisition->update([
             'status' => 'approved',
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
             'review_notes' => $notes,
+            'assigned_buyer_id' => $buyer?->id,
+            // Now it is an instruction rather than a suggestion, and this is
+            // the stamp phase 5 counts stalled days from.
+            'assigned_at' => $buyer ? now() : null,
         ]);
 
         $requisition->recordStatusChange(auth()->user(), 'pending', 'approved', $notes);
 
+        if ($buyer) {
+            $requisition->recordAssignment(auth()->user(), null, $buyer);
+
+            app(\App\Services\ProcurementNotifier::class)
+                ->requisitionAssigned($requisition->fresh(), auth()->user());
+        }
+
+        // And the answer goes back to whoever asked.
+        app(\App\Services\ProcurementNotifier::class)
+            ->requisitionDecided($requisition->fresh(), auth()->user());
+
         $this->reviewNotes = '';
 
-        session()->flash('message', __('Requisition approved. It can now be quoted.'));
+        session()->flash('message', $buyer
+            ? __('Requisition approved and handed to :name to quote.', ['name' => $buyer->name])
+            : __('Requisition approved. It can now be quoted.'));
     }
 
     public function rejectRequisition(int $requisitionId): void
@@ -595,9 +694,114 @@ trait ManagesRequisitions
 
         $requisition->recordStatusChange(auth()->user(), 'pending', 'rejected', $notes);
 
+        // The reason is a required field; until this it reached nobody.
+        app(\App\Services\ProcurementNotifier::class)
+            ->requisitionDecided($requisition->fresh(), auth()->user());
+
         $this->reviewNotes = '';
 
         session()->flash('message', __('Requisition rejected.'));
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | ASSIGNMENT
+    |---------------------------------------------------------------------------
+    */
+
+    /**
+     * Hand the requisition to somebody, or take it back off them.
+     *
+     * Reassignment after approval is a separate act from approving, so it has
+     * its own grant. It writes a history row rather than a new table: the
+     * status histories already carry who and when, and a reassignment nobody
+     * can see afterwards is how "I thought you were doing it" happens.
+     */
+    public function assignBuyer(int $requisitionId): void
+    {
+        $requisition = $this->scopedQuery()->findOrFail($requisitionId);
+
+        // Guarded against the requisition, not the page: the id came from the
+        // browser, and findOrFail proves the record exists, not that this
+        // person may touch it.
+        $this->authorizeAbility('requisitions.assign', $requisition);
+
+        abort_unless($requisition->canBeAssigned(), 403, __('This requisition is closed; it cannot be reassigned.'));
+
+        $buyerId = $this->reviewAssignedBuyerId !== '' ? (int) $this->reviewAssignedBuyerId : null;
+
+        if ($buyerId !== null && ! $this->eligibleBuyers($requisition)->contains('id', $buyerId)) {
+            $this->addError('reviewAssignedBuyerId', __('That person cannot raise a quotation round here.'));
+
+            return;
+        }
+
+        $previous = $requisition->assignedBuyer;
+
+        if ($previous?->id === $buyerId) {
+            return;
+        }
+
+        $buyer = $buyerId ? User::find($buyerId) : null;
+
+        $requisition->update([
+            'assigned_buyer_id' => $buyer?->id,
+            // A draft carries a suggestion, not a hand-off, so it is not
+            // stamped — the clock starts when the requisition is approved.
+            'assigned_at' => $buyer && $requisition->status !== 'draft' ? now() : null,
+        ]);
+
+        $requisition->recordAssignment(auth()->user(), $previous, $buyer);
+
+        // Only the new person is told, and only once the requisition is a real
+        // instruction. Taking it back off somebody mails nobody: the person
+        // who lost it finds out from the queue, not from a message telling
+        // them to stop.
+        if ($buyer) {
+            app(\App\Services\ProcurementNotifier::class)
+                ->requisitionAssigned($requisition->fresh(), auth()->user());
+        }
+
+        session()->flash('message', $buyer
+            ? __(':name is now quoting :number.', [
+                'name' => $buyer->name,
+                'number' => $requisition->requisition_number,
+            ])
+            : __(':number is now unassigned and waiting for a buyer.', [
+                'number' => $requisition->requisition_number,
+            ]));
+    }
+
+    /**
+     * Who this requisition may be handed to: whoever can actually raise the
+     * round on the location it belongs to.
+     *
+     * The same list the defaults panel offers, for the same reason — assigning
+     * work to somebody who will hit a 403 is a dead letter.
+     *
+     * Asked about a requisition it uses **that record's** location, not the
+     * page's: a job-site requisition opened from the project list must offer
+     * the site's own people too.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public function eligibleBuyers(?PurchaseRequisition $requisition = null): \Illuminate\Support\Collection
+    {
+        $scope = $requisition
+            ? ($requisition->jobSite ?? $requisition->project)
+            : $this->requisitionScope();
+
+        return app(\App\Services\BuyerDirectory::class)->for($scope);
+    }
+
+    /** The buyer this location falls to when nobody says otherwise. */
+    protected function resolvedDefaultBuyer(): ?User
+    {
+        return \App\Models\DefaultAssignment::resolve(
+            \App\Models\DefaultAssignment::QUOTATION_BUYER,
+            $this->contextJobSite(),
+            $this->contextProject(),
+        );
     }
 
     public function cancelRequisition(int $requisitionId): void

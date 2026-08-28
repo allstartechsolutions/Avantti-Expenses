@@ -1423,3 +1423,34 @@ screens open.
 are settled by what was built — the RFI links to `ChangeOrder`, and the budget flag is copied
 forward onto `budget_items`. FVS/FVM staying out of scope has still never been confirmed
 explicitly.
+
+---
+
+## Procurement assignment — parked during phases 1–3, 2026-08-28
+
+**`ProcurementNotifier` duplicates `TaskNotifier`'s send-and-dedupe mechanics.** Roughly sixty
+lines — the three pre-send checks, the write-before-send row, the try/catch that keeps a failed
+row rather than blocking the next attempt — exist twice, once against `task_notifications` and
+once against `notification_log`. This was deliberate: extracting a shared dispatcher today means
+editing the live task mail path, which is mailing real people, to save sixty lines. **Revisit
+when a third module wants the same thing** — at that point the shared version pays for the risk,
+and `notification_log`'s polymorphic shape is already the right target for all three.
+
+**`task_notifications` and `notification_log` are two tables for one idea.** Same columns but
+for the foreign key. If the dispatcher above is ever extracted, the honest follow-up is to move
+tasks onto `notification_log` and drop the old table — a data migration, so it needs its own
+decision rather than being smuggled in with a refactor.
+
+**`DefaultAssignment::resolve()` issues one `User::find()` per tier it walks.** At most three
+queries, usually one, and deliberately not cached with the row: the whole point of the walk is
+to skip somebody who has *just* been deactivated, and a cached user object is exactly what would
+defeat that. Worth revisiting only if a screen ever resolves defaults in a loop.
+
+**The assignment history row is identified by `old_status === new_status`.** It works, it needs
+no migration, and the history renders it correctly — but it is a convention rather than a
+column. If a second kind of non-status event ever needs recording on a requisition, add an
+`event` column instead of inventing a second convention.
+
+**Nothing consumes `assigned_at` yet.** It is written correctly by phases 2–3, but the stall
+reminder that reads it arrives in phase 5. Until then a requisition can sit assigned and
+untouched indefinitely with only the list column's day count to show for it.

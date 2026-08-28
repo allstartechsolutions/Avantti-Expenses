@@ -24,11 +24,13 @@ class JobSiteQuotations extends Component
     public $search = '';
     public $statusFilter = '';
     public $typeFilter = '';
+    public $assignmentFilter = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
         'typeFilter' => ['except' => ''],
+        'assignmentFilter' => ['except' => ''],
     ];
 
     public function mount(JobSite $jobSite)
@@ -69,18 +71,20 @@ class JobSiteQuotations extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->typeFilter = '';
+        $this->assignmentFilter = '';
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return $this->search !== '' || $this->statusFilter !== '' || $this->typeFilter !== '';
+        return $this->search !== '' || $this->statusFilter !== '' || $this->typeFilter !== ''
+            || $this->assignmentFilter !== '';
     }
 
     public function render()
     {
         $query = $this->scopedQuery()
-            ->with(['jobSite', 'createdBy', 'requisition', 'quotationVendors.items'])
+            ->with(['jobSite', 'createdBy', 'requisition', 'quotationVendors.items', 'assignedTo', 'assignees'])
             ->withCount('items');
 
         if ($this->search) {
@@ -110,6 +114,14 @@ class JobSiteQuotations extends Component
 
         if ($this->typeFilter) {
             $query->where('type', $this->typeFilter);
+        }
+
+        // "Mine" is the owner's and collaborator's own queue; "unassigned" is
+        // the bucket that stops a round quietly belonging to nobody.
+        if ($this->assignmentFilter === 'mine') {
+            $query->workedBy(auth()->id());
+        } elseif ($this->assignmentFilter === 'unassigned') {
+            $query->whereNull('assigned_to');
         }
 
         $quotations = $query->orderBy('created_at', 'desc')->paginate(15);

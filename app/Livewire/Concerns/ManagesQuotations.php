@@ -14,6 +14,7 @@ use App\Models\QuotationNegotiation;
 use App\Models\QuotationRfqEmail;
 use App\Models\Contract;
 use App\Models\PurchaseOrder;
+use App\Models\User;
 use App\Models\Vendor;
 use App\Services\BudgetService;
 use App\Services\QuotationComparisonService;
@@ -52,6 +53,20 @@ trait ManagesQuotations
 
     // Detail modal
     public $viewingQuotationId = null;
+
+    /**
+     * Who works the round: one owner, plus collaborators.
+     *
+     * `quo_assigned_to` is on the raise form — seeded from the requisition's
+     * buyer, so the hand-off carries forward rather than being re-decided.
+     * `roundOwnerId` and `roundCollaboratorId` drive the two controls on the
+     * detail view.
+     */
+    public $quo_assigned_to = '';
+
+    public $roundOwnerId = '';
+
+    public $roundCollaboratorId = '';
 
     // Comparison map
     public $comparingQuotationId = null;
@@ -131,6 +146,15 @@ trait ManagesQuotations
 
         $this->resetForm();
         $this->itemRows = [$this->blankItemRow()];
+
+        // A standalone round has no requisition to inherit a buyer from, so it
+        // falls back to the resolved default and then to the person raising it
+        // — somebody keying a round in is almost always the person who will
+        // work it.
+        $this->quo_assigned_to = (string) (
+            $this->resolvedDefaultBuyer()?->id ?? auth()->id() ?? ''
+        );
+
         $this->dispatch('open-modal', 'quotation-form-modal');
     }
 
@@ -152,6 +176,13 @@ trait ManagesQuotations
         $this->quo_description = $requisition->justification ?? '';
         $this->quo_needed_by = $requisition->needed_by?->format('Y-m-d') ?? '';
         $this->setBudgetItem($requisition->budget_item_id);
+
+        // Ownership carries onto the round: whoever was told to quote this
+        // requisition owns the round raised from it, unless somebody changes
+        // it here. That continuity is the point of the whole module.
+        $this->quo_assigned_to = (string) (
+            $requisition->assigned_buyer_id ?? $this->resolvedDefaultBuyer()?->id ?? auth()->id() ?? ''
+        );
 
         $this->itemRows = $requisition->items->map(fn ($item) => [
             'id' => null,
@@ -191,6 +222,7 @@ trait ManagesQuotations
         $this->quo_description = $quotation->description ?? '';
         $this->quo_needed_by = $quotation->needed_by?->format('Y-m-d') ?? '';
         $this->quo_responses_due_at = $quotation->responses_due_at?->format('Y-m-d') ?? '';
+        $this->quo_assigned_to = (string) ($quotation->assigned_to ?? '');
         $this->setBudgetItem($quotation->budget_item_id);
 
         $this->itemRows = $quotation->items->map(fn ($item) => [
@@ -244,6 +276,7 @@ trait ManagesQuotations
         $this->itemRows = [];
         $this->vendorRows = [];
         $this->quo_uploads = [];
+        $this->quo_assigned_to = '';
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -466,6 +499,7 @@ trait ManagesQuotations
             'quo_responses_due_at' => 'nullable|date',
             'quo_job_site_id' => 'nullable|exists:job_sites,id',
             'quo_requisition_id' => 'nullable|exists:purchase_requisitions,id',
+            'quo_assigned_to' => 'nullable|exists:users,id',
             'itemRows' => 'required|array|min:1',
             'itemRows.*.item_name' => 'nullable|string|max:255',
             'itemRows.*.description' => 'nullable|string',
@@ -481,6 +515,7 @@ trait ManagesQuotations
             'quo_responses_due_at' => __('response deadline'),
             'quo_job_site_id' => __('location'),
             'quo_requisition_id' => __('requisition'),
+            'quo_assigned_to' => __('owner'),
             'vendorRows.*.email' => __('vendor e-mail'),
             'quo_uploads.*' => __('file'),
         ]);
@@ -541,9 +576,33 @@ trait ManagesQuotations
             'budget_item_id' => $budgetItemId,
         ];
 
+        // Who owns the round. Only somebody who may assign gets to set it,
+        // otherwise the field is a way around the grant; without that grant a
+        // new round still gets an owner, from what the requisition carried.
+        $ownerId = null;
+        $mayAssign = $this->allowsAbility('quotations.assign', $this->quotationScope());
+
+        if ($mayAssign) {
+            $ownerId = $validated['quo_assigned_to'] ?: null;
+
+            $target = $jobSiteId
+                ? JobSite::where('project_id', $this->contextProject()->id)->find($jobSiteId)
+                : $this->contextProject();
+
+            if ($ownerId !== null
+                && ! app(\App\Services\BuyerDirectory::class)->for($target)->contains('id', (int) $ownerId)) {
+                $this->addError('quo_assigned_to', __('That person cannot work a quotation round here.'));
+
+                return;
+            }
+
+            $data['assigned_to'] = $ownerId ?: null;
+            $data['assigned_at'] = $ownerId ? now() : null;
+        }
+
         $user = auth()->user();
 
-        $quotation = DB::transaction(function () use ($data, $items, $vendors, $user) {
+        $quotation = DB::transaction(function () use ($data, $items, $vendors, $user, $requisitionId) {
             if ($this->editingQuotationId) {
                 $quotation = $this->scopedQuery()->findOrFail($this->editingQuotationId);
 
@@ -553,6 +612,20 @@ trait ManagesQuotations
                 $quotation->update($data);
             } else {
                 $previousRequisitionId = null;
+
+                // Ownership carries onto the round even when the person
+                // raising it may not assign: it comes from the requisition
+                // they were told to quote, which is not a decision they are
+                // making. A standalone round with nobody named falls to them.
+                if (! array_key_exists('assigned_to', $data)) {
+                    $inherited = $requisitionId
+                        ? PurchaseRequisition::whereKey($requisitionId)->value('assigned_buyer_id')
+                        : null;
+
+                    $data['assigned_to'] = $inherited ?: $user->id;
+                    $data['assigned_at'] = now();
+                }
+
                 $quotation = Quotation::createWithNumber($data + [
                     'project_id' => $this->contextProject()->id,
                     'status' => 'draft',
@@ -584,6 +657,12 @@ trait ManagesQuotations
                 'original_name' => $upload->getClientOriginalName(),
                 'uploaded_by' => $user->id,
             ]);
+        }
+
+        // Tell the owner, unless they are the person who just did it.
+        if ($quotation->assigned_to && $quotation->assigned_to !== $user->id) {
+            app(\App\Services\ProcurementNotifier::class)
+                ->quotationAssigned($quotation->fresh(), $user);
         }
 
         session()->flash('message', $this->editingQuotationId
@@ -750,10 +829,181 @@ trait ManagesQuotations
     {
         $this->authorizeAbility('quotations.view', $this->quotationScope());
 
-        $this->viewingQuotationId = $this->scopedQuery()->findOrFail($quotationId)->id;
+        $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->viewingQuotationId = $quotation->id;
         $this->sendMethod = 'email';
+        $this->roundOwnerId = (string) ($quotation->assigned_to ?? '');
+        $this->roundCollaboratorId = '';
         $this->resetErrorBag();
         $this->dispatch('open-modal', 'quotation-view-modal');
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | WHO WORKS THE ROUND
+    |---------------------------------------------------------------------------
+    | One owner, answerable for getting the prices in, plus collaborators for
+    | the same-scope more-hands case: one person collects, another negotiates.
+    |
+    | Two owners on one round is deliberately impossible. When the *scope*
+    | divides, the model already has the right answer — two rounds, one owner
+    | each, the steel to the steel merchants and the concrete to the plants.
+    */
+
+    /** Hand the round to somebody, or take it back off them. */
+    public function assignRound(int $quotationId): void
+    {
+        $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.assign', $quotation);
+
+        abort_unless($quotation->canBeAssigned(), 403, __('This round is closed; it cannot be reassigned.'));
+
+        $ownerId = $this->roundOwnerId !== '' ? (int) $this->roundOwnerId : null;
+
+        if ($ownerId !== null && ! $this->eligibleWorkers($quotation)->contains('id', $ownerId)) {
+            $this->addError('roundOwnerId', __('That person cannot work a quotation round here.'));
+
+            return;
+        }
+
+        $previous = $quotation->assignedTo;
+
+        if ($previous?->id === $ownerId) {
+            return;
+        }
+
+        $owner = $ownerId ? User::find($ownerId) : null;
+
+        $quotation->update([
+            'assigned_to' => $owner?->id,
+            'assigned_at' => $owner ? now() : null,
+        ]);
+
+        // The owner is an implicit collaborator, never both. A person promoted
+        // from collaborator to owner would otherwise be counted twice, and
+        // would be mailed twice by anything reading `workers()`.
+        if ($owner) {
+            $quotation->assignees()->detach($owner->id);
+        }
+
+        $quotation->recordAssignment(auth()->user(), $previous, $owner);
+
+        if ($owner && $owner->id !== auth()->id()) {
+            app(\App\Services\ProcurementNotifier::class)
+                ->quotationAssigned($quotation->fresh(), auth()->user());
+        }
+
+        session()->flash('message', $owner
+            ? __(':name now owns :number.', ['name' => $owner->name, 'number' => $quotation->quotation_number])
+            : __(':number has no owner and is waiting for one.', ['number' => $quotation->quotation_number]));
+    }
+
+    /** Put another pair of hands on the round. */
+    public function addCollaborator(int $quotationId): void
+    {
+        $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.assign', $quotation);
+
+        abort_unless($quotation->canBeAssigned(), 403, __('This round is closed; it cannot be reassigned.'));
+
+        $userId = $this->roundCollaboratorId !== '' ? (int) $this->roundCollaboratorId : null;
+
+        if ($userId === null) {
+            return;
+        }
+
+        if (! $this->eligibleWorkers($quotation)->contains('id', $userId)) {
+            $this->addError('roundCollaboratorId', __('That person cannot work a quotation round here.'));
+
+            return;
+        }
+
+        // The owner is already on it by definition; adding them again would
+        // put the same name on the screen twice.
+        if ($quotation->assigned_to === $userId) {
+            $this->addError('roundCollaboratorId', __('They already own this round.'));
+
+            return;
+        }
+
+        if ($quotation->assignees()->whereKey($userId)->exists()) {
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+
+        $quotation->assignees()->attach($userId, [
+            'assigned_by' => auth()->id(),
+            'assigned_at' => now(),
+        ]);
+
+        $quotation->recordCollaboratorChange(auth()->user(), $user, true);
+
+        if ($user->id !== auth()->id()) {
+            app(\App\Services\ProcurementNotifier::class)
+                ->quotationCollaboratorAdded($quotation->fresh(), $user, auth()->user());
+        }
+
+        $this->roundCollaboratorId = '';
+
+        session()->flash('message', __(':name was added to :number.', [
+            'name' => $user->name,
+            'number' => $quotation->quotation_number,
+        ]));
+    }
+
+    public function removeCollaborator(int $quotationId, int $userId): void
+    {
+        $quotation = $this->scopedQuery()->findOrFail($quotationId);
+
+        $this->authorizeAbility('quotations.assign', $quotation);
+
+        if (! $quotation->assignees()->whereKey($userId)->exists()) {
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+
+        $quotation->assignees()->detach($userId);
+
+        // Nobody is mailed about losing work: they find out from the queue,
+        // not from a message telling them to stop.
+        $quotation->recordCollaboratorChange(auth()->user(), $user, false);
+
+        session()->flash('message', __(':name was taken off :number.', [
+            'name' => $user->name,
+            'number' => $quotation->quotation_number,
+        ]));
+    }
+
+    /**
+     * Who this round may be given to: whoever can actually raise one here.
+     *
+     * The shared BuyerDirectory again, scoped to the round's own location
+     * rather than the page's.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public function eligibleWorkers(?Quotation $quotation = null): \Illuminate\Support\Collection
+    {
+        $scope = $quotation
+            ? ($quotation->jobSite ?? $quotation->project)
+            : $this->quotationScope();
+
+        return app(\App\Services\BuyerDirectory::class)->for($scope);
+    }
+
+    /** The buyer this location falls to when nobody says otherwise. */
+    protected function resolvedDefaultBuyer(): ?User
+    {
+        return \App\Models\DefaultAssignment::resolve(
+            \App\Models\DefaultAssignment::QUOTATION_BUYER,
+            $this->contextJobSite(),
+            $this->contextProject(),
+        );
     }
 
     public function closeViewModal(): void

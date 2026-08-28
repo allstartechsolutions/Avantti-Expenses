@@ -141,6 +141,28 @@
                                     <dt class="{{ $factLabel }}">{{ __('Created') }}</dt>
                                     <dd class="{{ $factValue }}">{{ $viewingRequisition->created_at?->format('M d, Y H:i') ?? '—' }}</dd>
                                 </div>
+                                <div class="col-span-2">
+                                    <dt class="{{ $factLabel }}">{{ __('Quoted By') }}</dt>
+                                    <dd class="{{ $factValue }}">
+                                        @if($viewingRequisition->assignedBuyer)
+                                            {{ $viewingRequisition->assignedBuyer->name }}
+                                            @if($viewingRequisition->assigned_at)
+                                                <span class="block text-xs text-slate-500 dark:text-slate-400">
+                                                    {{ __('Handed over :date', ['date' => $viewingRequisition->assigned_at->format('M d, Y H:i')]) }}
+                                                    @if($viewingRequisition->isAwaitingItsRound())
+                                                        &middot; {{ trans_choice(':count day waiting|:count days waiting', $viewingRequisition->daysSinceAssigned() ?? 0, ['count' => $viewingRequisition->daysSinceAssigned() ?? 0]) }}
+                                                    @endif
+                                                </span>
+                                            @else
+                                                <span class="block text-xs text-slate-500 dark:text-slate-400">
+                                                    {{ __('Suggested — it becomes a hand-off when the requisition is approved.') }}
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="text-amber-700 dark:text-amber-400">{{ __('Unassigned') }}</span>
+                                        @endif
+                                    </dd>
+                                </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Reviewed By') }}</dt>
                                     <dd class="{{ $factValue }}">{{ $viewingRequisition->reviewedBy?->name ?? '—' }}</dd>
@@ -268,9 +290,13 @@
                                             <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#3F5189] dark:bg-[#4A5A96]"></span>
                                             <div>
                                                 <p class="text-sm text-slate-900 dark:text-white">
-                                                    {{ $history->old_status
-                                                        ? __(':old to :new', ['old' => \App\Models\PurchaseRequisition::statusLabel($history->old_status), 'new' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)])
-                                                        : __('Created as :status', ['status' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)]) }}
+                                                    {{-- Equal statuses mark an assignment row rather than a
+                                                         status move; the two names are in the reason below. --}}
+                                                    {{ match (true) {
+                                                        $history->old_status === null => __('Created as :status', ['status' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)]),
+                                                        $history->old_status === $history->new_status => __('Assignment changed'),
+                                                        default => __(':old to :new', ['old' => \App\Models\PurchaseRequisition::statusLabel($history->old_status), 'new' => \App\Models\PurchaseRequisition::statusLabel($history->new_status)]),
+                                                    } }}
                                                 </p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
                                                     {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->format('M d, Y H:i') }}
@@ -287,11 +313,82 @@
                             @endif
                         </div>
 
+                        <!-- Who is quoting it — reassignment after approval -->
+                        @if($canAssign && $viewingRequisition->canBeAssigned() && ! $viewingRequisition->canBeReviewed())
+                            <div class="{{ $card }}">
+                                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ __('Who quotes it') }}</h3>
+
+                                @if($viewingRequisition->assignedBuyer)
+                                    <p class="text-sm text-slate-700 dark:text-slate-300 mb-3">
+                                        {{ __(':name is on this one.', ['name' => $viewingRequisition->assignedBuyer->name]) }}
+                                        @if($viewingRequisition->isAwaitingItsRound() && $viewingRequisition->assigned_at)
+                                            {{ trans_choice('It has been waiting :count day for a round.|It has been waiting :count days for a round.', $viewingRequisition->daysSinceAssigned() ?? 0, ['count' => $viewingRequisition->daysSinceAssigned() ?? 0]) }}
+                                        @endif
+                                    </p>
+                                @else
+                                    <p class="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                                        {{ __('Nobody has been asked to quote this yet, so it is sitting in the unassigned list.') }}
+                                    </p>
+                                @endif
+
+                                @if($eligibleBuyers->isEmpty())
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                                        {{ __('Nobody here can raise a quotation round yet. Add somebody to this team with the "Create" permission on Quotations.') }}
+                                    </p>
+                                @else
+                                    <label for="reassign-buyer" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Assigned to') }}</label>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                        <select
+                                            id="reassign-buyer"
+                                            wire:model="reviewAssignedBuyerId"
+                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                            <option value="">{{ __('Nobody yet — leave it in the unassigned list') }}</option>
+                                            @foreach($eligibleBuyers as $buyer)
+                                                <option value="{{ $buyer->id }}">{{ $buyer->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-ui.button variant="primary" icon="save" wire:click="assignBuyer({{ $viewingRequisition->id }})">
+                                            {{ __('Save') }}
+                                        </x-ui.button>
+                                    </div>
+                                    @error('reviewAssignedBuyerId') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ __('Changing this is recorded in the history below.') }}
+                                    </p>
+                                @endif
+                            </div>
+                        @endif
+
                         <!-- Review -->
                         @if($viewingRequisition->canBeReviewed())
                             <div class="{{ $card }}">
                                 <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{{ __('Approval') }}</h3>
                                 @if($canReview && ! $selfApproval)
+                                    @if($canAssign)
+                                        {{-- Approve and hand off in one act: the person approving is
+                                             the one who knows who buys steel this month. --}}
+                                        <label for="approve-buyer" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Who quotes it') }}</label>
+                                        @if($eligibleBuyers->isEmpty())
+                                            <p class="mb-3 text-sm text-amber-700 dark:text-amber-400">
+                                                {{ __('Nobody here can raise a quotation round yet, so this will be approved unassigned.') }}
+                                            </p>
+                                        @else
+                                            <select
+                                                id="approve-buyer"
+                                                wire:model="reviewAssignedBuyerId"
+                                                class="w-full mb-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                <option value="">{{ __('Nobody yet — leave it in the unassigned list') }}</option>
+                                                @foreach($eligibleBuyers as $buyer)
+                                                    <option value="{{ $buyer->id }}">{{ $buyer->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('reviewAssignedBuyerId') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                            <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                                                {{ __('They are told to start the cotação as soon as this is approved.') }}
+                                            </p>
+                                        @endif
+                                    @endif
+
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Review Notes') }}</label>
                                     <textarea
                                         wire:model="reviewNotes"

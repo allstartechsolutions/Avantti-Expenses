@@ -1,6 +1,7 @@
 {{--
     Quotation form — full page, shared by the project and job-site levels.
     Expects: $contextName, $showJobSitePicker, $jobSites, $catalogSuggestions,
+             $canAssign, $eligibleWorkers,
              $budgetItemSuggestions, $vendorSuggestions, $quotableRequisitions
 --}}
 @php
@@ -109,6 +110,32 @@
                             @error('quo_description') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>
                     </div>
+
+                    @if($canAssign)
+                        <div class="{{ $card }} space-y-4">
+                            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Who works it') }}</h3>
+
+                            @if($eligibleWorkers->isEmpty())
+                                <p class="text-sm text-slate-500 dark:text-slate-400">
+                                    {{ __('Nobody here can work a quotation round yet, so this will start unassigned.') }}
+                                </p>
+                            @else
+                                <div>
+                                    <label class="{{ $label }}">{{ __('Owner') }}</label>
+                                    <select wire:model="quo_assigned_to" class="{{ $field }}">
+                                        <option value="">{{ __('Nobody yet') }}</option>
+                                        @foreach($eligibleWorkers as $worker)
+                                            <option value="{{ $worker->id }}">{{ $worker->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ __('One person answerable for getting the prices in. Add more hands from the round itself once it exists.') }}
+                                    </p>
+                                    @error('quo_assigned_to') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="{{ $card }} space-y-3">
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Budget Item') }}</h3>
