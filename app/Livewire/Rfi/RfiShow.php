@@ -55,6 +55,9 @@ class RfiShow extends Component
      */
     public string $editingReplyReason = '';
 
+    /** Why the RFI is being withdrawn. Required by voidRfi(). */
+    public string $voidReason = '';
+
     /** Ball-in-court form. */
     public ?string $passToUserId = null;
 
@@ -119,6 +122,25 @@ class RfiShow extends Component
     {
         return $this->rfi->isClosed()
             && $this->allowsAbility('rfis.close', $this->scope());
+    }
+
+    /**
+     * Whether this person may withdraw it, and whether it may be destroyed.
+     *
+     * Two grants, because they are two different acts: voiding retires a
+     * record and keeps it, deleting removes it. Both are read by the view and
+     * neither is a substitute for the guards in the actions themselves.
+     */
+    public function getCanVoidProperty(): bool
+    {
+        return $this->rfi->canBeVoided()
+            && $this->allowsAbility('rfis.edit', $this->scope());
+    }
+
+    public function getCanDeleteProperty(): bool
+    {
+        return $this->rfi->canBeDeleted()
+            && $this->allowsAbility('rfis.delete', $this->scope());
     }
 
     public function getCanEditProperty(): bool
@@ -285,6 +307,70 @@ class RfiShow extends Component
         $this->rfi->refresh();
 
         session()->flash('rfi_message', __('collaboration.message.rfi_reopened'));
+    }
+
+    /**
+     * Withdraw the RFI without destroying it.
+     *
+     * A reason is required, for the same purpose as a rejection's: the people
+     * on the distribution list saw the question, and "it was withdrawn" with
+     * no explanation is the sort of gap somebody rings up about.
+     */
+    public function voidRfi(): void
+    {
+        $this->authorizeAbility('rfis.edit', $this->scope());
+
+        // The button is only rendered on a live RFI, but the wire:click behind
+        // it is a public endpoint.
+        if (! $this->rfi->canBeVoided()) {
+            throw ValidationException::withMessages([
+                'voidReason' => __('collaboration.help.rfi_already_void'),
+            ]);
+        }
+
+        $this->validate([
+            'voidReason' => ['required', 'string', 'min:3', 'max:1000'],
+        ], [], ['voidReason' => __('collaboration.field.void_reason')]);
+
+        $this->rfi->void(trim($this->voidReason));
+        $this->rfi->refresh();
+
+        $this->voidReason = '';
+
+        session()->flash('rfi_message', __('collaboration.message.rfi_voided'));
+    }
+
+    /**
+     * Destroy it outright.
+     *
+     * Only a draft nobody outside has seen, or one already voided — the model
+     * decides, and it takes its replies, files, distribution list and activity
+     * log with it. There is no undo, which is why it is a separate grant and
+     * asks for confirmation.
+     */
+    public function deleteRfi()
+    {
+        $this->authorizeAbility('rfis.delete', $this->scope());
+
+        abort_unless(
+            $this->rfi->canBeDeleted(),
+            403,
+            __('collaboration.help.rfi_only_draft_or_void_deleted'),
+        );
+
+        $project = $this->rfi->project_id;
+        $jobSite = $this->rfi->job_site_id;
+        $number = $this->rfi->number;
+
+        $this->rfi->delete();
+
+        session()->flash('message', __('collaboration.message.rfi_deleted', ['number' => $number]));
+
+        // There is no record left to stay on.
+        return $this->redirect(
+            $jobSite ? route('jobsites.rfis', $jobSite) : route('projects.rfis', $project),
+            navigate: true,
+        );
     }
 
     /** Hand the RFI to somebody, with the date they are expected by. */

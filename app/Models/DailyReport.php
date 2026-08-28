@@ -10,6 +10,22 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class DailyReport extends Model
 {
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Everything the day's report owns goes with it: its tasks, its
+        // manpower logs, its weather and its photographs. The images own their
+        // files, so they are deleted through Eloquent rather than in bulk.
+        static::deleting(function (self $report) {
+            $report->images->each->delete();
+            $report->tasks()->delete();
+            $report->manpowerLogs()->delete();
+            $report->weatherObservations()->delete();
+            $report->weather()->delete();
+        });
+    }
+
     protected $fillable = [
         'project_id',
         'job_site_id',
@@ -92,5 +108,21 @@ class DailyReport extends Model
     public function canBeEditedByAdmin(): bool
     {
         return $this->locked_at !== null;
+    }
+
+    /**
+     * Whether the report can be destroyed outright.
+     *
+     * A daily report is the site's record of what happened on a given day, so
+     * the bar is the lock rather than the age: once it is **locked** it has
+     * been signed off and read, and deleting it removes a day from the
+     * project's history. An unlocked one is still the author's working copy.
+     *
+     * `daily-reports.delete` has been in the catalogue since the module's
+     * permission pass and enforced nothing until now.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->locked_at === null;
     }
 }

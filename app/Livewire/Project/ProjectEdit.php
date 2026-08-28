@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Enums\ProjectStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\UserStatus;
 use App\Models\Client;
 use App\Models\Project;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class ProjectEdit extends Component
 {
+    use AuthorizesAbility;
+
     public Project $project;
     public $client_id = '';
     public $clientSearch = '';
@@ -127,6 +130,18 @@ class ProjectEdit extends Component
     public function updateProject()
     {
         $this->validate();
+
+        // Closing a project down is a different act from editing its address,
+        // and the catalogue has always said so — `project.archive`, "Archive or
+        // close", which enforced nothing until now. Only the *move into* a
+        // closed status is guarded: re-saving an already-closed project does
+        // not ask again, or nobody could correct a typo on one.
+        $becomingClosed = ProjectStatus::tryFrom($this->status)?->closesTheProject()
+            && ! $this->project->status->closesTheProject();
+
+        if ($becomingClosed) {
+            $this->authorizeAbility('project.archive', $this->project);
+        }
 
         $data = [
             'client_id' => $this->client_id,

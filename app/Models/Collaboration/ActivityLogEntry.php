@@ -43,6 +43,7 @@ class ActivityLogEntry extends Model
     public const DISTRIBUTED = 'distributed';
     public const SIGNED = 'signed';
     public const EXPORTED = 'exported';
+    public const VOIDED = 'voided';
 
     public function subject(): MorphTo
     {
@@ -78,6 +79,7 @@ class ActivityLogEntry extends Model
             self::DISTRIBUTED => __('collaboration.activity.distributed'),
             self::SIGNED => __('collaboration.activity.signed'),
             self::EXPORTED => __('collaboration.activity.exported'),
+            self::VOIDED => __('collaboration.activity.voided'),
             default => (string) $action,
         };
     }

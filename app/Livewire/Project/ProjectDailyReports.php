@@ -23,6 +23,40 @@ class ProjectDailyReports extends Component
         $this->project = $project;
     }
 
+    /**
+     * Destroy a daily report.
+     *
+     * Guarded against the report itself, not the page: the id came from the
+     * browser, and belonging to this project is something to check rather than
+     * assume. Only an unlocked one — a locked report has been signed off and
+     * read, and deleting it removes a day from the project's history.
+     */
+    public function deleteDailyReport(int $reportId): void
+    {
+        $report = $this->project->dailyReports()->findOrFail($reportId);
+
+        $this->authorizeAbility('daily-reports.delete', $report->jobSite ?? $this->project);
+
+        abort_unless(
+            $report->canBeDeleted(),
+            403,
+            __('This daily report has been locked. It is the record of that day and cannot be deleted.'),
+        );
+
+        $date = $report->report_date?->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y');
+
+        $report->delete();
+
+        session()->flash('message', __('The daily report for :date was deleted.', ['date' => $date]));
+    }
+
+    /** Read by the view before it renders the button. Never the guard itself. */
+    public function canDelete(\App\Models\DailyReport $report): bool
+    {
+        return $report->canBeDeleted()
+            && $this->allowsAbility('daily-reports.delete', $report->jobSite ?? $this->project);
+    }
+
     public function render()
     {
         $jobSites = $this->project->jobSites()->orderBy('job_site_name')->get();

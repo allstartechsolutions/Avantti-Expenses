@@ -21,6 +21,10 @@ abstract class TestCase extends BaseTestCase
      * empty array. `rfis` flipped at the end of phase 4 of
      * docs/RFI-Submittals-modules.md and `approvals` at the end of phase 5.
      *
+     * It is empty again: `assignment-defaults` flipped once the screens that
+     * consume it were built and guarded, so the assertions are once more
+     * proving that the whole catalogue is enforced. The constant stays for the
+     * next module built this way.
      * `assignment-defaults` is here from phase 1 of
      * docs/procurement-assignment-plan.md: the panels are guarded and the
      * defaults resolve, but the requisition and quotation screens that consume

@@ -1454,3 +1454,43 @@ column. If a second kind of non-status event ever needs recording on a requisiti
 **Nothing consumes `assigned_at` yet.** It is written correctly by phases 2–3, but the stall
 reminder that reads it arrives in phase 5. Until then a requisition can sit assigned and
 untouched indefinitely with only the list column's day count to show for it.
+
+---
+
+## Grants that enforced nothing — found and closed, 2026-08-28
+
+**Seven abilities were declared in the catalogue and enforced nowhere.** Each showed as a real
+permission on the access screens, could be granted to somebody, and changed no behaviour at
+all when it was. They survived a full permissions sweep described as complete because `swept`
+tracks whole **areas** and nothing had ever checked an individual **action**.
+
+| Ability | What it now does |
+|---|---|
+| `reports.export` | Guards `exportCsv()` on all six reports, and hides the button. Reading a figure on screen and walking out with the file are two acts. |
+| `purchase-orders.delete` | Destroys a draft, or a cancelled order with no expense behind it. |
+| `daily-reports.delete` | Destroys an **unlocked** report; a locked one is the record of that day. |
+| `approvals.delete` | Destroys a draft or a void approval. |
+| `approvals.manage_packages` | Submittal packages: create, assign an approval, close and reopen. The table and `approvals.package_id` shipped with the module and nothing had ever used them. |
+| `project.archive` | Guards moving a project into a closed status (completed or cancelled). |
+| `projects.archive` | **Removed** — a duplicate declaration of the act above. Two declarations of one act guarantee one of them does nothing. |
+
+**The systemic fix is `AbilityCatalogTest::test_every_declared_ability_is_enforced_somewhere`.**
+It fails when a declared ability appears nowhere in `app/`, `routes/` or a view. Seeder and
+test mentions deliberately do not count — those describe who *has* a grant, not what it stops.
+Six abilities built from `areaKey()` are exempted by name, and a second test pins that
+exemption list shut so a name cannot be dropped in to silence a real finding.
+
+**A tightening worth knowing about**: `reports.export` is admin-only by seed. Anyone who had
+been granted a specific report without it can still read the report and can no longer export
+it. That is what the catalogue always promised and what nobody was enforcing.
+
+**Two smaller things fixed while in there.** `Approval` and `DailyReport` had no `deleting`
+hook, so deleting either would have orphaned files (R2 objects Cloudflare goes on billing
+for), distribution entries and activity log rows. Both now clean up after themselves, and
+both — like `Rfi` — delete their cascading children **explicitly**, because MySQL enforces
+those cascades in production and SQLite does not under test, which makes the two environments
+disagree about what a delete does.
+
+**Still unchecked, and worth a pass of its own:** the reverse gap. `RfiFormTest` and
+`ApprovalFormTest` each pin that every public action method guards itself; no other module
+has that test. An unguarded `wire:click` would not be caught anywhere else.

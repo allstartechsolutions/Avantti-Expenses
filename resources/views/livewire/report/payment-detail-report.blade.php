@@ -23,9 +23,11 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Every payment individually — expense installments by due date, contract payments, and open contract balances.') }}</p>
         </div>
         <div class="flex items-center gap-2">
+            @can('reports.export')
             <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">
                 {{ __('Export CSV') }}
             </x-ui.button>
+            @endcan
             {{-- PDF links build their URL at click time from the address bar, which
                  Livewire keeps in sync with the active filters. --}}
             <x-ui.button variant="secondary" href="{{ route('reports.payment-details.pdf.view') }}" icon="eye"

@@ -119,6 +119,53 @@ class Rfi extends Model
 
     protected static function booted(): void
     {
+        /*
+         * Deleting an RFI has to take its debris with it.
+         *
+         * Three of the four children hang off polymorphic columns with no
+         * foreign key, so nothing cleans them up: the distribution list, the
+         * activity log, and — the expensive one — the uploaded files, whose R2
+         * objects Cloudflare goes on billing long after the row is gone.
+         *
+         * The replies DO have a cascading foreign key, and are still deleted
+         * here on purpose: a database-level cascade is enforced by MySQL in
+         * production and not by SQLite under test, so leaving it to the schema
+         * means the two environments quietly disagree about what a delete
+         * does. Doing it in one place makes them agree.
+         *
+         * A file that has also been filed into the project repository is left
+         * on R2 deliberately: the Document that points at it is a record of its
+         * own and must not be broken by tidying up an RFI.
+         */
+        static::deleting(function (self $rfi) {
+            $storage = app(\App\Services\DocumentStorageService::class);
+
+            foreach ($rfi->files as $file) {
+                if ($file->document_id === null) {
+                    try {
+                        $storage->deleteObject($file);
+                    } catch (\Throwable $e) {
+                        // A bucket that is unreachable must not strand the
+                        // record on screen; the object becomes prunable
+                        // debris, which is the lesser problem.
+                        \Illuminate\Support\Facades\Log::warning('RFI file could not be removed from storage', [
+                            'rfi' => $rfi->id, 'file' => $file->id, 'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                $file->forceDelete();
+            }
+
+            // Before the replies: the RFI points at one of them as the
+            // answer, and that reference has to go first.
+            $rfi->forceFill(['valid_reply_id' => null])->saveQuietly();
+
+            $rfi->replies()->delete();
+            $rfi->distribution()->delete();
+            $rfi->activity()->delete();
+        });
+
         static::saving(function (self $rfi) {
             if (! $rfi->exists) {
                 return;
@@ -505,6 +552,59 @@ class Rfi extends Model
         $this->fill(['status' => self::ANSWERED])->save();
 
         $this->logActivity(ActivityLogEntry::REOPENED);
+    }
+
+    /**
+     * Withdraw the RFI without destroying it.
+     *
+     * The `void` status has existed since the module was built and nothing
+     * could reach it. This is what reaches it: an RFI that has been sent to an
+     * outside projetista is a record — it keeps its number, its question, its
+     * replies and its distribution history, and simply stops being live.
+     *
+     * The ball is dropped at the same time: a voided RFI is nobody's turn.
+     */
+    public function void(string $reason): void
+    {
+        $this->fill([
+            'status' => self::VOID,
+            'ball_in_court_id' => null,
+        ])->save();
+
+        $this->logActivity(ActivityLogEntry::VOIDED, ['reason' => $reason]);
+    }
+
+    public function isVoid(): bool
+    {
+        return $this->status === self::VOID;
+    }
+
+    /**
+     * Whether it can be voided: anything still alive.
+     *
+     * A closed RFI can be voided too — closing says "answered", voiding says
+     * "this should never have been asked", and the second is sometimes the
+     * truth after the fact.
+     */
+    public function canBeVoided(): bool
+    {
+        return ! $this->isVoid();
+    }
+
+    /**
+     * Whether it can be destroyed outright.
+     *
+     * Only a record nobody outside has seen: a **draft**, which was never sent
+     * anywhere, or one already **voided**, where the decision to let it go has
+     * been taken and recorded once already. Everything else is somebody else's
+     * evidence, and the honest way to retire it is to void it.
+     *
+     * The same rule requisitions use, in the same words: delete is for records
+     * that never became real.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->isDraft() || $this->isVoid();
     }
 
     /**

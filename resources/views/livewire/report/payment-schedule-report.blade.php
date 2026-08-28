@@ -11,9 +11,11 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Everything the company owes and has paid — expenses by due date with monthly projections, plus contract balances — across the whole system or filtered by client, project, or job site.') }}</p>
         </div>
         <div class="flex items-center gap-2">
+            @can('reports.export')
             <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">
                 {{ __('Export CSV') }}
             </x-ui.button>
+            @endcan
             {{-- PDF links build their URL at click time from the address bar, which
                  Livewire keeps in sync with the active filters — so the export always
                  matches what is on screen. --}}

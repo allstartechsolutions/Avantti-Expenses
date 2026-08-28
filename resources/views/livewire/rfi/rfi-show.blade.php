@@ -76,6 +76,21 @@
                     <x-ui.button variant="secondary" size="sm" wire:click="reopen">{{ __('Reopen') }}</x-ui.button>
                 @endif
 
+                {{-- Withdrawing keeps the record; deleting removes it, and is
+                     offered only where there is nothing outside to preserve. --}}
+                @if($this->canVoid)
+                    <x-ui.button variant="warning" size="sm" x-on:click="$dispatch('open-modal', 'rfi-void')">
+                        {{ __('collaboration.label.void_rfi') }}
+                    </x-ui.button>
+                @endif
+
+                @if($this->canDelete)
+                    <x-ui.button variant="danger" size="sm" icon="trash" wire:click="deleteRfi"
+                        wire:confirm="{{ __('collaboration.help.delete_rfi_permanently') }}">
+                        {{ __('Delete') }}
+                    </x-ui.button>
+                @endif
+
                 @if($this->canExport)
                     <x-ui.button variant="secondary" size="sm" :href="route('rfis.pdf.download', $rfi)">
                         {{ __('PDF') }}
@@ -395,6 +410,28 @@
     @endif
 
     @if($this->canEdit)
+        <x-ui.modal name="rfi-void" maxWidth="lg">
+            <form wire:submit="voidRfi" class="p-6">
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('collaboration.label.void_rfi') }}</h2>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {{ __('collaboration.prompt.void_keeps_the_record') }}
+                </p>
+
+                <label class="block mt-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {{ __('collaboration.field.void_reason') }}
+                </label>
+                <textarea wire:model="voidReason" rows="3"
+                    placeholder="{{ __('collaboration.prompt.void_reason_placeholder') }}"
+                    class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"></textarea>
+                @error('voidReason') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+
+                <div class="mt-5 flex justify-end gap-2">
+                    <x-ui.button variant="secondary" type="button" x-on:click="$dispatch('close-modal', 'rfi-void')">{{ __('Cancel') }}</x-ui.button>
+                    <x-ui.button variant="warning" type="submit">{{ __('collaboration.label.void_rfi') }}</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+
         <x-ui.modal name="rfi-ball" maxWidth="lg">
             <form wire:submit="passBall" class="p-6">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('collaboration.label.ball_court') }}</h2>

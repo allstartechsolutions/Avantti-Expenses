@@ -5,6 +5,7 @@ namespace App\Livewire\Approval;
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\SignsAndDistributes;
 use App\Models\Approval;
+use App\Models\ApprovalPackage;
 use App\Models\Collaboration\ResponseCode;
 use App\Models\FileUpload;
 use App\Models\JobSite;
@@ -40,6 +41,12 @@ class ApprovalShow extends Component
 
     public string $responseComments = '';
 
+    /** Which package this approval belongs to, on the package panel. */
+    public string $packageId = '';
+
+    /** The title for a package being started from this screen. */
+    public string $newPackageTitle = '';
+
     public function mount(Approval $approval): void
     {
         $this->authorizeAbility('approvals.view', $approval);
@@ -49,6 +56,8 @@ class ApprovalShow extends Component
         $approval->logView();
 
         $this->resetReviewerRows();
+
+        $this->packageId = (string) ($approval->package_id ?? '');
     }
 
     protected function scope(): Project|JobSite
@@ -98,6 +107,19 @@ class ApprovalShow extends Component
         return $revision !== null
             && $revision->load('reviewers')->isWaitingOn(auth()->user())
             && $this->allowsAbility('approvals.respond', $this->scope());
+    }
+
+    /** Read by the view before it renders the package panel. */
+    public function getCanManagePackagesProperty(): bool
+    {
+        return $this->allowsAbility('approvals.manage_packages', $this->scope());
+    }
+
+    /** Read by the view before it renders the button. Never the guard itself. */
+    public function getCanDeleteProperty(): bool
+    {
+        return $this->approval->canBeDeleted()
+            && $this->allowsAbility('approvals.delete', $this->scope());
     }
 
     public function getCanEditProperty(): bool
@@ -229,6 +251,138 @@ class ApprovalShow extends Component
      * first, walking the ids from a page you are legitimately on fetches any
      * file in the system.
      */
+    /**
+     * Destroy the approval outright.
+     *
+     * Only a draft or a void one — the model decides, and it takes its
+     * revisions, files, distribution list and activity log with it. There is
+     * no undo, which is why it is a grant of its own and the button confirms.
+     */
+    public function deleteApproval()
+    {
+        $this->authorizeAbility('approvals.delete', $this->scope());
+
+        abort_unless(
+            $this->approval->canBeDeleted(),
+            403,
+            __('collaboration.help.approval_only_draft_or_void_deleted'),
+        );
+
+        $project = $this->approval->project_id;
+        $jobSite = $this->approval->job_site_id;
+        $number = $this->approval->number;
+
+        $this->approval->delete();
+
+        session()->flash('message', __('collaboration.message.approval_deleted', ['number' => $number]));
+
+        return $this->redirect(
+            $jobSite ? route('jobsites.approvals', $jobSite) : route('projects.approvals', $project),
+            navigate: true,
+        );
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | SUBMITTAL PACKAGES
+    |---------------------------------------------------------------------------
+    | Several approvals submitted to the architect as one bundle — the US
+    | submittal package. The table and the `package_id` column shipped with the
+    | collaboration module and nothing ever used them, which is why
+    | `approvals.manage_packages` was a grant that did nothing.
+    */
+
+    /** Put this approval into a package, or take it out of one. */
+    public function setPackage(): void
+    {
+        $this->authorizeAbility('approvals.manage_packages', $this->scope());
+
+        $packageId = $this->packageId !== '' ? (int) $this->packageId : null;
+
+        // Never an id from the browser without checking whose project it is:
+        // a package belongs to one job, and an approval cannot join another's.
+        if ($packageId !== null
+            && ! ApprovalPackage::where('project_id', $this->approval->project_id)
+                ->whereKey($packageId)->exists()) {
+            $this->addError('packageId', __('collaboration.help.package_not_on_this_project'));
+
+            return;
+        }
+
+        $this->approval->forceFill(['package_id' => $packageId])->save();
+        $this->approval->refresh();
+
+        session()->flash('rfi_message', $packageId
+            ? __('collaboration.message.approval_added_to_package', [
+                'package' => $this->approval->package?->number,
+            ])
+            : __('collaboration.message.approval_removed_from_package'));
+    }
+
+    /** Start a new package on this project and put this approval in it. */
+    public function createPackage(): void
+    {
+        $this->authorizeAbility('approvals.manage_packages', $this->scope());
+
+        $this->validate([
+            'newPackageTitle' => ['required', 'string', 'min:3', 'max:255'],
+        ], [], ['newPackageTitle' => __('collaboration.field.package_title')]);
+
+        $package = ApprovalPackage::createWithNumber([
+            'project_id' => $this->approval->project_id,
+            'title' => trim($this->newPackageTitle),
+            'status' => ApprovalPackage::OPEN,
+            'created_by_id' => auth()->id(),
+        ]);
+
+        $this->approval->forceFill(['package_id' => $package->id])->save();
+        $this->approval->refresh();
+
+        $this->newPackageTitle = '';
+        $this->packageId = (string) $package->id;
+
+        session()->flash('rfi_message', __('collaboration.message.package_created', [
+            'number' => $package->number,
+        ]));
+    }
+
+    /**
+     * Close a package, or reopen it.
+     *
+     * Closing says the bundle has gone to the architect and nothing more
+     * should be added; it does not touch the approvals inside, which each keep
+     * their own status.
+     */
+    public function togglePackageStatus(): void
+    {
+        $this->authorizeAbility('approvals.manage_packages', $this->scope());
+
+        $package = $this->approval->package;
+
+        if (! $package) {
+            return;
+        }
+
+        $package->update([
+            'status' => $package->isOpen() ? ApprovalPackage::CLOSED : ApprovalPackage::OPEN,
+        ]);
+
+        $this->approval->refresh();
+
+        session()->flash('rfi_message', $package->isOpen()
+            ? __('collaboration.message.package_reopened', ['number' => $package->number])
+            : __('collaboration.message.package_closed', ['number' => $package->number]));
+    }
+
+    /** The packages on this project, for the picker. */
+    public function availablePackages(): \Illuminate\Support\Collection
+    {
+        return ApprovalPackage::where('project_id', $this->approval->project_id)
+            ->withCount('approvals')
+            ->orderByDesc('id')
+            ->get();
+    }
+
     public function downloadFile(int $fileId, FileUploadService $files)
     {
         $this->authorizeAbility('approvals.view', $this->scope());

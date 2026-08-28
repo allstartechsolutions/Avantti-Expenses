@@ -200,6 +200,44 @@ class PurchaseOrderShow extends Component
     }
 
     /**
+     * Destroy the order outright.
+     *
+     * `purchase-orders.delete` has been in the catalogue since the module's
+     * permission pass and enforced nothing until now — it showed as a real
+     * grant on the access screens and did nothing when handed out.
+     *
+     * Only a draft or a cancelled order with no expense behind it: the model
+     * decides, and it takes the items, the status history and the attachments
+     * with it. There is no undo, so the button confirms.
+     */
+    public function deletePurchaseOrder()
+    {
+        $this->authorizeAbility('purchase-orders.delete', $this->purchaseOrder);
+
+        abort_unless(
+            $this->purchaseOrder->canBeDeleted(),
+            403,
+            __('Only a draft or a cancelled purchase order with no expense against it can be deleted.'),
+        );
+
+        $project = $this->purchaseOrder->project_id;
+        $number = $this->purchaseOrder->po_number;
+
+        $this->purchaseOrder->delete();
+
+        session()->flash('message', __('Purchase order :number was deleted.', ['number' => $number]));
+
+        return $this->redirect(route('projects.purchase-orders', $project), navigate: true);
+    }
+
+    /** Read by the view before it renders the button. Never the guard itself. */
+    public function getCanDeleteProperty(): bool
+    {
+        return $this->purchaseOrder->canBeDeleted()
+            && $this->allowsAbility('purchase-orders.delete', $this->purchaseOrder);
+    }
+
+    /**
      * Revise and resubmit a rejected PO
      */
     public function reviseAndResubmit()

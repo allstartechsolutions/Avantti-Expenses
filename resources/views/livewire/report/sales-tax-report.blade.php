@@ -13,9 +13,11 @@
                 </p>
             </div>
             <div>
+                @can('reports.export')
                 <x-ui.button variant="secondary" wire:click="exportCsv" icon="download">
                     {{ __('Export CSV') }}
                 </x-ui.button>
+                @endcan
             </div>
         </div>
     </div>

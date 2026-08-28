@@ -223,6 +223,8 @@ unknown key as on, so these send from the moment they deploy.
 | `requisition_submitted` | Submitted for approval — either from "Save and submit" or the button on a draft | The **named approver** for that location, or everybody holding `requisitions.approve` there when nobody is named | Once per submission; returning it to draft and sending it again asks again |
 | `requisition_awaiting_approval` | Submitted **N days ago** and still undecided | The same people the submission notice went to | Every N days, capped |
 | `requisition_decided` | Approved or rejected | Whoever asked for it — the named requester, else whoever keyed it in | Once per decision |
+| `requisition_cancelled` | Cancelled at any stage | Whoever asked for it **and** whoever was quoting it | Once |
+| `quotation_cancelled` | A round is cancelled | The owner and collaborators | Once |
 | `requisition_assigned` | Approved **and** assigned — either order. Never on a draft assignment. | The buyer | Once per assignment |
 | `requisition_stalled` | Approved, assigned, **no round raised** after N days | The buyer, cc the approver | Every N days, capped |
 | `quotation_assigned` | Round raised or reassigned; collaborator added | Owner, or just the person added | Once per assignment |
@@ -286,6 +288,20 @@ Two details worth keeping:
 - **Who gets asked lives in one place.** `whoDecidesOn()` is shared by the submission notice
   and the chase, so the two can never disagree about who is on the hook — including the N2
   rule that drops an approver who is named as the requester unless they hold `approve_own`.
+
+### Cancelling tells the people whose work stops
+
+Pulling a requisition or a round changed a status on a screen nobody was looking at. The
+buyer went on collecting prices for something nobody wanted, and the person who asked never
+found out it was off.
+
+The requisition's notice goes to **both** of them and says something different to each: one
+has work to stop, the other has a decision to make about raising a new one.
+
+The round's notice matters for a reason outside the system entirely. **The vendors were
+invited by e-mail and nothing will tell them it is cancelled** — so the mail lists who they
+were and says plainly that letting them know is now a phone call. That is the one thing an
+in-app status change cannot do.
 
 Options on the settings screen:
 

@@ -126,6 +126,41 @@ class Approval extends Model
         return $this->belongsTo(JobSite::class);
     }
 
+    protected static function booted(): void
+    {
+        /*
+         * The same debris an RFI leaves: revisions cascade, but the files, the
+         * distribution list and the activity log hang off polymorphic columns
+         * with no foreign key. The R2 objects are the expensive part — a file
+         * already filed into the project repository is left alone, because the
+         * Document pointing at it is a record of its own.
+         */
+        static::deleting(function (self $approval) {
+            $storage = app(\App\Services\DocumentStorageService::class);
+
+            foreach ($approval->files as $file) {
+                if ($file->document_id === null) {
+                    try {
+                        $storage->deleteObject($file);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Approval file could not be removed from storage', [
+                            'approval' => $approval->id, 'file' => $file->id, 'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                $file->forceDelete();
+            }
+
+            // Explicit rather than left to the schema: MySQL enforces those
+            // cascades in production and SQLite does not under test, so the two
+            // would disagree about what a delete does.
+            $approval->revisions()->delete();
+            $approval->distribution()->delete();
+            $approval->activity()->delete();
+        });
+    }
+
     public function revisions(): HasMany
     {
         return $this->hasMany(ApprovalRevision::class)->orderBy('id');
@@ -447,6 +482,23 @@ class Approval extends Model
     | State
     |---------------------------------------------------------------------------
     */
+
+    /**
+     * Whether it can be destroyed outright.
+     *
+     * The rule this codebase now uses in four places, in the same words:
+     * delete is for records that never became real. A **draft** has been
+     * submitted to nobody; a **void** one has had the decision to let it go
+     * taken and recorded once already. An approval that went to a projetista
+     * and came back is their evidence as much as ours.
+     *
+     * `approvals.delete` has been in the catalogue since the collaboration
+     * module and enforced nothing until now.
+     */
+    public function canBeDeleted(): bool
+    {
+        return in_array($this->status, [self::DRAFT, self::VOID], true);
+    }
 
     public function isDraft(): bool
     {

@@ -183,4 +183,102 @@ class AbilityCatalogTest extends TestCase
             AbilityCatalog::flush();
         }
     }
+
+    /*
+    |---------------------------------------------------------------------------
+    | Every declared ability actually does something
+    |---------------------------------------------------------------------------
+    */
+
+    /**
+     * A grant that enforces nothing is a lie told by the permission matrix.
+     *
+     * `swept` tracks whole areas, and nothing has ever checked an individual
+     * action — which is how six abilities came to sit in the catalogue,
+     * showing as enforced, doing nothing at all: somebody could hand one out
+     * and change no behaviour whatsoever.
+     *
+     * "Enforced" means the ability string appears somewhere that can refuse a
+     * request: `app/`, `routes/`, or a view. A seeder handing it out and a test
+     * asserting who holds it do NOT count — those describe who has it, not what
+     * it stops.
+     *
+     * When this fails, the fix is to guard the action or to remove the
+     * declaration. Adding a name to the allow-list below is the third option
+     * and needs a reason written beside it.
+     */
+    public function test_every_declared_ability_is_enforced_somewhere(): void
+    {
+        /*
+         * Built from a variable rather than written out, so a literal search
+         * cannot see them. Each is enforced in
+         * App\Livewire\Concerns\SignsAndDistributes via
+         * `$this->areaKey().'.<action>'`, where areaKey() returns 'rfis' on
+         * RfiShow and 'approvals' on ApprovalShow.
+         */
+        $builtDynamically = [
+            'rfis.answer', 'rfis.distribute', 'rfis.export',
+            'approvals.respond', 'approvals.distribute', 'approvals.export',
+        ];
+
+        $source = '';
+
+        foreach (['app', 'routes', 'resources/views'] as $dir) {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(base_path($dir))) as $file) {
+                if ($file->isFile() && str_ends_with($file->getFilename(), '.php')) {
+                    $source .= file_get_contents($file->getPathname())."\n";
+                }
+            }
+        }
+
+        $unenforced = [];
+
+        foreach (AbilityCatalog::abilities() as $ability) {
+            if (in_array($ability, $builtDynamically, true)) {
+                continue;
+            }
+
+            if (! str_contains($source, $ability)) {
+                $unenforced[] = $ability;
+            }
+        }
+
+        sort($unenforced);
+
+        $this->assertSame(
+            [],
+            $unenforced,
+            "These abilities are declared in the catalogue and enforced nowhere. Each one shows as a real "
+            ."permission on the access screens and does nothing when granted. Guard the action, or remove "
+            ."the declaration:\n  - ".implode("\n  - ", $unenforced),
+        );
+    }
+
+    /**
+     * The dynamic list above is a hole in the check, so it is pinned shut.
+     *
+     * Every entry has to be genuinely built from `areaKey()`; without this a
+     * name dropped into that array would silence a real finding.
+     */
+    public function test_the_dynamic_ability_exemptions_are_really_built_that_way(): void
+    {
+        $concern = str_replace(["\n", ' '], '', file_get_contents(
+            app_path('Livewire/Concerns/SignsAndDistributes.php')
+        ));
+
+        // `distribute` and `export` are the same word on both documents, so
+        // they are appended straight to the area key.
+        foreach (['distribute', 'export'] as $action) {
+            $this->assertStringContainsString(
+                "areaKey().'.".$action."'",
+                $concern,
+                "The exemption for `{$action}` claims it is built from areaKey(); it is not.",
+            );
+        }
+
+        // An RFI is *answered* and an approval is *responded to*, so those two
+        // are chosen by a ternary on the same key.
+        $this->assertStringContainsString("areaKey().'.'.(", $concern);
+        $this->assertStringContainsString("'answer':'respond'", $concern);
+    }
 }

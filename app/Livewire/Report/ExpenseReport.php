@@ -140,6 +140,12 @@ class ExpenseReport extends Component
      */
     public function exportCsv(): StreamedResponse
     {
+        // Reading a figure on screen and walking out with the file are two
+        // different acts: the view grant answers the first, this one the
+        // second. Declared in the catalogue from the start; nothing
+        // enforced it until now.
+        $this->authorizeAbility('reports.export');
+
         $service = $this->service();
 
         [$headers, $rows, $totals] = match ($this->view) {

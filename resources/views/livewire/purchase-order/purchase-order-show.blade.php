@@ -458,6 +458,25 @@
                             {{ __('This purchase order has been cancelled.') }}
                         </div>
                     @endif
+
+                    {{-- Destroying it outright. Offered only where there is
+                         nothing to preserve: a draft nobody sent, or a
+                         cancelled order with no expense behind it. --}}
+                    @if($this->canDelete)
+                        <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
+                            <x-ui.button
+                                variant="danger"
+                                class="w-full justify-center"
+                                wire:click="deletePurchaseOrder"
+                                wire:confirm="{{ __('Delete this purchase order for good? Its items, history and attachments go with it. This cannot be undone.') }}"
+                                icon="trash">
+                                {{ __('Delete PO') }}
+                            </x-ui.button>
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
+                                {{ __('Nothing was ordered against it, so there is no record to keep.') }}
+                            </p>
+                        </div>
+                    @endif
                 </div>
             </div>
 

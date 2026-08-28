@@ -32,6 +32,12 @@ class NotificationLogEntry extends Model
     /** The buyer was handed an approved requisition to quote. */
     public const REQUISITION_ASSIGNED = 'requisition_assigned';
 
+    /** Cancelled — the work stops, and the people doing it are told. */
+    public const REQUISITION_CANCELLED = 'requisition_cancelled';
+
+    /** A round was pulled; stop chasing vendors for it. */
+    public const QUOTATION_CANCELLED = 'quotation_cancelled';
+
     /** Approved, assigned, and still no round after N days. */
     public const REQUISITION_STALLED = 'requisition_stalled';
 
@@ -50,10 +56,12 @@ class NotificationLogEntry extends Model
         self::REQUISITION_AWAITING,
         self::REQUISITION_DECIDED,
         self::REQUISITION_ASSIGNED,
+        self::REQUISITION_CANCELLED,
         self::REQUISITION_STALLED,
         self::QUOTATION_ASSIGNED,
         self::QUOTATION_DUE_SOON,
         self::QUOTATION_OVERDUE,
+        self::QUOTATION_CANCELLED,
     ];
 
     protected $fillable = [

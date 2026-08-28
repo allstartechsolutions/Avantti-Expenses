@@ -825,6 +825,12 @@ trait ManagesRequisitions
         $requisition->update(['status' => 'cancelled']);
         $requisition->recordStatusChange(auth()->user(), $oldStatus, 'cancelled');
 
+        // The work stops, so the people doing it are told — the buyer above
+        // all, who would otherwise carry on collecting prices for something
+        // nobody wants any more.
+        app(\App\Services\ProcurementNotifier::class)
+            ->requisitionCancelled($requisition->fresh(), auth()->user());
+
         session()->flash('message', __('Requisition cancelled.'));
     }
 

@@ -61,6 +61,15 @@ class PurchaseOrder extends Model
             if ($purchaseOrder->receipt_path && Storage::exists($purchaseOrder->receipt_path)) {
                 Storage::delete($purchaseOrder->receipt_path);
             }
+
+            // The attachments own their files, so deleting them through
+            // Eloquent is what clears the disk too. Items and status histories
+            // are cascaded by the schema; they are removed here as well so the
+            // behaviour does not depend on which database is running — MySQL
+            // enforces those cascades and SQLite under test does not.
+            $purchaseOrder->attachments->each->delete();
+            $purchaseOrder->items()->delete();
+            $purchaseOrder->statusHistories()->delete();
         });
     }
 
@@ -286,6 +295,30 @@ class PurchaseOrder extends Model
     public function totalInCents(): int
     {
         return (int) round((float) $this->total_amount * 100);
+    }
+
+    /**
+     * Whether the order can be destroyed outright.
+     *
+     * The rule the requisition and the RFI already use, in the same words:
+     * delete is for records that never became real. A **draft** was never sent
+     * to a vendor and commits nothing; a **cancelled** one has had the decision
+     * to let it go taken and recorded once already.
+     *
+     * An approved order is refused even when cancelled afterwards if money
+     * moved against it — the linked expense is the company's financial record
+     * and is not something an order screen gets to erase.
+     */
+    public function canBeDeleted(): bool
+    {
+        if (! in_array($this->status, ['draft', 'cancelled'], true)) {
+            return false;
+        }
+
+        // A cancelled order may still carry the expense it created. Cancelling
+        // unwinds that where it can; where it could not, the order stays as the
+        // document that explains the expense.
+        return $this->expense_id === null;
     }
 
     public function canBeEdited(): bool

@@ -27,10 +27,12 @@ class NotificationSetting extends Model
     public const REQUISITION_AWAITING = 'requisition_awaiting_approval';
     public const REQUISITION_DECIDED = 'requisition_decided';
     public const REQUISITION_ASSIGNED = 'requisition_assigned';
+    public const REQUISITION_CANCELLED = 'requisition_cancelled';
     public const REQUISITION_STALLED = 'requisition_stalled';
     public const QUOTATION_ASSIGNED = 'quotation_assigned';
     public const QUOTATION_DUE_SOON = 'quotation_due_soon';
     public const QUOTATION_OVERDUE = 'quotation_overdue';
+    public const QUOTATION_CANCELLED = 'quotation_cancelled';
 
     /** Every task trigger, in the order the settings screen lists them. */
     public const KEYS = [self::TASK_CREATED, self::TASK_CLOSED, self::TASK_OVERDUE, self::TASK_WEEKLY_DIGEST];
@@ -41,10 +43,12 @@ class NotificationSetting extends Model
         self::REQUISITION_AWAITING,
         self::REQUISITION_DECIDED,
         self::REQUISITION_ASSIGNED,
+        self::REQUISITION_CANCELLED,
         self::REQUISITION_STALLED,
         self::QUOTATION_ASSIGNED,
         self::QUOTATION_DUE_SOON,
         self::QUOTATION_OVERDUE,
+        self::QUOTATION_CANCELLED,
     ];
 
     /**
@@ -169,10 +173,12 @@ class NotificationSetting extends Model
             self::REQUISITION_AWAITING => __('A requisition has been waiting for a decision'),
             self::REQUISITION_DECIDED => __('Your requisition was approved or rejected'),
             self::REQUISITION_ASSIGNED => __('You were asked to quote a requisition'),
+            self::REQUISITION_CANCELLED => __('A requisition you were working on was cancelled'),
             self::REQUISITION_STALLED => __('An approved requisition is still not being quoted'),
             self::QUOTATION_ASSIGNED => __('You were put on a quotation round'),
             self::QUOTATION_DUE_SOON => __('Quotation responses are due soon'),
             self::QUOTATION_OVERDUE => __('Quotation responses are past due'),
+            self::QUOTATION_CANCELLED => __('A quotation round you were working on was cancelled'),
             default => $key,
         };
     }
@@ -188,10 +194,12 @@ class NotificationSetting extends Model
             self::REQUISITION_AWAITING => __('Goes to whoever can approve it while a submitted requisition still has no decision.'),
             self::REQUISITION_DECIDED => __('Goes to whoever asked for it, carrying the decision and the reason given.'),
             self::REQUISITION_ASSIGNED => __('Goes to the buyer when an approved requisition is handed to them, never to the person who handed it over and never on a draft.'),
+            self::REQUISITION_CANCELLED => __('Goes to whoever asked for it and whoever was quoting it — the work stops, so the people doing it are told.'),
             self::REQUISITION_STALLED => __('Goes to the buyer, copying whoever approved it, while an approved requisition still has no quotation round.'),
             self::QUOTATION_ASSIGNED => __('Goes to whoever is put on a round — the owner, or just the person added.'),
             self::QUOTATION_DUE_SOON => __('Goes to the owner and collaborators before the response date, once, and again if the date moves.'),
             self::QUOTATION_OVERDUE => __('Goes to the owner and collaborators once the response date has passed and the round is still open.'),
+            self::QUOTATION_CANCELLED => __('Goes to the owner and collaborators when a round is cancelled, so nobody keeps chasing vendors for it.'),
             default => '',
         };
     }

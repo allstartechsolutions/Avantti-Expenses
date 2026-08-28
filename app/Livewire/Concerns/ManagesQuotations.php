@@ -1369,6 +1369,11 @@ trait ManagesQuotations
         $quotation->recordStatusChange(auth()->user(), $oldStatus, 'cancelled');
         $quotation->requisition?->refreshChainStatus();
 
+        // Whoever was working it needs to stop, and to tell the vendors they
+        // invited — nothing in the system does that for them.
+        app(\App\Services\ProcurementNotifier::class)
+            ->quotationCancelled($quotation->fresh(), auth()->user());
+
         session()->flash('message', __('Quotation cancelled.'));
     }
 

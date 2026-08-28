@@ -3,6 +3,11 @@
 namespace App\Services;
 
 use App\Mail\QuotationAssignedMail;
+use App\Mail\QuotationCancelledMail;
+use App\Mail\QuotationDueSoonMail;
+use App\Mail\RequisitionAssignedMail;
+use App\Mail\RequisitionAwaitingMail;
+use App\Mail\RequisitionCancelledMail;
 use App\Mail\QuotationDueSoonMail;
 use App\Mail\RequisitionAssignedMail;
 use App\Mail\RequisitionAwaitingMail;
@@ -350,6 +355,64 @@ class ProcurementNotifier
             collect([$added]),
             fn (User $user) => new QuotationAssignedMail($quotation, $user, $actor, owns: false),
             'collaborator:'.$added->id.':'.now()->timestamp,
+        );
+    }
+
+    /**
+     * A requisition was cancelled — the work on it stops.
+     *
+     * Goes to the two people it costs: whoever asked for it, who now has to
+     * decide whether to raise another, and whoever was told to quote it, who
+     * would otherwise carry on collecting prices for something nobody wants.
+     * Never to the person who cancelled it.
+     */
+    public function requisitionCancelled(PurchaseRequisition $requisition, User $actor, ?string $reason = null): void
+    {
+        if (! NotificationSetting::enabled(NotificationSetting::REQUISITION_CANCELLED)) {
+            return;
+        }
+
+        if ($requisition->status !== 'cancelled') {
+            return;
+        }
+
+        $people = collect([$requisition->decisionRecipient(), $requisition->assignedBuyer])
+            ->filter()
+            ->reject(fn (User $user) => $user->id === $actor->id);
+
+        $this->sendAfterResponse(
+            NotificationSetting::REQUISITION_CANCELLED,
+            $requisition,
+            $people,
+            fn (User $user) => new RequisitionCancelledMail($requisition, $user, $actor, $reason),
+        );
+    }
+
+    /**
+     * A quotation round was cancelled.
+     *
+     * Goes to whoever was working it. The point is to stop them chasing
+     * vendors for a round that no longer exists — which is the one thing an
+     * in-app status change on its own will not do, because they are not
+     * looking at the screen.
+     */
+    public function quotationCancelled(Quotation $quotation, User $actor, ?string $reason = null): void
+    {
+        if (! NotificationSetting::enabled(NotificationSetting::QUOTATION_CANCELLED)) {
+            return;
+        }
+
+        if ($quotation->status !== 'cancelled') {
+            return;
+        }
+
+        $people = $quotation->workers()->reject(fn (User $user) => $user->id === $actor->id);
+
+        $this->sendAfterResponse(
+            NotificationSetting::QUOTATION_CANCELLED,
+            $quotation,
+            $people,
+            fn (User $user) => new QuotationCancelledMail($quotation, $user, $actor, $reason),
         );
     }
 

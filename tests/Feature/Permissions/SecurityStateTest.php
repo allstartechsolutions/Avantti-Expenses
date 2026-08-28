@@ -140,14 +140,15 @@ class SecurityStateTest extends TestCase
         // M1 converted the permission module's own screens and F2 converted
         // the last one — the documentation library — on its way to deleting
         // the legacy bridge. Every area decides for itself. Each pass moved
-        // one line of this list; there are no lines left to move.
+        // one line of this list; `assignment-defaults` was the most recent,
+        // once the screens that consume it were built and guarded.
         $swept = array_values(array_diff(array_keys(AbilityCatalog::areas()), AbilityCatalog::unsweptAreas()));
 
         sort($swept);
 
         $this->assertSame(
             [
-                'access', 'approvals', 'budget', 'catalog', 'change-orders', 'clients', 'company',
+                'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
                 'meetings', 'payments', 'project',

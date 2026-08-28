@@ -751,7 +751,10 @@ return [
             'actions' => [
                 'view' => ['name' => 'See the project list'],
                 'create', 'edit',
-                'archive' => ['name' => 'Archive or close'],
+                // No `archive` here: closing a project down is an act on one
+                // project, and `project.archive` on the Project Overview area
+                // is what guards it. Two declarations of the same act meant one
+                // of them could only ever be a grant that did nothing.
                 'delete' => ['sensitive' => true],
             ],
         ],
@@ -1018,6 +1021,7 @@ return [
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
             'money' => false,
+            'swept' => true,
             'swept' => false,
             'actions' => [
                 'view' => ['name' => 'See who work falls to by default'],

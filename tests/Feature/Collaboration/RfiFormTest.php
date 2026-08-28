@@ -601,6 +601,10 @@ class RfiFormTest extends TestCase
             'cancelEditingReply', 'removeReplyUpload',
             // Read-only helpers the view asks before it renders a button.
             'getCanChooseReplyProperty', 'canEditReply',
+            // Same again for withdrawing and destroying. The two actions
+            // behind these buttons — voidRfi() and deleteRfi() — are NOT
+            // exempt and are checked below.
+            'getCanVoidProperty', 'getCanDeleteProperty',
         ];
 
         $checked = [];
@@ -647,7 +651,9 @@ class RfiFormTest extends TestCase
         // proving nothing, so name what it actually inspected.
         $this->assertEqualsCanonicalizing(
             ['save', 'recordAnswer', 'close', 'reopen', 'passBall', 'downloadFile',
-                'chooseReply', 'startEditingReply', 'saveReplyEdit'],
+                'chooseReply', 'startEditingReply', 'saveReplyEdit',
+                // Withdrawing and destroying, added when the RFI gained them.
+                'voidRfi', 'deleteRfi'],
             $checked,
         );
     }

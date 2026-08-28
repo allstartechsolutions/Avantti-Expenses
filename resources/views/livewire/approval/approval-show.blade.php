@@ -76,6 +76,15 @@
                     </x-ui.button>
                 @endif
 
+                {{-- Offered only where there is nothing outside to preserve: a
+                     draft nobody submitted, or one already void. --}}
+                @if($this->canDelete)
+                    <x-ui.button variant="danger" size="sm" icon="trash" wire:click="deleteApproval"
+                        wire:confirm="{{ __('collaboration.help.delete_approval_permanently') }}">
+                        {{ __('Delete') }}
+                    </x-ui.button>
+                @endif
+
                 @if($this->canExport)
                     <x-ui.button variant="secondary" size="sm" :href="route('approvals.pdf.download', $approval)">
                         {{ __('PDF') }}
@@ -396,6 +405,76 @@
     @endif
 
     {{-- Record a response --}}
+
+    {{-- Submittal package: several approvals sent to the architect as one
+         bundle. The table and the column shipped with the module; this is what
+         finally uses them. --}}
+    @if($this->canManagePackages)
+        <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                {{ __('collaboration.label.submittal_package') }}
+            </h3>
+
+            @if($approval->package)
+                <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 dark:bg-slate-900/40 px-4 py-3 mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-slate-900 dark:text-white">
+                            {{ $approval->package->number }} — {{ $approval->package->title }}
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {{ $approval->package->getStatusLabel() }}
+                            &middot; {{ trans_choice(':count approval|:count approvals', $approval->package->approvals()->count(), ['count' => $approval->package->approvals()->count()]) }}
+                        </p>
+                    </div>
+                    <x-ui.button variant="secondary" size="sm" wire:click="togglePackageStatus">
+                        {{ $approval->package->isOpen()
+                            ? __('collaboration.label.close_package')
+                            : __('collaboration.label.reopen_package') }}
+                    </x-ui.button>
+                </div>
+            @else
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    {{ __('collaboration.help.approval_not_in_a_package') }}
+                </p>
+            @endif
+
+            <label for="approval-package" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {{ __('collaboration.field.package') }}
+            </label>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <select id="approval-package" wire:model="packageId"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">{{ __('collaboration.label.no_package') }}</option>
+                    @foreach($this->availablePackages() as $package)
+                        <option value="{{ $package->id }}">
+                            {{ $package->number }} — {{ $package->title }} ({{ $package->approvals_count }})
+                        </option>
+                    @endforeach
+                </select>
+                <x-ui.button variant="primary" size="sm" icon="save" wire:click="setPackage">{{ __('Save') }}</x-ui.button>
+            </div>
+            @error('packageId') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+
+            <div class="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <label for="new-package" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    {{ __('collaboration.field.package_title') }}
+                </label>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <input id="new-package" type="text" wire:model="newPackageTitle"
+                        placeholder="{{ __('collaboration.prompt.package_title_placeholder') }}"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
+                    <x-ui.button variant="secondary" size="sm" icon="plus" wire:click="createPackage">
+                        {{ __('collaboration.label.start_package') }}
+                    </x-ui.button>
+                </div>
+                @error('newPackageTitle') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {{ __('collaboration.help.package_numbered_per_project') }}
+                </p>
+            </div>
+        </div>
+    @endif
+
     @if($this->canRespond)
         <x-ui.modal name="approval-respond" maxWidth="2xl">
             <form wire:submit="recordResponse" class="p-6">

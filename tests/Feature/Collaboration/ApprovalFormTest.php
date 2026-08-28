@@ -533,6 +533,11 @@ class ApprovalFormTest extends TestCase
             // component and touch no record. The save they feed is guarded.
             'addDistributionRow', 'removeDistributionRow', 'removeUpload',
             'addReviewerRow', 'removeReviewerRow', 'reuseLastReviewers',
+            // Read-only helpers the view asks before it renders a button. The
+            // actions behind them — deleteApproval(), setPackage(),
+            // createPackage(), togglePackageStatus() — are NOT exempt and are
+            // checked below.
+            'getCanDeleteProperty', 'getCanManagePackagesProperty', 'availablePackages',
         ];
 
         $checked = [];
@@ -569,7 +574,9 @@ class ApprovalFormTest extends TestCase
         // A filter that quietly skipped everything would pass while proving
         // nothing, so name what was actually inspected.
         $this->assertEqualsCanonicalizing(
-            ['save', 'submitRevision', 'recordResponse', 'downloadFile'],
+            ['save', 'submitRevision', 'recordResponse', 'downloadFile',
+                // Destroying an approval, and the submittal packages.
+                'deleteApproval', 'setPackage', 'createPackage', 'togglePackageStatus'],
             $checked,
         );
     }

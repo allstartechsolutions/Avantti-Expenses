@@ -133,6 +133,12 @@ class CompanyFinancialReport extends Component
 
     public function exportCsv(): StreamedResponse
     {
+        // Reading a figure on screen and walking out with the file are two
+        // different acts: the view grant answers the first, this one the
+        // second. Declared in the catalogue from the start; nothing
+        // enforced it until now.
+        $this->authorizeAbility('reports.export');
+
         $data = $this->service()->build();
         $rows = $this->filterItems($data['items']);
         $range = ($this->fromDate || $this->toDate)
