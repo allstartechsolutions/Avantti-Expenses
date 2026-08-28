@@ -1022,7 +1022,6 @@ return [
             'levels' => ['global', 'project', 'job_site'],
             'money' => false,
             'swept' => true,
-            'swept' => false,
             'actions' => [
                 'view' => ['name' => 'See who work falls to by default'],
                 'edit' => ['name' => 'Change who work falls to by default'],

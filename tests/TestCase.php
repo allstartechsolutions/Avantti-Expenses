@@ -31,7 +31,5 @@ abstract class TestCase extends BaseTestCase
      * them arrive in phases 2 and 4, so the area is not finished being spent.
      * It flips at phase 7.
      */
-    protected const AREAS_UNDER_CONSTRUCTION = [
-        'assignment-defaults',
-    ];
+    protected const AREAS_UNDER_CONSTRUCTION = [];
 }
