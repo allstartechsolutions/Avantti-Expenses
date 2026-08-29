@@ -1426,7 +1426,7 @@ explicitly.
 
 ---
 
-## Procurement assignment — parked during phases 1–3, 2026-08-28
+## Procurement assignment — parked during the build, 2026-08-28
 
 **`ProcurementNotifier` duplicates `TaskNotifier`'s send-and-dedupe mechanics.** Roughly sixty
 lines — the three pre-send checks, the write-before-send row, the try/catch that keeps a failed
@@ -1494,3 +1494,37 @@ disagree about what a delete does.
 **Still unchecked, and worth a pass of its own:** the reverse gap. `RfiFormTest` and
 `ApprovalFormTest` each pin that every public action method guards itself; no other module
 has that test. An unguarded `wire:click` would not be caught anywhere else.
+
+---
+
+## Merging two branches that both append — 2026-08-28
+
+Merging the two procurement PRs produced **four silent breakages and no conflict markers**.
+Git resolved everything on its own and was wrong four times, so it reached the owner as a
+white screen rather than a merge failure:
+
+- **`lang/en.json` and `lang/pt_BR.json` became invalid JSON.** Both branches had appended a
+  final entry; the merge joined the two "last lines" and dropped the comma between them. One
+  key ended up duplicated as well.
+- **`ProcurementNotifier.php` imported three classes twice** — PHP refuses that outright, so
+  nothing ran at all: not the app, not `artisan test`, not `tinker`.
+- **`config/permissions.php` carried `'swept' => true` and `'swept' => false`** in one array.
+  PHP silently takes the last, so the area reverted to unswept with no error anywhere.
+- **`tests/TestCase.php`** reverted `AREAS_UNDER_CONSTRUCTION` to its old contents.
+
+**The shape to remember:** every one of these is a file where both branches *appended to the
+end* — a JSON tail, an import block, an array of flags. That is where a three-way merge is
+least able to help and most confident anyway.
+
+**After any merge that touches this module, run these three before assuming it worked** — the
+test suite cannot start if the second one is broken:
+
+```
+php -l app/Services/ProcurementNotifier.php      # or lint the whole app/ tree
+python3 -c "import json; json.load(open('lang/pt_BR.json'))"
+php artisan test
+```
+
+Worth considering if it happens again: a `.gitattributes` merge strategy for `lang/*.json`, or
+splitting the procurement strings into their own file the way `collaboration.php` already is.
+That would remove the JSON tail as a conflict point entirely.

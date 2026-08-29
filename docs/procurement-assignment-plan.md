@@ -500,7 +500,24 @@ Menu labels for the new queue page go in `lang/en/navigation.php` and
 | **4** ✅ | `quotations.assigned_to` + `quotation_assignees` + `quotation_assigned` | **Done.** Ownership carries onto the round and survives reassignment. 27 tests in `tests/Feature/Permissions/QuotationAssignmentTest.php`. |
 | **5** ✅ | The three scheduled reminders + their commands + the options UI | **Done.** Stall, approaching and past due all fire once per window and survive a double run. 26 tests in `tests/Feature/Permissions/ProcurementRemindersTest.php`. |
 | **6** ✅ | The **My quotations** queue, nav badge, unassigned bucket | **Done.** The three groups list correctly under `visibleTo()`. 23 tests in `tests/Feature/Permissions/MyQuotationsTest.php`. |
-| **7** | **Review and Improvements** — walk both themes, both locales, a phone; empty and partial states; `swept => true`; docs level with what was built | — |
+| **7** | **Review and Improvements** — walk both themes, both locales, a phone; empty and partial states; `swept => true`; docs level with what was built | **Partly done.** `swept => true` and `AREAS_UNDER_CONSTRUCTION` cleared (28 Aug); docs level. **Still open: the screen walk** — both themes, both locales, on a phone — and a Portuguese speaker reading the e-mail bodies. |
+
+---
+
+## What was built beyond the seven phases
+
+The plan covered the post-approval half of the chain. Walking the real screens found the half
+before it was silent, and the rest followed:
+
+| Added | Why |
+|---|---|
+| `requisition_approver` default | A second `role_key` in the same table, set on the same panel. Decides **who is told**, never who may approve. |
+| `requisition_submitted` | Pressing Submit told nobody; the approver found out by noticing a count on a screen. |
+| `requisition_awaiting_approval` | Nothing chased an undecided requisition — the period when the site is actually blocked was the one period nothing watched. Default 3 days, against the quoting stall's 7. |
+| `requisition_decided` | The answer never came back. The rejection reason is a required field whose text reached nobody. |
+| `requisition_cancelled` / `quotation_cancelled` | Cancelling changed a status on a screen nobody was looking at. The round's version lists the invited vendors, because nothing will tell *them*. |
+
+**Ten triggers in all**, every one switchable per install and per person.
 
 ---
 

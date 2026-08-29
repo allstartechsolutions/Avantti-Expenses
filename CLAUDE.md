@@ -37,8 +37,9 @@ Concretely, for every feature:
 ## Every Module Ships With Its Permissions
 
 **A new module is not finished when its screens work.** The permission module
-(`docs/permissions-module.md`) is complete and deployed: 30 areas, 147 abilities, no role
-checks left anywhere in the application. Anything built from now on joins it **as it is
+(`docs/permissions-module.md`) is complete and deployed: **33 areas, 170 abilities**, no role
+checks left anywhere in the application. (It was 30/147 when the sweep finished; the
+collaboration and procurement-assignment modules added the rest.) Anything built from now on joins it **as it is
 built**, never afterwards — retro-fitting permissions onto eighteen modules took a week and
 found forty-odd holes that had been live in production.
 
@@ -61,7 +62,16 @@ whole of it, in five lines:
    not records: a project total is the company's financial picture, the amount on an expense
    somebody filed is not a secret from them.
 5. **Write the test** — reproduced, revocable, scoped, separate — and add the pt_BR strings in
-   the same change. Then flip `swept => true`.
+   the same change. Then flip `swept => true` **in that same change**, not in a later phase: an
+   area whose screens are guarded and filtered is finished, and leaving the flag behind is how
+   work comes to look done while advertising that it is not.
+
+**A declared ability that guards nothing is a lie the permission matrix tells.** Seven of them
+accumulated before anybody noticed — each one grantable on the access screens and changing no
+behaviour at all — because `swept` tracks whole *areas* and nothing checked individual
+*actions*. `AbilityCatalogTest::test_every_declared_ability_is_enforced_somewhere` now fails
+when an ability appears nowhere in `app/`, `routes/` or a view. Declaring an action you have
+not built yet will break the suite, which is the point: build it, or do not declare it.
 
 Two rules that hold everywhere and were each learned the hard way:
 
