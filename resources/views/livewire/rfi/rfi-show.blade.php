@@ -378,27 +378,42 @@
                      them at once, and the file belongs to what was said. --}}
                 <div class="mt-4">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('collaboration.label.attach_to_this_reply') }}</label>
-                    <input type="file" multiple wire:model="replyUploads"
-                        class="mt-1 block w-full text-sm text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200 dark:hover:file:bg-slate-600">
+                    <x-ui.file-drop wire:model="newReplyUploads" class="mt-1 space-y-2">
+                        {{-- Three keys, three different refusals: the answer's
+                             own check, this box's size check, and Livewire's
+                             temporary-upload rules. --}}
+                        @error('replyUploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                        @error('newReplyUploads') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                        @error('newReplyUploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
 
-                    <div wire:loading wire:target="replyUploads" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        {{ __('Uploading...') }}
-                    </div>
+                        @if(count($replyUploads) > 0)
+                            <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                @foreach($replyUploads as $index => $upload)
+                                    <li wire:key="reply-upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                        <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                            {{ $upload->getClientOriginalName() }}
+                                        </span>
+                                        <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                            {{ \App\Services\DocumentSettings::formatBytes($upload->getSize()) }}
+                                        </span>
+                                        <x-ui.icon-button
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="trash"
+                                            type="button"
+                                            wire:click="removeReplyUpload({{ $index }})"
+                                            title="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                            aria-label="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                            class="hover:text-red-600 dark:hover:text-red-400" />
+                                    </li>
+                                @endforeach
+                            </ul>
 
-                    @error('replyUploads.*') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
-
-                    @if(count($replyUploads) > 0)
-                        <ul class="mt-2 divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
-                            @foreach($replyUploads as $index => $upload)
-                                <li wire:key="reply-upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
-                                    <span class="truncate text-slate-900 dark:text-white">{{ $upload->getClientOriginalName() }}</span>
-                                    <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeReplyUpload({{ $index }})">
-                                        {{ __('Remove') }}
-                                    </x-ui.button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                {{ trans_choice(':count file goes up with this answer.|:count files go up with this answer.', count($replyUploads), ['count' => count($replyUploads)]) }}
+                            </p>
+                        @endif
+                    </x-ui.file-drop>
                 </div>
 
                 <div class="mt-5 flex justify-end gap-2">

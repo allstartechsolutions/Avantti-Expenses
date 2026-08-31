@@ -335,30 +335,48 @@
 
                         <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Attachments') }}</label>
-                            <input
-                                type="file"
-                                wire:model="income_uploads"
-                                multiple
+                            <x-ui.file-drop
+                                wire:model="income_new_uploads"
                                 accept=".pdf,.jpg,.jpeg,.png"
-                                class="block w-full text-sm text-slate-500 dark:text-slate-400
-                                    file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                    file:text-sm file:font-medium file:bg-[#3F5189] file:text-white
-                                    hover:file:bg-[#4A5A96] file:cursor-pointer">
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('PDF, JPG or PNG, up to 10MB each.') }}</p>
-                            <div wire:loading wire:target="income_uploads" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Uploading...') }}</div>
-                            @if(count($income_uploads) > 0)
-                                <ul class="mt-2 space-y-1">
-                                    @foreach($income_uploads as $upload)
-                                        <li class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                                            <svg class="w-4 h-4 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                                            </svg>
-                                            <span class="truncate">{{ $upload->getClientOriginalName() }}</span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-                            @error('income_uploads.*') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                :hint="__('PDF, JPG or PNG, up to 10MB each.')"
+                                class="mt-1 space-y-2">
+
+                                {{-- Three keys, three different refusals: the save's
+                                     own check, this box's, and Livewire's
+                                     temporary-upload rules, which reject a file
+                                     before it ever reaches PHP. --}}
+                                @error('income_uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('income_new_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('income_new_uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                @if(count($income_uploads) > 0)
+                                    <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                        @foreach($income_uploads as $index => $upload)
+                                            <li wire:key="income-upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                                <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                    {{ $upload->getClientOriginalName() }}
+                                                </span>
+                                                <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                    {{ \App\Services\DocumentSettings::formatBytes($upload->getSize()) }}
+                                                </span>
+                                                <x-ui.icon-button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon="trash"
+                                                    type="button"
+                                                    wire:click="removeIncomeUpload({{ $index }})"
+                                                    title="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                                    aria-label="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                                    class="hover:text-red-600 dark:hover:text-red-400" />
+                                            </li>
+                                        @endforeach
+                                    </ul>
+
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($income_uploads), ['count' => count($income_uploads)]) }}
+                                    </p>
+                                @endif
+                            </x-ui.file-drop>
                             @if($editingIncomeId)
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('New files are added to the existing attachments. Manage them from the income record view.') }}</p>
                             @endif

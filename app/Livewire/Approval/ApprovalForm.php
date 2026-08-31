@@ -15,7 +15,9 @@ use App\Models\Membership;
 use App\Models\Project;
 use App\Models\Vendor;
 use App\Services\FileUploadService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -59,6 +61,20 @@ class ApprovalForm extends Component
 
     public ?string $due_date = null;
 
+    /**
+     * The three type-to-search pickers.
+     *
+     * A project's budget can run to hundreds of lines and the vendor book to
+     * thousands of names, which is more than a `<select>` can be walked
+     * through. Each string holds what was typed; when a row is taken, the
+     * string becomes that row's label and the id beside it is what saves.
+     */
+    public string $budgetItemSearch = '';
+
+    public string $supplierSearch = '';
+
+    public string $catalogItemSearch = '';
+
     /** Certificate block — only for `laudo_certificado`. */
     public string $issuing_body = '';
 
@@ -70,7 +86,18 @@ class ApprovalForm extends Component
 
     public array $distributionRows = [];
 
+    /**
+     * Files chosen for this approval but not yet stored.
+     *
+     * They are held rather than sent because the record they belong to may not
+     * exist yet — `save()` creates the approval and the attachments in one
+     * step. `newUploads` is what the drop zone writes to; `updatedNewUploads()`
+     * moves them across, so a second drop adds to the queue instead of
+     * replacing what was dropped first.
+     */
     public array $uploads = [];
+
+    public array $newUploads = [];
 
     public function mount(?Project $project = null, ?JobSite $jobSite = null, ?Approval $approval = null): void
     {
@@ -116,6 +143,12 @@ class ApprovalForm extends Component
         $this->catalog_item_id = $approval->catalog_item_id ? (string) $approval->catalog_item_id : null;
         $this->supplier_id = $approval->supplier_id ? (string) $approval->supplier_id : null;
         $this->due_date = $approval->due_date?->toDateString();
+
+        // The pickers open showing what is linked, not an empty box the user
+        // has to search again to find out.
+        $this->budgetItemSearch = $approval->budgetItem ? $this->budgetItemLabel($approval->budgetItem) : '';
+        $this->supplierSearch = $approval->supplier?->name ?? '';
+        $this->catalogItemSearch = $approval->catalogItem?->name ?? '';
 
         if ($certificate = $approval->certificate) {
             $this->issuing_body = $certificate->issuing_body ?? '';
@@ -170,8 +203,157 @@ class ApprovalForm extends Component
         }
     }
 
-    public function removeUpload(int $index): void
+    /*
+    |---------------------------------------------------------------------------
+    | The pickers
+    |---------------------------------------------------------------------------
+    |
+    | Each one is the same three moves: take a row, drop the link, and drop the
+    | link again the moment the text stops being the label of what was taken —
+    | otherwise somebody types over a chosen supplier, saves, and the record
+    | keeps a vendor whose name is no longer on the screen.
+    */
+
+    public function selectBudgetItem(int $id): void
     {
+        $this->authorizeAbility($this->isEditing ? 'approvals.edit' : 'approvals.create', $this->scope());
+
+        // Never act on an id that came from the browser: this one has to be a
+        // line of *this* project's budget, the same check `save()` makes.
+        $item = $this->projectBudgetItems()->whereKey($id)->first();
+
+        if (! $item) {
+            return;
+        }
+
+        $this->budget_item_id = (string) $item->id;
+        $this->budgetItemSearch = $this->budgetItemLabel($item);
+    }
+
+    public function clearBudgetItem(): void
+    {
+        $this->budget_item_id = null;
+        $this->budgetItemSearch = '';
+    }
+
+    public function updatedBudgetItemSearch(): void
+    {
+        if ($this->budget_item_id && $this->budgetItemSearch !== $this->selectedBudgetItemLabel()) {
+            $this->budget_item_id = null;
+        }
+    }
+
+    public function selectSupplier(int $id): void
+    {
+        $this->authorizeAbility($this->isEditing ? 'approvals.edit' : 'approvals.create', $this->scope());
+
+        $supplier = Vendor::whereKey($id)->first();
+
+        if (! $supplier) {
+            return;
+        }
+
+        $this->supplier_id = (string) $supplier->id;
+        $this->supplierSearch = $supplier->name;
+    }
+
+    public function clearSupplier(): void
+    {
+        $this->supplier_id = null;
+        $this->supplierSearch = '';
+    }
+
+    public function updatedSupplierSearch(): void
+    {
+        if ($this->supplier_id && $this->supplierSearch !== $this->selectedSupplierLabel()) {
+            $this->supplier_id = null;
+        }
+    }
+
+    public function selectCatalogItem(int $id): void
+    {
+        $this->authorizeAbility($this->isEditing ? 'approvals.edit' : 'approvals.create', $this->scope());
+
+        $item = CatalogItem::where('is_active', true)->whereKey($id)->first();
+
+        if (! $item) {
+            return;
+        }
+
+        $this->catalog_item_id = (string) $item->id;
+        $this->catalogItemSearch = $item->name;
+    }
+
+    public function clearCatalogItem(): void
+    {
+        $this->catalog_item_id = null;
+        $this->catalogItemSearch = '';
+    }
+
+    public function updatedCatalogItemSearch(): void
+    {
+        if ($this->catalog_item_id && $this->catalogItemSearch !== $this->selectedCatalogItemLabel()) {
+            $this->catalog_item_id = null;
+        }
+    }
+
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied **whatever happens**, including for a file that fails the size
+     * rule. One left behind is invisible — the list on screen is the queue,
+     * not this — and would fail every later save on a file with no button to
+     * remove it, with nothing to do but reload and lose the form.
+     *
+     * The refusal is said with `addError()` rather than by throwing, because
+     * `validate()` ends with a bare `resetErrorBag()`: a file dropped onto a
+     * form that is already showing "the title field is required" would
+     * silently clear that message while the title was still empty.
+     */
+    public function updatedNewUploads(): void
+    {
+        $dropped = $this->newUploads;
+        $this->newUploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(['file' => $file], ['file' => $this->fileRule()]);
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('newUploads', __('Not attached — larger than the :size limit: :files', [
+                'size' => \App\Services\DocumentSettings::formatBytes(app(FileUploadService::class)->maxBytes()),
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /**
+     * Take a file back out of the queue before it is stored.
+     *
+     * NOT `removeUpload()`: that name is part of Livewire's own `$wire` API
+     * (`$wire.removeUpload(property, tmpFilename)`), so a `wire:click` on it
+     * never reaches this class — it reaches Livewire's uploader with the row
+     * index where a property name should be, and the request dies with
+     * "Property [$0] not found".
+     */
+    public function discardUpload(int $index): void
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the array entry would leave it in livewire-tmp until the daily
+        // sweep, which on a form where drawings are dropped and thought better
+        // of is real disk.
+        $this->uploads[$index]?->delete();
+
         unset($this->uploads[$index]);
 
         $this->uploads = array_values($this->uploads);
@@ -204,7 +386,10 @@ class ApprovalForm extends Component
             'distributionRows.*.user_id' => 'nullable|integer|exists:users,id',
             'distributionRows.*.external_email' => 'nullable|email|max:255',
             'distributionRows.*.external_name' => 'nullable|string|max:255',
-            'uploads.*' => 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024),
+            // `newUploads` carries no rule: `updatedNewUploads()` empties it on
+            // every change, so a rule here could only ever fail on a file the
+            // user cannot see.
+            'uploads.*' => $this->fileRule(),
         ];
     }
 
@@ -216,6 +401,12 @@ class ApprovalForm extends Component
      * case, a second opinion that makes this one screen say *data de
      * vencimento* where every other says *vencimento*.
      */
+    /** One place for the size cap, so the drop zone and `save()` cannot disagree. */
+    protected function fileRule(): string
+    {
+        return 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024);
+    }
+
     protected function validationAttributes(): array
     {
         return [
@@ -223,6 +414,7 @@ class ApprovalForm extends Component
             'budget_item_id' => __('collaboration.field.budget_line'),
             'catalog_item_id' => __('collaboration.field.catalog_item'),
             'supplier_id' => __('supplier'),
+            'uploads.*' => __('attachment'),
             'issuing_body' => __('collaboration.field.issuing_body'),
             'valid_until' => __('valid until'),
         ];
@@ -251,7 +443,7 @@ class ApprovalForm extends Component
 
         if ($this->budget_item_id) {
             abort_unless(
-                in_array((int) $this->budget_item_id, array_keys($this->budgetLines()), true),
+                $this->projectBudgetItems()->whereKey($this->budget_item_id)->exists(),
                 404,
             );
         }
@@ -397,30 +589,199 @@ class ApprovalForm extends Component
     */
 
     /**
-     * The project's budget lines, as id => "code name".
+     * Per-request caches.
+     *
+     * `render()` runs on every debounced keystroke, and each picker asks for
+     * the label of what is linked, the project's job sites and the people who
+     * can be named. Protected, so Livewire neither ships them to the browser
+     * nor carries them into the next request, where they could be stale.
+     */
+    protected ?array $jobSiteIdCache = null;
+
+    protected array $labelCache = [];
+
+    protected ?array $assignableCache = null;
+
+    protected ?array $assignableDetailCache = null;
+
+    /** How many rows a picker offers at a time. */
+    protected const RESULT_LIMIT = 20;
+
+    /** How much has to be typed before a search runs. */
+    protected const MIN_SEARCH = 2;
+
+    /**
+     * The project's budget lines.
      *
      * A `BudgetItem` is this project's applied cost code, so these are the
      * codes the work is actually costed against — not the template library
-     * behind them (docs/rfi-aprovacoes-discovery.md item 4).
-     *
-     * @return array<int, string>
+     * behind them (docs/rfi-aprovacoes-discovery.md item 4). Everything that
+     * offers or accepts a line goes through this query, so a line from
+     * another project can neither be listed nor saved.
      */
-    protected function budgetLines(): array
+    protected function projectBudgetItems(): Builder
     {
-        $budgetIds = Budget::query()
-            ->where('project_id', $this->project->id)
-            ->orWhereIn('job_site_id', $this->project->jobSites()->pluck('id'))
-            ->pluck('id');
+        return BudgetItem::query()
+            ->whereIn('budget_id', Budget::query()
+                ->where(fn ($q) => $q
+                    ->where('project_id', $this->project->id)
+                    ->orWhereIn('job_site_id', $this->projectJobSiteIds()))
+                ->select('id'));
+    }
 
-        if ($budgetIds->isEmpty()) {
+    /** @return array<int, int> */
+    protected function projectJobSiteIds(): array
+    {
+        return $this->jobSiteIdCache ??= $this->project->jobSites()->pluck('id')->all();
+    }
+
+    protected function budgetItemLabel(BudgetItem $item): string
+    {
+        return trim($item->code.' '.$item->name);
+    }
+
+    protected function selectedBudgetItemLabel(): string
+    {
+        return $this->cachedLabel('budget', $this->budget_item_id, function (string $id) {
+            $item = $this->projectBudgetItems()->whereKey($id)->first();
+
+            return $item ? $this->budgetItemLabel($item) : '';
+        });
+    }
+
+    protected function selectedSupplierLabel(): string
+    {
+        return $this->cachedLabel('supplier', $this->supplier_id,
+            fn (string $id) => Vendor::whereKey($id)->value('name') ?? '');
+    }
+
+    protected function selectedCatalogItemLabel(): string
+    {
+        return $this->cachedLabel('catalog', $this->catalog_item_id,
+            fn (string $id) => CatalogItem::whereKey($id)->value('name') ?? '');
+    }
+
+    /**
+     * The label of what is linked, read once per id per request.
+     *
+     * Asked for three times over in a single render — by the view, by the
+     * search that has to know it is looking at a read-back and not a search,
+     * and by the unlink check.
+     */
+    protected function cachedLabel(string $key, ?string $id, callable $read): string
+    {
+        if (! $id) {
+            return '';
+        }
+
+        return $this->labelCache[$key.':'.$id] ??= $read($id);
+    }
+
+    /**
+     * Whether a picker should run its query at all.
+     *
+     * Not while the box still holds the label of what is already linked: that
+     * text is a read-back, not a search, and querying on it would drop a
+     * panel over the field on every re-render.
+     */
+    protected function isSearching(string $term, string $selectedLabel): bool
+    {
+        $term = trim($term);
+
+        return mb_strlen($term) >= self::MIN_SEARCH && $term !== $selectedLabel;
+    }
+
+    /**
+     * Budget lines matching what was typed, by code or by name.
+     *
+     * The location comes back with each row because a project's own budget
+     * and its job sites' budgets can carry the same code twice — "01.02
+     * Alvenaria" alone would not say which one is being costed.
+     *
+     * @return array<int, array{id: int, label: string, meta: ?string}>
+     */
+    protected function budgetItemResults(): array
+    {
+        if (! $this->isSearching($this->budgetItemSearch, $this->selectedBudgetItemLabel())) {
             return [];
         }
 
-        return BudgetItem::query()
-            ->whereIn('budget_id', $budgetIds)
+        $term = trim($this->budgetItemSearch);
+
+        return $this->projectBudgetItems()
+            ->with('budget.jobSite:id,job_site_name')
+            ->where(fn ($q) => $q
+                ->where('code', 'like', '%'.$term.'%')
+                ->orWhere('name', 'like', '%'.$term.'%'))
             ->orderBy('code')
-            ->get(['id', 'code', 'name'])
-            ->mapWithKeys(fn (BudgetItem $item) => [$item->id => trim($item->code.' '.$item->name)])
+            ->take(self::RESULT_LIMIT)
+            ->get()
+            ->map(fn (BudgetItem $item) => [
+                'id' => $item->id,
+                'label' => $this->budgetItemLabel($item),
+                'meta' => $item->budget?->jobSite?->job_site_name ?? __('Project (General)'),
+            ])
+            ->all();
+    }
+
+    /**
+     * Vendors matching what was typed, by name or by the person to call.
+     *
+     * @return array<int, array{id: int, label: string, meta: ?string}>
+     */
+    protected function supplierResults(): array
+    {
+        if (! $this->isSearching($this->supplierSearch, $this->selectedSupplierLabel())) {
+            return [];
+        }
+
+        $term = trim($this->supplierSearch);
+
+        return Vendor::query()
+            ->where(fn ($q) => $q
+                ->where('name', 'like', '%'.$term.'%')
+                ->orWhere('contact_name', 'like', '%'.$term.'%'))
+            ->orderBy('name')
+            ->take(self::RESULT_LIMIT)
+            ->get(['id', 'name', 'contact_name', 'city', 'state'])
+            ->map(fn (Vendor $vendor) => [
+                'id' => $vendor->id,
+                'label' => $vendor->name,
+                'meta' => collect([$vendor->contact_name, collect([$vendor->city, $vendor->state])->filter()->implode('/')])
+                    ->filter()
+                    ->implode(' · ') ?: null,
+            ])
+            ->all();
+    }
+
+    /**
+     * Active catalog items matching what was typed, by name or SKU.
+     *
+     * @return array<int, array{id: int, label: string, meta: ?string}>
+     */
+    protected function catalogItemResults(): array
+    {
+        if (! $this->isSearching($this->catalogItemSearch, $this->selectedCatalogItemLabel())) {
+            return [];
+        }
+
+        $term = trim($this->catalogItemSearch);
+
+        return CatalogItem::query()
+            ->where('is_active', true)
+            ->where(fn ($q) => $q
+                ->where('name', 'like', '%'.$term.'%')
+                ->orWhere('sku', 'like', '%'.$term.'%'))
+            ->orderBy('name')
+            ->take(self::RESULT_LIMIT)
+            ->get(['id', 'name', 'sku', 'usage_unit', 'purchase_unit'])
+            ->map(fn (CatalogItem $item) => [
+                'id' => $item->id,
+                'label' => $item->name,
+                'meta' => collect([$item->sku, $item->usage_unit ?? $item->purchase_unit])
+                    ->filter()
+                    ->implode(' · ') ?: null,
+            ])
             ->all();
     }
 
@@ -433,7 +794,7 @@ class ApprovalForm extends Component
      */
     protected function assignableUserDetails(): array
     {
-        return Membership::query()
+        return $this->assignableDetailCache ??= Membership::query()
             ->active()
             ->where(function ($q) {
                 $q->where(fn ($q) => $q
@@ -442,7 +803,7 @@ class ApprovalForm extends Component
 
                 $q->orWhere(fn ($q) => $q
                     ->where('scopeable_type', JobSite::class)
-                    ->whereIn('scopeable_id', $this->project->jobSites()->pluck('id')));
+                    ->whereIn('scopeable_id', $this->projectJobSiteIds()));
             })
             ->with('user:id,name,email')
             ->get()
@@ -458,7 +819,7 @@ class ApprovalForm extends Component
 
     protected function assignableUsers(): array
     {
-        return Membership::query()
+        return $this->assignableCache ??= Membership::query()
             ->active()
             ->where(function ($q) {
                 $q->where(fn ($q) => $q
@@ -467,7 +828,7 @@ class ApprovalForm extends Component
 
                 $q->orWhere(fn ($q) => $q
                     ->where('scopeable_type', JobSite::class)
-                    ->whereIn('scopeable_id', $this->project->jobSites()->pluck('id')));
+                    ->whereIn('scopeable_id', $this->projectJobSiteIds()));
             })
             ->with('user:id,name')
             ->get()
@@ -483,9 +844,16 @@ class ApprovalForm extends Component
     {
         return view('livewire.approval.approval-form', [
             'jobSites' => $this->project->jobSites()->orderBy('job_site_name')->get(['id', 'job_site_name']),
-            'budgetLines' => $this->budgetLines(),
-            'catalogItems' => CatalogItem::where('is_active', true)->orderBy('name')->pluck('name', 'id')->all(),
-            'suppliers' => Vendor::orderBy('name')->pluck('name', 'id')->all(),
+            'budgetItemResults' => $this->budgetItemResults(),
+            'budgetItemLabel' => $this->selectedBudgetItemLabel(),
+            'budgetLineCount' => $this->projectBudgetItems()->count(),
+            'supplierResults' => $this->supplierResults(),
+            'supplierLabel' => $this->selectedSupplierLabel(),
+            'supplierCount' => Vendor::count(),
+            'catalogItemResults' => $this->catalogItemResults(),
+            'catalogItemLabel' => $this->selectedCatalogItemLabel(),
+            'catalogItemCount' => CatalogItem::where('is_active', true)->count(),
+            'minSearch' => self::MIN_SEARCH,
             'assignableUsers' => $this->assignableUsers(),
             'chosenUsers' => $this->assignableUserDetails(),
             'roleOptions' => DistributionEntry::roleOptions(),

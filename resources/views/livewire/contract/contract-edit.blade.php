@@ -217,14 +217,43 @@
                 <!-- Contract File Upload -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        {{ $existingFilePath ? 'Replace File' : 'Contract File' }}
+                        {{ $existingFilePath ? __('Replace File') : __('Contract File') }}
                     </label>
-                    <input
-                        type="file"
+                    <x-ui.file-drop
                         wire:model="contract_file"
+                        :multiple="false"
                         accept=".pdf,.jpg,.jpeg,.png"
-                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#3F5189] file:text-white hover:file:bg-[#2F3F6F]">
-                    @error('contract_file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        :label="$existingFilePath ? __('Drop the replacement here, or') : __('Drop the contract here, or')"
+                        :hint="__('PDF, JPG or PNG, up to 10MB.')">
+
+                        @error('contract_file') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                        @if($contract_file)
+                            <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                    {{ $contract_file->getClientOriginalName() }}
+                                </span>
+                                <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                    {{ \App\Services\DocumentSettings::formatBytes($contract_file->getSize()) }}
+                                </span>
+                                <x-ui.icon-button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon="trash"
+                                    type="button"
+                                    wire:click="clearContractFile"
+                                    title="{{ __('Remove :file', ['file' => $contract_file->getClientOriginalName()]) }}"
+                                    aria-label="{{ __('Remove :file', ['file' => $contract_file->getClientOriginalName()]) }}"
+                                    class="hover:text-red-600 dark:hover:text-red-400" />
+                            </div>
+
+                            @if($existingFilePath)
+                                <p class="text-xs text-amber-600 dark:text-amber-400">
+                                    {{ __('This replaces the file already on the contract when you save.') }}
+                                </p>
+                            @endif
+                        @endif
+                    </x-ui.file-drop>
                 </div>
             </div>
         </div>

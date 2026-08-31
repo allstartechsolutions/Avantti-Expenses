@@ -7,6 +7,7 @@ use App\Models\Income;
 use App\Models\JobSite;
 use App\Models\Project;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -30,7 +31,16 @@ class ProjectIncome extends Component
     public $income_title = '';
     public $income_description = '';
     public $income_amount = null;
+    /**
+     * Files chosen for this income, and the box the drop zone writes to.
+     *
+     * `updatedIncomeNewUploads()` moves them across, so a second drop adds to
+     * the queue instead of replacing what was dropped first — Livewire's
+     * `uploadMultiple` runs with `append = false`.
+     */
     public $income_uploads = [];
+
+    public $income_new_uploads = [];
 
     // View modal
     public $viewingIncome = null;
@@ -149,7 +159,7 @@ class ProjectIncome extends Component
             // percent-out-of-range error on every row at once.
             'distributionRows.*.amount' => 'nullable|numeric|min:0',
             'distributionRows.*.percent' => 'nullable|numeric|min:0',
-            'income_uploads.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'income_uploads.*' => $this->incomeFileRule(),
         ], [], [
             'income_date' => __('date'),
             'income_status' => __('status'),
@@ -595,6 +605,68 @@ class ProjectIncome extends Component
         session()->flash('message', __('Income marked as received.'));
     }
 
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied **whatever happens**, including for a file the rule refuses. One
+     * left behind is invisible — the list on screen is the queue, not this —
+     * and would fail every later save on a file with no button to remove it.
+     *
+     * The refusal is said with `addError()` rather than by throwing, because
+     * `validate()` ends with a bare `resetErrorBag()`: a file dropped onto a
+     * form already showing "the amount field is required" would silently clear
+     * that message while the amount was still empty.
+     */
+    public function updatedIncomeNewUploads(): void
+    {
+        $dropped = $this->income_new_uploads;
+        $this->income_new_uploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(
+                ['file' => $file],
+                ['file' => $this->incomeFileRule()],
+                [],
+                ['file' => __('file')],
+            );
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->income_uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('income_new_uploads', __('Not attached — must be a PDF, JPG or PNG under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /** Take a file back out of the queue before the income is saved. */
+    public function removeIncomeUpload(int $index): void
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the array entry would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->income_uploads[$index]?->delete();
+
+        unset($this->income_uploads[$index]);
+
+        $this->income_uploads = array_values($this->income_uploads);
+    }
+
+    /** One place for what an income attachment may be, so the drop zone and the save agree. */
+    protected function incomeFileRule(): string
+    {
+        return 'file|mimes:pdf,jpg,jpeg,png|max:10240';
+    }
+
     protected function resetForm(): void
     {
         $this->reset([
@@ -607,6 +679,7 @@ class ProjectIncome extends Component
             'income_description',
             'income_amount',
             'income_uploads',
+            'income_new_uploads',
             'income_location_mode',
             'distributionRows',
             'distributionSearch',

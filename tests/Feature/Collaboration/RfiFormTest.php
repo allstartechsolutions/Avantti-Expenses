@@ -455,7 +455,7 @@ class RfiFormTest extends TestCase
             ->test(RfiForm::class, ['project' => $this->project])
             ->set('subject', 'Assunto')
             ->set('question', 'Pergunta')
-            ->set('uploads', [
+            ->set('newUploads', [
                 UploadedFile::fake()->create('prancha.pdf', 120, 'application/pdf'),
                 UploadedFile::fake()->create('detalhe.pdf', 80, 'application/pdf'),
             ])
@@ -472,6 +472,66 @@ class RfiFormTest extends TestCase
         );
     }
 
+    /**
+     * A second drop adds to the queue.
+     *
+     * Files arrive one drag at a time. Before the drop zone this form bound
+     * `wire:model` straight to the queue, and Livewire's `uploadMultiple` runs
+     * with `append = false` — so a second pick replaced the first batch, with
+     * nothing on screen to say so.
+     */
+    public function test_files_dropped_in_two_goes_are_all_kept(): void
+    {
+        Storage::fake(config('documents.disk', 'local'));
+
+        Livewire::actingAs($this->admin)
+            ->test(RfiForm::class, ['project' => $this->project])
+            ->set('subject', 'Assunto')
+            ->set('question', 'Pergunta')
+            ->set('newUploads', [UploadedFile::fake()->create('prancha.pdf', 20, 'application/pdf')])
+            // The box is emptied for the next drop, and the queue holds the first.
+            ->assertSet('newUploads', [])
+            ->set('newUploads', [UploadedFile::fake()->create('detalhe.pdf', 20, 'application/pdf')])
+            ->assertCount('uploads', 2)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertEqualsCanonicalizing(
+            ['prancha.pdf', 'detalhe.pdf'],
+            Rfi::first()->availableFiles()->pluck('original_name')->all(),
+        );
+    }
+
+    /**
+     * A file over this install's size cap is refused without wedging the form.
+     *
+     * The cap is lowered here on purpose: Livewire's own temporary-upload rule
+     * (12 MB by default) catches anything bigger than itself first, so this is
+     * the install whose own limit is *below* Livewire's, where the file arrives
+     * and this form has to refuse it — without leaving it in a box nothing on
+     * screen can empty.
+     */
+    public function test_an_oversize_file_is_refused_without_blocking_the_save(): void
+    {
+        Storage::fake(config('documents.disk', 'local'));
+
+        config(['tasks.max_upload_bytes' => 1024 * 1024]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(RfiForm::class, ['project' => $this->project])
+            ->set('subject', 'Assunto')
+            ->set('question', 'Pergunta')
+            ->set('newUploads', [UploadedFile::fake()->create('prancha-enorme.pdf', 4096, 'application/pdf')])
+            ->assertHasErrors('newUploads')
+            ->assertSet('newUploads', [])
+            ->assertCount('uploads', 0);
+
+        $component->call('save')->assertHasNoErrors();
+
+        $this->assertSame(1, Rfi::count());
+        $this->assertSame(0, Rfi::first()->availableFiles()->count());
+    }
+
     public function test_a_chosen_file_can_be_taken_off_before_saving(): void
     {
         Storage::fake(config('documents.disk', 'local'));
@@ -480,11 +540,11 @@ class RfiFormTest extends TestCase
             ->test(RfiForm::class, ['project' => $this->project])
             ->set('subject', 'Assunto')
             ->set('question', 'Pergunta')
-            ->set('uploads', [
+            ->set('newUploads', [
                 UploadedFile::fake()->create('mantida.pdf', 10, 'application/pdf'),
                 UploadedFile::fake()->create('removida.pdf', 10, 'application/pdf'),
             ])
-            ->call('removeUpload', 1)
+            ->call('discardUpload', 1)
             ->call('save')
             ->assertHasNoErrors();
 
@@ -597,8 +657,9 @@ class RfiFormTest extends TestCase
             'getCanEditProperty',
             // Form-local state: they move rows and files about in the
             // component and touch no record. The save they feed is guarded.
-            'addDistributionRow', 'removeDistributionRow', 'addEveryoneOnProject', 'removeUpload',
-            'cancelEditingReply', 'removeReplyUpload',
+            'addDistributionRow', 'removeDistributionRow', 'addEveryoneOnProject', 'discardUpload',
+            'updatedNewUploads',
+            'cancelEditingReply', 'removeReplyUpload', 'updatedNewReplyUploads',
             // Read-only helpers the view asks before it renders a button.
             'getCanChooseReplyProperty', 'canEditReply',
             // Same again for withdrawing and destroying. The two actions

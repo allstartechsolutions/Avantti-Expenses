@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Models\Rfi;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -68,8 +69,18 @@ class RfiForm extends Component
     /** Repeating rows: who gets a copy. */
     public array $distributionRows = [];
 
-    /** Files chosen before the record exists. */
+    /**
+     * Files chosen for this RFI but not yet stored.
+     *
+     * They are held rather than sent because the record they belong to may not
+     * exist yet — `save()` creates the RFI and its attachments in one step.
+     * `newUploads` is what the drop zone writes to; `updatedNewUploads()`
+     * moves them across, so a second drop adds to the queue instead of
+     * replacing what was dropped first.
+     */
     public array $uploads = [];
+
+    public array $newUploads = [];
 
     /**
      * Three routes reach this: create under a project, create under a job
@@ -207,8 +218,62 @@ class RfiForm extends Component
         }
     }
 
-    public function removeUpload(int $index): void
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied **whatever happens**, including for a file that fails the size
+     * rule. One left behind is invisible — the list on screen is the queue,
+     * not this — and would fail every later save on a file with no button to
+     * remove it.
+     *
+     * The refusal is said with `addError()` rather than by throwing, because
+     * `validate()` ends with a bare `resetErrorBag()`: a file dropped onto a
+     * form already showing "the subject field is required" would silently
+     * clear that message while the subject was still empty.
+     */
+    public function updatedNewUploads(): void
     {
+        $dropped = $this->newUploads;
+        $this->newUploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(['file' => $file], ['file' => $this->fileRule()]);
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('newUploads', __('Not attached — larger than the :size limit: :files', [
+                'size' => \App\Services\DocumentSettings::formatBytes(app(FileUploadService::class)->maxBytes()),
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /**
+     * Take a file back out of the queue before it is stored.
+     *
+     * NOT `removeUpload()`: that name is part of Livewire's own `$wire` API
+     * (`$wire.removeUpload(property, tmpFilename)`), so a `wire:click` on it
+     * never reaches this class — it reaches Livewire's uploader with the row
+     * index where a property name should be, and the request dies with
+     * "Property [$0] not found".
+     */
+    public function discardUpload(int $index): void
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the array entry would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->uploads[$index]?->delete();
+
         unset($this->uploads[$index]);
 
         $this->uploads = array_values($this->uploads);
@@ -237,8 +302,17 @@ class RfiForm extends Component
             'distributionRows.*.user_id' => 'nullable|integer|exists:users,id',
             'distributionRows.*.external_email' => 'nullable|email|max:255',
             'distributionRows.*.external_name' => 'nullable|string|max:255',
-            'uploads.*' => 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024),
+            // `newUploads` carries no rule: `updatedNewUploads()` empties it on
+            // every change, so a rule here could only ever fail on a file the
+            // user cannot see.
+            'uploads.*' => $this->fileRule(),
         ];
+    }
+
+    /** One place for the size cap, so the drop zone and `save()` cannot disagree. */
+    protected function fileRule(): string
+    {
+        return 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024);
     }
 
     /**
@@ -257,6 +331,7 @@ class RfiForm extends Component
             'ball_in_court_id' => __('collaboration.field.ball_court'),
             'schedule_impact_days' => __('collaboration.field.schedule_impact_days'),
             'cost_impact_amount' => __('collaboration.field.estimated_cost_impact'),
+            'uploads.*' => __('attachment'),
         ];
     }
 

@@ -93,6 +93,17 @@ class ContractEdit extends Component
         $this->existingFilePath = null;
     }
 
+    /** Take the chosen file back off before it is stored. */
+    public function clearContractFile()
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the reference would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->contract_file?->delete();
+
+        $this->contract_file = null;
+    }
+
     public function save()
     {
         $this->authorizeAbility('contracts.edit', $this->contract);

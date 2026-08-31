@@ -419,15 +419,35 @@
                                     <label for="document_file" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         {{ __('Document File') }} <span class="text-red-500">*</span>
                                     </label>
-                                    <input
-                                        type="file"
-                                        id="document_file"
+                                    <x-ui.file-drop
                                         wire:model="document_file"
-                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#3F5189] file:text-white hover:file:bg-[#4A5A96]"
+                                        :multiple="false"
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                    >
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Accepted formats: PDF, DOC, DOCX, JPG, PNG. Max size: 10MB') }}</p>
-                                    @error('document_file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        :label="__('Drop the document here, or')"
+                                        :hint="__('Accepted formats: PDF, DOC, DOCX, JPG, PNG. Max size: 10MB')">
+
+                                        @error('document_file') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                        @if($document_file)
+                                            <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                                <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                    {{ $document_file->getClientOriginalName() }}
+                                                </span>
+                                                <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                    {{ \App\Services\DocumentSettings::formatBytes($document_file->getSize()) }}
+                                                </span>
+                                                <x-ui.icon-button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon="trash"
+                                                    type="button"
+                                                    wire:click="clearDocumentFile"
+                                                    title="{{ __('Remove :file', ['file' => $document_file->getClientOriginalName()]) }}"
+                                                    aria-label="{{ __('Remove :file', ['file' => $document_file->getClientOriginalName()]) }}"
+                                                    class="hover:text-red-600 dark:hover:text-red-400" />
+                                            </div>
+                                        @endif
+                                    </x-ui.file-drop>
                                 </div>
 
                                 <!-- Notes -->

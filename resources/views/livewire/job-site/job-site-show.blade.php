@@ -1193,51 +1193,38 @@
                             </div>
                         @endif
 
-                        <div
-                            x-data="{ isDragging: false }"
-                            @dragover.prevent="isDragging = true"
-                            @dragleave.prevent="isDragging = false"
-                            @drop.prevent="isDragging = false; $refs.fileInput.files = $event.dataTransfer.files; $refs.fileInput.dispatchEvent(new Event('change', { bubbles: true }))"
-                            :class="isDragging ? 'border-[#3F5189] bg-[#3F5189]/5' : 'border-slate-300 dark:border-slate-600'"
-                            class="relative border-2 border-dashed rounded-lg p-6 transition-colors duration-200 hover:border-[#3F5189] dark:hover:border-[#4A5A96] cursor-pointer"
-                            @click="$refs.fileInput.click()">
+                        {{-- Was a hand-rolled drop zone; it is the shared component
+                             now, so this modal, the project one and the two full
+                             expense screens behave identically. --}}
+                        <x-ui.file-drop
+                            wire:model="expense_receipt"
+                            :multiple="false"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            :label="__('Drop the receipt here, or')"
+                            :hint="__('PDF, JPG or PNG, up to 10MB.')">
 
-                            <input
-                                type="file"
-                                x-ref="fileInput"
-                                wire:model="expense_receipt"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                class="hidden"
-                            >
+                            @error('expense_receipt') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
 
-                            <div class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="mt-4 flex justify-center text-sm text-slate-600 dark:text-slate-400">
-                                    <span class="relative font-medium text-[#3F5189] dark:text-[#4A5A96] hover:text-[#2F3F6F]">
-                                        {{ __('Click to upload') }}
-                                    </span>
-                                    <span class="pl-1">{{ __('or drag and drop') }}</span>
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('PDF, JPG, PNG up to 10MB') }}</p>
-                            </div>
-                        </div>
-
-                        @error('expense_receipt') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
-
-                        @if($expense_receipt)
-                            <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                <div class="flex items-center">
-                                    <svg class="h-5 w-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span class="text-sm text-green-800 dark:text-green-300 font-medium">
+                            @if($expense_receipt)
+                                <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                    <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
                                         {{ $expense_receipt->getClientOriginalName() }}
                                     </span>
+                                    <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                        {{ \App\Services\DocumentSettings::formatBytes($expense_receipt->getSize()) }}
+                                    </span>
+                                    <x-ui.icon-button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="trash"
+                                        type="button"
+                                        wire:click="clearExpenseReceipt"
+                                        title="{{ __('Remove :file', ['file' => $expense_receipt->getClientOriginalName()]) }}"
+                                        aria-label="{{ __('Remove :file', ['file' => $expense_receipt->getClientOriginalName()]) }}"
+                                        class="hover:text-red-600 dark:hover:text-red-400" />
                                 </div>
-                            </div>
-                        @endif
+                            @endif
+                        </x-ui.file-drop>
                     </div>
 
                     <!-- Payment Section -->

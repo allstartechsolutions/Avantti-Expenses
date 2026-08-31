@@ -62,42 +62,64 @@
                     @error('description') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                 </div>
 
+                {{-- Budget line, supplier and catalog item are all sets a
+                     working company outgrows: hundreds of lines, thousands of
+                     vendors. Each is typed into rather than scrolled through. --}}
                 <div>
-                    <label class="{{ $label }}">{{ __('collaboration.label.budget_line') }}</label>
-                    <select wire:model="budget_item_id" class="{{ $input }}">
-                        <option value="">{{ __('Not set') }}</option>
-                        @foreach($budgetLines as $id => $text)
-                            <option value="{{ $id }}">{{ $text }}</option>
-                        @endforeach
-                    </select>
-                    @if(empty($budgetLines))
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            {{ __('collaboration.help.project_budget_lines_there_nothing') }}
-                        </p>
-                    @endif
-                    @error('budget_item_id') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    <x-ui.search-select
+                        wire:model.live.debounce.300ms="budgetItemSearch"
+                        :label="__('collaboration.label.budget_line')"
+                        :placeholder="__('Search by code or name...')"
+                        :hint="__('Optional — the budget line this is costed against.')"
+                        :results="$budgetItemResults"
+                        :selectedId="$budget_item_id"
+                        :selectedLabel="$budgetItemLabel"
+                        select="selectBudgetItem"
+                        clear="clearBudgetItem"
+                        :search="$budgetItemSearch"
+                        :minChars="$minSearch"
+                        :total="$budgetLineCount"
+                        error="budget_item_id"
+                        :empty="__('No budget line of this project matches. Try the code, or part of the name.')"
+                        :unavailable="$budgetLineCount === 0 ? __('collaboration.help.project_budget_lines_there_nothing') : null" />
                 </div>
 
                 <div>
-                    <label class="{{ $label }}">{{ __('Supplier') }}</label>
-                    <select wire:model="supplier_id" class="{{ $input }}">
-                        <option value="">{{ __('Not set') }}</option>
-                        @foreach($suppliers as $id => $text)
-                            <option value="{{ $id }}">{{ $text }}</option>
-                        @endforeach
-                    </select>
-                    @error('supplier_id') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    <x-ui.search-select
+                        wire:model.live.debounce.300ms="supplierSearch"
+                        :label="__('Supplier')"
+                        :placeholder="__('Search by name or contact...')"
+                        :hint="__('Optional — who is being proposed for this.')"
+                        :results="$supplierResults"
+                        :selectedId="$supplier_id"
+                        :selectedLabel="$supplierLabel"
+                        select="selectSupplier"
+                        clear="clearSupplier"
+                        :search="$supplierSearch"
+                        :minChars="$minSearch"
+                        :total="$supplierCount"
+                        error="supplier_id"
+                        :empty="__('No vendor matches. Check the spelling, or register the vendor first.')"
+                        :unavailable="$supplierCount === 0 ? __('No vendors are registered yet, so there is none to name here.') : null" />
                 </div>
 
                 <div>
-                    <label class="{{ $label }}">{{ __('collaboration.label.catalog_item') }}</label>
-                    <select wire:model="catalog_item_id" class="{{ $input }}">
-                        <option value="">{{ __('Not set') }}</option>
-                        @foreach($catalogItems as $id => $text)
-                            <option value="{{ $id }}">{{ $text }}</option>
-                        @endforeach
-                    </select>
-                    @error('catalog_item_id') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    <x-ui.search-select
+                        wire:model.live.debounce.300ms="catalogItemSearch"
+                        :label="__('collaboration.label.catalog_item')"
+                        :placeholder="__('Search by name or SKU...')"
+                        :hint="__('Optional — the catalogued item this covers.')"
+                        :results="$catalogItemResults"
+                        :selectedId="$catalog_item_id"
+                        :selectedLabel="$catalogItemLabel"
+                        select="selectCatalogItem"
+                        clear="clearCatalogItem"
+                        :search="$catalogItemSearch"
+                        :minChars="$minSearch"
+                        :total="$catalogItemCount"
+                        error="catalog_item_id"
+                        :empty="__('No active catalog item matches.')"
+                        :unavailable="$catalogItemCount === 0 ? __('The catalog is empty, so there is no item to link.') : null" />
                 </div>
 
                 <div>
@@ -215,11 +237,16 @@
                             </select>
                         </div>
 
-                        <div class="md:col-span-1 flex md:justify-end">
-                            <x-ui.button variant="ghost" size="sm" type="button" icon="trash"
-                                wire:click="removeDistributionRow({{ $index }})">
-                                <span class="md:sr-only">{{ __('Remove') }}</span>
-                            </x-ui.button>
+                        <div class="md:col-span-1 flex justify-end items-center md:h-[38px]">
+                            <x-ui.icon-button
+                                variant="ghost"
+                                size="sm"
+                                icon="trash"
+                                type="button"
+                                wire:click="removeDistributionRow({{ $index }})"
+                                title="{{ __('Remove this row') }}"
+                                aria-label="{{ __('Remove this row') }}"
+                                class="hover:text-red-600 dark:hover:text-red-400" />
                         </div>
                     </div>
                 @endforeach
@@ -237,27 +264,43 @@
             </div>
 
             <div class="px-5 py-5 space-y-3">
-                <input type="file" multiple wire:model="uploads"
-                    class="block w-full text-sm text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200 dark:hover:file:bg-slate-600">
+                <x-ui.file-drop wire:model="newUploads">
+                    {{-- Three keys, three different refusals: `uploads.*` from
+                         save(), `newUploads` from this form's own size check,
+                         and `newUploads.*` from Livewire's temporary-upload
+                         rules, which reject a file before it ever reaches PHP. --}}
+                    @error('uploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    @error('newUploads') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    @error('newUploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
 
-                <div wire:loading wire:target="uploads" class="text-sm text-slate-500 dark:text-slate-400">
-                    {{ __('Uploading...') }}
-                </div>
+                    @if(count($uploads) > 0)
+                        <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                            @foreach($uploads as $index => $upload)
+                                <li wire:key="upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                    <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                        {{ $upload->getClientOriginalName() }}
+                                    </span>
+                                    <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                        {{ \App\Services\DocumentSettings::formatBytes($upload->getSize()) }}
+                                    </span>
+                                    <x-ui.icon-button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="trash"
+                                        type="button"
+                                        wire:click="discardUpload({{ $index }})"
+                                        title="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                        aria-label="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                        class="hover:text-red-600 dark:hover:text-red-400" />
+                                </li>
+                            @endforeach
+                        </ul>
 
-                @error('uploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
-
-                @if(count($uploads) > 0)
-                    <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
-                        @foreach($uploads as $index => $upload)
-                            <li wire:key="upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
-                                <span class="truncate text-slate-900 dark:text-white">{{ $upload->getClientOriginalName() }}</span>
-                                <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeUpload({{ $index }})">
-                                    {{ __('Remove') }}
-                                </x-ui.button>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($uploads), ['count' => count($uploads)]) }}
+                        </p>
+                    @endif
+                </x-ui.file-drop>
 
                 @if($this->isEditing && $approval->availableFiles()->exists())
                     <div>
@@ -276,7 +319,7 @@
             <x-ui.button variant="secondary" :href="$this->isEditing ? route('approvals.show', $approval) : $backUrl">
                 {{ __('Cancel') }}
             </x-ui.button>
-            <x-ui.button variant="primary" type="submit" icon="save" wire:loading.attr="disabled" wire:target="save,uploads">
+            <x-ui.button variant="primary" type="submit" icon="save" wire:loading.attr="disabled" wire:target="save,newUploads">
                 {{ $this->isEditing ? __('collaboration.label.save_changes') : __('collaboration.label.raise_approval') }}
             </x-ui.button>
         </div>

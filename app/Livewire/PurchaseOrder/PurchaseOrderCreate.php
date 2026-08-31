@@ -283,6 +283,17 @@ class PurchaseOrderCreate extends Component
     /**
      * Save as draft
      */
+    /** Take the chosen document back off before the order is saved. */
+    public function clearPoReceipt()
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the reference would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->po_receipt?->delete();
+
+        $this->po_receipt = null;
+    }
+
     public function saveAsDraft()
     {
         $this->authorizeAbility('purchase-orders.create', $this->purchaseOrderScope());

@@ -101,6 +101,20 @@ class ApprovalFormTest extends TestCase
         ]);
     }
 
+    protected function makeSupplier(string $name, ?string $contact = null): \App\Models\Supplier
+    {
+        $supplier = \App\Models\Supplier::create([
+            'name' => $name,
+            'created_by' => $this->admin->id,
+        ]);
+
+        if ($contact) {
+            $supplier->forceFill(['contact_name' => $contact])->save();
+        }
+
+        return $supplier;
+    }
+
     protected function memberWith(string $templateKey): User
     {
         $user = User::factory()->create([
@@ -188,6 +202,136 @@ class ApprovalFormTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame($line->id, Approval::first()->budget_item_id);
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | The type-to-search pickers
+    |---------------------------------------------------------------------------
+    |
+    | A project can carry hundreds of budget lines and the company thousands of
+    | vendors, so neither is a list to scroll: what these prove is that the
+    | search finds the row, taking it links the id, and the link never outlives
+    | the text that named it.
+    */
+
+    public function test_the_budget_line_picker_finds_a_line_by_code_or_by_name(): void
+    {
+        $line = $this->makeBudgetLine();
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project]);
+
+        $component->set('budgetItemSearch', '07.1')
+            ->assertViewHas('budgetItemResults', fn (array $rows) => collect($rows)->contains('id', $line->id));
+
+        $component->set('budgetItemSearch', 'revest')
+            ->assertViewHas('budgetItemResults', fn (array $rows) => collect($rows)->contains('id', $line->id));
+
+        // One character is not a search — the whole budget would come back.
+        $component->set('budgetItemSearch', '0')
+            ->assertViewHas('budgetItemResults', []);
+    }
+
+    public function test_taking_a_budget_line_links_it_and_names_it_in_the_box(): void
+    {
+        $line = $this->makeBudgetLine();
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('budgetItemSearch', 'revest')
+            ->call('selectBudgetItem', $line->id)
+            ->assertSet('budget_item_id', (string) $line->id)
+            ->assertSet('budgetItemSearch', '07.100 Revestimentos')
+            // The label is a read-back, not a search: no panel over the field.
+            ->assertViewHas('budgetItemResults', [])
+            ->set('title', 'Porcelanato')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame($line->id, Approval::first()->budget_item_id);
+    }
+
+    /** Typing over a chosen line unlinks it; saving what is on screen is the point. */
+    public function test_typing_over_a_chosen_budget_line_unlinks_it(): void
+    {
+        $line = $this->makeBudgetLine();
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->call('selectBudgetItem', $line->id)
+            ->assertSet('budget_item_id', (string) $line->id)
+            ->set('budgetItemSearch', 'outra coisa')
+            ->assertSet('budget_item_id', null)
+            ->call('clearBudgetItem')
+            ->assertSet('budgetItemSearch', '');
+    }
+
+    /** The picker is the same door as the form: another project's line is neither offered nor taken. */
+    public function test_a_budget_line_from_another_project_is_never_offered_or_taken(): void
+    {
+        $other = Project::create([
+            'project_name' => 'Obra Norte',
+            'client_id' => $this->project->client_id,
+            'contact_person' => 'Contact',
+            'email' => 'other@example.test',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $foreign = $this->makeBudgetLine($other);
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('budgetItemSearch', 'revest')
+            ->assertViewHas('budgetItemResults', [])
+            ->call('selectBudgetItem', $foreign->id)
+            ->assertSet('budget_item_id', null);
+    }
+
+    public function test_the_supplier_picker_searches_names_and_contacts_and_caps_what_it_returns(): void
+    {
+        $supplier = $this->makeSupplier('Cerâmica Portobello', 'Marcos Vieira');
+
+        for ($i = 0; $i < 24; $i++) {
+            $this->makeSupplier('Cerâmica Genérica '.$i);
+        }
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project]);
+
+        $component->set('supplierSearch', 'portobello')
+            ->assertViewHas('supplierResults', fn (array $rows) => collect($rows)->contains('id', $supplier->id));
+
+        $component->set('supplierSearch', 'marcos')
+            ->assertViewHas('supplierResults', fn (array $rows) => collect($rows)->contains('id', $supplier->id));
+
+        // 25 vendors match; a dropdown does not take 25 rows.
+        $component->set('supplierSearch', 'cerâmica')
+            ->assertViewHas('supplierResults', fn (array $rows) => count($rows) === 20);
+    }
+
+    public function test_taking_a_supplier_links_it_and_typing_over_it_unlinks_it(): void
+    {
+        $supplier = $this->makeSupplier('Cerâmica Portobello');
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('supplierSearch', 'portobello')
+            ->call('selectSupplier', $supplier->id)
+            ->assertSet('supplier_id', (string) $supplier->id)
+            ->assertSet('supplierSearch', 'Cerâmica Portobello')
+            ->set('title', 'Porcelanato')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame($supplier->id, Approval::first()->supplier_id);
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['approval' => Approval::first()])
+            // Editing opens with what is linked already named.
+            ->assertSet('supplierSearch', 'Cerâmica Portobello')
+            ->set('supplierSearch', 'Cerâm')
+            ->assertSet('supplier_id', null);
     }
 
     /*
@@ -413,13 +557,84 @@ class ApprovalFormTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(ApprovalForm::class, ['project' => $this->project])
             ->set('title', 'Porcelanato')
-            ->set('uploads', [
+            ->set('newUploads', [
                 UploadedFile::fake()->create('ficha-tecnica.pdf', 100, 'application/pdf'),
             ])
             ->call('save')
             ->assertHasNoErrors();
 
         $this->assertSame(['ficha-tecnica.pdf'], Approval::first()->availableFiles()->pluck('original_name')->all());
+    }
+
+    /**
+     * A second drop adds to the queue.
+     *
+     * Files arrive one drag at a time; if each drop replaced the last, the
+     * user would lose the first batch with nothing on screen to say so.
+     */
+    public function test_files_dropped_in_two_goes_are_all_kept(): void
+    {
+        Storage::fake(config('documents.disk', 'local'));
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('title', 'Porcelanato')
+            ->set('newUploads', [UploadedFile::fake()->create('ficha-tecnica.pdf', 20, 'application/pdf')])
+            // The box is emptied for the next drop, and the queue holds the first.
+            ->assertSet('newUploads', [])
+            ->set('newUploads', [UploadedFile::fake()->create('laudo.pdf', 20, 'application/pdf')])
+            ->assertCount('uploads', 2)
+            ->call('discardUpload', 0)
+            ->assertCount('uploads', 1)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(['laudo.pdf'], Approval::first()->availableFiles()->pluck('original_name')->all());
+    }
+
+    /**
+     * A file over this install's size cap is refused without wedging the form.
+     *
+     * Left in the box it would be invisible — the list on screen is the queue,
+     * not the box — and would fail every later save with no button to remove
+     * it. And the refusal must not take the rest of the form's messages with
+     * it: `validate()` ends with a bare `resetErrorBag()`, which is why this
+     * hook uses `addError()` instead.
+     *
+     * The cap is lowered here on purpose. Livewire's own temporary-upload rule
+     * (12 MB by default) catches anything bigger than itself first; this is the
+     * install whose own limit is *below* Livewire's — a stock `upload_max_filesize`
+     * of 2 M, say — where the file arrives and this form has to refuse it.
+     */
+    public function test_an_oversize_file_is_refused_without_blocking_the_save(): void
+    {
+        Storage::fake(config('documents.disk', 'local'));
+
+        config(['tasks.max_upload_bytes' => 1024 * 1024]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            // A form already showing a message of its own.
+            ->set('title', '')
+            ->call('save')
+            ->assertHasErrors('title')
+            ->set('newUploads', [UploadedFile::fake()->create('planta-enorme.pdf', 4096, 'application/pdf')]);
+
+        // Refused, said, and out of the box.
+        $component->assertHasErrors('newUploads')
+            ->assertSet('newUploads', [])
+            ->assertCount('uploads', 0)
+            // The title message is still there, because the title is still empty.
+            ->assertHasErrors('title');
+
+        // And the form still saves, rather than failing for ever on a file
+        // nothing on screen can remove.
+        $component->set('title', 'Porcelanato')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, Approval::count());
+        $this->assertSame(0, Approval::first()->availableFiles()->count());
     }
 
     /**
@@ -435,7 +650,7 @@ class ApprovalFormTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(ApprovalForm::class, ['project' => $this->project])
             ->set('title', 'Porcelanato')
-            ->set('uploads', [
+            ->set('newUploads', [
                 UploadedFile::fake()->create('ficha.pdf', 20, 'application/pdf'),
                 UploadedFile::fake()->create('malicioso.exe', 20, 'application/x-msdownload'),
             ])
@@ -531,8 +746,13 @@ class ApprovalFormTest extends TestCase
             'getCanRespondProperty', 'getCanEditProperty',
             // Form-local state: they move rows and files about in the
             // component and touch no record. The save they feed is guarded.
-            'addDistributionRow', 'removeDistributionRow', 'removeUpload',
+            'addDistributionRow', 'removeDistributionRow', 'discardUpload', 'updatedNewUploads',
             'addReviewerRow', 'removeReviewerRow', 'reuseLastReviewers',
+            // The type-to-search pickers. Clearing and re-typing only unset a
+            // property; the three select* methods, which act on an id that
+            // came from the browser, are NOT exempt and are checked below.
+            'clearBudgetItem', 'clearSupplier', 'clearCatalogItem',
+            'updatedBudgetItemSearch', 'updatedSupplierSearch', 'updatedCatalogItemSearch',
             // Read-only helpers the view asks before it renders a button. The
             // actions behind them — deleteApproval(), setPackage(),
             // createPackage(), togglePackageStatus() — are NOT exempt and are
@@ -575,6 +795,8 @@ class ApprovalFormTest extends TestCase
         // nothing, so name what was actually inspected.
         $this->assertEqualsCanonicalizing(
             ['save', 'submitRevision', 'recordResponse', 'downloadFile',
+                // The pickers that take an id from the browser.
+                'selectBudgetItem', 'selectSupplier', 'selectCatalogItem',
                 // Destroying an approval, and the submittal packages.
                 'deleteApproval', 'setPackage', 'createPackage', 'togglePackageStatus'],
             $checked,
@@ -586,6 +808,48 @@ class ApprovalFormTest extends TestCase
     | Through the routes
     |---------------------------------------------------------------------------
     */
+
+    /**
+     * No action may be named after one of Livewire's own `$wire` methods.
+     *
+     * `removeUpload()` was, on both of this module's forms, and the delete
+     * button on the attachment queue never reached PHP: `$wire.removeUpload`
+     * is Livewire's uploader, so the click went there with the row index where
+     * a property name belongs and the request died with
+     * "Property [$0] not found". The name is the whole bug, which is why it is
+     * checked mechanically rather than remembered.
+     */
+    public function test_no_action_is_named_after_a_livewire_api_method(): void
+    {
+        // From Livewire's own alias map (dist/livewire.js): anything here is
+        // intercepted in the browser and never reaches the component.
+        $reserved = [
+            'get', 'set', 'call', 'commit', 'watch', 'entangle', 'dispatch', 'dispatchTo',
+            'dispatchSelf', 'upload', 'uploadMultiple', 'removeUpload', 'cancelUpload',
+            'refresh', 'toggle', 'on', 'js',
+        ];
+
+        foreach ([
+            ApprovalForm::class,
+            \App\Livewire\Approval\ApprovalShow::class,
+            \App\Livewire\Rfi\RfiForm::class,
+            \App\Livewire\Rfi\RfiShow::class,
+        ] as $class) {
+            $reflection = new \ReflectionClass($class);
+
+            foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+                if ($method->getDeclaringClass()->getName() !== $class) {
+                    continue;
+                }
+
+                $this->assertNotContains(
+                    $method->getName(),
+                    $reserved,
+                    "{$class}::{$method->getName()}() shadows a Livewire \$wire method; a wire:click on it never reaches PHP.",
+                );
+            }
+        }
+    }
 
     public function test_the_pages_render_through_their_routes(): void
     {

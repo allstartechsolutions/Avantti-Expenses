@@ -63,21 +63,56 @@
     @endif
 
     <!-- Upload Form -->
-    <form wire:submit.prevent="save" class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <input
-            type="file"
-            wire:model="upload"
-            accept=".pdf,.jpg,.jpeg,.png"
-            class="block w-full text-sm text-slate-500 dark:text-slate-400
-                file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                file:text-sm file:font-medium file:bg-[#3F5189] file:text-white
-                hover:file:bg-[#4A5A96] file:cursor-pointer">
-        <x-ui.button type="submit" variant="secondary" size="sm">
-            <span wire:loading.remove wire:target="upload,save">{{ __('Upload') }}</span>
-            <span wire:loading wire:target="upload,save">{{ __('Uploading...') }}</span>
-        </x-ui.button>
-    </form>
-    @error('upload')
-        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-    @enderror
+    @if($this->canUpload())
+        <form wire:submit.prevent="save" class="space-y-3">
+            <x-ui.file-drop
+                wire:model="newUploads"
+                accept=".pdf,.jpg,.jpeg,.png"
+                :hint="__('PDF, JPG or PNG, up to 10MB each.')">
+
+                {{-- Three keys, three different refusals: the upload's own check,
+                     this box's, and Livewire's temporary-upload rules. --}}
+                @error('uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                @error('uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                @error('newUploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                @error('newUploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                @if(count($uploads) > 0)
+                    <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                        @foreach($uploads as $index => $file)
+                            <li wire:key="pending-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                    {{ $file->getClientOriginalName() }}
+                                </span>
+                                <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                    {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                </span>
+                                <x-ui.icon-button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon="trash"
+                                    type="button"
+                                    wire:click="discardUpload({{ $index }})"
+                                    title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                    aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                    class="hover:text-red-600 dark:hover:text-red-400" />
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-ui.file-drop>
+
+            @if(count($uploads) > 0)
+                <div class="flex items-center justify-end">
+                    <x-ui.button type="submit" variant="secondary" size="sm" icon="upload"
+                        wire:loading.attr="disabled" wire:target="newUploads,save">
+                        <span wire:loading.remove wire:target="newUploads,save">
+                            {{ trans_choice('Upload :count file|Upload :count files', count($uploads), ['count' => count($uploads)]) }}
+                        </span>
+                        <span wire:loading wire:target="newUploads,save">{{ __('Uploading...') }}</span>
+                    </x-ui.button>
+                </div>
+            @endif
+        </form>
+    @endif
 </div>

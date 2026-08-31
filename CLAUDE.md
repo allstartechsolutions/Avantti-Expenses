@@ -314,6 +314,32 @@ Conditionally show fields based on country:
 - Use Laravel's Storage facade
 - Implement proper file cleanup when records are deleted
 
+### Every upload is drag-and-drop — no bare `<input type="file">` anywhere
+
+A file field is a drop zone with a click-to-choose fallback, never a naked browser
+file input. People drag a ficha técnica out of a folder; making them hunt through a
+file dialog for it is the bare minimum, and the bare minimum is not what this
+product ships. Two components cover every case — use one of them, never roll a third:
+
+| Component | Use it when | How it sends |
+|---|---|---|
+| `<x-ui.file-drop wire:model="newUploads">` | The record may not exist yet — a create/edit form that holds its files until save. | Livewire `wire:model`; the form stores them in `save()`. |
+| `<x-ui.file-uploader :targetType="..." :targetId="...">` | The record already exists — attach now, to a task, a note, a document. | Straight to storage with presigned URLs; the bytes never pass through PHP, so gigabyte files work. |
+
+`file-drop` takes the queue list as its slot, so every screen shows what is waiting,
+its size, and a trash icon-button for each — **whose method must not be called
+`removeUpload()`**: that name belongs to Livewire's own `$wire` API, so the click is
+intercepted in the browser and dies server-side with `Property [$0] not found`. Call it
+`discardUpload()`. Both zones are dark-mode, translated, and show real
+upload progress. `resources/views/components/ui/README.md` documents the props;
+`ApprovalForm` + `approval-form.blade.php` are the reference implementation, including
+the `updatedNewUploads()` hook that makes a **second drop add to the queue instead of
+replacing the first** — without it a user loses a batch with nothing on screen to say so.
+
+**The old plain inputs are being replaced module by module as each module is reviewed**
+— the remaining ones are listed in `docs/review-and-improvements.md` (A2). New screens
+have no excuse: use the component from the first commit.
+
 ## Performance Considerations
 - Use eager loading to prevent N+1 queries
 - Implement pagination for large datasets

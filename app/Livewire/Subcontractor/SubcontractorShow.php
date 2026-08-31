@@ -108,6 +108,17 @@ class SubcontractorShow extends Component
         ]);
     }
 
+    /** Take the chosen document back off before it is stored. */
+    public function clearDocumentFile()
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the reference would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->document_file?->delete();
+
+        $this->document_file = null;
+    }
+
     public function updatedDocumentTypeId($value)
     {
         // Reset expiration date when document type changes

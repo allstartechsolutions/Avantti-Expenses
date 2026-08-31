@@ -173,18 +173,34 @@
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('File') }}</label>
-                            <input
-                                type="file"
+                            <x-ui.file-drop
                                 wire:model="file"
+                                :multiple="false"
                                 accept=".pdf,.jpg,.jpeg,.png"
-                                class="w-full text-sm text-slate-500 dark:text-slate-400
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-md file:border-0
-                                    file:text-sm file:font-semibold
-                                    file:bg-[#3F5189] file:text-white
-                                    hover:file:bg-[#2F3F6F]">
-                            <p class="mt-1 text-xs text-slate-400">{{ __('PDF, JPG, PNG up to 10MB') }}</p>
-                            @error('file') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                :hint="__('PDF, JPG, PNG up to 10MB')">
+
+                                @error('file') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                @if($file)
+                                    <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                        <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                            {{ $file->getClientOriginalName() }}
+                                        </span>
+                                        <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                            {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                        </span>
+                                        <x-ui.icon-button
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="trash"
+                                            type="button"
+                                            wire:click="clearFile"
+                                            title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                            aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                            class="hover:text-red-600 dark:hover:text-red-400" />
+                                    </div>
+                                @endif
+                            </x-ui.file-drop>
                         </div>
                     </div>
 

@@ -210,8 +210,7 @@
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Upload a logo image (max 2MB)') }}</p>
                 </div>
                 <div class="p-6">
-                    <div x-data="{ dragOver: false }"
-                         class="relative">
+                    <div class="relative">
 
                         @if($existingLogo && !$logoPreview)
                             <!-- Existing Logo -->
@@ -265,40 +264,17 @@
                             </div>
                         @endif
 
-                        <!-- File Upload Area -->
-                        <div @dragover.prevent="dragOver = true"
-                             @dragleave.prevent="dragOver = false"
-                             @drop.prevent="dragOver = false; $refs.logoInput.files = $event.dataTransfer.files; $refs.logoInput.dispatchEvent(new Event('change', { bubbles: true }));"
-                             :class="dragOver ? 'border-[#3F5189] bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600'"
-                             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors">
+                        {{-- Was a hand-rolled drop zone; the shared component now,
+                             so the logo behaves like every other upload. --}}
+                        <x-ui.file-drop
+                            wire:model="logo"
+                            :multiple="false"
+                            accept="image/*"
+                            :label="__('Drop the logo here, or')"
+                            :hint="__('PNG, JPG, GIF up to 2MB')">
 
-                            <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-
-                            <div class="mt-4">
-                                <label for="logo" class="cursor-pointer">
-                                    <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ __('Click to upload or drag and drop') }}
-                                    </span>
-                                    <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        {{ __('PNG, JPG, GIF up to 2MB') }}
-                                    </span>
-                                </label>
-                                <input
-                                    type="file"
-                                    id="logo"
-                                    x-ref="logoInput"
-                                    wire:model="logo"
-                                    class="sr-only"
-                                    accept="image/*"
-                                >
-                            </div>
-                        </div>
-
-                        @error('logo')
-                            <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span>
-                        @enderror
+                            @error('logo') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        </x-ui.file-drop>
                     </div>
                 </div>
             </div>

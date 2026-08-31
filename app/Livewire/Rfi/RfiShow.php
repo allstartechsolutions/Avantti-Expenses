@@ -39,7 +39,16 @@ class RfiShow extends Component
     public string $answerText = '';
 
     /** Files attached with a reply — the marked-up prancha, usually. */
+    /**
+     * Files chosen with an answer, and the box the drop zone writes to.
+     *
+     * `updatedNewReplyUploads()` moves them across so a second drop adds to the
+     * queue instead of replacing what was dropped first — Livewire's
+     * `uploadMultiple` runs with `append = false`.
+     */
     public array $replyUploads = [];
+
+    public array $newReplyUploads = [];
 
     /** Editing one reply. */
     public ?int $editingReplyId = null;
@@ -197,13 +206,13 @@ class RfiShow extends Component
         }
 
         $this->validateOnly('answerText');
-        $this->validate(['replyUploads.*' => 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024)]);
+        $this->validate(['replyUploads.*' => $this->replyFileRule()]);
 
         $reply = $this->rfi->addReply($this->answerText, auth()->user());
 
         $this->storeReplyUploads($reply);
 
-        $this->reset(['answerText', 'replyUploads']);
+        $this->reset(['answerText', 'replyUploads', 'newReplyUploads']);
         $this->rfi->refresh();
 
         $this->dispatch('close-modal', 'rfi-answer');
@@ -406,8 +415,57 @@ class RfiShow extends Component
         session()->flash('rfi_message', __('collaboration.message.ball_court_updated'));
     }
 
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied whatever happens: a file left in it is invisible — the list on
+     * screen is the queue, not this — and `addError()` rather than `validate()`
+     * because the latter ends with a bare `resetErrorBag()`, which would wipe
+     * the answer's own message off the modal.
+     */
+    public function updatedNewReplyUploads(): void
+    {
+        $dropped = $this->newReplyUploads;
+        $this->newReplyUploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = \Illuminate\Support\Facades\Validator::make(
+                ['file' => $file],
+                ['file' => $this->replyFileRule()],
+            );
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->replyUploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('newReplyUploads', __('Not attached — larger than the :size limit: :files', [
+                'size' => \App\Services\DocumentSettings::formatBytes(app(FileUploadService::class)->maxBytes()),
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /** One place for the size cap, so the drop zone and the answer cannot disagree. */
+    protected function replyFileRule(): string
+    {
+        return 'nullable|file|max:'.(int) (app(FileUploadService::class)->maxBytes() / 1024);
+    }
+
     public function removeReplyUpload(int $index): void
     {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the array entry would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->replyUploads[$index]?->delete();
+
         unset($this->replyUploads[$index]);
 
         $this->replyUploads = array_values($this->replyUploads);

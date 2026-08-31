@@ -68,6 +68,14 @@ class ContractChangeOrders extends Component
         $this->resetForm();
     }
 
+    /** Take the chosen file back off before it is stored. */
+    public function clearFile()
+    {
+        $this->file?->delete();
+
+        $this->file = null;
+    }
+
     public function save()
     {
         $this->authorizeAbility('contracts.edit', $this->contract);

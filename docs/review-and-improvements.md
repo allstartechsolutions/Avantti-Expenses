@@ -1528,3 +1528,118 @@ php artisan test
 Worth considering if it happens again: a `.gitattributes` merge strategy for `lang/*.json`, or
 splitting the procurement strings into their own file the way `collaboration.php` already is.
 That would remove the JSON tail as a conflict point entirely.
+
+---
+
+## A1 — Six hand-rolled search pickers should become `<x-ui.search-select>` — 2026-08-31
+
+The approvals form's budget line, supplier and catalog item fields were `<select>` elements
+listing **every** row: unusable once a company has a few hundred budget lines or a few
+thousand vendors, and a full vendor table sent down with every render. They are now
+type-to-search pickers built on a new shared component,
+`resources/views/components/ui/search-select.blade.php` — the first one in the codebase and
+the first with keyboard navigation and `role="combobox"`.
+
+**The rest of the app still has six copies of the same idea, all hand-rolled and none with
+keyboard navigation** (found by survey, 2026-08-31):
+
+| Where | Fields |
+|---|---|
+| `ManagesExpenseForm` + expense form body / item modal | supplier, budget item, catalog item |
+| `purchase-order-create` / `-edit` | supplier, budget item, catalog item |
+| `estimate-create` / `-edit`, `invoice-create` / `-edit` | client, project, job site, catalog |
+| `contract-create` / `-edit`, `allocation-editor`, change-order `form-modal` | subcontractor, cost code |
+| `quotation` / `requisition` form modals | budget item, catalog item, vendor |
+| `catalog-item-create` / `-edit` | supplier — and this one **preloads every vendor as JSON** |
+
+Each behaves slightly differently (some close on click-away, some only when the server stops
+returning rows; some show the selection as a pill, some echo it into the input; none say
+whether an id is actually linked). Migrating them is mechanical — the server side already
+has `*Search` properties and `select*` / `clear*` methods with the same shape as the
+approvals form — but it touches paid-for screens in six modules, so it belongs in a review
+phase and not in a feature change. The catalog one is the most worth doing first: it is the
+only picker that ships the whole vendor table to the browser.
+
+**Also noticed while doing this, and deliberately not changed:** the approvals supplier field
+searches `Vendor`, not `Supplier`, so a vendor flagged only as a *subcontractor* can be named
+as the fornecedor of an approval. That is what the `<select>` did too — narrowing it to
+`is_supplier` would quietly change who can be picked, which is a decision, not a fix. Ask
+before flipping it.
+
+---
+
+## A2 — Every upload becomes a drop zone, module by module — 2026-08-31
+
+**The rule is now in `CLAUDE.md`** (*File Handling → Every upload is drag-and-drop*): no bare
+`<input type="file">` anywhere. Two components cover every case —
+`<x-ui.file-drop>` for a form that holds its files until save, `<x-ui.file-uploader>` for a
+record that already exists and can take the bytes straight to storage.
+
+**Done:** approvals (`approval-form.blade.php`), which is the reference implementation, and
+the whole RFI side — `rfi-form.blade.php` and the answer modal in `rfi-show.blade.php`
+(`newReplyUploads` + `updatedNewReplyUploads()`), both of which had the replace-on-second-pick
+data loss described below — and **income at both levels** (`project-income.blade.php`,
+`job-site-income.blade.php`), which had the same data loss *and* no way at all to take a
+wrongly-chosen file back off before saving. Income keeps its own narrower rule (PDF/JPG/PNG,
+10 MB) by passing `accept` and `hint` to the zone; covered by
+`tests/Feature/Income/IncomeAttachmentTest.php`.
+
+**Contracts** are done too — `contract-create`, `contract-edit` and
+`contract-change-orders`, all three of which are **single-file** fields, so they pass
+`:multiple="false"` and their own `accept` / `hint` (PDF, JPG, PNG, 10 MB). They gained
+`clearContractFile()` / `clearFile()`, which they had no equivalent of: the chosen file was
+never shown and could not be taken back off, only overwritten. `contract-edit` also had two
+strings outside `__()` (*Replace File* / *Contract File*), now wrapped and translated.
+Covered by `tests/Feature/Contract/ContractFileTest.php` — the first functional test any of
+those three components has had.
+
+**Expenses, purchase orders and the shared attachments panel** are done. Six surfaces:
+the two receipt/quote fields (`expense_receipt` on the expense screens and both expense
+modals, `po_receipt` on both purchase-order screens), each single-file with a new
+`clearExpenseReceipt()` / `clearPoReceipt()`, and `livewire/shared/attachments.blade.php`,
+which is used by expenses, purchase orders, income, requisitions and quotations.
+
+Three things beyond the drag-and-drop, all of them in the panel:
+
+- **It now takes several files in one act.** It was one file per round trip — three
+  photographs of a delivery meant three uploads. `Attachments` gained the queue
+  (`uploads` / `newUploads` / `discardUpload()`), and `save()` loops.
+- **The upload form is hidden from somebody who may not upload.** `canUpload()` existed and
+  was never called from the view, so a reader was shown a form that could only ever fail.
+  The guard on `save()` is unchanged — this hides a form, it does not replace a check.
+- **The job-site expense modal's hand-rolled drop zone is gone**, replaced by the shared
+  component, so all four expense entry points behave identically.
+
+Covered by `tests/Feature/Attachments/SharedAttachmentsTest.php` (five, including that
+uploading is still refused without the record's edit grant) and
+`tests/Feature/Expense/ReceiptFieldTest.php` (three, rendering all four receipt surfaces).
+
+**The three one-off fields** are done — the **company logo** (`image/*`, 2 MB; its
+hand-rolled drop zone replaced by the component, keeping its image preview and
+`removeLogo`), the **cost-code CSV import** (`.csv,.txt`, 1 MB, showing the file with the
+row count read from it and a new guarded `clearImportFile()` that clears the preview with
+it), and the **subcontractor document** (`.pdf,.doc,.docx,.jpg,.jpeg,.png`, 10 MB, new
+`clearDocumentFile()`). Each keeps its own `accept` and `hint` rather than the document
+allow-list. None of the three could take a chosen file back off before. Covered by
+`tests/Feature/Uploads/OneOffUploadTest.php`.
+Its Livewire side gained `newUploads` + `updatedNewUploads()`, so a second drop **adds to**
+the queue rather than replacing it — the trap every one of these conversions has to avoid,
+because a plain `wire:model` file input replaces its whole selection on each pick.
+
+**Still plain file inputs, to be converted as each module is reviewed:**
+
+| Module | File |
+|---|---|
+| Documents | `livewire/documents/partials/upload-modal.blade.php` (the local-upload fallback at the bottom; the main zone is already drag-and-drop) |
+| Change orders | `change-order/partials/form-modal.blade.php` |
+| Quotations | `quotation/partials/form-modal.blade.php`, `proposal-modal.blade.php`, `requisition/partials/form-modal.blade.php` |
+| Daily reports | `daily-report/daily-report-form.blade.php` |
+
+Checked, so the next pass does not have to: **change orders** take a single file (`co_file`,
+no `accept` at all today — give it one). **Quotations**, **requisitions** and the quotation
+**proposal modal** are all multi-file (`quo_uploads`, `req_uploads`, `prop_uploads`,
+`.pdf,.jpg,.jpeg,.png`), so each needs the `newUploads` + `updated…()` accumulate hook or a
+second drop will wipe the first. **Daily reports** have two multi-file image fields
+(`taskImages`, `manpowerImages`) with no `accept`. The **documents** fallback is the
+`localUploads` input at the bottom of the modal; the main zone there is already
+drag-and-drop and goes straight to R2.

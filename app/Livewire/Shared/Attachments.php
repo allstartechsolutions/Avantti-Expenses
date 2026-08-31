@@ -12,6 +12,7 @@ use App\Models\Quotation;
 use App\Models\QuotationVendor;
 use App\Services\PermissionResolver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -36,7 +37,17 @@ class Attachments extends Component
 
     public int $modelId;
 
-    public $upload = null;
+    /**
+     * The files waiting to be attached, and the box the drop zone writes to.
+     *
+     * A queue rather than one file: people attach three photographs of the same
+     * delivery, and doing that one round trip at a time is exactly the repeated
+     * work the design standard says to take out. `updatedNewUploads()` moves
+     * them across, so a second drop adds instead of replacing.
+     */
+    public array $uploads = [];
+
+    public array $newUploads = [];
 
     protected function resolveModel(): Model
     {
@@ -87,27 +98,92 @@ class Attachments extends Component
         };
     }
 
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied **whatever happens**, including for a file the rule refuses: one
+     * left behind is invisible — the list on screen is the queue, not this —
+     * and would fail every later upload with no button to remove it. The
+     * refusal is said with `addError()` rather than by throwing, because
+     * `validate()` ends with a bare `resetErrorBag()`.
+     */
+    public function updatedNewUploads(): void
+    {
+        $dropped = $this->newUploads;
+        $this->newUploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(['file' => $file], ['file' => $this->fileRule()]);
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('newUploads', __('Not attached — must be a PDF, JPG or PNG under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /**
+     * Take a file back out of the queue before it is stored.
+     *
+     * NOT `removeUpload()`: that name is part of Livewire's own `$wire` API, so
+     * a `wire:click` on it never reaches this class.
+     */
+    public function discardUpload(int $index): void
+    {
+        $this->uploads[$index]?->delete();
+
+        unset($this->uploads[$index]);
+
+        $this->uploads = array_values($this->uploads);
+    }
+
+    /** One place for what an attachment may be, so the drop zone and the save agree. */
+    protected function fileRule(): string
+    {
+        return 'file|mimes:pdf,jpg,jpeg,png|max:10240';
+    }
+
     public function save(): void
     {
         $this->authorizeAbility($this->area().'.edit', $this->scope());
 
         $this->validate([
-            'upload' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'uploads' => 'required|array|min:1',
+            'uploads.*' => $this->fileRule(),
+        ], [
+            'uploads.required' => __('Choose a file first.'),
+            'uploads.min' => __('Choose a file first.'),
         ]);
 
         $model = $this->resolveModel();
+        $directory = $this->storageDirectory();
 
-        $path = $this->upload->store($this->storageDirectory(), 'local');
+        foreach ($this->uploads as $upload) {
+            $model->attachments()->create([
+                'file_path' => $upload->store($directory, 'local'),
+                'original_name' => $upload->getClientOriginalName(),
+                'uploaded_by' => auth()->id(),
+            ]);
+        }
 
-        $model->attachments()->create([
-            'file_path' => $path,
-            'original_name' => $this->upload->getClientOriginalName(),
-            'uploaded_by' => auth()->id(),
-        ]);
+        $stored = count($this->uploads);
 
-        $this->reset('upload');
+        $this->reset(['uploads', 'newUploads']);
 
-        session()->flash('attachment_message', __('File uploaded successfully.'));
+        session()->flash('attachment_message', trans_choice(
+            ':count file uploaded.|:count files uploaded.', $stored, ['count' => $stored],
+        ));
     }
 
     public function deleteAttachment(int $attachmentId): void

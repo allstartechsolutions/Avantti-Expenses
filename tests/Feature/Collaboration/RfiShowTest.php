@@ -705,6 +705,35 @@ class RfiShowTest extends TestCase
      * what was said, not to the SI as a whole — otherwise three replies later
      * nobody knows which drawing went with which answer.
      */
+    /**
+     * A second drop adds to an answer's files.
+     *
+     * The box the drop zone writes to is emptied on every change, so two drags
+     * both arrive — Livewire's `uploadMultiple` runs with `append = false`, and
+     * binding it straight to the queue lost the first batch in silence.
+     */
+    public function test_files_dropped_in_two_goes_all_go_up_with_the_answer(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake(config('documents.disk', 'local'));
+
+        $rfi = $this->rfi();
+
+        Livewire::actingAs($this->admin)
+            ->test(RfiShow::class, ['rfi' => $rfi])
+            ->set('answerText', 'Ver os dois anexos.')
+            ->set('newReplyUploads', [\Illuminate\Http\UploadedFile::fake()->create('prancha.pdf', 20, 'application/pdf')])
+            ->assertSet('newReplyUploads', [])
+            ->set('newReplyUploads', [\Illuminate\Http\UploadedFile::fake()->create('detalhe.pdf', 20, 'application/pdf')])
+            ->assertCount('replyUploads', 2)
+            ->call('recordAnswer')
+            ->assertHasNoErrors();
+
+        $this->assertEqualsCanonicalizing(
+            ['prancha.pdf', 'detalhe.pdf'],
+            $rfi->fresh()->replies()->first()->availableFiles()->pluck('original_name')->all(),
+        );
+    }
+
     public function test_a_reply_carries_its_own_attachments(): void
     {
         \Illuminate\Support\Facades\Storage::fake(config('documents.disk', 'local'));

@@ -232,11 +232,16 @@
                             </select>
                         </div>
 
-                        <div class="md:col-span-1 flex md:justify-end">
-                            <x-ui.button variant="ghost" size="sm" type="button" icon="trash"
-                                wire:click="removeDistributionRow({{ $index }})">
-                                <span class="md:sr-only">{{ __('Remove') }}</span>
-                            </x-ui.button>
+                        <div class="md:col-span-1 flex justify-end items-center md:h-[38px]">
+                            <x-ui.icon-button
+                                variant="ghost"
+                                size="sm"
+                                icon="trash"
+                                type="button"
+                                wire:click="removeDistributionRow({{ $index }})"
+                                title="{{ __('Remove this row') }}"
+                                aria-label="{{ __('Remove this row') }}"
+                                class="hover:text-red-600 dark:hover:text-red-400" />
                         </div>
                     </div>
                 @endforeach
@@ -255,27 +260,43 @@
             </div>
 
             <div class="px-5 py-5 space-y-3">
-                <input type="file" multiple wire:model="uploads"
-                    class="block w-full text-sm text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200 dark:hover:file:bg-slate-600">
+                <x-ui.file-drop wire:model="newUploads">
+                    {{-- Three keys, three different refusals: `uploads.*` from
+                         save(), `newUploads` from this form's own size check,
+                         and `newUploads.*` from Livewire's temporary-upload
+                         rules, which reject a file before it ever reaches PHP. --}}
+                    @error('uploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    @error('newUploads') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
+                    @error('newUploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
 
-                <div wire:loading wire:target="uploads" class="text-sm text-slate-500 dark:text-slate-400">
-                    {{ __('Uploading...') }}
-                </div>
+                    @if(count($uploads) > 0)
+                        <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                            @foreach($uploads as $index => $upload)
+                                <li wire:key="upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                    <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                        {{ $upload->getClientOriginalName() }}
+                                    </span>
+                                    <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                        {{ \App\Services\DocumentSettings::formatBytes($upload->getSize()) }}
+                                    </span>
+                                    <x-ui.icon-button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="trash"
+                                        type="button"
+                                        wire:click="discardUpload({{ $index }})"
+                                        title="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                        aria-label="{{ __('Remove :file', ['file' => $upload->getClientOriginalName()]) }}"
+                                        class="hover:text-red-600 dark:hover:text-red-400" />
+                                </li>
+                            @endforeach
+                        </ul>
 
-                @error('uploads.*') <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
-
-                @if(count($uploads) > 0)
-                    <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
-                        @foreach($uploads as $index => $upload)
-                            <li wire:key="upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
-                                <span class="truncate text-slate-900 dark:text-white">{{ $upload->getClientOriginalName() }}</span>
-                                <x-ui.button variant="ghost" size="sm" type="button" wire:click="removeUpload({{ $index }})">
-                                    {{ __('Remove') }}
-                                </x-ui.button>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($uploads), ['count' => count($uploads)]) }}
+                        </p>
+                    @endif
+                </x-ui.file-drop>
 
                 @if($this->isEditing && $rfi->availableFiles()->exists())
                     <div>
@@ -295,7 +316,7 @@
                 {{ __('Cancel') }}
             </x-ui.button>
             <x-ui.button variant="primary" type="submit" icon="save"
-                wire:loading.attr="disabled" wire:target="save,uploads">
+                wire:loading.attr="disabled" wire:target="save,newUploads">
                 {{ $this->isEditing ? __('collaboration.label.save_changes') : __('collaboration.label.raise_rfi') }}
             </x-ui.button>
         </div>

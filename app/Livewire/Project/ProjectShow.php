@@ -671,6 +671,17 @@ class ProjectShow extends Component
             ->toArray();
     }
 
+    /** Take the chosen receipt back off before the record is saved. */
+    public function clearExpenseReceipt()
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the reference would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->expense_receipt?->delete();
+
+        $this->expense_receipt = null;
+    }
+
     public function saveExpense()
     {
         if ($this->expenseModalMode === 'edit' && $this->editingExpense) {

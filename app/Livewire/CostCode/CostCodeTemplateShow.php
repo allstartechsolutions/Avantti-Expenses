@@ -201,6 +201,21 @@ class CostCodeTemplateShow extends Component
         $this->reset(['importFile', 'importErrors', 'importPreview']);
     }
 
+    /**
+     * Take the chosen CSV back off, and the preview read from it with it.
+     *
+     * Guarded like every other action on this screen: the preview it clears is
+     * built from the file, and building it is `cost-codes.create`.
+     */
+    public function clearImportFile()
+    {
+        $this->authorizeAbility('cost-codes.create');
+
+        $this->importFile?->delete();
+
+        $this->reset(['importFile', 'importErrors', 'importPreview']);
+    }
+
     public function updatedImportFile()
     {
         $this->authorizeAbility('cost-codes.create');
