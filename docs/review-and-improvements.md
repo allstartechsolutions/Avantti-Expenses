@@ -1672,3 +1672,59 @@ because a plain `wire:model` file input replaces its whole selection on each pic
 **No plain file inputs remain.** The only `type="file"` left in the app is the hidden input
 behind "choose files" inside the cloud uploader's own drop zone — the same shape
 `x-ui.file-drop` uses internally, not a bare field.
+
+---
+
+## A3 — Dates: 144 screens showed a US date on a Brazilian install — 2026-08-31
+
+**Closed the same day it was raised.** Every screen decided for itself how to write a date,
+and the commonest habit — 133 uses of `format('M d, Y')` — printed `Aug 31, 2026` everywhere:
+the US order *and* English month names, which `app.locale` cannot fix because `format()` never
+translates. Alongside it: 11 hardcoded `m/d/Y`, 29 hardcoded `d/m/Y` (wrong the other way, on
+a US install), and 39 copies of the same country ternary.
+
+One answer now — the Carbon macros in `AppServiceProvider::registerDateMacros()`, applied to
+~320 call sites across 142 files including every PDF and e-mail template. The full rule is in
+**[docs/date-formatting.md](./date-formatting.md)**; the short version is in `CLAUDE.md`.
+
+**The date fields were a separate bug with the same symptom.** `<input type="date">` renders
+in the *browser's* locale, so a BR install seen through an en-US browser asked for
+`mm/dd/yyyy` no matter what the app said — nothing about the app could fix it. 89 inputs
+became `<x-ui.date-input>`, a text field in this install's order with the native control kept
+hidden for its picker. **The value crossing to Livewire is still `Y-m-d`**, so no rule, query
+or component changed.
+
+**Three things the mechanical sweep got wrong, all caught before the end:**
+
+- It scraped bare words out of `class` values and appended them as attributes.
+- It **dropped five `@disabled(...)` bindings** — the expense form's paid/due dates and the
+  contract measurement period would have been editable while locked.
+- Two tags held a `>` inside a Blade expression, so the regex cut them mid-directive.
+
+And one it caused: `@disabled($flag)` **restored into a component tag** stops Blade compiling
+the tag at all — the field vanished from the expense form's payment section with no error
+anywhere. `:disabled="$flag"` is the component form.
+
+**What guards it now:** `DateFormatSweepTest` (no hand-written format, no native `type="date"`,
+no Blade directive in any component tag) and `DateInputTest` (the field itself, per country).
+
+---
+
+## Two bugs found while working on the documents module — 2026-08-31
+
+Both were reported by the owner from the live app, and both are fixed.
+
+**"New Version" opened underneath the document.** `document-upload-modal` and
+`document-detail-modal` both declare `layer="top"`, so both sat at `z-index: 60` and DOM
+order decided — and the upload modal is `@include`d one line *before* the detail modal. Share,
+edit and folder are included after it, which is why only that one button looked broken.
+`x-ui.modal` now treats its layer as a *resting* z-index and raises a modal above whatever is
+open when it opens, so include order stops mattering for all 52 files that use it.
+
+**A new version uploaded, and the preview kept showing the old file.** `documents.preview` is
+the same URL for every version, so Livewire's morph saw an unchanged `<iframe>` and left it
+alone — and the browser would have answered from cache anyway. The stage's `src` and
+`wire:key` now both carry `current_version_id`. Separately, `documentUploaded()` and
+`saveLocalUploads()` cleared four computed properties but not `viewingDocument`, the one the
+open detail view reads.
+

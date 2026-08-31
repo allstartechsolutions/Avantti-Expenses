@@ -328,6 +328,17 @@ Use `wire:confirm` for delete confirmations (not custom modals):
 </x-ui.button>
 ```
 
+### Dates
+```blade
+{{ $expense->expense_date->appDate() }}          {{-- 31 ago 2026 / Aug 31, 2026 --}}
+<x-ui.date-input wire:model="expense_date" />    {{-- never <input type="date"> --}}
+```
+See *Dates and Times Come From the Macros* below, and `docs/date-formatting.md`.
+
+**On a component tag, write `:disabled="$flag"`, never `@disabled($flag)`** — a Blade
+directive inside a `<x-…>` tag stops the tag compiling and the element vanishes from the page
+with no error. This is true of every component, not just this one.
+
 ### Address Format (Country-based)
 Use `config('app.country')` to determine address format:
 - **US**: Street, Address Line 2, City, State, ZIP Code
@@ -376,9 +387,10 @@ upload progress. `resources/views/components/ui/README.md` documents the props;
 the `updatedNewUploads()` hook that makes a **second drop add to the queue instead of
 replacing the first** — without it a user loses a batch with nothing on screen to say so.
 
-**The old plain inputs are being replaced module by module as each module is reviewed**
-— the remaining ones are listed in `docs/review-and-improvements.md` (A2). New screens
-have no excuse: use the component from the first commit.
+**The sweep is finished** (31 Aug 2026): every module was converted, and the only
+`type="file"` left in the app is the hidden input inside the cloud uploader's own drop zone.
+A2 in `docs/review-and-improvements.md` records what was done and the two decisions taken
+along the way. New screens use the component from the first commit.
 
 ## Performance Considerations
 - Use eager loading to prevent N+1 queries

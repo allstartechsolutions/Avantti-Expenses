@@ -297,3 +297,56 @@ that bug. Use `discardUpload()`, and keep it out of the reserved list checked by
 `ApprovalFormTest::test_no_action_is_named_after_a_livewire_api_method`.
 
 `app/Livewire/Approval/ApprovalForm.php` is the reference implementation.
+
+---
+
+# `<x-ui.date-input>` — a date field that reads the way this install writes dates
+
+**Never `<input type="date">`.** A native date input renders in the **browser's** locale,
+which has nothing to do with `config('app.country')`: a Brazilian install seen through an
+en-US browser asks for `mm/dd/yyyy`, and no attribute or CSS rule changes that.
+
+```blade
+<x-ui.date-input wire:model="expense_date" />
+<x-ui.date-input wire:model.live="fromDate" class="{{ $field }}" />
+<x-ui.date-input wire:model="expense_paid_date" :disabled="$amountsLocked" />
+```
+
+| Prop | Default | Purpose |
+|---|---|---|
+| `wire:model` | — | The property. Holds `Y-m-d` throughout; `.live` is carried through. |
+| `placeholder` | `dd/mm/aaaa` / `mm/dd/yyyy` | What the box asks for. |
+| `disabled`, `readonly` | `false` | Either one hides the calendar button. |
+| `id` | derived from the property | Only pass one if a `<label for>` needs it. |
+
+The box on screen is a text field in this install's order, digits masked as they are typed,
+with strict parsing — 31/02/2026 is refused rather than quietly becoming 3 March, and a
+half-typed date clears the value so what is saved is always what is shown. The native control
+stays on the page, hidden and out of the tab order, only so the calendar button can call
+`showPicker()` on it. **What crosses to Livewire is `Y-m-d`, exactly as before**, so no rule,
+query or component needs to know this exists.
+
+Behaviour: `dateInput()` in `resources/js/app.js` — **changing it needs `npm run build`**.
+
+**The trap that cost an afternoon:** a Blade directive inside a component tag stops Blade
+compiling the tag at all. `<x-ui.date-input @disabled($flag) />` is left in the page as
+literal text and the field simply is not there, with no error anywhere. Write
+`:disabled="$flag"`. `DateFormatSweepTest` now fails on any component tag carrying
+`@disabled` / `@checked` / `@readonly` / `@required` / `@class` / `@style`.
+
+Printing a date is the other half: `->appDate()` and friends, in
+[docs/date-formatting.md](../../../docs/date-formatting.md).
+
+---
+
+# `<x-ui.modal>` — layering
+
+A modal declares a **resting** layer (`layer="base"`, or `layer="top"` for one that opens
+from inside another). On opening it raises itself one step above whatever is already open,
+and on closing it drops back. Two modals declaring the same layer are therefore ordered by
+**when they opened**, not by the order their partials happen to be `@include`d — which is how
+the documents "New Version" panel came to open *underneath* the document it was raised from.
+
+The z-index is a reactive `:style` binding rather than a write to `$el.style`: a Livewire
+re-render morphs attributes back to what the server sent, which would drop a raised modal
+back under its parent mid-use.

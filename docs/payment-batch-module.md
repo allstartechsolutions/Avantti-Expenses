@@ -315,7 +315,7 @@ Read-only view of a batch with details, summary, and items table.
 | # | Column | Notes |
 |---|--------|-------|
 | 1 | Name | With filter badges below (Client, Project, Subcontractor, PM, Status) |
-| 2 | Payment Date | Formatted m/d/Y |
+| 2 | Payment Date | `->appDate()` — see [Date and Time Formatting](./date-formatting.md) |
 | 3 | Items | Count from `withCount` |
 | 4 | Total Amount | Sum from `withSum` (cents → dollars) |
 | 5 | Status | Color-coded badge |
