@@ -624,3 +624,128 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+
+/*
+ * Date field.
+ *
+ * `<input type="date">` renders in the *browser's* locale, which has nothing
+ * to do with `config('app.country')`: a Brazilian install seen through an
+ * en-US browser asks for mm/dd/yyyy. So the field people read and type into is
+ * plain text in this install's order, and the native control is kept beside it
+ * for its picker alone.
+ *
+ * What travels to Livewire is always `Y-m-d` — the display format is a fact
+ * about the screen and never reaches the server.
+ *
+ * Usage: <x-ui.date-input wire:model="expense_date" /> — see
+ * resources/views/components/ui/date-input.blade.php.
+ */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('dateInput', (entangled, isBR) => ({
+        value: entangled,
+        isBR,
+        display: '',
+
+        init() {
+            this.display = this.toDisplay(this.value);
+
+            // The server sets this too — a form being filled in for editing, a
+            // reset after saving, a default date. Only overwrite what the user
+            // is typing when the two have genuinely diverged.
+            this.$watch('value', (incoming) => {
+                if (this.toIso(this.display) !== incoming) {
+                    this.display = this.toDisplay(incoming);
+                }
+            });
+        },
+
+        /** `2026-08-31` -> `31/08/2026` or `08/31/2026`. */
+        toDisplay(iso) {
+            const parts = String(iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (! parts) return '';
+
+            const [, year, month, day] = parts;
+
+            return this.isBR ? `${day}/${month}/${year}` : `${month}/${day}/${year}`;
+        },
+
+        /**
+         * The other way, and strict about it: a date that does not exist —
+         * 31/02, or 30/02/2026 — is not a date, and saving it as one would
+         * have the server quietly shift it into March.
+         */
+        toIso(text) {
+            const digits = String(text ?? '').replace(/\D/g, '');
+            if (digits.length !== 8) return '';
+
+            const first = digits.slice(0, 2);
+            const second = digits.slice(2, 4);
+            const year = digits.slice(4);
+
+            const day = this.isBR ? first : second;
+            const month = this.isBR ? second : first;
+
+            const date = new Date(`${year}-${month}-${day}T00:00:00`);
+
+            if (Number.isNaN(date.getTime())
+                || date.getMonth() + 1 !== Number(month)
+                || date.getDate() !== Number(day)) {
+                return '';
+            }
+
+            return `${year}-${month}-${day}`;
+        },
+
+        /** Separators appear as the digits are typed; nothing else is accepted. */
+        onInput(event) {
+            const digits = event.target.value.replace(/\D/g, '').slice(0, 8);
+
+            let out = digits;
+            if (digits.length > 4) {
+                out = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+            } else if (digits.length > 2) {
+                out = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+            }
+
+            this.display = out;
+
+            // A half-typed date clears the value rather than holding the last
+            // complete one, so what is saved is always what is on screen.
+            this.value = this.toIso(out);
+        },
+
+        /** Leaving the field tidies it: a date that will not parse is dropped. */
+        commit() {
+            const iso = this.toIso(this.display);
+
+            this.value = iso;
+            this.display = this.toDisplay(iso);
+        },
+
+        takeFromPicker(event) {
+            this.value = event.target.value || '';
+            this.display = this.toDisplay(this.value);
+        },
+
+        openPicker() {
+            const native = this.$refs.native;
+            if (! native) return;
+
+            native.value = this.value || '';
+
+            // Supported everywhere this product runs; the focus/click fallback
+            // is for anything older, where the browser opens it on its own.
+            if (typeof native.showPicker === 'function') {
+                try {
+                    native.showPicker();
+                    return;
+                } catch (error) {
+                    // Not allowed from here — fall through.
+                }
+            }
+
+            native.focus();
+            native.click();
+        },
+    }));
+});

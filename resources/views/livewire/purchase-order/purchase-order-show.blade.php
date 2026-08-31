@@ -112,7 +112,7 @@
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->po_date->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->po_date->appDate() }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Supplier') }}</dt>
@@ -124,7 +124,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created At') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->created_at->format('M d, Y H:i') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->created_at->appDateTime() }}</dd>
                         </div>
                         @if($purchaseOrder->approvedBy)
                             <div>
@@ -133,7 +133,7 @@
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->approved_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->approved_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($purchaseOrder->notes)
@@ -285,7 +285,7 @@
                         @if($purchaseOrder->payment_due_date)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due Date') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->payment_due_date->format('M d, Y') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $purchaseOrder->payment_due_date->appDate() }}</dd>
                             </div>
                         @endif
                         <div>
@@ -382,7 +382,7 @@
                             @if($purchaseOrder->receipts->isNotEmpty())
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     {{ __('Last delivery :date by :name', [
-                                        'date' => $purchaseOrder->receipts->first()->received_at?->format('M d, Y'),
+                                        'date' => $purchaseOrder->receipts->first()->received_at?->appDate(),
                                         'name' => $purchaseOrder->receipts->first()->receivedBy?->name ?? __('Unknown'),
                                     ]) }}
                                 </p>
@@ -561,7 +561,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                        {{ $history->created_at->format('M d, Y H:i') }}
+                                                        {{ $history->created_at->appDateTime() }}
                                                     </div>
                                                     @if($history->reason)
                                                         <div class="mt-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded p-2">
@@ -680,7 +680,7 @@
                 @foreach($purchaseOrder->receipts as $receipt)
                     <li class="border-l-2 border-slate-200 pl-4 dark:border-slate-700">
                         <p class="text-sm text-slate-900 dark:text-white">
-                            <span class="font-medium">{{ $receipt->received_at?->format('M d, Y') }}</span>
+                            <span class="font-medium">{{ $receipt->received_at?->appDate() }}</span>
                             <span class="text-slate-500 dark:text-slate-400">
                                 &middot; {{ $receipt->receivedBy?->name ?? __('Unknown') }}
                             </span>
@@ -714,8 +714,7 @@
                 <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Delivery date') }}</label>
-                        <input type="date" wire:model="receiptDate"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <x-ui.date-input wire:model="receiptDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                         @error('receiptDate') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
                     <div>

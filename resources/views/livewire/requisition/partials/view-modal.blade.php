@@ -107,7 +107,7 @@
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Needed By') }}</dt>
                                     <dd class="{{ $factValue }} {{ $viewingRequisition->isOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
-                                        {{ $viewingRequisition->needed_by?->format('M d, Y') ?? '—' }}
+                                        {{ $viewingRequisition->needed_by?->appDate() ?? '—' }}
                                         @if($viewingRequisition->isOverdue())
                                             <span class="block text-xs">{{ __('Overdue') }}</span>
                                         @endif
@@ -139,7 +139,7 @@
                                 </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Created') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->created_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->created_at?->appDateTime() ?? '—' }}</dd>
                                 </div>
                                 <div class="col-span-2">
                                     <dt class="{{ $factLabel }}">{{ __('Quoted By') }}</dt>
@@ -148,7 +148,7 @@
                                             {{ $viewingRequisition->assignedBuyer->name }}
                                             @if($viewingRequisition->assigned_at)
                                                 <span class="block text-xs text-slate-500 dark:text-slate-400">
-                                                    {{ __('Handed over :date', ['date' => $viewingRequisition->assigned_at->format('M d, Y H:i')]) }}
+                                                    {{ __('Handed over :date', ['date' => $viewingRequisition->assigned_at->appDateTime()]) }}
                                                     @if($viewingRequisition->isAwaitingItsRound())
                                                         &middot; {{ trans_choice(':count day waiting|:count days waiting', $viewingRequisition->daysSinceAssigned() ?? 0, ['count' => $viewingRequisition->daysSinceAssigned() ?? 0]) }}
                                                     @endif
@@ -169,7 +169,7 @@
                                 </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Reviewed') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->reviewed_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->reviewed_at?->appDateTime() ?? '—' }}</dd>
                                 </div>
                                 <div class="col-span-2">
                                     <dt class="{{ $factLabel }}">{{ __('Review Notes') }}</dt>
@@ -177,7 +177,7 @@
                                 </div>
                                 <div class="col-span-2">
                                     <dt class="{{ $factLabel }}">{{ __('Last Updated') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->updated_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingRequisition->updated_at?->appDateTime() ?? '—' }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -299,7 +299,7 @@
                                                     } }}
                                                 </p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                    {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->format('M d, Y H:i') }}
+                                                    {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->appDateTime() }}
                                                 </p>
                                                 @if($history->reason)
                                                     <p class="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{{ $history->reason }}</p>

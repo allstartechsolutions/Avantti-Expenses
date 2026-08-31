@@ -1,7 +1,6 @@
 <div>
     @php
         $field = 'px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
         $stats = $this->stats;
     @endphp
 
@@ -32,7 +31,7 @@
         <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
             <p class="text-sm font-medium text-white/80">{{ __('Next Meeting') }}</p>
             @if($stats['next'])
-                <p class="text-2xl font-bold mt-1">{{ $stats['next']->meeting_date->format($dateFormat) }}</p>
+                <p class="text-2xl font-bold mt-1">{{ $stats['next']->meeting_date->appDate() }}</p>
                 <p class="mt-2 text-sm text-white/80 truncate">{{ $stats['next']->number }} — {{ $stats['next']->title }}</p>
             @else
                 <p class="text-2xl font-bold mt-1">—</p>
@@ -85,8 +84,8 @@
             <option value="cancelled">{{ __('Meeting status: cancelled') }}</option>
         </select>
 
-        <input type="date" wire:model.live="fromDate" class="{{ $field }}" title="{{ __('From') }}">
-        <input type="date" wire:model.live="toDate" class="{{ $field }}" title="{{ __('To') }}">
+        <x-ui.date-input wire:model.live="fromDate" class="{{ $field }}" title="{{ __('From') }}" />
+        <x-ui.date-input wire:model.live="toDate" class="{{ $field }}" title="{{ __('To') }}" />
 
         @if($this->hasFilters())
             <button type="button" wire:click="clearFilters" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">
@@ -147,7 +146,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                                    {{ $meeting->meeting_date->format($dateFormat) }}
+                                    {{ $meeting->meeting_date->appDate() }}
                                     @if($meeting->started_at)
                                         <span class="block text-xs text-slate-400">{{ substr($meeting->started_at, 0, 5) }}</span>
                                     @endif

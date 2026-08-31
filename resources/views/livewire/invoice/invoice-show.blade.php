@@ -78,7 +78,7 @@
                         @endif
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Invoice Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->invoice_date->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->invoice_date->appDate() }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Terms') }}</dt>
@@ -87,7 +87,7 @@
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due Date') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white {{ $invoice->isPastDue() ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
-                                {{ $invoice->due_date->format('M d, Y') }}
+                                {{ $invoice->due_date->appDate() }}
                                 @if($invoice->isPastDue())
                                     (Past Due)
                                 @endif
@@ -110,13 +110,13 @@
                         @if($invoice->sent_at)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Sent At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->sent_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->sent_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($invoice->paid_at)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Paid At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->paid_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $invoice->paid_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($invoice->notes)
@@ -253,7 +253,7 @@
                                 @foreach($invoice->emailsSent as $email)
                                     <tr>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white whitespace-nowrap">
-                                            {{ $email->sent_at->format('M d, Y H:i') }}
+                                            {{ $email->sent_at->appDateTime() }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white whitespace-nowrap">
                                             {{ $email->sentBy?->name ?? __('Unknown') }}
@@ -270,7 +270,7 @@
                                         <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             @if($email->opened_at)
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                    Opened {{ $email->opened_at->format('M d, Y H:i') }}
+                                                    Opened {{ $email->opened_at->appDateTime() }}
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
@@ -427,7 +427,7 @@
                                     {{ __('Past Due') }}
                                 </div>
                                 <p class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                    Due date was {{ $invoice->due_date->format('M d, Y') }}
+                                    Due date was {{ $invoice->due_date->appDate() }}
                                 </p>
                             </div>
                         @endif
@@ -502,7 +502,7 @@
                             <p class="text-sm font-medium text-green-600 dark:text-green-400">{{ __('Paid in Full') }}</p>
                             @if($invoice->paid_at)
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                    {{ $invoice->paid_at->format('M d, Y H:i') }}
+                                    {{ $invoice->paid_at->appDateTime() }}
                                 </p>
                             @endif
                             @if($invoice->payments->where('status', 'completed')->count() > 0)
@@ -608,7 +608,7 @@
                                         </div>
                                         <div class="mt-1 text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
                                             <p>
-                                                {{ $payment->payment_date->format('M d, Y') }} &middot;
+                                                {{ $payment->payment_date->appDate() }} &middot;
                                                 @if($payment->gateway === 'cardpointe')
                                                     {{ $payment->getCardDisplayName() }}
                                                 @else
@@ -714,7 +714,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                        {{ $history->created_at->format('M d, Y H:i') }}
+                                                        {{ $history->created_at->appDateTime() }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -884,12 +884,7 @@
 
                         <div>
                             <label for="paymentDate" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Payment Date *') }}</label>
-                            <input
-                                type="date"
-                                id="paymentDate"
-                                wire:model="paymentDate"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                required>
+                            <x-ui.date-input id="paymentDate" wire:model="paymentDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                             @error('paymentDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 

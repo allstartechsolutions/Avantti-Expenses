@@ -68,7 +68,7 @@
                             @foreach($dailyReports as $report)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $report->report_date->format('M d, Y') }}
+                                        {{ $report->report_date->appDate() }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($report->jobSite)

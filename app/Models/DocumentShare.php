@@ -161,7 +161,7 @@ class DocumentShare extends Model
     {
         return match (true) {
             $this->isRevoked() => __('This link has been revoked.'),
-            $this->isExpired() => __('This link expired on :date.', ['date' => $this->expires_at->format('d/m/Y')]),
+            $this->isExpired() => __('This link expired on :date.', ['date' => $this->expires_at->appDate()]),
             $this->isExhausted() => __('This link has reached its download limit.'),
             $this->targetIsGone() => __('What this link pointed to has been deleted.'),
             default => null,

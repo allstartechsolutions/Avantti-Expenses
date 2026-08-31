@@ -112,7 +112,7 @@
                             @foreach($purchaseOrders as $po)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $po->po_date->format('M d, Y') }}
+                                        {{ $po->po_date->appDate() }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">

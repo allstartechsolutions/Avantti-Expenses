@@ -536,7 +536,7 @@
                                             {{ Number::currency($history->old_cost, config('app.currency'), config('app.locale')) }} → {{ Number::currency($history->new_cost, config('app.currency'), config('app.locale')) }}
                                         </div>
                                         <div class="text-xs text-slate-500 dark:text-slate-400">
-                                            {{ $history->changed_at->format('M d, Y g:i A') }}
+                                            {{ $history->changed_at->appDateTime() }}
                                         </div>
                                         @if($history->changedBy)
                                             <div class="text-xs text-slate-500 dark:text-slate-400">

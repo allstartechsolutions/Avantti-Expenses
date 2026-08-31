@@ -4608,5 +4608,17 @@
     "Drop the CSV here, or": "Solte o CSV aqui, ou",
     "CSV or TXT, up to 1MB.": "CSV ou TXT, até 1MB.",
     ":count row read|:count rows read": ":count linha lida|:count linhas lidas",
-    "Drop the document here, or": "Solte o documento aqui, ou"
+    "Drop the document here, or": "Solte o documento aqui, ou",
+    "Drop the file here, or": "Solte o arquivo aqui, ou",
+    "This replaces the file already on the change order when you save.": "Ao salvar, isto substitui o arquivo que já está na ordem de alteração.",
+    "Not added — must be an image under 10MB: :files": "Não adicionado — deve ser uma imagem de até 10MB: :files",
+    "Up to :size per file, :count files at a time.": "Até :size por arquivo, :count arquivos por vez.",
+    ":count file queued.|:count files queued.": ":count arquivo na fila.|:count arquivos na fila.",
+    "Twenty files at a time. The rest were not added.": "Vinte arquivos por vez. Os demais não foram adicionados.",
+    "Not added — not an allowed type, or larger than :size: :files": "Não adicionado — tipo não permitido ou maior que :size: :files",
+    "No supplier matches. A vendor registered only as a subcontractor does not appear here.": "Nenhum fornecedor corresponde. Um fornecedor cadastrado apenas como subempreiteiro não aparece aqui.",
+    "No suppliers are registered yet, so there is none to name here.": "Ainda não há fornecedores cadastrados, portanto não há nenhum a indicar aqui.",
+    "dd/mm/aaaa": "dd/mm/aaaa",
+    "mm/dd/yyyy": "mm/dd/yyyy",
+    "Open the calendar": "Abrir o calendário"
 }

@@ -22,6 +22,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * The quotation page, shared by the project and job-site levels.
@@ -49,7 +50,16 @@ trait ManagesQuotations
     public $vendorRows = [];
     public $vendorSearch = '';
     public $vendorSearchAll = false;
+    /**
+     * Files chosen here, and the box the drop zone writes to.
+     *
+     * `updatedQuoNewUploads()` moves them across, so a second drop adds to the
+     * queue instead of replacing it — Livewire's `uploadMultiple` runs with
+     * `append = false`.
+     */
     public $quo_uploads = [];
+
+    public $quo_new_uploads = [];
 
     // Detail modal
     public $viewingQuotationId = null;
@@ -100,7 +110,15 @@ trait ManagesQuotations
     public $prop_discount_amount = '';
     public $prop_tax_amount = '';
     public $prop_notes = '';
+    /**
+     * The vendor's proposal files, and the box the drop zone writes to.
+     *
+     * `updatedPropNewUploads()` moves them across, so a second drop adds
+     * instead of replacing.
+     */
     public $prop_uploads = [];
+
+    public $prop_new_uploads = [];
 
     // The RFQ e-mail
     public $rfqSubject = '';
@@ -276,6 +294,7 @@ trait ManagesQuotations
         $this->itemRows = [];
         $this->vendorRows = [];
         $this->quo_uploads = [];
+        $this->quo_new_uploads = [];
         $this->quo_assigned_to = '';
         $this->resetErrorBag();
         $this->resetValidation();
@@ -476,6 +495,53 @@ trait ManagesQuotations
     // =========================================================================
     // SAVE
     // =========================================================================
+
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied whatever happens: a file left in it is invisible — the list on
+     * screen is the queue, not this — and would fail every later save with no
+     * button to remove it. `addError()` rather than `validate()`, which ends
+     * with a bare `resetErrorBag()` and would wipe the rest of the form.
+     */
+    public function updatedQuoNewUploads(): void
+    {
+        $dropped = $this->quo_new_uploads;
+        $this->quo_new_uploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(
+                ['file' => $file],
+                ['file' => 'file|mimes:pdf,jpg,jpeg,png|max:10240'],
+            );
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->quo_uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('quo_new_uploads', __('Not attached — must be a PDF, JPG or PNG under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /** Take a file back out of the queue before it is stored. */
+    public function discardQuotationUpload(int $index): void
+    {
+        $this->quo_uploads[$index]?->delete();
+
+        unset($this->quo_uploads[$index]);
+
+        $this->quo_uploads = array_values($this->quo_uploads);
+    }
 
     public function saveQuotation(): void
     {
@@ -1110,7 +1176,7 @@ trait ManagesQuotations
         ]);
 
         $due = $quotation->responses_due_at
-            ? __('Please send your proposal by :date.', ['date' => $quotation->responses_due_at->format('M d, Y')])
+            ? __('Please send your proposal by :date.', ['date' => $quotation->responses_due_at->appDate()])
             : __('Please send your proposal as soon as you can.');
 
         $this->rfqBody = __('Hello,').'<br><br>'
@@ -1520,7 +1586,7 @@ trait ManagesQuotations
             ->groupBy('catalog_item_id')
             ->map(fn ($rows) => [
                 'amount' => (float) $rows->first()->new_cost,
-                'date' => $rows->first()->changed_at?->format('M d, Y'),
+                'date' => $rows->first()->changed_at?->appDate(),
             ])
             ->all();
     }
@@ -1548,6 +1614,7 @@ trait ManagesQuotations
         $this->prop_tax_amount = '';
         $this->prop_notes = '';
         $this->prop_uploads = [];
+        $this->prop_new_uploads = [];
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -1563,6 +1630,46 @@ trait ManagesQuotations
             && $row->quotation->isOpen()
             && $row->quotation->status !== 'awarded'
             && in_array($row->status, ['invited', 'responded'], true);
+    }
+
+    /** Proposal files dropped or chosen join the queue, and the box is emptied. */
+    public function updatedPropNewUploads(): void
+    {
+        $dropped = $this->prop_new_uploads;
+        $this->prop_new_uploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(
+                ['file' => $file],
+                ['file' => 'file|mimes:pdf,jpg,jpeg,png|max:10240'],
+            );
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->prop_uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('prop_new_uploads', __('Not attached — must be a PDF, JPG or PNG under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /** Take a proposal file back out of the queue before it is stored. */
+    public function discardProposalUpload(int $index): void
+    {
+        $this->prop_uploads[$index]?->delete();
+
+        unset($this->prop_uploads[$index]);
+
+        $this->prop_uploads = array_values($this->prop_uploads);
     }
 
     public function saveProposal(): void

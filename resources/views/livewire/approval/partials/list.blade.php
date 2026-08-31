@@ -7,7 +7,6 @@
 --}}
 @php
     $showLocationColumn = $showLocationColumn ?? false;
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
 @endphp
 
 <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -85,7 +84,7 @@
                                                 : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200' }}">
                                             {{ $approval->certificate->hasExpired()
                                                 ? __('collaboration.label.certificate_expired')
-                                                : __('collaboration.label.certificate_expires', ['date' => $approval->certificate->valid_until->format($dateFormat)]) }}
+                                                : __('collaboration.label.certificate_expires', ['date' => $approval->certificate->valid_until->appDate()]) }}
                                         </span>
                                     </p>
                                 @endif
@@ -122,7 +121,7 @@
                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                 @if($approval->due_date)
                                     <span class="{{ $approval->isOverdue() ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-slate-600 dark:text-slate-300' }}">
-                                        {{ $approval->due_date->format($dateFormat) }}
+                                        {{ $approval->due_date->appDate() }}
                                     </span>
                                 @else
                                     <span class="text-slate-400 dark:text-slate-500">—</span>

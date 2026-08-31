@@ -52,12 +52,12 @@
                 {{ __('No.') }} {{ str_pad($measurement->measurement_number, 2, '0', STR_PAD_LEFT) }}
             </div>
             <div style="font-size: 8pt; color: #555;">
-                {{ __('Period') }}: {{ $measurement->period_start->format('d/m/Y') }} — {{ $measurement->period_end->format('d/m/Y') }}
+                {{ __('Period') }}: {{ $measurement->period_start->appDate() }} — {{ $measurement->period_end->appDate() }}
             </div>
             <div style="font-size: 8pt; color: {{ $measurement->isApproved() ? '#27ae60' : ($measurement->isCancelled() ? '#e74c3c' : '#d97706') }}; font-weight: bold;">
                 {{ $measurement->getStatusLabel() }}
             </div>
-            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('d/m/Y - H:i') }}</div>
+            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
         </td>
     </tr>
 </table>
@@ -153,9 +153,9 @@
 
 {{-- Trail --}}
 <div style="font-size: 7pt; color: #777; margin-bottom: 22px;">
-    {{ __('Created by') }}: {{ $measurement->createdBy?->name ?? '—' }} · {{ $measurement->created_at?->format('d/m/Y') }}
+    {{ __('Created by') }}: {{ $measurement->createdBy?->name ?? '—' }} · {{ $measurement->created_at?->appDate() }}
     @if($measurement->approvedBy)
-        &nbsp;|&nbsp; {{ __('Approved') }}: {{ $measurement->approvedBy->name }} · {{ $measurement->approved_at?->format('d/m/Y H:i') }}
+        &nbsp;|&nbsp; {{ __('Approved') }}: {{ $measurement->approvedBy->name }} · {{ $measurement->approved_at?->appDateTime() }}
     @endif
 </div>
 
@@ -175,7 +175,7 @@
 </table>
 
 <div style="margin-top: 18px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 6.5pt; color: #999; text-align: center;">
-    {{ $company?->name }} — {{ __('Measurement') }} #{{ $measurement->measurement_number }} — {{ $contract->contract_number }} — {{ $generatedAt->format('d/m/Y') }}
+    {{ $company?->name }} — {{ __('Measurement') }} #{{ $measurement->measurement_number }} — {{ $contract->contract_number }} — {{ $generatedAt->appDate() }}
 </div>
 </body>
 </html>

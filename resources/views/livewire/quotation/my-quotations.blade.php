@@ -2,7 +2,6 @@
     @php
         $field = 'px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
         $card = 'bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700';
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'M d, Y';
 
         $tabs = ['to_start' => __('To start'), 'in_progress' => __('In progress')];
 
@@ -202,7 +201,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     @if($round->responses_due_at)
                                         <span class="{{ $round->responsesOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-900 dark:text-white' }}">
-                                            {{ $round->responses_due_at->format($dateFormat) }}
+                                            {{ $round->responses_due_at->appDate() }}
                                         </span>
                                         @if($round->responsesOverdue())
                                             <div class="text-xs text-red-600 dark:text-red-400">{{ __('Overdue') }}</div>
@@ -277,7 +276,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     @if($requisition->needed_by)
                                         <span class="{{ $requisition->isOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-900 dark:text-white' }}">
-                                            {{ $requisition->needed_by->format($dateFormat) }}
+                                            {{ $requisition->needed_by->appDate() }}
                                         </span>
                                         @if($requisition->isOverdue())
                                             <div class="text-xs text-red-600 dark:text-red-400">{{ __('Overdue') }}</div>
@@ -290,7 +289,7 @@
                                     @php $waited = $tab === 'unassigned' ? null : $requisition->daysSinceAssigned(); @endphp
                                     @if($tab === 'unassigned')
                                         <span class="text-slate-900 dark:text-white">
-                                            {{ $requisition->reviewed_at?->format($dateFormat) ?? '—' }}
+                                            {{ $requisition->reviewed_at?->appDate() ?? '—' }}
                                         </span>
                                     @elseif($waited !== null)
                                         <span class="{{ $waited >= 7 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-900 dark:text-white' }}">

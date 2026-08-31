@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Requisition')">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>
@@ -17,7 +16,7 @@
                     {{ __('Project') }}: {{ $requisition->project?->project_name }}<br>
                     {{ __('Where') }}: {{ $requisition->getLocationDisplay() }}<br>
                     {{ __('Asked for by') }}: {{ $requisition->getRequesterName() }}<br>
-                    {{ __('Needed By') }}: {{ $requisition->needed_by?->format($dateFormat) ?? __('No date given') }}<br>
+                    {{ __('Needed By') }}: {{ $requisition->needed_by?->appDate() ?? __('No date given') }}<br>
                     {{ __('Items') }}: {{ trans_choice(':count item|:count items', $requisition->items->count(), ['count' => $requisition->items->count()]) }}
                 </div>
             </td>

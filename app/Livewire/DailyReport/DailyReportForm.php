@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Validator;
 
 class DailyReportForm extends Component
 {
@@ -40,7 +41,17 @@ class DailyReportForm extends Component
     public $taskModalMode = 'create';
     public $editingTaskIndex = null;
     public $taskDescription = '';
+    /**
+     * Photographs for this task, and the box the drop zone writes to.
+     *
+     * `updatedNewTaskImages()` moves them across, so a second drop adds to the
+     * queue instead of replacing it — Livewire's `uploadMultiple` runs with
+     * `append = false`, which on a site report means the first three
+     * photographs vanish when the fourth is dropped.
+     */
     public $taskImages = [];
+
+    public $newTaskImages = [];
     public $existingTaskImages = [];
 
     // Weather data from API
@@ -79,7 +90,10 @@ class DailyReportForm extends Component
     public $manpower_works = '';
     public $manpower_hours = '';
     public $manpower_comments = '';
+    /** Photographs for this crew entry, and the box the drop zone writes to. */
     public $manpowerImages = [];
+
+    public $newManpowerImages = [];
     public $existingManpowerImages = [];
 
     protected function rules()
@@ -177,7 +191,7 @@ class DailyReportForm extends Component
 
     public function openAddTaskModal()
     {
-        $this->reset(['taskDescription', 'taskImages', 'existingTaskImages', 'editingTaskIndex']);
+        $this->reset(['taskDescription', 'taskImages', 'newTaskImages', 'existingTaskImages', 'editingTaskIndex']);
         $this->taskModalMode = 'create';
         $this->showTaskModal = true;
         $this->dispatch('open-modal', 'task-modal');
@@ -190,9 +204,62 @@ class DailyReportForm extends Component
         $this->taskDescription = $task['description'];
         $this->existingTaskImages = $task['images'] ?? [];
         $this->taskImages = [];
+        $this->newTaskImages = [];
         $this->taskModalMode = 'edit';
         $this->showTaskModal = true;
         $this->dispatch('open-modal', 'task-modal');
+    }
+
+    /**
+     * Photographs dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied whatever happens: one left in it is invisible — the thumbnails
+     * are the queue, not this — and `addError()` rather than `validate()`,
+     * which ends with a bare `resetErrorBag()` and would clear the task
+     * description's own message.
+     */
+    public function updatedNewTaskImages()
+    {
+        $this->taskImages = $this->mergeImages($this->taskImages, $this->newTaskImages, 'newTaskImages');
+        $this->newTaskImages = [];
+    }
+
+    public function updatedNewManpowerImages()
+    {
+        $this->manpowerImages = $this->mergeImages($this->manpowerImages, $this->newManpowerImages, 'newManpowerImages');
+        $this->newManpowerImages = [];
+    }
+
+    /**
+     * Keep the images that pass, name the ones that do not.
+     *
+     * @param  array<int, mixed>  $queue
+     * @param  array<int, mixed>  $dropped
+     * @return array<int, mixed>
+     */
+    protected function mergeImages(array $queue, array $dropped, string $errorKey): array
+    {
+        $refused = [];
+
+        foreach ($dropped as $image) {
+            $validator = Validator::make(['image' => $image], ['image' => 'image|max:10240']);
+
+            if ($validator->fails()) {
+                $refused[] = $image->getClientOriginalName();
+
+                continue;
+            }
+
+            $queue[] = $image;
+        }
+
+        if ($refused !== []) {
+            $this->addError($errorKey, __('Not added — must be an image under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+
+        return $queue;
     }
 
     public function saveTask()
@@ -265,7 +332,7 @@ class DailyReportForm extends Component
     public function closeTaskModal()
     {
         $this->showTaskModal = false;
-        $this->reset(['taskDescription', 'taskImages', 'existingTaskImages', 'editingTaskIndex']);
+        $this->reset(['taskDescription', 'taskImages', 'newTaskImages', 'existingTaskImages', 'editingTaskIndex']);
         $this->dispatch('close-modal', 'task-modal');
     }
 
@@ -437,6 +504,7 @@ class DailyReportForm extends Component
         $this->manpower_comments = $log['comments'] ?? '';
         $this->existingManpowerImages = $log['images'] ?? [];
         $this->manpowerImages = [];
+        $this->newManpowerImages = [];
         $this->manpowerModalMode = 'edit';
         $this->showManpowerModal = true;
         $this->dispatch('open-modal', 'manpower-modal');

@@ -64,7 +64,18 @@ trait ManagesDocuments
     public string $uploadVersionNotes = '';
 
     /** Files chosen on an install without cloud storage, uploaded through PHP. */
+    /**
+     * The files waiting to go up on an install without R2, and the box the
+     * drop zone writes to.
+     *
+     * `updatedLocalNewUploads()` moves them across, so a second drop adds to
+     * the queue instead of replacing it — Livewire's `uploadMultiple` runs
+     * with `append = false`, and the rule here allows twenty files, so
+     * arriving in batches is the normal way this field is filled.
+     */
     public $localUploads = [];
+
+    public $localNewUploads = [];
 
     // Folder modal
     public ?int $editingFolderId = null;
@@ -455,6 +466,10 @@ trait ManagesDocuments
         $this->uploadCategory = 'other';
         $this->uploadTags = '';
         $this->uploadIsInternal = false;
+        // A queue left over from the last time the panel was open would go up
+        // against whatever is being uploaded to now.
+        $this->localUploads = [];
+        $this->localNewUploads = [];
 
         if ($documentId) {
             $document = Document::findOrFail($documentId);
@@ -535,7 +550,10 @@ trait ManagesDocuments
             $this->syncTags($document, $this->uploadTags);
         }
 
-        unset($this->documents, $this->stats, $this->folders, $this->availableTags);
+        // The detail view is on screen when a new version is uploaded from it,
+        // so what it shows has to be read again — the version it lists and the
+        // file it previews both come from this.
+        unset($this->documents, $this->stats, $this->folders, $this->availableTags, $this->viewingDocument);
     }
 
     /**
@@ -543,6 +561,65 @@ trait ManagesDocuments
      * through PHP, so it is bounded by upload_max_filesize / post_max_size,
      * and the panel says so before the user picks a 2 GB drawing set.
      */
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied whatever happens: one left in it is invisible — the list on
+     * screen is the queue, not this — and `addError()` rather than
+     * `validate()`, which ends with a bare `resetErrorBag()`.
+     */
+    public function updatedLocalNewUploads(): void
+    {
+        $this->authorizeDocumentCreate();
+
+        $dropped = $this->localNewUploads;
+        $this->localNewUploads = [];
+
+        $maxBytes = DocumentSettings::maxUploadBytes();
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            // The allow-list and the size cap, the same two the upload itself
+            // answers to.
+            if (! DocumentSettings::isAllowedFile($file->getClientOriginalName(), $file->getMimeType())
+                || $file->getSize() > $maxBytes) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->localUploads[] = $file;
+        }
+
+        if (count($this->localUploads) > 20) {
+            $this->localUploads = array_slice($this->localUploads, 0, 20);
+
+            $this->addError('localUploads', __('Twenty files at a time. The rest were not added.'));
+        }
+
+        if ($refused !== []) {
+            $this->addError('localNewUploads', __('Not added — not an allowed type, or larger than :size: :files', [
+                'size' => DocumentSettings::formatBytes($maxBytes),
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /**
+     * Take a file back out of the queue before it goes up.
+     *
+     * NOT `removeUpload()`: that name is part of Livewire's own `$wire` API, so
+     * a `wire:click` on it never reaches this class.
+     */
+    public function discardLocalUpload(int $index): void
+    {
+        $this->localUploads[$index]?->delete();
+
+        unset($this->localUploads[$index]);
+
+        $this->localUploads = array_values($this->localUploads);
+    }
+
     public function saveLocalUploads(): void
     {
         $this->authorizeDocumentCreate();
@@ -647,6 +724,7 @@ trait ManagesDocuments
         }
 
         $this->localUploads = [];
+        $this->localNewUploads = [];
 
         if ($stored > 0) {
             $this->closeUploadModal();
@@ -658,7 +736,9 @@ trait ManagesDocuments
             ));
         }
 
-        unset($this->documents, $this->stats, $this->folders, $this->availableTags);
+        // Same as the cloud path: a new version raised from the detail view has
+        // to reach the file it previews, not only the history beside it.
+        unset($this->documents, $this->stats, $this->folders, $this->availableTags, $this->viewingDocument);
     }
 
     // =========================================================================

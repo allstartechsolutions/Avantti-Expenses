@@ -41,7 +41,7 @@
             <td style="width: 50%; vertical-align: top; text-align: right; border: none; padding: 0;">
                 <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('JOB SITE FINANCIAL REPORT') }}</div>
                 <div style="font-size: 9pt; color: #555;">{{ $jobSite->job_site_name }}</div>
-                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
             </td>
         </tr>
     </table>
@@ -123,7 +123,7 @@
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 4px 8px;">{{ $co['title'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 8px; color: #666;">
-                        {{ $co['date']?->format('M d, Y') }}
+                        {{ $co['date']?->appDate() }}
                         @if(($co['status'] ?? 'approved') !== 'approved')
                             · <span style="color: #b7791f;">{{ __('not approved') }}</span>
                         @endif
@@ -179,7 +179,7 @@
         <tbody>
             @forelse($expenses as $expense)
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->expense_date?->format('M d, Y') }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->expense_date?->appDate() }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->item_name }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->supplier?->name ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $expense->getStatusLabel() }}</td>

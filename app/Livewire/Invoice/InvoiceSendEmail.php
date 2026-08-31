@@ -50,8 +50,8 @@ class InvoiceSendEmail extends Component
             . "<strong style='color:#3F5189;font-size:15px;'>".__('Invoice Summary')."</strong>"
             . "<table width='100%' cellpadding='0' cellspacing='0' style='margin-top:10px;'>"
             . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Invoice Number:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;font-weight:bold;'>{$invoice->invoice_number}</td></tr>"
-            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Date:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->invoice_date->format('M d, Y')}</td></tr>"
-            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Due Date:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->due_date->format('M d, Y')}</td></tr>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Date:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->invoice_date->appDate()}</td></tr>"
+            . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Due Date:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;'>{$invoice->due_date->appDate()}</td></tr>"
             . "<tr><td style='padding:4px 0;font-size:13px;color:#666;'>".__('Total:')."</td><td style='padding:4px 0;font-size:13px;color:#333;text-align:right;font-weight:bold;'>\${$this->formatMoney($invoice->total_amount)}</td></tr>"
             . $amountPaidLine
             . "<tr><td colspan='2' style='padding:8px 0 0;'><div style='border-top:1px solid #dee2e6;'></div></td></tr>"

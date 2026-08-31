@@ -128,15 +128,9 @@
 
             <!-- Date Range -->
             <div class="flex items-center gap-2">
-                <input
-                    type="date"
-                    wire:model.live="dateFrom"
-                    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                <x-ui.date-input wire:model.live="dateFrom" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
                 <span class="text-slate-500 dark:text-slate-400">{{ __('to') }}</span>
-                <input
-                    type="date"
-                    wire:model.live="dateTo"
-                    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                <x-ui.date-input wire:model.live="dateTo" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
             </div>
         </div>
     </div>
@@ -196,7 +190,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm {{ $payment['is_overdue'] ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-900 dark:text-white' }}">
-                                    {{ $payment['due_date'] ? $payment['due_date']->format('M d, Y') : '-' }}
+                                    {{ $payment['due_date'] ? $payment['due_date']->appDate() : '-' }}
                                 </div>
                                 @if($payment['is_overdue'] && $payment['due_date'])
                                     <div class="text-xs text-red-600 dark:text-red-400">
@@ -303,10 +297,7 @@
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         {{ __('Paid Date') }}
                     </label>
-                    <input
-                        type="date"
-                        wire:model="paidDate"
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <x-ui.date-input wire:model="paidDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                 </div>
             </div>
             <div class="mt-6 flex items-center justify-end space-x-3">

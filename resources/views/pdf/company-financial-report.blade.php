@@ -61,10 +61,10 @@
             </div>
             @if($fromDate || $toDate)
                 <div style="font-size: 8pt; color: #555;">
-                    {{ __('Period') }}: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }} — {{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}
+                    {{ __('Period') }}: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->appDate() : __('beginning') }} — {{ $toDate ? \Carbon\Carbon::parse($toDate)->appDate() : __('open-ended') }}
                 </div>
             @endif
-            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
             @if($client)<div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>@endif
             @if($project)<div style="font-size: 7pt; color: #888;">{{ __('Project') }}: {{ $project->project_name }}</div>@endif
             @if($jobSite)<div style="font-size: 7pt; color: #888;">{{ __('Job Site') }}: {{ $jobSite->job_site_name }}</div>@endif
@@ -187,7 +187,7 @@
         <tbody>
             @foreach($rows as $row)
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['date']?->format('m/d/Y') ?? '—' }}</td>
+                    <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['date']?->appDate() ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $sourceLabels[$row['source']] ?? $row['source'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['description'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['party'] ?? '—' }}</td>
@@ -204,7 +204,7 @@
 
 {{-- Footer --}}
 <div style="margin-top: 15px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 6.5pt; color: #999; text-align: center;">
-    {{ $company?->name }} — {{ __('Company Financials') }} — {{ $generatedAt->format('M d, Y') }}
+    {{ $company?->name }} — {{ __('Company Financials') }} — {{ $generatedAt->appDate() }}
 </div>
 </body>
 </html>

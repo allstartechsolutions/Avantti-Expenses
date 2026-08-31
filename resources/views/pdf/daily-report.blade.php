@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>{{ __('Daily Report') }} - {{ $dailyReport->report_date->format('m/d/Y') }}</title>
+    <title>{{ __('Daily Report') }} - {{ $dailyReport->report_date->appDate() }}</title>
 </head>
 <body style="font-family: DejaVu Sans, sans-serif; font-size: 9pt; line-height: 1.4; color: #333; margin: 0; padding: 20px;">
 
@@ -37,14 +37,14 @@
 
     <!-- Report Title -->
     <div style="font-size: 16pt; font-weight: bold; color: #333; margin-bottom: 15px; padding-top: 10px; border-top: 3px solid #3F5189;">
-        {{ __('Daily Log:') }} {{ $dailyReport->report_date->format('l n/j/Y') }}
+        {{ __('Daily Log:') }} {{ $dailyReport->report_date->translatedFormat('l') }}, {{ $dailyReport->report_date->appDate() }}
     </div>
 
     <!-- Status Box -->
     <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 10px 15px; margin-bottom: 20px;">
         <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">{{ __('Daily Log Completed') }}</div>
         <div style="font-size: 8pt; color: #555;">
-            {{ __('Prepared by :name on :date', ['name' => $dailyReport->preparedBy->name, 'date' => $dailyReport->created_at->format('D, M d, Y \a\t h:i A T')]) }}
+            {{ __('Prepared by :name on :date', ['name' => $dailyReport->preparedBy->name, 'date' => $dailyReport->created_at->appDateTime()]) }}
         </div>
     </div>
 
@@ -345,7 +345,7 @@
     <!-- Footer -->
     <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 8pt; color: #666;">
         <span>{{ $company->name ?? config('app.name') }}</span>
-        <span style="float: right;">{{ __('Printed On:') }} {{ now()->format('M d, Y \a\t h:i A T') }}</span>
+        <span style="float: right;">{{ __('Printed On:') }} {{ now()->appDateTime() }}</span>
     </div>
 
 </body>

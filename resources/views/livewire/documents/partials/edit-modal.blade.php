@@ -16,7 +16,7 @@
                     {{ __('version :number', ['number' => $document->current_version_number]) }} ·
                     {{ __('uploaded by :name on :date', [
                         'name' => $document->uploadedBy?->name ?? __('unknown'),
-                        'date' => $document->created_at->format('d/m/Y'),
+                        'date' => $document->created_at->appDate(),
                     ]) }}
                 </p>
             @endif

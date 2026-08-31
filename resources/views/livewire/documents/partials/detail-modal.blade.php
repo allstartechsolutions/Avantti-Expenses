@@ -159,14 +159,14 @@
                                         <dt class="{{ $term }}">{{ __('Uploaded by') }}</dt>
                                         <dd class="{{ $value }}">
                                             {{ $document->uploadedBy?->name ?? __('unknown') }}
-                                            <span class="text-slate-500 dark:text-slate-400">· {{ $document->created_at->format('d/m/Y H:i') }}</span>
+                                            <span class="text-slate-500 dark:text-slate-400">· {{ $document->created_at->appDateTime() }}</span>
                                         </dd>
                                     </div>
                                     <div>
                                         <dt class="{{ $term }}">{{ __('Last updated') }}</dt>
                                         <dd class="{{ $value }}">
                                             {{ $document->updatedBy?->name ?? __('unknown') }}
-                                            <span class="text-slate-500 dark:text-slate-400">· {{ $document->updated_at->format('d/m/Y H:i') }}</span>
+                                            <span class="text-slate-500 dark:text-slate-400">· {{ $document->updated_at->appDateTime() }}</span>
                                         </dd>
                                     </div>
                                     @if($document->trashed())
@@ -174,7 +174,7 @@
                                             <dt class="{{ $term }}">{{ __('Deleted by') }}</dt>
                                             <dd class="{{ $value }}">
                                                 {{ $document->deletedBy?->name ?? __('unknown') }}
-                                                <span class="text-slate-500 dark:text-slate-400">· {{ $document->deleted_at->format('d/m/Y H:i') }}</span>
+                                                <span class="text-slate-500 dark:text-slate-400">· {{ $document->deleted_at->appDateTime() }}</span>
                                             </dd>
                                         </div>
                                     @endif
@@ -221,7 +221,7 @@
                                             <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $version->notes ?: '—' }}</td>
                                             <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                                 {{ $version->uploadedBy?->name ?? __('unknown') }}
-                                                <span class="block text-xs text-slate-400 dark:text-slate-500">{{ $version->created_at->format('d/m/Y H:i') }}</span>
+                                                <span class="block text-xs text-slate-400 dark:text-slate-500">{{ $version->created_at->appDateTime() }}</span>
                                             </td>
                                             <td class="px-5 py-3">
                                                 <div class="flex items-center justify-end gap-2">
@@ -270,7 +270,7 @@
                                             @endif
                                         </div>
                                         <span class="text-xs text-slate-500 dark:text-slate-400">
-                                            @if($share->expires_at) {{ __('Expires :date', ['date' => $share->expires_at->format('d/m/Y')]) }} @else {{ __('No expiry') }} @endif
+                                            @if($share->expires_at) {{ __('Expires :date', ['date' => $share->expires_at->appDate()]) }} @else {{ __('No expiry') }} @endif
                                             · {{ trans_choice('{0} never opened|{1} :count download|[2,*] :count downloads', $share->download_count, ['count' => $share->download_count]) }}
                                         </span>
                                     </li>
@@ -303,7 +303,7 @@
                                         </div>
                                         <div class="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             {{ $activity->user?->name ?? __('a share link') }}
-                                            · {{ $activity->created_at->format('d/m/Y H:i') }}
+                                            · {{ $activity->created_at->appDateTime() }}
                                             @if($activity->ip_address) · {{ $activity->ip_address }} @endif
                                         </div>
                                     </li>

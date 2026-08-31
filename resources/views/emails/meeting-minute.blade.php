@@ -6,7 +6,6 @@
     <title>{{ $meeting->number }}</title>
 </head>
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
 @endphp
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f5f7; color: #333;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f5f7; padding: 30px 0;">
@@ -30,7 +29,7 @@
                             <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #555;">
                                 {{ __('The minutes of :title, held on :date, are attached and recorded in the system.', [
                                     'title' => $meeting->title,
-                                    'date' => $meeting->meeting_date->format($dateFormat),
+                                    'date' => $meeting->meeting_date->appDate(),
                                 ]) }}
                             </p>
 
@@ -38,7 +37,7 @@
                                 <tr>
                                     <td style="padding: 14px 16px; font-size: 13px; color: #555;">
                                         <strong style="color: #3F5189;">{{ $meeting->number }}</strong><br>
-                                        {{ $meeting->meeting_date->format($dateFormat) }}
+                                        {{ $meeting->meeting_date->appDate() }}
                                         @if($meeting->started_at) · {{ substr($meeting->started_at, 0, 5) }} @endif
                                         @if($meeting->location) · {{ $meeting->location }} @endif<br>
                                         {{ __('Chair: :chair', ['chair' => $meeting->chair?->name ?? '—']) }}
@@ -61,7 +60,7 @@
                                                 <strong>{{ $item->task->code() }}</strong> — {{ $item->title }}<br>
                                                 <span style="color: #777;">
                                                     {{ __('Due Date') }}:
-                                                    <strong>{{ $item->task->due_date?->format($dateFormat) ?? '—' }}</strong>
+                                                    <strong>{{ $item->task->due_date?->appDate() ?? '—' }}</strong>
                                                     · {{ $snapshot['progress'] ?? $item->task->progress }}%
                                                 </span>
                                             </td>

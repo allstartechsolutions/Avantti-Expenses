@@ -7,7 +7,6 @@
 --}}
 @php
     $field = 'px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
 
     $groupLabels = [
         'overdue' => ['label' => __('Overdue'), 'class' => 'text-red-600 dark:text-red-400'],
@@ -158,7 +157,7 @@
             </div>
             @if($stats['next_due'])
                 <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
-                    {{ __('Next due :date', ['date' => \Illuminate\Support\Carbon::parse($stats['next_due'])->format($dateFormat)]) }}
+                    {{ __('Next due :date', ['date' => \Illuminate\Support\Carbon::parse($stats['next_due'])->appDate()]) }}
                 </p>
             @endif
         </div>

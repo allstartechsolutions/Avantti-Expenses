@@ -573,7 +573,7 @@ class CollaborationDocumentTest extends TestCase
             ->assertSee(__('collaboration.label.last_sent_on', [
                 // The page prints the install's own format, not a fixed one.
                 'when' => $rfi->fresh()->lastDistribution()->created_at
-                    ->format(config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A'),
+                    ->appDateTime(),
                 'count' => 1,
             ]));
     }

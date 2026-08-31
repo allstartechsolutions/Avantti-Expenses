@@ -73,7 +73,7 @@
                             <span class="font-normal">
                                 {{ __('by :name on :date', [
                                     'name' => $budget->lockedBy->name,
-                                    'date' => $budget->locked_at?->format('M d, Y'),
+                                    'date' => $budget->locked_at?->appDate(),
                                 ]) }}
                             </span>
                         @endif
@@ -459,7 +459,7 @@
                             {{ $entry->label() }}
                         </span>
                         <span class="text-slate-700 dark:text-slate-300">{{ $entry->user?->name ?? __('Unknown') }}</span>
-                        <span class="text-slate-400 dark:text-slate-500">{{ $entry->created_at?->format('M d, Y H:i') }}</span>
+                        <span class="text-slate-400 dark:text-slate-500">{{ $entry->created_at?->appDateTime() }}</span>
                         @if($entry->reason)
                             <span class="w-full text-xs text-slate-500 dark:text-slate-400">{{ $entry->reason }}</span>
                         @endif

@@ -8,7 +8,6 @@
 </head>
 <body style="font-family: DejaVu Sans, sans-serif; font-size: 9pt; line-height: 1.45; color: #333; margin: 0; padding: 18px;">
 @php
-    $dateFormat = 'd/m/Y';
     $stampFormat = 'd/m/Y H:i';
 @endphp
 
@@ -32,7 +31,7 @@
         <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('collaboration.label.ball_court') }}</strong></td>
         <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->ballInCourt?->name ?: '—' }}</td>
         <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('collaboration.label.due') }}</strong></td>
-        <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->due_date?->format($dateFormat) ?: '—' }}</td>
+        <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->due_date?->appDate() ?: '—' }}</td>
     </tr>
     <tr>
         <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('Priority') }}</strong></td>

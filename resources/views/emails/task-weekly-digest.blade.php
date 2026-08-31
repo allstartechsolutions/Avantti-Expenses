@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Your open tasks')">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>

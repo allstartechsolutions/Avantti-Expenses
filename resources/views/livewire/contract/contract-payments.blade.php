@@ -182,10 +182,7 @@
         <div class="flex flex-col md:flex-row md:items-center gap-4">
             <div class="flex items-center gap-3">
                 <label class="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ __('Payment Date') }}</label>
-                <input
-                    type="date"
-                    wire:model="paymentDate"
-                    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                <x-ui.date-input wire:model="paymentDate" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
             </div>
             <div class="flex-1"></div>
             <div class="flex items-center gap-3">
@@ -384,7 +381,7 @@
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @if($contract->latestPayment)
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $contract->latestPayment->payment_date->format('M d, Y') }}
+                                        {{ $contract->latestPayment->payment_date->appDate() }}
                                     </div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400">
                                         {{ Number::currency($contract->latestPayment->amount, config('app.currency'), config('app.locale')) }}
@@ -454,7 +451,7 @@
                                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                                                 @foreach($contract->changeOrders as $co)
                                                     <tr>
-                                                        <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->date->format('M d, Y') }}</td>
+                                                        <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->date->appDate() }}</td>
                                                         <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->title }}</td>
                                                         <td class="py-1.5 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ $co->description ?? '-' }}</td>
                                                         <td class="py-1.5 text-right font-medium {{ $co->amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">

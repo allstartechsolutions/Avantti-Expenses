@@ -18,15 +18,27 @@ $maxWidthClass = [
 ][$maxWidth];
 
 // A modal opened from inside another one has to paint above it, or the click
-// looks like it did nothing. The z-index is inline on purpose: a Tailwind
-// class would need the CSS bundle rebuilt before the fix took effect.
-$zIndex = $layer === 'top' ? 60 : 50;
+// looks like it did nothing. This is the *resting* z-index; opening raises the
+// modal above whatever is already open (see raiseAboveOpenModals below), so
+// two modals declaring the same layer no longer settle it by include order —
+// which is how "New Version" opened underneath the document it was raised
+// from. The z-index is inline on purpose: a Tailwind class would need the CSS
+// bundle rebuilt before the fix took effect.
+$baseZIndex = $layer === 'top' ? 60 : 50;
 @endphp
 
 <div
     x-data="{
         name: '{{ $name }}',
         show: @js($show),
+        baseZIndex: {{ $baseZIndex }},
+        /*
+         * Bound with `:style` rather than written to `$el.style` directly: a
+         * Livewire re-render morphs the element's attributes back to what the
+         * server sent, which would drop a raised modal back under its parent
+         * halfway through using it.
+         */
+        zIndex: {{ $baseZIndex }},
         /*
          * Which modals are open is read from the DOM rather than kept in a
          * variable: Livewire can remove an open modal from the page outright,
@@ -44,6 +56,26 @@ $zIndex = $layer === 'top' ? 60 : 50;
             );
             return top === $el;
         },
+        /*
+         * Paint above everything already open.
+         *
+         * Two modals that declare the same layer would otherwise be ordered by
+         * their position in the DOM, so whether a child appeared above its
+         * parent depended on the order the partials happened to be included
+         * in. Opening one now puts it one step above the highest open modal;
+         * closing it drops it back to its resting layer so the stack cannot
+         * creep upwards over a session.
+         */
+        raiseAboveOpenModals() {
+            const others = this.openModals().filter(el => el !== $el);
+
+            const highest = others.reduce(
+                (best, el) => Math.max(best, parseInt(el.style.zIndex || 0, 10)),
+                this.baseZIndex,
+            );
+
+            this.zIndex = Math.max(this.baseZIndex, highest + 1);
+        },
         syncScrollLock() {
             // The last modal to close gives the page its scrolling back; a
             // child closing must not unlock the page under its parent.
@@ -60,9 +92,11 @@ $zIndex = $layer === 'top' ? 60 : 50;
                 this.$nextTick(() => this.syncScrollLock());
 
                 if (value) {
+                    this.raiseAboveOpenModals();
                     setTimeout(() => this.firstFocusable()?.focus(), 100);
                     this.$dispatch('modal-opened', this.name);
                 } else {
+                    this.zIndex = this.baseZIndex;
                     this.$dispatch('modal-closed', this.name);
                 }
             });
@@ -92,10 +126,11 @@ $zIndex = $layer === 'top' ? 60 : 50;
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
+    :style="{ zIndex: zIndex }"
     :data-ui-modal-open="show ? 'true' : 'false'"
     data-ui-modal-open="{{ $show ? 'true' : 'false' }}"
     class="fixed inset-0 overflow-y-auto"
-    style="display: {{ $show ? 'block' : 'none' }}; z-index: {{ $zIndex }};"
+    style="display: {{ $show ? 'block' : 'none' }}; z-index: {{ $baseZIndex }};"
 >
     <!-- Backdrop -->
     <div

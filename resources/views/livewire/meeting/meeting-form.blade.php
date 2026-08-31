@@ -3,7 +3,6 @@
         $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
         $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
         $card = 'bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700';
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
         $editing = $meeting?->exists;
     @endphp
 
@@ -59,7 +58,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="{{ $label }}">{{ __('Date') }} <span class="text-red-500">*</span></label>
-                        <input type="date" wire:model.live="meeting_date" class="{{ $field }}">
+                        <x-ui.date-input wire:model.live="meeting_date" class="{{ $field }}" />
                         @error('meeting_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
                     <div>
@@ -218,7 +217,7 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Previous meeting in this series') }}</p>
                         <p class="mt-1 font-medium text-slate-900 dark:text-white">{{ $this->previousMeeting->number }}</p>
                         <p class="text-sm text-slate-600 dark:text-slate-300">
-                            {{ $this->previousMeeting->meeting_date->format($dateFormat) }} — {{ $this->previousMeeting->title }}
+                            {{ $this->previousMeeting->meeting_date->appDate() }} — {{ $this->previousMeeting->title }}
                         </p>
                         <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
                             {{ trans_choice(':count open action item carries forward|:count open action items carry forward',

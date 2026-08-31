@@ -1,6 +1,4 @@
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
-    $dateTimeFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
     $isBR = config('app.country') === 'BR';
     $input = 'mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
 
@@ -119,8 +117,8 @@
                     ? 'bg-rose-50 text-rose-900 dark:bg-rose-900/20 dark:text-rose-200'
                     : 'bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200' }}">
                 {{ $approval->certificate->hasExpired()
-                    ? __('collaboration.message.certificate_expired', ['date' => $approval->certificate->valid_until->format($dateFormat)])
-                    : __('collaboration.message.certificate_expires', ['date' => $approval->certificate->valid_until->format($dateFormat)]) }}
+                    ? __('collaboration.message.certificate_expired', ['date' => $approval->certificate->valid_until->appDate()])
+                    : __('collaboration.message.certificate_expires', ['date' => $approval->certificate->valid_until->appDate()]) }}
             </div>
         @endif
     </div>
@@ -175,7 +173,7 @@
                     @php
                         $rows = [
                             ['label' => __('Type'), 'value' => $approval->getTypeLabel()],
-                            ['label' => __('collaboration.label.due'), 'value' => $approval->due_date?->format($dateFormat)],
+                            ['label' => __('collaboration.label.due'), 'value' => $approval->due_date?->appDate()],
                             ['label' => __('collaboration.label.budget_line'), 'value' => $approval->budgetItem
                                 ? trim($approval->budgetItem->code.' '.$approval->budgetItem->name) : null],
                             ['label' => __('collaboration.label.catalog_item'), 'value' => $approval->catalogItem?->name],
@@ -216,12 +214,12 @@
                             </div>
                             <div class="px-5 py-3 flex items-start justify-between gap-4">
                                 <dt class="text-slate-500 dark:text-slate-400">{{ __('collaboration.label.issued_2') }}</dt>
-                                <dd class="text-right text-slate-900 dark:text-white">{{ $approval->certificate->issued_at?->format($dateFormat) ?: __('Not set') }}</dd>
+                                <dd class="text-right text-slate-900 dark:text-white">{{ $approval->certificate->issued_at?->appDate() ?: __('Not set') }}</dd>
                             </div>
                             <div class="px-5 py-3 flex items-start justify-between gap-4">
                                 <dt class="text-slate-500 dark:text-slate-400">{{ __('collaboration.label.valid_until') }}</dt>
                                 <dd class="text-right {{ $approval->certificate->hasExpired() ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-slate-900 dark:text-white' }}">
-                                    {{ $approval->certificate->valid_until?->format($dateFormat) ?: __('Not set') }}
+                                    {{ $approval->certificate->valid_until?->appDate() ?: __('Not set') }}
                                 </dd>
                             </div>
                         </dl>
@@ -268,7 +266,7 @@
                     @if($lastSend)
                         <p class="text-slate-600 dark:text-slate-300">
                             {{ __('collaboration.label.last_sent_on', [
-                                'when' => $lastSend->created_at?->format($dateTimeFormat),
+                                'when' => $lastSend->created_at?->appDateTime(),
                                 'count' => $lastSend->context['sent'] ?? 0,
                             ]) }}
                         </p>
@@ -318,11 +316,11 @@
                     </div>
                     <div class="px-5 py-3 flex items-start justify-between gap-4">
                         <dt class="text-slate-500 dark:text-slate-400">{{ __('collaboration.label.raised_3') }}</dt>
-                        <dd class="text-right text-slate-900 dark:text-white">{{ $approval->created_at?->format($dateTimeFormat) }}</dd>
+                        <dd class="text-right text-slate-900 dark:text-white">{{ $approval->created_at?->appDateTime() }}</dd>
                     </div>
                     <div class="px-5 py-3 flex items-start justify-between gap-4">
                         <dt class="text-slate-500 dark:text-slate-400">{{ __('Last updated') }}</dt>
-                        <dd class="text-right text-slate-900 dark:text-white">{{ $approval->updated_at?->format($dateTimeFormat) }}</dd>
+                        <dd class="text-right text-slate-900 dark:text-white">{{ $approval->updated_at?->appDateTime() }}</dd>
                     </div>
                 </dl>
             </div>

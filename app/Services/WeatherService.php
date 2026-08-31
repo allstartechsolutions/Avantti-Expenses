@@ -159,7 +159,7 @@ class WeatherService
 
             if (in_array($hourNum, $targetHours)) {
                 $snapshots[] = [
-                    'time' => $hourTime->format('g:i A'),
+                    'time' => $hourTime->appTime(),
                     'hour' => $hourNum,
                     'condition' => $hour['conditions'] ?? 'Unknown',
                     'icon' => $hour['icon'] ?? 'cloudy',

@@ -166,7 +166,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Created On') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $project->created_at->format('F d, Y') }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $project->created_at->appDateLong() }}</p>
                                 </div>
 
                                 <!-- Created By -->
@@ -703,7 +703,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="text-sm text-slate-900 dark:text-white">
-                                                        {{ $jobSite->created_at->format('M d, Y') }}
+                                                        {{ $jobSite->created_at->appDate() }}
                                                     </div>
                                                     @if($jobSite->createdBy)
                                                         <div class="text-xs text-slate-500 dark:text-slate-400">
@@ -886,7 +886,7 @@
                                     @foreach($expenses as $expense)
                                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ $expense->expense_date->format('M d, Y') }}
+                                                {{ $expense->expense_date->appDate() }}
                                             </td>
                                             <td class="px-6 py-4">
                                                 <div class="flex items-center">
@@ -962,7 +962,7 @@
                                                     @if($expense->status !== 'paid' && $expense->isOneTime())
                                                         @can('expenses.pay', $expense)
                                                         @if($markPaidType === 'expense' && $markPaidId === $expense->id)
-                                                            <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                            <x-ui.date-input wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                                             <button
                                                                 wire:click="confirmMarkPaid"
                                                                 class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
@@ -1175,7 +1175,7 @@
                                     @foreach($dailyReports as $report)
                                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                                {{ $report->report_date->format('M d, Y') }}
+                                                {{ $report->report_date->appDate() }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @if($report->jobSite)

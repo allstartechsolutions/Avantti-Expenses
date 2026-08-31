@@ -285,8 +285,8 @@
                                                 @if($column['valid_until'])
                                                     <div class="{{ $column['expired'] ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
                                                         {{ $column['expired']
-                                                            ? __('Expired :date', ['date' => $column['valid_until']->format('M d, Y')])
-                                                            : __('Valid to :date', ['date' => $column['valid_until']->format('M d, Y')]) }}
+                                                            ? __('Expired :date', ['date' => $column['valid_until']->appDate()])
+                                                            : __('Valid to :date', ['date' => $column['valid_until']->appDate()]) }}
                                                     </div>
                                                 @endif
                                                 @if($column['unquoted'] > 0)
@@ -323,7 +323,7 @@
                                 <li class="flex flex-wrap items-center justify-between gap-2 text-sm">
                                     <span class="text-slate-900 dark:text-white">{{ $row->vendor?->name ?? __('Unknown') }}</span>
                                     <span class="text-xs text-slate-500 dark:text-slate-400">
-                                        {{ $row->invited_at ? __('Asked :date, no answer yet', ['date' => $row->invited_at->format('M d, Y')]) : __('Not asked yet') }}
+                                        {{ $row->invited_at ? __('Asked :date, no answer yet', ['date' => $row->invited_at->appDate()]) : __('Not asked yet') }}
                                     </span>
                                 </li>
                             @endforeach

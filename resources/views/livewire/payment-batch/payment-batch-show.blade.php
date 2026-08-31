@@ -37,7 +37,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Payment Date') }}</p>
-                <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->payment_date->format('m/d/Y') }}</p>
+                <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->payment_date->appDate() }}</p>
             </div>
             <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</p>
@@ -45,7 +45,7 @@
             </div>
             <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created At') }}</p>
-                <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->created_at->format('m/d/Y g:i A') }}</p>
+                <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->created_at->appDateTime() }}</p>
             </div>
             @if($paymentBatch->approved_by)
                 <div>
@@ -54,7 +54,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Approved At') }}</p>
-                    <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->approved_at?->format('m/d/Y g:i A') ?? '—' }}</p>
+                    <p class="text-sm text-slate-900 dark:text-white mt-1">{{ $paymentBatch->approved_at?->appDateTime() ?? '—' }}</p>
                 </div>
             @endif
             @if($paymentBatch->notes)

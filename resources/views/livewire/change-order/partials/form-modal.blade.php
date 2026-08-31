@@ -97,7 +97,7 @@
                                 @if($viewing)
                                     <p class="text-slate-900 dark:text-white">{{ $co_requested_date ? \Carbon\Carbon::parse($co_requested_date)->translatedFormat('d M Y') : '—' }}</p>
                                 @else
-                                    <input type="date" wire:model="co_requested_date" class="{{ $field }}">
+                                    <x-ui.date-input wire:model="co_requested_date" class="{{ $field }}" />
                                     @error('co_requested_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                                 @endif
                             </div>
@@ -167,12 +167,42 @@
                             @endif
 
                             @unless($viewing)
-                                <input type="file" wire:model="co_file" class="{{ $field }} mt-2">
-                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Maximum file size: 10MB') }}</p>
-                                @error('co_file') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
-                                @if($co_file)
-                                    <p class="mt-1 text-sm text-green-600 dark:text-green-400">{{ __('New file selected:') }} {{ $co_file->getClientOriginalName() }}</p>
-                                @endif
+                                <x-ui.file-drop
+                                    wire:model="co_file"
+                                    :multiple="false"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    :label="__('Drop the file here, or')"
+                                    :hint="__('PDF, JPG or PNG, up to 10MB.')"
+                                    class="mt-2 space-y-2">
+
+                                    @error('co_file') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                    @if($co_file)
+                                        <div class="flex items-center justify-between gap-3 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                            <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                {{ $co_file->getClientOriginalName() }}
+                                            </span>
+                                            <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                {{ \App\Services\DocumentSettings::formatBytes($co_file->getSize()) }}
+                                            </span>
+                                            <x-ui.icon-button
+                                                variant="ghost"
+                                                size="sm"
+                                                icon="trash"
+                                                type="button"
+                                                wire:click="clearChangeOrderFile"
+                                                title="{{ __('Remove :file', ['file' => $co_file->getClientOriginalName()]) }}"
+                                                aria-label="{{ __('Remove :file', ['file' => $co_file->getClientOriginalName()]) }}"
+                                                class="hover:text-red-600 dark:hover:text-red-400" />
+                                        </div>
+
+                                        @if($existingFilePath)
+                                            <p class="text-xs text-amber-600 dark:text-amber-400">
+                                                {{ __('This replaces the file already on the change order when you save.') }}
+                                            </p>
+                                        @endif
+                                    @endif
+                                </x-ui.file-drop>
                             @endunless
                         </div>
                     </div>

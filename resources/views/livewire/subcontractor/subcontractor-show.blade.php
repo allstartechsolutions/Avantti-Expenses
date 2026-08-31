@@ -161,7 +161,7 @@
                                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                         {{ __('Added On') }}
                                     </label>
-                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->created_at->format('F d, Y') }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ $subcontractor->created_at->appDateLong() }}</p>
                                 </div>
                             </div>
                         </div>
@@ -403,13 +403,7 @@
                                                 <span class="text-red-500">*</span>
                                             @endif
                                         </label>
-                                        <input
-                                            type="date"
-                                            id="expiration_date"
-                                            wire:model="expiration_date"
-                                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            @if(!$this->selectedDocumentType || !$this->selectedDocumentType->requires_expiration) @endif
-                                        >
+                                        <x-ui.date-input id="expiration_date" wire:model="expiration_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                         @error('expiration_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -517,7 +511,7 @@
                                                 </td>
                                                 <td class="px-4 py-4">
                                                     @if($document->expiration_date)
-                                                        <span class="text-sm text-slate-900 dark:text-white">{{ $document->expiration_date->format('M d, Y') }}</span>
+                                                        <span class="text-sm text-slate-900 dark:text-white">{{ $document->expiration_date->appDate() }}</span>
                                                     @else
                                                         <span class="text-sm text-slate-500 dark:text-slate-400">N/A</span>
                                                     @endif
@@ -535,7 +529,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-4">
-                                                    <div class="text-sm text-slate-900 dark:text-white">{{ $document->created_at->format('M d, Y') }}</div>
+                                                    <div class="text-sm text-slate-900 dark:text-white">{{ $document->created_at->appDate() }}</div>
                                                     <div class="text-xs text-slate-500 dark:text-slate-400">by {{ $document->uploadedBy->name ?? __('Unknown') }}</div>
                                                 </td>
                                                 <td class="px-4 py-4 text-right">

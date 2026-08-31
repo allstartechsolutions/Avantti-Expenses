@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Quotation')">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>
@@ -17,10 +16,10 @@
                     {{ __('Project') }}: {{ $quotation->project?->project_name }}<br>
                     {{ __('Where') }}: {{ $quotation->jobSite?->job_site_name ?? __('Project Level') }}<br>
                     {{ __('Responses Due') }}:
-                    <strong @if($quotation->responsesOverdue()) style="color: #b91c1c;" @endif>{{ $quotation->responses_due_at?->format($dateFormat) ?? __('No date given') }}</strong>
+                    <strong @if($quotation->responsesOverdue()) style="color: #b91c1c;" @endif>{{ $quotation->responses_due_at?->appDate() ?? __('No date given') }}</strong>
                     @if($quotation->responsesOverdue()) · {{ __('Overdue') }} @endif
                     <br>
-                    {{ __('Needed On Site') }}: {{ $quotation->needed_by?->format($dateFormat) ?? __('No date given') }}<br>
+                    {{ __('Needed On Site') }}: {{ $quotation->needed_by?->appDate() ?? __('No date given') }}<br>
                     {{ __('Items') }}: {{ trans_choice(':count item|:count items', $quotation->items->count(), ['count' => $quotation->items->count()]) }}<br>
                     {{ __('Vendors Invited') }}: {{ $quotation->quotationVendors->count() }}
                 </div>

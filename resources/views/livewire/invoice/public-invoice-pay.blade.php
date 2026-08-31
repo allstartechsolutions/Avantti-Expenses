@@ -56,11 +56,11 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <div>
                         <dt class="font-medium text-slate-500">{{ __('Invoice Date') }}</dt>
-                        <dd class="mt-1 text-slate-900">{{ $invoice->invoice_date->format('M d, Y') }}</dd>
+                        <dd class="mt-1 text-slate-900">{{ $invoice->invoice_date->appDate() }}</dd>
                     </div>
                     <div>
                         <dt class="font-medium text-slate-500">{{ __('Due Date') }}</dt>
-                        <dd class="mt-1 text-slate-900">{{ $invoice->due_date->format('M d, Y') }}</dd>
+                        <dd class="mt-1 text-slate-900">{{ $invoice->due_date->appDate() }}</dd>
                     </div>
                     <div>
                         <dt class="font-medium text-slate-500">{{ __('Total') }}</dt>

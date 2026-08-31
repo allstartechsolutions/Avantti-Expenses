@@ -2,7 +2,6 @@
     @php
         $card = 'bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700';
         $counts = $this->counts;
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     @endphp
 
     <!-- Page header -->
@@ -89,7 +88,7 @@
                                     @else
                                         <span class="rounded bg-[#3F5189]/10 px-1.5 py-0.5 text-[#3F5189] dark:text-[#4A5A96]">{{ __('Written here') }}</span>
                                     @endif
-                                    <span>{{ __('updated :date', ['date' => $entry['updated_at']?->format($dateFormat)]) }}</span>
+                                    <span>{{ __('updated :date', ['date' => $entry['updated_at']?->appDate()]) }}</span>
                                 </p>
                             </a>
                         @endforeach

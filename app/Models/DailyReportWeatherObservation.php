@@ -117,7 +117,7 @@ class DailyReportWeatherObservation extends Model
             return '-';
         }
 
-        return $this->observed_at->format('g:i A');
+        return $this->observed_at->appTime();
     }
 
     /**

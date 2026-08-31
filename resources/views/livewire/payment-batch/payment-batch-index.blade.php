@@ -163,7 +163,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $batch->payment_date->format('m/d/Y') }}
+                                        {{ $batch->payment_date->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -197,7 +197,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $batch->created_at->format('m/d/Y') }}
+                                        {{ $batch->created_at->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

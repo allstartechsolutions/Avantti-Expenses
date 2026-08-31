@@ -35,13 +35,11 @@
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('From') }}</label>
-                <input type="date" wire:model.live="fromDate"
-                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                <x-ui.date-input wire:model.live="fromDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('To') }}</label>
-                <input type="date" wire:model.live="toDate"
-                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                <x-ui.date-input wire:model.live="toDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Client') }}</label>
@@ -89,7 +87,7 @@
     @if ($fromDate || $toDate)
         <div class="mb-6 px-6 py-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg">
             <p class="text-xs text-blue-800 dark:text-blue-300">
-                {{ __('Showing period') }}: <strong>{{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }}</strong> — <strong>{{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}</strong>.
+                {{ __('Showing period') }}: <strong>{{ $fromDate ? \Carbon\Carbon::parse($fromDate)->appDate() : __('beginning') }}</strong> — <strong>{{ $toDate ? \Carbon\Carbon::parse($toDate)->appDate() : __('open-ended') }}</strong>.
                 {{ __('Contract installments are matched by their due date and contract payments by their payment date, like expenses.') }}
             </p>
         </div>

@@ -115,7 +115,7 @@
 
                 <div>
                     <label class="{{ $label }}">{{ __('collaboration.label.due') }}</label>
-                    <input type="date" wire:model="due_date" class="{{ $input }}">
+                    <x-ui.date-input wire:model="due_date" class="{{ $input }}" />
                     @error('due_date') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                 </div>
             </div>

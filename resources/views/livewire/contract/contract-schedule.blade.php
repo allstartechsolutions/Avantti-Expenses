@@ -59,16 +59,16 @@
                                     </td>
                                     <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                         @if($item->trigger_type === 'date')
-                                            {{ __('Fixed date') }}: {{ $item->due_date?->format('M d, Y') }}
+                                            {{ __('Fixed date') }}: {{ $item->due_date?->appDate() }}
                                         @else
                                             {{ __('Milestone') }}
                                             @if($item->due_date)
-                                                <span class="text-xs text-slate-400">({{ __('expected') }} {{ $item->due_date->format('M d, Y') }})</span>
+                                                <span class="text-xs text-slate-400">({{ __('expected') }} {{ $item->due_date->appDate() }})</span>
                                             @endif
                                         @endif
                                         @if($item->isReleased())
                                             <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                                                {{ __('Released') }} {{ $item->released_at->format('M d, Y') }}
+                                                {{ __('Released') }} {{ $item->released_at->appDate() }}
                                                 @if($item->releasedBy) · {{ $item->releasedBy->name }} @endif
                                             </p>
                                         @endif
@@ -208,7 +208,7 @@
                                     @error("rows.{$i}.trigger_type") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </td>
                                 <td class="px-2 py-2">
-                                    <input type="date" wire:model="rows.{{ $i }}.due_date" class="{{ $inputClasses }}">
+                                    <x-ui.date-input wire:model="rows.{{ $i }}.due_date" class="{{ $inputClasses }}" />
                                     <p class="mt-0.5 text-[10px] text-slate-400">{{ $row['trigger_type'] === 'date' ? __('Due Date') : __('Expected Date') }}</p>
                                     @error("rows.{$i}.due_date") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </td>
@@ -375,7 +375,7 @@
                                     <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $change->item_description }}</span>
                                 </div>
                                 <span class="text-xs text-slate-400 whitespace-nowrap">
-                                    {{ $change->created_at->format('M d, Y H:i') }} · {{ $change->changedBy?->name ?? __('Unknown') }}
+                                    {{ $change->created_at->appDateTime() }} · {{ $change->changedBy?->name ?? __('Unknown') }}
                                 </span>
                             </div>
                             @if($change->changes)

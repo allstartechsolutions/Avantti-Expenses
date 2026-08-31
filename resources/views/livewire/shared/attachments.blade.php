@@ -31,7 +31,7 @@
                                 @if($attachment->uploadedBy)
                                     {{ __('Uploaded by') }} {{ $attachment->uploadedBy->name }} ·
                                 @endif
-                                {{ $attachment->created_at->format('M d, Y H:i') }}
+                                {{ $attachment->created_at->appDateTime() }}
                             </p>
                         </div>
                     </div>

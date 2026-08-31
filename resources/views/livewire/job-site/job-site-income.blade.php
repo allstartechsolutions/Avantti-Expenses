@@ -93,7 +93,7 @@
                                 @php $income = $entry['income']; @endphp
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $income->effectiveDate()?->format('M d, Y') }}
+                                        {{ $income->effectiveDate()?->appDate() }}
                                         @if($income->isExpected())
                                             <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Due') }}</span>
                                         @endif
@@ -290,13 +290,13 @@
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                     {{ $income_status === 'expected' ? __('Reference Date') : __('Date') }} <span class="text-red-500">*</span>
                                 </label>
-                                <input type="date" wire:model="income_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <x-ui.date-input wire:model="income_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                 @error('income_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
                             @if($income_status === 'expected')
                                 <div class="sm:col-span-2">
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Due Date') }} <span class="text-red-500">*</span></label>
-                                    <input type="date" wire:model="income_due_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <x-ui.date-input wire:model="income_due_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                     @error('income_due_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                                 </div>
                             @endif
@@ -460,7 +460,7 @@
                                 <p class="text-3xl font-bold mt-1">{{ Number::currency($shownAmount, config('app.currency'), config('app.locale')) }}</p>
                                 <p class="mt-2 text-sm text-white/80">
                                     {{ $viewingIncome->isExpected() ? __('Due') : __('Received') }}
-                                    {{ $viewingIncome->effectiveDate()?->format('M d, Y') }}
+                                    {{ $viewingIncome->effectiveDate()?->appDate() }}
                                     @if($viewingIncome->isOverdue())
                                         &middot; {{ __('Overdue by :days days', ['days' => $viewingIncome->due_date->diffInDays(today())]) }}
                                     @endif
@@ -481,11 +481,11 @@
                                     </div>
                                     <div>
                                         <dt class="{{ $factLabel }}">{{ $viewingIncome->isExpected() ? __('Reference Date') : __('Date') }}</dt>
-                                        <dd class="{{ $factValue }}">{{ $viewingIncome->income_date->format('M d, Y') }}</dd>
+                                        <dd class="{{ $factValue }}">{{ $viewingIncome->income_date->appDate() }}</dd>
                                     </div>
                                     <div>
                                         <dt class="{{ $factLabel }}">{{ __('Due Date') }}</dt>
-                                        <dd class="{{ $factValue }}">{{ $viewingIncome->due_date?->format('M d, Y') ?? '—' }}</dd>
+                                        <dd class="{{ $factValue }}">{{ $viewingIncome->due_date?->appDate() ?? '—' }}</dd>
                                     </div>
                                     <div>
                                         <dt class="{{ $factLabel }}">{{ __('Project') }}</dt>
@@ -507,11 +507,11 @@
                                     </div>
                                     <div>
                                         <dt class="{{ $factLabel }}">{{ __('Created') }}</dt>
-                                        <dd class="{{ $factValue }}">{{ $viewingIncome->created_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                        <dd class="{{ $factValue }}">{{ $viewingIncome->created_at?->appDateTime() ?? '—' }}</dd>
                                     </div>
                                     <div>
                                         <dt class="{{ $factLabel }}">{{ __('Last Updated') }}</dt>
-                                        <dd class="{{ $factValue }}">{{ $viewingIncome->updated_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                        <dd class="{{ $factValue }}">{{ $viewingIncome->updated_at?->appDateTime() ?? '—' }}</dd>
                                     </div>
                                 </dl>
                             </div>
@@ -600,7 +600,7 @@
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             {{ __('Added By') }}: {{ $viewingIncome->createdBy?->name ?? '—' }}
                             &middot;
-                            {{ $viewingIncome->created_at?->format('M d, Y H:i') }}
+                            {{ $viewingIncome->created_at?->appDateTime() }}
                         </p>
                         <div class="flex flex-wrap items-center justify-end gap-3">
                             @unless($viewingShare)

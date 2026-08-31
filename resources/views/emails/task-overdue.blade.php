@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Past due')" accent="#dc2626">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>
@@ -15,7 +14,7 @@
                 <strong style="color: #3F5189;">{{ $task->code() }}</strong> — {{ $task->title }}
                 <div style="color: #777; font-size: 13px; margin-top: 6px;">
                     {{ $task->getScopeLabel() }}<br>
-                    {{ __('Due Date') }}: <strong style="color: #dc2626;">{{ $task->due_date?->format($dateFormat) }}</strong>
+                    {{ __('Due Date') }}: <strong style="color: #dc2626;">{{ $task->due_date?->appDate() }}</strong>
                     · {{ $task->progress }}% · {{ $task->getStatusLabel() }}
                 </div>
                 @if($lastNote)

@@ -42,7 +42,7 @@
                                 <tr wire:key="measurement-{{ $measurement->id }}">
                                     <td class="px-3 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ $measurement->measurement_number }}</td>
                                     <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                        {{ $measurement->period_start->format('M d, Y') }} — {{ $measurement->period_end->format('M d, Y') }}
+                                        {{ $measurement->period_start->appDate() }} — {{ $measurement->period_end->appDate() }}
                                         @if($measurement->scheduleItem)
                                             <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
                                                 {{ $measurement->scheduleItem->description }}
@@ -50,7 +50,7 @@
                                         @endif
                                         @if($measurement->approvedBy)
                                             <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                                                {{ __('Approved') }} {{ $measurement->approved_at?->format('M d, Y') }} · {{ $measurement->approvedBy->name }}
+                                                {{ __('Approved') }} {{ $measurement->approved_at?->appDate() }} · {{ $measurement->approvedBy->name }}
                                             </p>
                                         @endif
                                     </td>
@@ -155,12 +155,12 @@
             <div class="px-6 py-3 border-b border-slate-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-{{ $scheduleItems->count() > 0 ? '4' : '3' }} gap-4">
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">{{ __('Period Start') }} *</label>
-                    <input type="date" wire:model="periodStart" @disabled($readOnly) class="{{ $inputClasses }}">
+                    <x-ui.date-input wire:model="periodStart" :disabled="$readOnly" class="{{ $inputClasses }}" />
                     @error('periodStart') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">{{ __('Period End') }} *</label>
-                    <input type="date" wire:model="periodEnd" @disabled($readOnly) class="{{ $inputClasses }}">
+                    <x-ui.date-input wire:model="periodEnd" :disabled="$readOnly" class="{{ $inputClasses }}" />
                     @error('periodEnd') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 @if($scheduleItems->count() > 0)
@@ -174,7 +174,7 @@
                                     &middot; {{ __('Scheduled') }} {{ Number::currency($scheduleItem->getScheduledAmount(), config('app.currency'), config('app.locale')) }}
                                     &middot; {{ __('Balance') }} {{ Number::currency($scheduleItem->getBalance(), config('app.currency'), config('app.locale')) }}
                                     @if($scheduleItem->due_date)
-                                        &middot; {{ $scheduleItem->due_date->format('d/m/Y') }}
+                                        &middot; {{ $scheduleItem->due_date->appDate() }}
                                     @endif
                                     &middot; {{ $scheduleItem->getStatusLabel() }}
                                 </option>
@@ -211,7 +211,7 @@
                                     {{ $selected->trigger_type === 'date' ? __('Due Date') : __('Expected Date') }}
                                 </span>
                                 <span class="font-medium text-slate-900 dark:text-white">
-                                    {{ $selected->due_date?->format('d/m/Y') ?? '—' }}
+                                    {{ $selected->due_date?->appDate() ?? '—' }}
                                 </span>
                             </div>
                             <div>

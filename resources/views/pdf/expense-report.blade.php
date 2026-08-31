@@ -57,9 +57,9 @@
                 <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('EXPENSE REPORT') }}</div>
                 <div style="font-size: 8pt; color: #555;">{{ $viewLabels[$view] }}</div>
                 <div style="font-size: 8pt; color: #555;">
-                    {{ \Carbon\Carbon::parse($fromDate)->format('M d, Y') }} — {{ \Carbon\Carbon::parse($toDate)->format('M d, Y') }}
+                    {{ \Carbon\Carbon::parse($fromDate)->appDate() }} — {{ \Carbon\Carbon::parse($toDate)->appDate() }}
                 </div>
-                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
                 @endif
@@ -258,7 +258,7 @@
             <tbody>
                 @forelse($detail as $row)
                     <tr>
-                        <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ ($dateBasis === 'due' ? $row['due_date'] : $row['expense_date'])?->format('M d, Y') }}</td>
+                        <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ ($dateBasis === 'due' ? $row['due_date'] : $row['expense_date'])?->appDate() }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['item'] }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['vendor'] ?? '—' }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['project'] ?? '—' }}</td>

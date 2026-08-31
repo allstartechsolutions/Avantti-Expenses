@@ -77,7 +77,7 @@
                     <td class="px-3 py-3 hidden sm:table-cell text-sm text-right text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $document->formattedSize() }}</td>
                     <td class="px-3 py-3 hidden lg:table-cell text-sm text-slate-600 dark:text-slate-300">{{ $document->uploadedBy?->name ?? '—' }}</td>
                     <td class="px-3 py-3 hidden md:table-cell text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        {{ ($showTrash ? $document->deleted_at : $document->updated_at)?->format('d/m/Y H:i') }}
+                        {{ ($showTrash ? $document->deleted_at : $document->updated_at)?->appDateTime() }}
                     </td>
                     <td class="px-4 sm:px-6 py-3">
                         <div class="flex items-center justify-end gap-1">

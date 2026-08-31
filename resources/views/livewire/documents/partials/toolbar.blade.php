@@ -61,11 +61,11 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('From') }}</label>
-                            <input type="date" wire:model.live="dateFrom" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <x-ui.date-input wire:model.live="dateFrom" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('To') }}</label>
-                            <input type="date" wire:model.live="dateTo" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <x-ui.date-input wire:model.live="dateTo" class="w-full px-2 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                         </div>
                     </div>
                 </div>

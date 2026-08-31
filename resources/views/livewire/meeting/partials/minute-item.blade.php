@@ -9,7 +9,6 @@
     meeting-show.blade.php, so "expand all" can reach every row.
 --}}
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
     $task = $item->task;
     $me = auth()->user();
@@ -84,7 +83,7 @@
                     <span>{{ $task->owner?->name }}</span>
                     @if($task->due_date)
                         <span class="{{ $task->isOverdue() ? 'font-semibold text-red-600 dark:text-red-400' : '' }}">
-                            {{ $task->due_date->format($dateFormat) }}
+                            {{ $task->due_date->appDate() }}
                         </span>
                     @endif
                     <span>{{ $meeting->isPublished() ? ($snapshot['progress'] ?? $task->progress) : $task->progress }}%</span>
@@ -171,7 +170,7 @@
                         <span class="font-medium">{{ $snapshot['progress'] ?? $task->progress }}%</span>
                         <span>{{ __('owner: :name', ['name' => $snapshot['owner_name'] ?? $task->owner?->name]) }}</span>
                         @if($snapshot['due_date'] ?? null)
-                            <span>{{ __('due :date', ['date' => \Illuminate\Support\Carbon::parse($snapshot['due_date'])->format($dateFormat)]) }}</span>
+                            <span>{{ __('due :date', ['date' => \Illuminate\Support\Carbon::parse($snapshot['due_date'])->appDate()]) }}</span>
                         @endif
                         @if(($snapshot['status'] ?? null) && $snapshot['status'] !== $task->status)
                             <span class="text-slate-400">{{ __('since then it has moved on') }}</span>

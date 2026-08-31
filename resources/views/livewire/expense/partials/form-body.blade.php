@@ -59,10 +59,7 @@
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             {{ __('Expense Date') }} <span class="text-red-500">*</span>
                         </label>
-                        <input
-                            type="date"
-                            wire:model="expense_date"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <x-ui.date-input wire:model="expense_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                         @error('expense_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -274,12 +271,12 @@
                         @if($expense_status === 'paid')
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Paid Date') }}</label>
-                                <input @disabled($amountsLocked) type="date" wire:model="expense_paid_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <x-ui.date-input wire:model="expense_paid_date" :disabled="$amountsLocked" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                             </div>
                         @else
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Due Date') }} <span class="text-red-500">*</span></label>
-                                <input @disabled($amountsLocked) type="date" wire:model="expense_payment_due_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <x-ui.date-input wire:model="expense_payment_due_date" :disabled="$amountsLocked" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                 @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
                         @endif
@@ -301,7 +298,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('First Payment Date') }} <span class="text-red-500">*</span></label>
-                            <input @disabled($amountsLocked) type="date" wire:model="expense_payment_due_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <x-ui.date-input wire:model="expense_payment_due_date" :disabled="$amountsLocked" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                             @error('expense_payment_due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                     </div>

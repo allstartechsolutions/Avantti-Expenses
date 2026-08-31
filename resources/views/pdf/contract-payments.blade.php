@@ -40,7 +40,7 @@
             </td>
             <td style="width: 50%; vertical-align: top; text-align: right; border: none; padding: 0;">
                 <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('CONTRACT PAYMENTS') }}</div>
-                <div style="font-size: 8pt; color: #555;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+                <div style="font-size: 8pt; color: #555;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
                 @if(count($filters) > 0)
                     <div style="font-size: 7pt; color: #888; margin-top: 3px;">
                         {{ __('Filters') }}: {{ implode(' | ', $filters) }}
@@ -156,7 +156,7 @@
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt;">
                         @if($contract->latestPayment)
-                            {{ $contract->latestPayment->payment_date->format('M d, Y') }}
+                            {{ $contract->latestPayment->payment_date->appDate() }}
                             <br><span style="color: #27ae60;">${{ number_format($contract->latestPayment->amount, 2) }}</span>
                         @else
                             <span style="color: #ccc;">—</span>
@@ -176,7 +176,7 @@
                                 </tr>
                                 @foreach($contract->changeOrders as $co)
                                     <tr>
-                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $co->date->format('M d, Y') }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $co->date->appDate() }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #333; font-weight: bold;">{{ $co->title }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ \Illuminate\Support\Str::limit($co->description, 60) ?? '' }}</td>
                                         <td style="border: none; padding: 1px 0; font-size: 7pt; font-weight: bold; text-align: right; color: {{ $co->amount >= 0 ? '#27ae60' : '#e74c3c' }}; white-space: nowrap;">
@@ -201,7 +201,7 @@
                                 </tr>
                                 @foreach($contract->payments as $payment)
                                     <tr>
-                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $payment->payment_date->format('M d, Y') }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $payment->payment_date->appDate() }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #333;">{{ $payment->payment_method ? $payment->getPaymentMethodLabel() : '—' }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->reference_number ?? '' }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->notes ?? '' }}</td>
@@ -220,7 +220,7 @@
 
     <!-- Footer -->
     <div style="margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7pt; color: #888; text-align: center;">
-        {{ $company->name ?? config('app.name') }} — {{ __('Contract Payments Report') }} — {{ $generatedAt->format('M d, Y') }}
+        {{ $company->name ?? config('app.name') }} — {{ __('Contract Payments Report') }} — {{ $generatedAt->appDate() }}
     </div>
 
 </body>

@@ -7,7 +7,6 @@
 </head>
 <body style="font-family: DejaVu Sans, sans-serif; font-size: 9pt; line-height: 1.45; color: #333; margin: 0; padding: 18px;">
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $stampFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
 
     // Editor output has to be stripped for print: dompdf will not lay out
@@ -51,7 +50,7 @@
     <tr>
         <td style="width: 25%; border: 1px solid #e2e8f0; padding: 5px 7px; background: #f8fafc;">
             <div style="font-size: 7pt; color: #64748b; text-transform: uppercase;">{{ __('Date') }}</div>
-            <div style="font-weight: bold;">{{ $meeting->meeting_date->format($dateFormat) }}</div>
+            <div style="font-weight: bold;">{{ $meeting->meeting_date->appDate() }}</div>
         </td>
         <td style="width: 25%; border: 1px solid #e2e8f0; padding: 5px 7px; background: #f8fafc;">
             <div style="font-size: 7pt; color: #64748b; text-transform: uppercase;">{{ __('Time') }}</div>
@@ -110,7 +109,7 @@
 --}}
 @if($meeting->published_at && ! $meeting->published_at->isSameDay($meeting->meeting_date))
     <div style="font-size: 7pt; color: #94a3b8; margin-bottom: 6px;">
-        {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->format($dateFormat)]) }}
+        {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->appDate()]) }}
     </div>
 @endif
 
@@ -150,7 +149,7 @@
                     <div style="margin-top: 4px; font-size: 7.5pt; color: #475569;">
                         {{ __('Task') }} {{ $item->task->code() }} ·
                         {{ __('Owner') }}: <strong>{{ $snapshot['owner_name'] ?? $item->task->owner?->name }}</strong> ·
-                        {{ __('Due Date') }}: <strong>{{ ($snapshot['due_date'] ?? null) ? \Illuminate\Support\Carbon::parse($snapshot['due_date'])->format($dateFormat) : ($item->task->due_date?->format($dateFormat) ?? '—') }}</strong> ·
+                        {{ __('Due Date') }}: <strong>{{ ($snapshot['due_date'] ?? null) ? \Illuminate\Support\Carbon::parse($snapshot['due_date'])->appDate() : ($item->task->due_date?->appDate() ?? '—') }}</strong> ·
                         {{ __('Progress') }}: <strong>{{ $snapshot['progress'] ?? $item->task->progress }}%</strong>
                     </div>
                 @endif
@@ -192,7 +191,7 @@
                     </td>
                     <td style="border: 1px solid #e2e8f0; padding: 4px 7px;">{{ $snapshot['owner_name'] ?? $item->task?->owner?->name ?? '—' }}</td>
                     <td style="border: 1px solid #e2e8f0; padding: 4px 7px; {{ $overdue ? 'color: #dc2626; font-weight: bold;' : '' }}">
-                        {{ ($snapshot['due_date'] ?? null) ? \Illuminate\Support\Carbon::parse($snapshot['due_date'])->format($dateFormat) : '—' }}
+                        {{ ($snapshot['due_date'] ?? null) ? \Illuminate\Support\Carbon::parse($snapshot['due_date'])->appDate() : '—' }}
                     </td>
                     <td style="border: 1px solid #e2e8f0; padding: 4px 7px;">
                         {{ $item->task?->getStatusLabel() ?? '—' }}
@@ -220,7 +219,7 @@
 @if($meeting->next_meeting_date)
     <div style="margin-top: 14px; border: 1px solid #e2e8f0; padding: 6px 8px;">
         <span style="font-size: 8pt; font-weight: bold; color: #3F5189; text-transform: uppercase;">{{ __('The Next Meeting') }}:</span>
-        <strong>{{ $meeting->next_meeting_date->format($dateFormat) }}</strong>
+        <strong>{{ $meeting->next_meeting_date->appDate() }}</strong>
         @if($meeting->nextMeeting) ({{ $meeting->nextMeeting->number }}) @endif
     </div>
 @endif

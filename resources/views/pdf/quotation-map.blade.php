@@ -34,7 +34,7 @@
             <td style="width: 40%; vertical-align: top; text-align: right; border: none; padding: 0;">
                 <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('COMPARISON MAP') }}</div>
                 <div style="font-size: 9pt; color: #555;">{{ $quotation->quotation_number }}</div>
-                <div style="font-size: 7.5pt; color: #666;">{{ now()->format('M d, Y H:i') }}</div>
+                <div style="font-size: 7.5pt; color: #666;">{{ now()->appDateTime() }}</div>
             </td>
         </tr>
     </table>
@@ -138,8 +138,8 @@
                             @if($column['payment_terms'])<div>{{ $column['payment_terms'] }}</div>@endif
                             @if($column['valid_until'])
                                 <div>{{ $column['expired']
-                                    ? __('Expired :date', ['date' => $column['valid_until']->format('M d, Y')])
-                                    : __('Valid to :date', ['date' => $column['valid_until']->format('M d, Y')]) }}</div>
+                                    ? __('Expired :date', ['date' => $column['valid_until']->appDate()])
+                                    : __('Valid to :date', ['date' => $column['valid_until']->appDate()]) }}</div>
                             @endif
                             @if($column['unquoted'] > 0)<div>{{ __(':count not quoted', ['count' => $column['unquoted']]) }}</div>@endif
                             @if($column['unavailable'] > 0)<div>{{ __(':count not supplied', ['count' => $column['unavailable']]) }}</div>@endif

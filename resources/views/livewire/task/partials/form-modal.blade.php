@@ -155,12 +155,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="{{ $label }}">{{ __('Start Date') }}</label>
-                                <input type="date" wire:model="task_start_date" class="{{ $field }}">
+                                <x-ui.date-input wire:model="task_start_date" class="{{ $field }}" />
                                 @error('task_start_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
                             <div>
                                 <label class="{{ $label }}">{{ __('Due Date') }}</label>
-                                <input type="date" wire:model="task_due_date" class="{{ $field }}">
+                                <x-ui.date-input wire:model="task_due_date" class="{{ $field }}" />
                                 @error('task_due_date') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
                         </div>

@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Quotation')">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>
@@ -17,7 +16,7 @@
                     {{ __('Project') }}: {{ $quotation->project?->project_name }}<br>
                     {{ __('Where') }}: {{ $quotation->jobSite?->job_site_name ?? __('Project Level') }}<br>
                     {{ __('Responses Due') }}:
-                    <strong @if($overdue) style="color: #b91c1c;" @endif>{{ $quotation->responses_due_at?->format($dateFormat) ?? __('No date given') }}</strong><br>
+                    <strong @if($overdue) style="color: #b91c1c;" @endif>{{ $quotation->responses_due_at?->appDate() ?? __('No date given') }}</strong><br>
                     {{ __('Proposals') }}: {{ $quotation->respondedCount() }} / {{ $quotation->invitedCount() }}
                 </div>
             </td>

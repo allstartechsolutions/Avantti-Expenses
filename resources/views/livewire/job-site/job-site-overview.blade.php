@@ -152,7 +152,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Created On') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $jobSite->created_at->format('F d, Y') }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $jobSite->created_at->appDateLong() }}</p>
                         </div>
 
                         <!-- Created By -->
@@ -358,7 +358,7 @@
                             @foreach($jobSite->supervisorHistories as $history)
                                 <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-600">
                                     <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                                        {{ $history->created_at->format('M d, Y h:i A') }}
+                                        {{ $history->created_at->appDateTime() }}
                                     </div>
                                     <div class="text-sm text-slate-900 dark:text-white">
                                         @if($history->old_supervisor_id === null && $history->new_supervisor_id !== null)

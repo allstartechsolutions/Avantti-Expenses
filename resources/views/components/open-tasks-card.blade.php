@@ -22,7 +22,6 @@
         ? route('jobsites.tasks', $jobSite)
         : route('projects.tasks', $project);
 
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
 @endphp
 
 @if(\App\Models\ModuleAccess::isEnabled('meetings'))
@@ -65,7 +64,7 @@
                         <div class="flex justify-between gap-3">
                             <dt class="text-slate-500 dark:text-slate-400">{{ __('Next due') }}</dt>
                             <dd class="font-medium text-slate-800 dark:text-slate-100">
-                                {{ \Illuminate\Support\Carbon::parse($nextDue)->format($dateFormat) }}
+                                {{ \Illuminate\Support\Carbon::parse($nextDue)->appDate() }}
                             </dd>
                         </div>
                     @endif

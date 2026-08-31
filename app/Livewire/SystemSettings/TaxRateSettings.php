@@ -179,7 +179,7 @@ class TaxRateSettings extends Component
                     'old_value' => $entry->old_value,
                     'new_value' => $entry->new_value,
                     'changed_by' => $entry->changedBy->name ?? 'Unknown',
-                    'created_at' => $entry->created_at->format('M d, Y h:i A'),
+                    'created_at' => $entry->created_at->appDateTime(),
                 ];
             })
             ->toArray();

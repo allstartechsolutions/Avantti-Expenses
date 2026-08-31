@@ -2,7 +2,6 @@
     @php
         $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
         $card = 'bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700';
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
         $stampFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
         $counters = $this->counters;
         $editable = $this->isEditable();
@@ -37,7 +36,7 @@
             <h1 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ $meeting->title }}</h1>
 
             <p class="text-sm text-slate-500 dark:text-slate-400">
-                {{ $meeting->meeting_date->format($dateFormat) }}
+                {{ $meeting->meeting_date->appDate() }}
                 @if($meeting->started_at) · {{ substr($meeting->started_at, 0, 5) }}@if($meeting->ended_at)–{{ substr($meeting->ended_at, 0, 5) }}@endif @endif
                 @if($meeting->location) · {{ $meeting->location }} @endif
                 @if($meeting->series) · {{ $meeting->series->name }} @endif
@@ -240,7 +239,7 @@
                 @else
                     @if($meeting->published_at && ! $meeting->published_at->isSameDay($meeting->meeting_date))
                         <div class="px-6 py-2 text-xs text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                            {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->format($dateFormat)]) }}
+                            {{ __('Figures as at publication, :date', ['date' => $meeting->published_at->appDate()]) }}
                         </div>
                     @endif
 
@@ -415,15 +414,15 @@
                         <a href="{{ route('meetings.show', $meeting->nextMeeting) }}" class="font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">
                             {{ $meeting->nextMeeting->number }}
                         </a>
-                        — {{ $meeting->nextMeeting->meeting_date->format($dateFormat) }}
+                        — {{ $meeting->nextMeeting->meeting_date->appDate() }}
                     </p>
                 @elseif($editable)
-                    <input type="date" wire:model="nextMeetingDate" class="{{ $field }} mt-3">
+                    <x-ui.date-input wire:model="nextMeetingDate" class="{{ $field }} mt-3" />
                     <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
                         {{ __('Agreed before everyone leaves. Nothing is scheduled automatically.') }}
                     </p>
                 @elseif($meeting->next_meeting_date)
-                    <p class="mt-3 text-sm text-slate-700 dark:text-slate-200">{{ $meeting->next_meeting_date->format($dateFormat) }}</p>
+                    <p class="mt-3 text-sm text-slate-700 dark:text-slate-200">{{ $meeting->next_meeting_date->appDate() }}</p>
                 @else
                     <p class="mt-3 text-sm text-slate-400 dark:text-slate-500">{{ __('Not agreed.') }}</p>
                 @endif

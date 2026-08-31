@@ -99,8 +99,8 @@
                         :minChars="$minSearch"
                         :total="$supplierCount"
                         error="supplier_id"
-                        :empty="__('No vendor matches. Check the spelling, or register the vendor first.')"
-                        :unavailable="$supplierCount === 0 ? __('No vendors are registered yet, so there is none to name here.') : null" />
+                        :empty="__('No supplier matches. A vendor registered only as a subcontractor does not appear here.')"
+                        :unavailable="$supplierCount === 0 ? __('No suppliers are registered yet, so there is none to name here.') : null" />
                 </div>
 
                 <div>
@@ -124,7 +124,7 @@
 
                 <div>
                     <label class="{{ $label }}">{{ __('collaboration.label.due') }}</label>
-                    <input type="date" wire:model="due_date" class="{{ $input }}">
+                    <x-ui.date-input wire:model="due_date" class="{{ $input }}" />
                     @error('due_date') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                 </div>
 
@@ -166,13 +166,13 @@
 
                     <div>
                         <label class="{{ $label }}">{{ __('collaboration.label.issued_2') }}</label>
-                        <input type="date" wire:model="issued_at" class="{{ $input }}">
+                        <x-ui.date-input wire:model="issued_at" class="{{ $input }}" />
                         @error('issued_at') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label class="{{ $label }}">{{ __('collaboration.label.valid_until') }}</label>
-                        <input type="date" wire:model="valid_until" class="{{ $input }}">
+                        <x-ui.date-input wire:model="valid_until" class="{{ $input }}" />
                         @error('valid_until') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
                     </div>
                 </div>

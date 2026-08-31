@@ -7,7 +7,6 @@
     panel says loudly when the newest is not the chosen one.
 --}}
 @php
-    $dateTimeFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
     $newest = $replies->first();
     $newestIsNotValid = $newest && $rfi->valid_reply_id && $newest->id !== $rfi->valid_reply_id;
 @endphp
@@ -67,13 +66,13 @@
                             <span class="text-xs text-slate-500 dark:text-slate-400">· {{ $reply->repliedBy->company_name }}</span>
                         @endif
 
-                        <span class="text-xs text-slate-400 dark:text-slate-500">· {{ $reply->replied_at?->format($dateTimeFormat) }}</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">· {{ $reply->replied_at?->appDateTime() }}</span>
 
                         @if($reply->wasEdited())
                             <span class="text-xs text-amber-600 dark:text-amber-400">
                                 · {{ __('collaboration.label.edited_by_on', [
                                     'who' => $reply->editedBy?->name ?? __('collaboration.label.removed_user'),
-                                    'when' => $reply->edited_at?->format($dateTimeFormat),
+                                    'when' => $reply->edited_at?->appDateTime(),
                                 ]) }}
                             </span>
                         @endif

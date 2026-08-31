@@ -389,7 +389,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-slate-900 dark:text-white">
-                                                {{ $jobSite->created_at->format('M d, Y') }}
+                                                {{ $jobSite->created_at->appDate() }}
                                             </div>
                                             @if($jobSite->createdBy)
                                                 <div class="text-xs text-slate-500 dark:text-slate-400">

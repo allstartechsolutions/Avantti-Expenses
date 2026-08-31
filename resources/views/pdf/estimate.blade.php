@@ -71,7 +71,7 @@
                 <table style="width: 100%; border: none;">
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Estimate Date:') }}</td>
-                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->estimate_date->format('M d, Y') }}</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->estimate_date->appDate() }}</td>
                     </tr>
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Terms:') }}</td>
@@ -79,7 +79,7 @@
                     </tr>
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Due Date:') }}</td>
-                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->due_date->format('M d, Y') }}</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $estimate->due_date->appDate() }}</td>
                     </tr>
                     @if($estimate->project)
                     <tr>

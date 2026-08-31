@@ -47,7 +47,7 @@
                                             <tr>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Responses Due') }}</td>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">
-                                                    {{ $quotation->responses_due_at?->format('M d, Y') ?? __('As soon as possible') }}
+                                                    {{ $quotation->responses_due_at?->appDate() ?? __('As soon as possible') }}
                                                 </td>
                                             </tr>
                                             <tr>

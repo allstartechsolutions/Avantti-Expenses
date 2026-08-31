@@ -1,6 +1,5 @@
 {{-- One line of the agenda being built. Expects: $item, $depth, $canUp, $canDown --}}
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     // The arrows stop at the edge of the location block: a line cannot change
     // project by being moved, so the whole block moves from its heading instead.
     $canUp = $canUp ?? true;
@@ -85,7 +84,7 @@
 
                 @if($task->due_date)
                     <span class="{{ $task->isOverdue() ? 'font-semibold text-red-600 dark:text-red-400' : '' }}">
-                        {{ $task->due_date->format($dateFormat) }}
+                        {{ $task->due_date->appDate() }}
                         @if($task->isOverdue())
                             · {{ trans_choice(':count day late|:count days late', $task->daysOverdue(), ['count' => $task->daysOverdue()]) }}
                         @endif

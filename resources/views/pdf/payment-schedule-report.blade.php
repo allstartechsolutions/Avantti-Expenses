@@ -47,10 +47,10 @@
                 </div>
                 @if($fromDate || $toDate)
                     <div style="font-size: 8pt; color: #555;">
-                        {{ __('Period') }}: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('M d, Y') : __('beginning') }} — {{ $toDate ? \Carbon\Carbon::parse($toDate)->format('M d, Y') : __('open-ended') }}
+                        {{ __('Period') }}: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->appDate() : __('beginning') }} — {{ $toDate ? \Carbon\Carbon::parse($toDate)->appDate() : __('open-ended') }}
                     </div>
                 @endif
-                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
                 @endif
@@ -68,7 +68,7 @@
 
     {{-- Footer --}}
     <div style="margin-top: 15px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 6.5pt; color: #999; text-align: center;">
-        {{ $company?->name }} — {{ __('Payment Schedule') }} — {{ $generatedAt->format('M d, Y') }}
+        {{ $company?->name }} — {{ __('Payment Schedule') }} — {{ $generatedAt->appDate() }}
     </div>
 </body>
 </html>

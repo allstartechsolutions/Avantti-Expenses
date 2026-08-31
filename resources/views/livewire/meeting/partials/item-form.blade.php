@@ -85,8 +85,8 @@
 
             <div class="md:col-span-2">
                 <label class="{{ $label }}">{{ __('Due Date') }} <span class="text-red-500">*</span></label>
-                <input type="date" wire:model="item_task_due_date"
-                       class="{{ $field }} {{ $errors->has('item_task_due_date') ? 'border-red-400 dark:border-red-500' : '' }}">
+                <x-ui.date-input wire:model="item_task_due_date"
+                       class="{{ $field }} {{ $errors->has('item_task_due_date') ? 'border-red-400 dark:border-red-500' : '' }}" />
                 @if($editingLine?->task && ! $editingLine->task->due_date)
                     <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
                         {{ __('This one has never had a date. Give it one — the minute cannot be published without it.') }}

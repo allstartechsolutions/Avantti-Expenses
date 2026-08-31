@@ -123,7 +123,7 @@
                             @foreach($expenses as $expense)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $expense->expense_date->format('M d, Y') }}
+                                        {{ $expense->expense_date->appDate() }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
@@ -216,7 +216,7 @@
                                             @if($expense->status !== 'paid' && $expense->isOneTime())
                                                 @can('expenses.pay', $expense)
                                                 @if($markPaidType === 'expense' && $markPaidId === $expense->id)
-                                                    <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                    <x-ui.date-input wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                                     <button
                                                         wire:click="confirmMarkPaid"
                                                         class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
@@ -312,7 +312,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Date') }}</label>
-                            <p class="text-slate-900 dark:text-white">{{ $expense_date ? \Carbon\Carbon::parse($expense_date)->format('M d, Y') : '-' }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $expense_date ? \Carbon\Carbon::parse($expense_date)->appDate() : '-' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Supplier') }}</label>
@@ -450,7 +450,7 @@
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
                                                         @if($editDueDateId === $payment->id)
                                                             <div class="flex items-center gap-1">
-                                                                <input type="date" wire:model="editDueDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                                <x-ui.date-input wire:model="editDueDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                                                 <button wire:click="confirmEditDueDate" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300" title="{{ __('Confirm') }}">
                                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                                                 </button>
@@ -459,7 +459,7 @@
                                                                 </button>
                                                             </div>
                                                         @else
-                                                            {{ $payment->due_date->format('M d, Y') }}
+                                                            {{ $payment->due_date->appDate() }}
                                                             @if($payment->status !== 'paid' && auth()->user()->can('expenses.edit', $viewingExpense))
                                                                 <button wire:click="startEditDueDate({{ $payment->id }})" class="ml-1 text-slate-400 hover:text-[#3F5189] dark:hover:text-[#8B9DD6] align-middle" title="{{ __('Change due date') }}">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -481,7 +481,7 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">
-                                                        {{ $payment->paid_date ? $payment->paid_date->format('M d, Y') : '-' }}
+                                                        {{ $payment->paid_date ? $payment->paid_date->appDate() : '-' }}
                                                         @if($payment->status === 'paid' && $payment->paidBy)
                                                             <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $payment->paidBy->name }}</span>
                                                         @endif
@@ -489,7 +489,7 @@
                                                     <td class="px-4 py-2 text-right">
                                                         @if($markPaidType === 'payment' && $markPaidId === $payment->id)
                                                             <div class="flex items-center justify-end gap-2">
-                                                                <input type="date" wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                                <x-ui.date-input wire:model="markPaidDate" class="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                                                                 <button wire:click="confirmMarkPaid" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">{{ __('Confirm') }}</button>
                                                                 <button wire:click="cancelMarkPaid" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium">{{ __('Cancel') }}</button>
                                                             </div>
@@ -525,7 +525,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Paid Date') }}</label>
                                         <p class="text-slate-900 dark:text-white">
-                                            {{ \Carbon\Carbon::parse($expense_paid_date)->format('M d, Y') }}
+                                            {{ \Carbon\Carbon::parse($expense_paid_date)->appDate() }}
                                             @if($viewingExpense?->paidBy)
                                                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ __('by') }} {{ $viewingExpense->paidBy->name }}</span>
                                             @endif
@@ -534,7 +534,7 @@
                                 @elseif($expense_status === 'unpaid' && $expense_payment_due_date)
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Due Date') }}</label>
-                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_payment_due_date)->format('M d, Y') }}</p>
+                                        <p class="text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($expense_payment_due_date)->appDate() }}</p>
                                     </div>
                                 @endif
                             </div>

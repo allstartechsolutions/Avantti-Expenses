@@ -49,7 +49,7 @@
                 <h1 class="mt-1 text-xl font-semibold text-slate-900">{{ $share->folder->name }}</h1>
                 <p class="mt-1 text-sm text-slate-500">
                     {{ trans_choice('{0} No documents|{1} :count document|[2,*] :count documents', $documents->count(), ['count' => $documents->count()]) }}
-                    @if($share->expires_at) · {{ __('Available until :date', ['date' => $share->expires_at->format('d/m/Y')]) }} @endif
+                    @if($share->expires_at) · {{ __('Available until :date', ['date' => $share->expires_at->appDate()]) }} @endif
                 </p>
             </div>
 
@@ -97,8 +97,8 @@
                     <h1 class="mt-0.5 text-xl font-semibold text-slate-900 break-words">{{ $document->name }}</h1>
                     <p class="mt-1 text-sm text-slate-500">
                         {{ $document->formattedSize() }}
-                        · {{ __('updated :date', ['date' => $document->updated_at->format('d/m/Y')]) }}
-                        @if($share->expires_at) · {{ __('Available until :date', ['date' => $share->expires_at->format('d/m/Y')]) }} @endif
+                        · {{ __('updated :date', ['date' => $document->updated_at->appDate()]) }}
+                        @if($share->expires_at) · {{ __('Available until :date', ['date' => $share->expires_at->appDate()]) }} @endif
                     </p>
                 </div>
             </div>

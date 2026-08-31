@@ -115,6 +115,21 @@ class ApprovalFormTest extends TestCase
         return $supplier;
     }
 
+    /** A vendor flagged only as a subcontractor — not a supplier. */
+    protected function makeSubcontractorOnly(string $name): \App\Models\Vendor
+    {
+        $vendor = new \App\Models\Vendor;
+
+        $vendor->forceFill([
+            'name' => $name,
+            'is_supplier' => false,
+            'is_subcontractor' => true,
+            'created_by' => $this->admin->id,
+        ])->save();
+
+        return $vendor;
+    }
+
     protected function memberWith(string $templateKey): User
     {
         $user = User::factory()->create([
@@ -332,6 +347,70 @@ class ApprovalFormTest extends TestCase
             ->assertSet('supplierSearch', 'Cerâmica Portobello')
             ->set('supplierSearch', 'Cerâm')
             ->assertSet('supplier_id', null);
+    }
+
+    /**
+     * The field is *Fornecedor*, so it offers suppliers.
+     *
+     * Suppliers and subcontractors share one table; a vendor flagged only as a
+     * subcontractor used to be offered here and could be saved as the supplier
+     * of an approval.
+     */
+    public function test_a_subcontractor_only_vendor_is_neither_offered_nor_taken(): void
+    {
+        $sub = $this->makeSubcontractorOnly('Empreiteira Alvenaria');
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('supplierSearch', 'alvenaria')
+            ->assertViewHas('supplierResults', [])
+            ->call('selectSupplier', $sub->id)
+            ->assertSet('supplier_id', null);
+    }
+
+    /** And it cannot be saved by setting the property directly either. */
+    public function test_a_subcontractor_only_vendor_is_refused_on_save(): void
+    {
+        $sub = $this->makeSubcontractorOnly('Empreiteira Alvenaria');
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['project' => $this->project])
+            ->set('title', 'Porcelanato')
+            ->set('supplier_id', (string) $sub->id)
+            ->call('save')
+            ->assertNotFound();
+
+        $this->assertSame(0, Approval::count());
+    }
+
+    /**
+     * A record raised before the narrowing keeps what it has.
+     *
+     * Refusing it would mean nobody could correct the title of an approval
+     * filed last month, which is a worse outcome than the link itself.
+     */
+    public function test_an_approval_that_already_names_a_subcontractor_can_still_be_edited(): void
+    {
+        $sub = $this->makeSubcontractorOnly('Empreiteira Alvenaria');
+
+        $approval = Approval::create([
+            'project_id' => $this->project->id,
+            'title' => 'Porcelanato',
+            'type' => Approval::TYPE_MATERIAL,
+            'supplier_id' => $sub->id,
+            'created_by_id' => $this->admin->id,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(ApprovalForm::class, ['approval' => $approval])
+            // The name it already carries is read back, whatever the flags say.
+            ->assertSet('supplierSearch', 'Empreiteira Alvenaria')
+            ->set('title', 'Porcelanato retificado')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame($sub->id, $approval->fresh()->supplier_id);
+        $this->assertSame('Porcelanato retificado', $approval->fresh()->title);
     }
 
     /*

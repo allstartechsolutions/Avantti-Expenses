@@ -201,7 +201,7 @@
 
                                 <!-- Created -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                                    {{ $project->created_at->format('M d, Y') }}
+                                    {{ $project->created_at->appDate() }}
                                 </td>
 
                                 <!-- Actions -->

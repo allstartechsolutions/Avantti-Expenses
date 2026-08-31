@@ -183,23 +183,52 @@
 
                         <div>
                             <label class="{{ $label }}">{{ __('Files') }}</label>
-                            <input type="file" multiple wire:model="localUploads" accept="{{ $config['accept'] }}"
-                                class="block w-full text-sm text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#3F5189] file:text-white hover:file:bg-[#4A5A96] file:cursor-pointer">
-                            <div wire:loading wire:target="localUploads" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ __('Reading files...') }}</div>
-                            @error('localUploads') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                            @error('localUploads.*') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                        </div>
 
-                        @if(is_array($localUploads) && count($localUploads))
-                            <ul class="space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                                @foreach($localUploads as $file)
-                                    <li class="flex items-center justify-between gap-3 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2">
-                                        <span class="truncate">{{ $file->getClientOriginalName() }}</span>
-                                        <span class="text-xs text-slate-400 shrink-0">{{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
+                            {{-- The same act as the cloud branch above: drag or choose,
+                                 see the queue, take one back off, then upload. Only the
+                                 transport differs. --}}
+                            <x-ui.file-drop
+                                wire:model="localNewUploads"
+                                :accept="$config['accept']"
+                                :hint="__('Up to :size per file, :count files at a time.', ['size' => $config['maxLabel'], 'count' => 20])"
+                                class="mt-1 space-y-2">
+
+                                <div wire:loading wire:target="localNewUploads" class="text-sm text-slate-500 dark:text-slate-400">{{ __('Reading files...') }}</div>
+
+                                @error('localUploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('localUploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('localNewUploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('localNewUploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                @if(is_array($localUploads) && count($localUploads))
+                                    <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                        @foreach($localUploads as $index => $file)
+                                            <li wire:key="local-upload-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                                <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                    {{ $file->getClientOriginalName() }}
+                                                </span>
+                                                <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                    {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                                </span>
+                                                <x-ui.icon-button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon="trash"
+                                                    type="button"
+                                                    wire:click="discardLocalUpload({{ $index }})"
+                                                    title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                    aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                    class="hover:text-red-600 dark:hover:text-red-400" />
+                                            </li>
+                                        @endforeach
+                                    </ul>
+
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ trans_choice(':count file queued.|:count files queued.', count($localUploads), ['count' => count($localUploads)]) }}
+                                    </p>
+                                @endif
+                            </x-ui.file-drop>
+                        </div>
 
                         <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
                             <x-ui.button type="button" variant="secondary" wire:click="closeUploadModal">{{ __('Cancel') }}</x-ui.button>

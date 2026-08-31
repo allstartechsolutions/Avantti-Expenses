@@ -46,13 +46,11 @@
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('From') }}</label>
-                <input type="date" wire:model.live="fromDate"
-                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                <x-ui.date-input wire:model.live="fromDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('To') }}</label>
-                <input type="date" wire:model.live="toDate"
-                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                <x-ui.date-input wire:model.live="toDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Client') }}</label>
@@ -209,7 +207,7 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach ($rows as $r)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ $r['date']?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ $r['date']?->appDate() ?? '—' }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">
                                         {{ $r['vendor'] ?? '—' }}
                                         @if ($r['type'] === 'contract')
@@ -227,7 +225,7 @@
                                     </td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
                                         @if ($r['paid_date'])
-                                            {{ $r['paid_date']->format('M d, Y') }}
+                                            {{ $r['paid_date']->appDate() }}
                                             @if ($r['paid_by'])
                                                 <span class="block text-xs text-slate-400 dark:text-slate-500">{{ __('by') }} {{ $r['paid_by'] }}</span>
                                             @endif

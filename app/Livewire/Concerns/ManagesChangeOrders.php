@@ -470,7 +470,10 @@ trait ManagesChangeOrders
             'co_status' => 'required|in:' . implode(',', ChangeOrder::STATUSES),
             'co_description' => 'nullable|string',
             'co_amount' => 'required|numeric',
-            'co_file' => 'nullable|file|max:10240',
+            // Was 'nullable|file|max:10240' — anything at all, the only upload
+            // in the app with no type restriction. Narrowed to the same set
+            // every other document field takes.
+            'co_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'coLines.*.amount' => 'required|numeric|not_in:0',
             'coLines.*.description' => 'nullable|string|max:255',
         ];
@@ -490,6 +493,17 @@ trait ManagesChangeOrders
             'coLines.*.amount' => __('cost line amount'),
             'coLines.*.description' => __('cost line description'),
         ];
+    }
+
+    /** Take the chosen file back off before the change order is saved. */
+    public function clearChangeOrderFile()
+    {
+        // Livewire's own `_removeUpload()` deletes the temporary file; dropping
+        // only the reference would leave it in livewire-tmp until the daily
+        // sweep.
+        $this->co_file?->delete();
+
+        $this->co_file = null;
     }
 
     public function saveChangeOrder(): void

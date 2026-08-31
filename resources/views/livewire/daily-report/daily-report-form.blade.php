@@ -106,12 +106,7 @@
             </div>
             <div>
                 <label for="report_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Report Date *') }}</label>
-                <input
-                    type="date"
-                    id="report_date"
-                    wire:model="report_date"
-                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white"
-                    required>
+                <x-ui.date-input id="report_date" wire:model="report_date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-[#3F5189] focus:border-[#3F5189] dark:bg-slate-700 dark:text-white" />
                 @error('report_date') <span class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</span> @enderror
             </div>
             <div>
@@ -370,7 +365,7 @@
                         @foreach($weatherObservations as $index => $obs)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                 <td class="px-3 py-2 text-slate-900 dark:text-white">
-                                    {{ \Carbon\Carbon::createFromFormat('H:i', $obs['observed_at'])->format('g:i A') }}
+                                    {{ \Carbon\Carbon::createFromFormat('H:i', $obs['observed_at'])->appTime() }}
                                 </td>
                                 <td class="px-3 py-2">
                                     @if($obs['weather_delay'])
@@ -720,51 +715,17 @@
                         </div>
                     @endif
 
-                    <!-- Upload New Images -->
-                    <div x-data="{ dragOver: false }">
-                        <div @dragover.prevent="dragOver = true"
-                             @dragleave.prevent="dragOver = false"
-                             @drop.prevent="dragOver = false; $refs.taskImageInput.files = $event.dataTransfer.files; $refs.taskImageInput.dispatchEvent(new Event('change', { bubbles: true }));"
-                             :class="dragOver ? 'border-[#3F5189] bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600'"
-                             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer"
-                             @click="$refs.taskImageInput.click()">
+                    {{-- Was a hand-rolled drop zone; the shared component now. The
+                         thumbnails above are the queue — images are shown, not listed. --}}
+                    <x-ui.file-drop
+                        wire:model="newTaskImages"
+                        accept="image/*"
+                        :hint="__('PNG, JPG, GIF up to 10MB each')">
 
-                            <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-
-                            <div class="mt-4">
-                                <label for="taskImages" class="cursor-pointer">
-                                    <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ __('Click to upload or drag and drop') }}
-                                    </span>
-                                    <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        {{ __('PNG, JPG, GIF up to 10MB each') }}
-                                    </span>
-                                </label>
-                                <input
-                                    type="file"
-                                    id="taskImages"
-                                    x-ref="taskImageInput"
-                                    wire:model="taskImages"
-                                    multiple
-                                    accept="image/*"
-                                    class="hidden">
-                            </div>
-
-                            <!-- Show uploading progress -->
-                            <div wire:loading wire:target="taskImages" class="mt-4">
-                                <div class="inline-flex items-center px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-[#3F5189]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    {{ __('Uploading...') }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @error('taskImages.*') <span class="text-sm text-red-600 dark:text-red-400 mt-1 block">{{ $message }}</span> @enderror
+                        @error('taskImages.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        @error('newTaskImages') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        @error('newTaskImages.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                    </x-ui.file-drop>
                 </div>
 
                 <!-- Modal Actions -->
@@ -1048,51 +1009,17 @@
                         </div>
                     @endif
 
-                    <!-- Upload New Images -->
-                    <div x-data="{ dragOver: false }">
-                        <div @dragover.prevent="dragOver = true"
-                             @dragleave.prevent="dragOver = false"
-                             @drop.prevent="dragOver = false; $refs.manpowerImageInput.files = $event.dataTransfer.files; $refs.manpowerImageInput.dispatchEvent(new Event('change', { bubbles: true }));"
-                             :class="dragOver ? 'border-[#3F5189] bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600'"
-                             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer"
-                             @click="$refs.manpowerImageInput.click()">
+                    {{-- Was a hand-rolled drop zone; the shared component now. The
+                         thumbnails above are the queue — images are shown, not listed. --}}
+                    <x-ui.file-drop
+                        wire:model="newManpowerImages"
+                        accept="image/*"
+                        :hint="__('PNG, JPG, GIF up to 10MB each')">
 
-                            <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-
-                            <div class="mt-4">
-                                <label for="manpowerImages" class="cursor-pointer">
-                                    <span class="mt-2 block text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ __('Click to upload or drag and drop') }}
-                                    </span>
-                                    <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                        {{ __('PNG, JPG, GIF up to 10MB each') }}
-                                    </span>
-                                </label>
-                                <input
-                                    type="file"
-                                    id="manpowerImages"
-                                    x-ref="manpowerImageInput"
-                                    wire:model="manpowerImages"
-                                    multiple
-                                    accept="image/*"
-                                    class="hidden">
-                            </div>
-
-                            <!-- Show uploading progress -->
-                            <div wire:loading wire:target="manpowerImages" class="mt-4">
-                                <div class="inline-flex items-center px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-[#3F5189]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    {{ __('Uploading...') }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @error('manpowerImages.*') <span class="text-sm text-red-600 dark:text-red-400 mt-1 block">{{ $message }}</span> @enderror
+                        @error('manpowerImages.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        @error('newManpowerImages') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        @error('newManpowerImages.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                    </x-ui.file-drop>
                 </div>
 
                 <!-- Modal Actions -->

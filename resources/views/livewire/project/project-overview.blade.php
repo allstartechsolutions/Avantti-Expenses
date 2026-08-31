@@ -81,7 +81,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Created On') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $project->created_at->format('F d, Y') }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $project->created_at->appDateLong() }}</p>
                         </div>
 
                         <!-- Created By -->

@@ -64,7 +64,7 @@
                     @endif
                 </p>
                 <p class="text-xs text-slate-400 dark:text-slate-500">
-                    {{ $document->uploadedBy?->name }} · {{ ($showTrash ? $document->deleted_at : $document->updated_at)?->format('d/m/Y') }}
+                    {{ $document->uploadedBy?->name }} · {{ ($showTrash ? $document->deleted_at : $document->updated_at)?->appDate() }}
                 </p>
 
                 <div class="flex items-center gap-1 pt-1 border-t border-slate-100 dark:border-slate-700">

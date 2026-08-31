@@ -229,7 +229,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-500 dark:text-slate-400">{{ __('Joined:') }}</span>
-                            <span class="text-slate-900 dark:text-white">{{ $user->created_at->format('M d, Y') }}</span>
+                            <span class="text-slate-900 dark:text-white">{{ $user->created_at->appDate() }}</span>
                         </div>
                     </div>
                 </div>

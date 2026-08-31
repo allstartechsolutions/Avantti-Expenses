@@ -42,7 +42,7 @@
             <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0;">
                 <div style="font-size: 16pt; font-weight: bold; color: #3F5189;">{{ __('QUOTATION REQUEST') }}</div>
                 <div style="font-size: 10pt; color: #555;">{{ $quotation->quotation_number }}</div>
-                <div style="font-size: 8pt; color: #666;">{{ now()->format('M d, Y') }}</div>
+                <div style="font-size: 8pt; color: #666;">{{ now()->appDate() }}</div>
             </td>
         </tr>
     </table>
@@ -69,13 +69,13 @@
                     <tr>
                         <td style="border: none; padding: 1px 0; color: #666;">{{ __('Responses Due') }}</td>
                         <td style="border: none; padding: 1px 0; text-align: right;">
-                            {{ $quotation->responses_due_at?->format('M d, Y') ?? __('As soon as possible') }}
+                            {{ $quotation->responses_due_at?->appDate() ?? __('As soon as possible') }}
                         </td>
                     </tr>
                     <tr>
                         <td style="border: none; padding: 1px 0; color: #666;">{{ __('Needed On Site') }}</td>
                         <td style="border: none; padding: 1px 0; text-align: right;">
-                            {{ $quotation->needed_by?->format('M d, Y') ?? '—' }}
+                            {{ $quotation->needed_by?->appDate() ?? '—' }}
                         </td>
                     </tr>
                     <tr>

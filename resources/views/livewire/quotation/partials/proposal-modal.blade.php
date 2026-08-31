@@ -240,7 +240,7 @@
                                 </div>
                                 <div>
                                     <label class="{{ $label }}">{{ __('Valid Until') }}</label>
-                                    <input type="date" wire:model="prop_valid_until" class="{{ $field }}">
+                                    <x-ui.date-input wire:model="prop_valid_until" class="{{ $field }}" />
                                     @error('prop_valid_until') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="sm:col-span-2">
@@ -267,7 +267,7 @@
                                 </div>
                                 <div>
                                     <label class="{{ $label }}">{{ __('Received On') }} <span class="text-red-500">*</span></label>
-                                    <input type="date" wire:model="prop_received_at" class="{{ $field }}">
+                                    <x-ui.date-input wire:model="prop_received_at" class="{{ $field }}" />
                                     @error('prop_received_at') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -280,18 +280,43 @@
 
                             <div>
                                 <label class="{{ $label }}">{{ __('The Vendor’s Proposal') }}</label>
-                                <input
-                                    type="file"
-                                    wire:model="prop_uploads"
-                                    multiple
+                                <x-ui.file-drop
+                                    wire:model="prop_new_uploads"
                                     accept=".pdf,.jpg,.jpeg,.png"
-                                    class="block w-full text-sm text-slate-500 dark:text-slate-400
-                                        file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                        file:text-sm file:font-medium file:bg-[#3F5189] file:text-white
-                                        hover:file:bg-[#4A5A96] file:cursor-pointer">
-                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Attach the PDF they sent, so every keyed-in price has the original behind it.') }}</p>
-                                <div wire:loading wire:target="prop_uploads" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Uploading...') }}</div>
-                                @error('prop_uploads.*') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                                    :hint="__('Attach the PDF they sent, so every keyed-in price has the original behind it.')">
+
+                                    @error('prop_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    @error('prop_new_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    @error('prop_new_uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                    @if(count($prop_uploads) > 0)
+                                        <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                            @foreach($prop_uploads as $index => $file)
+                                                <li wire:key="prop_uploads-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                                    <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                        {{ $file->getClientOriginalName() }}
+                                                    </span>
+                                                    <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                        {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                                    </span>
+                                                    <x-ui.icon-button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        icon="trash"
+                                                        type="button"
+                                                        wire:click="discardProposalUpload({{ $index }})"
+                                                        title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                        aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                        class="hover:text-red-600 dark:hover:text-red-400" />
+                                                </li>
+                                            @endforeach
+                                        </ul>
+
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($prop_uploads), ['count' => count($prop_uploads)]) }}
+                                        </p>
+                                    @endif
+                                </x-ui.file-drop>
                                 @if($pricingVendorRow->attachments->count() > 0)
                                     <ul class="mt-2 space-y-1">
                                         @foreach($pricingVendorRow->attachments as $attachment)

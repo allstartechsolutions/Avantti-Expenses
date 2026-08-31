@@ -447,7 +447,7 @@ class RequisitionAssignedMailTest extends TestCase
             $this->assertStringContainsString($requisition->requisition_number, $rendered);
             $this->assertStringContainsString(__('Urgent'), $rendered);
             $this->assertStringContainsString(
-                $requisition->needed_by->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'),
+                $requisition->needed_by->appDate(),
                 $rendered,
             );
             // The one item on the fixture, with its quantity.

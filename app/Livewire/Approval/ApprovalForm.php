@@ -13,6 +13,7 @@ use App\Models\FileUpload;
 use App\Models\JobSite;
 use App\Models\Membership;
 use App\Models\Project;
+use App\Models\Supplier;
 use App\Models\Vendor;
 use App\Services\FileUploadService;
 use Illuminate\Database\Eloquent\Builder;
@@ -247,7 +248,7 @@ class ApprovalForm extends Component
     {
         $this->authorizeAbility($this->isEditing ? 'approvals.edit' : 'approvals.create', $this->scope());
 
-        $supplier = Vendor::whereKey($id)->first();
+        $supplier = Supplier::whereKey($id)->first();
 
         if (! $supplier) {
             return;
@@ -444,6 +445,18 @@ class ApprovalForm extends Component
         if ($this->budget_item_id) {
             abort_unless(
                 $this->projectBudgetItems()->whereKey($this->budget_item_id)->exists(),
+                404,
+            );
+        }
+
+        // The picker offers suppliers only, but a public property can be set
+        // by a crafted payload, so the same narrowing is applied here. The one
+        // exception is the value the record already carried: approvals raised
+        // before this narrowing may point at a vendor flagged only as a
+        // subcontractor, and editing the rest of such a record must not fail.
+        if ($this->supplier_id && ! Supplier::whereKey($this->supplier_id)->exists()) {
+            abort_unless(
+                $this->isEditing && (string) $this->approval->supplier_id === (string) $this->supplier_id,
                 404,
             );
         }
@@ -737,14 +750,18 @@ class ApprovalForm extends Component
 
         $term = trim($this->supplierSearch);
 
-        return Vendor::query()
+        // `Supplier`, not `Vendor`: the field is *Fornecedor*, and the unified
+        // table also holds vendors flagged only as subcontractors. Reading a
+        // linked name still goes through `Vendor` below, so a record that
+        // already points at one keeps showing it.
+        return Supplier::query()
             ->where(fn ($q) => $q
                 ->where('name', 'like', '%'.$term.'%')
                 ->orWhere('contact_name', 'like', '%'.$term.'%'))
             ->orderBy('name')
             ->take(self::RESULT_LIMIT)
             ->get(['id', 'name', 'contact_name', 'city', 'state'])
-            ->map(fn (Vendor $vendor) => [
+            ->map(fn (Supplier $vendor) => [
                 'id' => $vendor->id,
                 'label' => $vendor->name,
                 'meta' => collect([$vendor->contact_name, collect([$vendor->city, $vendor->state])->filter()->implode('/')])
@@ -849,7 +866,7 @@ class ApprovalForm extends Component
             'budgetLineCount' => $this->projectBudgetItems()->count(),
             'supplierResults' => $this->supplierResults(),
             'supplierLabel' => $this->selectedSupplierLabel(),
-            'supplierCount' => Vendor::count(),
+            'supplierCount' => Supplier::count(),
             'catalogItemResults' => $this->catalogItemResults(),
             'catalogItemLabel' => $this->selectedCatalogItemLabel(),
             'catalogItemCount' => CatalogItem::where('is_active', true)->count(),

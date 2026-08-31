@@ -71,7 +71,7 @@
                 <table style="width: 100%; border: none;">
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Invoice Date:') }}</td>
-                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $invoice->invoice_date->format('M d, Y') }}</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $invoice->invoice_date->appDate() }}</td>
                     </tr>
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Terms:') }}</td>
@@ -79,7 +79,7 @@
                     </tr>
                     <tr>
                         <td style="border: none; padding: 2px 5px; font-size: 8pt; font-weight: bold; color: #555; text-align: right;">{{ __('Due Date:') }}</td>
-                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $invoice->due_date->format('M d, Y') }}</td>
+                        <td style="border: none; padding: 2px 5px; font-size: 9pt; text-align: right;">{{ $invoice->due_date->appDate() }}</td>
                     </tr>
                     @if($invoice->project)
                     <tr>
@@ -200,7 +200,7 @@
             @foreach($invoice->payments->where('status', 'completed') as $payment)
             <tr>
                 <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->payment_number }}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->payment_date->format('M d, Y') }}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->payment_date->appDate() }}</td>
                 <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->getPaymentMethodLabel() }}</td>
                 <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt;">{{ $payment->reference_number ?? '—' }}</td>
                 <td style="border: 1px solid #ddd; padding: 4px 8px; font-size: 8pt; text-align: right;">${{ number_format($payment->amount, 2) }}</td>

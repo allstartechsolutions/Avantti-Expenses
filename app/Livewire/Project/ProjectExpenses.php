@@ -137,7 +137,7 @@ class ProjectExpenses extends Component
                 'label' => $h->getActionLabel(),
                 'color' => $h->getActionColor(),
                 'user' => $h->changedBy?->name,
-                'date' => $h->created_at->format('M d, Y H:i'),
+                'date' => $h->created_at->appDateTime(),
                 'changes' => $h->changes,
             ])
             ->toArray();

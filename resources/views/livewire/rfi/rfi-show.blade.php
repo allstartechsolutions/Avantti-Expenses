@@ -1,6 +1,4 @@
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
-    $dateTimeFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
     $isBR = config('app.country') === 'BR';
 
     $statusTone = match ($rfi->status) {
@@ -150,7 +148,7 @@
                     @php
                         $rows = [
                             ['label' => __('collaboration.label.ball_court'), 'value' => $rfi->ballInCourt?->name],
-                            ['label' => __('collaboration.label.due'), 'value' => $rfi->due_date?->format($dateFormat)],
+                            ['label' => __('collaboration.label.due'), 'value' => $rfi->due_date?->appDate()],
                             ['label' => __('collaboration.label.discipline'), 'value' => $rfi->discipline ? $rfi->getDisciplineLabel() : null],
                         ];
 
@@ -217,7 +215,7 @@
                                     </a>
                                     @if($rfi->change_order_linked_at)
                                         <span class="block text-xs text-slate-500 dark:text-slate-400">
-                                            {{ $rfi->change_order_linked_at->format($dateFormat) }}
+                                            {{ $rfi->change_order_linked_at->appDate() }}
                                         </span>
                                     @endif
                                 </dd>
@@ -278,7 +276,7 @@
                     @if($lastSend)
                         <p class="text-slate-600 dark:text-slate-300">
                             {{ __('collaboration.label.last_sent_on', [
-                                'when' => $lastSend->created_at?->format($dateTimeFormat),
+                                'when' => $lastSend->created_at?->appDateTime(),
                                 'count' => $lastSend->context['sent'] ?? 0,
                             ]) }}
                         </p>
@@ -350,11 +348,11 @@
                     </div>
                     <div class="px-5 py-3 flex items-start justify-between gap-4">
                         <dt class="text-slate-500 dark:text-slate-400">{{ __('collaboration.label.raised_3') }}</dt>
-                        <dd class="text-right text-slate-900 dark:text-white">{{ $rfi->created_at?->format($dateTimeFormat) }}</dd>
+                        <dd class="text-right text-slate-900 dark:text-white">{{ $rfi->created_at?->appDateTime() }}</dd>
                     </div>
                     <div class="px-5 py-3 flex items-start justify-between gap-4">
                         <dt class="text-slate-500 dark:text-slate-400">{{ __('Last updated') }}</dt>
-                        <dd class="text-right text-slate-900 dark:text-white">{{ $rfi->updated_at?->format($dateTimeFormat) }}</dd>
+                        <dd class="text-right text-slate-900 dark:text-white">{{ $rfi->updated_at?->appDateTime() }}</dd>
                     </div>
                 </dl>
             </div>
@@ -469,8 +467,7 @@
                 @endif
 
                 <label class="block mt-4 text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('collaboration.label.due') }}</label>
-                <input type="date" wire:model="passToDueDate"
-                    class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <x-ui.date-input wire:model="passToDueDate" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                 @error('passToDueDate') <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p> @enderror
 
                 <div class="mt-5 flex justify-end gap-2">

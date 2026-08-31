@@ -1,6 +1,5 @@
 {{-- One task in a list inside an e-mail. Expects: $task, $recipient --}}
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $late = $task->isOverdue();
 @endphp
 <tr>
@@ -12,7 +11,7 @@
             @if($task->due_date)
                 ·
                 <span style="{{ $late ? 'color: #dc2626; font-weight: bold;' : '' }}">
-                    {{ $task->due_date->format($dateFormat) }}@if($late) · {{ trans_choice(':count day late|:count days late', $task->daysOverdue(), ['count' => $task->daysOverdue()]) }}@endif
+                    {{ $task->due_date->appDate() }}@if($late) · {{ trans_choice(':count day late|:count days late', $task->daysOverdue(), ['count' => $task->daysOverdue()]) }}@endif
                 </span>
             @else
                 · {{ __('No due date') }}

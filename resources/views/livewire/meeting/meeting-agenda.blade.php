@@ -3,7 +3,6 @@
         $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500';
         $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
         $card = 'bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700';
-        $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
         $counts = $this->counts;
     @endphp
 
@@ -18,7 +17,7 @@
             </div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Agenda') }}</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {{ $meeting->title }} · {{ $meeting->meeting_date->format($dateFormat) }}
+                {{ $meeting->title }} · {{ $meeting->meeting_date->appDate() }}
                 @if($meeting->series) · {{ $meeting->series->name }} @endif
             </p>
         </div>
@@ -65,7 +64,7 @@
                         @foreach($this->unpublishedEarlier as $earlier)
                             <a href="{{ route('meetings.show', $earlier) }}"
                                class="font-mono text-xs underline hover:no-underline">
-                                {{ $earlier->number }} · {{ $earlier->meeting_date->format($dateFormat) }}
+                                {{ $earlier->number }} · {{ $earlier->meeting_date->appDate() }}
                             </a>
                         @endforeach
                     </p>
@@ -326,7 +325,7 @@
                                                     <span class="shrink-0 text-xs text-slate-400">{{ $task->owner?->name }}</span>
                                                     @if($task->due_date)
                                                         <span class="shrink-0 text-xs {{ $task->isOverdue() ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-400' }}">
-                                                            {{ $task->due_date->format($dateFormat) }}
+                                                            {{ $task->due_date->appDate() }}
                                                         </span>
                                                     @endif
                                                     <button type="button" wire:click="addTaskToAgenda({{ $task->id }})"

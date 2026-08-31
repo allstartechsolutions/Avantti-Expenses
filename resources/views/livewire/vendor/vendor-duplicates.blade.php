@@ -86,7 +86,7 @@
                                                     @endforeach
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ $vendor->created_at->format('M d, Y') }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ $vendor->created_at->appDate() }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                                 <x-ui.button
                                                     variant="primary"

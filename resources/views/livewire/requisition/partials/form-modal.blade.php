@@ -73,7 +73,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="{{ $label }}">{{ __('Needed By') }}</label>
-                                <input type="date" wire:model="req_needed_by" class="{{ $field }}">
+                                <x-ui.date-input wire:model="req_needed_by" class="{{ $field }}" />
                                 @error('req_needed_by') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
                             @if($showJobSitePicker)
@@ -178,18 +178,43 @@
 
                     <div class="{{ $card }}">
                         <label class="{{ $label }}">{{ __('Attachments') }}</label>
-                        <input
-                            type="file"
-                            wire:model="req_uploads"
-                            multiple
+                        <x-ui.file-drop
+                            wire:model="req_new_uploads"
                             accept=".pdf,.jpg,.jpeg,.png"
-                            class="block w-full text-sm text-slate-500 dark:text-slate-400
-                                file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                file:text-sm file:font-medium file:bg-[#3F5189] file:text-white
-                                hover:file:bg-[#4A5A96] file:cursor-pointer">
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Specs, drawings or a photo of what is needed. PDF, JPG or PNG, up to 10MB each.') }}</p>
-                        <div wire:loading wire:target="req_uploads" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Uploading...') }}</div>
-                        @error('req_uploads.*') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            :hint="__('Specs, drawings or a photo of what is needed. PDF, JPG or PNG, up to 10MB each.')">
+
+                            @error('req_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            @error('req_new_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            @error('req_new_uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                            @if(count($req_uploads) > 0)
+                                <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                    @foreach($req_uploads as $index => $file)
+                                        <li wire:key="req_uploads-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                            <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                {{ $file->getClientOriginalName() }}
+                                            </span>
+                                            <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                            </span>
+                                            <x-ui.icon-button
+                                                variant="ghost"
+                                                size="sm"
+                                                icon="trash"
+                                                type="button"
+                                                wire:click="discardRequisitionUpload({{ $index }})"
+                                                title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                class="hover:text-red-600 dark:hover:text-red-400" />
+                                        </li>
+                                    @endforeach
+                                </ul>
+
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($req_uploads), ['count' => count($req_uploads)]) }}
+                                </p>
+                            @endif
+                        </x-ui.file-drop>
                     </div>
                 </div>
 

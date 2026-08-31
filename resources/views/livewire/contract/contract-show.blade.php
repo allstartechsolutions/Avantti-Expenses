@@ -131,11 +131,11 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Start Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->start_date->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->start_date->appDate() }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('End Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->end_date?->format('M d, Y') ?? __('Not set') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->end_date?->appDate() ?? __('Not set') }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -474,7 +474,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                        {{ $history->created_at->format('M d, Y H:i') }}
+                                                        {{ $history->created_at->appDateTime() }}
                                                     </div>
                                                     @if($history->reason)
                                                         <div class="mt-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded p-2">
@@ -509,7 +509,7 @@
                                             {{ Number::currency($payment->amount, config('app.currency'), config('app.locale')) }}
                                         </p>
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                            {{ $payment->payment_date->format('M d, Y') }} &middot; {{ $payment->getPaymentMethodLabel() }}
+                                            {{ $payment->payment_date->appDate() }} &middot; {{ $payment->getPaymentMethodLabel() }}
                                         </p>
                                         @if($payment->is_retention_release)
                                             <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
@@ -656,10 +656,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Date *') }}</label>
-                            <input
-                                type="date"
-                                wire:model="retentionDate"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <x-ui.date-input wire:model="retentionDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                             @error('retentionDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
@@ -731,7 +728,7 @@
                                     @foreach($this->payableMeasurements as $payableMeasurement)
                                         <option value="{{ $payableMeasurement->id }}">
                                             {{ __('Measurement') }} #{{ $payableMeasurement->measurement_number }}
-                                            &middot; {{ $payableMeasurement->period_start->format('d/m/Y') }}—{{ $payableMeasurement->period_end->format('d/m/Y') }}
+                                            &middot; {{ $payableMeasurement->period_start->appDate() }}—{{ $payableMeasurement->period_end->appDate() }}
                                             &middot; {{ __('Net') }} {{ Number::currency($payableMeasurement->getRemainingNet(), config('app.currency'), config('app.locale')) }}
                                         </option>
                                     @endforeach
@@ -768,7 +765,7 @@
                                             {{ $scheduleItem->description }}
                                             &middot; {{ __('Balance') }} {{ Number::currency($scheduleItem->getBalance(), config('app.currency'), config('app.locale')) }}
                                             @if($scheduleItem->due_date)
-                                                &middot; {{ __('Due Date:') }} {{ $scheduleItem->due_date->format('d/m/Y') }}
+                                                &middot; {{ __('Due Date:') }} {{ $scheduleItem->due_date->appDate() }}
                                             @endif
                                         </option>
                                     @endforeach
@@ -887,10 +884,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Date *') }}</label>
-                            <input
-                                type="date"
-                                wire:model="paymentDate"
-                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <x-ui.date-input wire:model="paymentDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                             @error('paymentDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 

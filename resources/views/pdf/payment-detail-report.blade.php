@@ -67,9 +67,9 @@
                 <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('PAYMENT DETAILS') }}</div>
                 <div style="font-size: 8pt; color: #555;">{{ $viewLabels[$view] }}</div>
                 <div style="font-size: 8pt; color: #555;">
-                    {{ \Carbon\Carbon::parse($fromDate)->format('M d, Y') }} — {{ \Carbon\Carbon::parse($toDate)->format('M d, Y') }}
+                    {{ \Carbon\Carbon::parse($fromDate)->appDate() }} — {{ \Carbon\Carbon::parse($toDate)->appDate() }}
                 </div>
-                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('M d, Y - h:i A') }}</div>
+                <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
                 @endif
@@ -136,7 +136,7 @@
             <tbody>
                 @forelse ($rows as $r)
                     <tr>
-                        <td style="{{ $td }}">{{ $r['date']?->format('M d, Y') ?? '—' }}</td>
+                        <td style="{{ $td }}">{{ $r['date']?->appDate() ?? '—' }}</td>
                         <td style="{{ $td }}">{{ $r['vendor'] ?? '—' }}@if($r['type'] === 'contract') ({{ __('Contract') }})@endif</td>
                         <td style="{{ $td }}">{{ $r['item'] ?? '—' }}</td>
                         <td style="{{ $td }}">{{ $r['project'] ?? '—' }}</td>
@@ -144,7 +144,7 @@
                         <td style="{{ $td }}">{{ $r['installment_label'] ?? '—' }}</td>
                         <td style="{{ $td }} color: {{ $statusColors[$r['status']] ?? '#333' }}; font-weight: bold;">{{ __(ucfirst($r['status'])) }}</td>
                         <td style="{{ $td }}">
-                            {{ $r['paid_date']?->format('M d, Y') ?? '—' }}
+                            {{ $r['paid_date']?->appDate() ?? '—' }}
                             @if($r['paid_by']) <span style="color: #888;">({{ $r['paid_by'] }})</span>@endif
                         </td>
                         <td style="{{ $tdRight }}">{{ $money($r['amount']) }}</td>

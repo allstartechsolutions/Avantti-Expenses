@@ -3134,5 +3134,17 @@
     "Drop the CSV here, or": "Drop the CSV here, or",
     "CSV or TXT, up to 1MB.": "CSV or TXT, up to 1MB.",
     ":count row read|:count rows read": ":count row read|:count rows read",
-    "Drop the document here, or": "Drop the document here, or"
+    "Drop the document here, or": "Drop the document here, or",
+    "Drop the file here, or": "Drop the file here, or",
+    "This replaces the file already on the change order when you save.": "This replaces the file already on the change order when you save.",
+    "Not added — must be an image under 10MB: :files": "Not added — must be an image under 10MB: :files",
+    "Up to :size per file, :count files at a time.": "Up to :size per file, :count files at a time.",
+    ":count file queued.|:count files queued.": ":count file queued.|:count files queued.",
+    "Twenty files at a time. The rest were not added.": "Twenty files at a time. The rest were not added.",
+    "Not added — not an allowed type, or larger than :size: :files": "Not added — not an allowed type, or larger than :size: :files",
+    "No supplier matches. A vendor registered only as a subcontractor does not appear here.": "No supplier matches. A vendor registered only as a subcontractor does not appear here.",
+    "No suppliers are registered yet, so there is none to name here.": "No suppliers are registered yet, so there is none to name here.",
+    "dd/mm/aaaa": "dd/mm/aaaa",
+    "mm/dd/yyyy": "mm/dd/yyyy",
+    "Open the calendar": "Open the calendar"
 }

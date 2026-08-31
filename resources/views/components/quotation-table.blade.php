@@ -32,7 +32,7 @@
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $quotation->title }}</div>
                                 <span class="text-xs text-slate-500 dark:text-slate-400">
                                     {{ $quotation->quotation_number ?? '#'.$quotation->id }}
-                                    &middot; {{ $quotation->created_at->format('M d, Y') }}
+                                    &middot; {{ $quotation->created_at->appDate() }}
                                     @if($quotation->requisition)
                                         &middot; {{ $quotation->requisition->requisition_number }}
                                     @endif
@@ -83,7 +83,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 @if($quotation->responses_due_at)
                                     <span class="{{ $quotation->responsesOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-900 dark:text-white' }}">
-                                        {{ $quotation->responses_due_at->format('M d, Y') }}
+                                        {{ $quotation->responses_due_at->appDate() }}
                                     </span>
                                     @if($quotation->responsesOverdue())
                                         <div class="text-xs text-red-600 dark:text-red-400">{{ __('Overdue') }}</div>

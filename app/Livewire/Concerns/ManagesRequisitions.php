@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\PurchaseRequisition;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * The requisition page, shared by the project and job-site levels.
@@ -34,7 +35,16 @@ trait ManagesRequisitions
     public $budgetItemSearch = '';
     public $catalogSearch = '';
     public $itemRows = [];
+    /**
+     * Files chosen here, and the box the drop zone writes to.
+     *
+     * `updatedReqNewUploads()` moves them across, so a second drop adds to the
+     * queue instead of replacing it — Livewire's `uploadMultiple` runs with
+     * `append = false`.
+     */
     public $req_uploads = [];
+
+    public $req_new_uploads = [];
 
     // Detail modal
     public $viewingRequisitionId = null;
@@ -141,6 +151,7 @@ trait ManagesRequisitions
         $this->catalogSearch = '';
         $this->itemRows = [];
         $this->req_uploads = [];
+        $this->req_new_uploads = [];
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -287,6 +298,53 @@ trait ManagesRequisitions
     /**
      * @param  string  $mode  'draft' keeps it editable, 'pending' sends it for approval
      */
+    /**
+     * Files dropped or chosen join the queue, and the box is emptied.
+     *
+     * Emptied whatever happens: a file left in it is invisible — the list on
+     * screen is the queue, not this. `addError()` rather than `validate()`,
+     * which ends with a bare `resetErrorBag()` and would wipe the rest of the
+     * form.
+     */
+    public function updatedReqNewUploads(): void
+    {
+        $dropped = $this->req_new_uploads;
+        $this->req_new_uploads = [];
+
+        $refused = [];
+
+        foreach ($dropped as $file) {
+            $validator = Validator::make(
+                ['file' => $file],
+                ['file' => 'file|mimes:pdf,jpg,jpeg,png|max:10240'],
+            );
+
+            if ($validator->fails()) {
+                $refused[] = $file->getClientOriginalName();
+
+                continue;
+            }
+
+            $this->req_uploads[] = $file;
+        }
+
+        if ($refused !== []) {
+            $this->addError('req_new_uploads', __('Not attached — must be a PDF, JPG or PNG under 10MB: :files', [
+                'files' => implode(', ', $refused),
+            ]));
+        }
+    }
+
+    /** Take a file back out of the queue before it is stored. */
+    public function discardRequisitionUpload(int $index): void
+    {
+        $this->req_uploads[$index]?->delete();
+
+        unset($this->req_uploads[$index]);
+
+        $this->req_uploads = array_values($this->req_uploads);
+    }
+
     public function saveRequisition(string $mode = 'pending'): void
     {
         $mode = in_array($mode, ['draft', 'pending'], true) ? $mode : 'pending';

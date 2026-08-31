@@ -21,6 +21,18 @@
 @php
     $control = 'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-[#3F5189]/40';
 
+    /*
+     * The file behind this URL changes when a new version is uploaded; the URL
+     * does not. Without a marker, Livewire's morph sees an <iframe> whose
+     * attributes are unchanged and leaves it alone — and even if it did not,
+     * the browser would answer from its own cache — so the reader goes on
+     * looking at the version they opened while the history beside it already
+     * lists the new one. The marker changes the src and the wire:key together,
+     * which reloads the file and replaces the node.
+     */
+    $versionMark = $document->current_version_id;
+    $stageSrc = $src.(str_contains($src, '?') ? '&' : '?').'v='.$versionMark;
+
     // Normal, widened and full screen. The widened height leaves room for the
     // modal's header, the card header and the sticky footer.
     $height = "fs ? 'h-full' : (wide ? 'h-[calc(100vh-14rem)] min-h-[520px]' : 'h-[70vh]')";
@@ -104,16 +116,19 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('This document is in the trash. Restore it to open the file again.') }}</p>
             </div>
         @elseif($document->isPdf())
-            <iframe src="{{ $src }}" title="{{ $document->name }}" class="w-full border-0"
+            <iframe wire:key="preview-pdf-{{ $document->id }}-{{ $versionMark }}"
+                src="{{ $stageSrc }}" title="{{ $document->name }}" class="w-full border-0"
                 x-bind:class="{{ $height }}"></iframe>
         @elseif($document->isImage())
             <div class="flex w-full items-center justify-center p-4" x-bind:class="fs ? 'h-full p-0' : ''">
-                <img src="{{ $src }}" alt="{{ $document->name }}" class="w-auto rounded"
+                <img wire:key="preview-image-{{ $document->id }}-{{ $versionMark }}"
+                    src="{{ $stageSrc }}" alt="{{ $document->name }}" class="w-auto rounded"
                     x-bind:class="{{ $mediaHeight }}">
             </div>
         @elseif($document->isVideo())
-            <video controls preload="metadata" class="w-full bg-black" x-bind:class="{{ $mediaHeight }}">
-                <source src="{{ $src }}" type="{{ $document->current_mime_type }}">
+            <video wire:key="preview-video-{{ $document->id }}-{{ $versionMark }}"
+                controls preload="metadata" class="w-full bg-black" x-bind:class="{{ $mediaHeight }}">
+                <source src="{{ $stageSrc }}" type="{{ $document->current_mime_type }}">
             </video>
         @else
             <div class="px-6 py-16 text-center">

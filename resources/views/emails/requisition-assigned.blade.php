@@ -1,4 +1,3 @@
-@php $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'; @endphp
 
 <x-email-shell :heading="__('Requisition')">
     <p style="margin: 0 0 14px; font-size: 15px;">{{ __('Hello :name,', ['name' => $recipient->name]) }}</p>
@@ -15,7 +14,7 @@
                     {{ __('Project') }}: {{ $requisition->project?->project_name }}<br>
                     {{ __('Where') }}: {{ $requisition->getLocationDisplay() }}<br>
                     {{ __('Needed By') }}:
-                    <strong @if($requisition->isOverdue()) style="color: #b91c1c;" @endif>{{ $requisition->needed_by?->format($dateFormat) ?? __('No date given') }}</strong>
+                    <strong @if($requisition->isOverdue()) style="color: #b91c1c;" @endif>{{ $requisition->needed_by?->appDate() ?? __('No date given') }}</strong>
                     @if($requisition->isOverdue()) · {{ __('Overdue') }} @endif
                     <br>
                     {{ __('Priority') }}: {{ $requisition->getPriorityLabel() }}<br>

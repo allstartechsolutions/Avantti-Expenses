@@ -1,6 +1,5 @@
 @php
     $isRfi = $document instanceof \App\Models\Rfi;
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
 @endphp
 
 <p>
@@ -25,7 +24,7 @@
     @if($document->due_date)
         <tr>
             <td><strong>{{ __('Due') }}</strong></td>
-            <td>{{ $document->due_date->format($dateFormat) }}</td>
+            <td>{{ $document->due_date->appDate() }}</td>
         </tr>
     @endif
 </table>

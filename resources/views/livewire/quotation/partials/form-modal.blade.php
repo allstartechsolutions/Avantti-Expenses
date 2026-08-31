@@ -93,12 +93,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="{{ $label }}">{{ __('Needed On Site') }}</label>
-                                <input type="date" wire:model="quo_needed_by" class="{{ $field }}">
+                                <x-ui.date-input wire:model="quo_needed_by" class="{{ $field }}" />
                                 @error('quo_needed_by') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
                             <div>
                                 <label class="{{ $label }}">{{ __('Responses Due') }}</label>
-                                <input type="date" wire:model="quo_responses_due_at" class="{{ $field }}">
+                                <x-ui.date-input wire:model="quo_responses_due_at" class="{{ $field }}" />
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('The deadline given to the vendors.') }}</p>
                                 @error('quo_responses_due_at') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                             </div>
@@ -167,18 +167,43 @@
 
                     <div class="{{ $card }}">
                         <label class="{{ $label }}">{{ __('Attachments') }}</label>
-                        <input
-                            type="file"
-                            wire:model="quo_uploads"
-                            multiple
+                        <x-ui.file-drop
+                            wire:model="quo_new_uploads"
                             accept=".pdf,.jpg,.jpeg,.png"
-                            class="block w-full text-sm text-slate-500 dark:text-slate-400
-                                file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                file:text-sm file:font-medium file:bg-[#3F5189] file:text-white
-                                hover:file:bg-[#4A5A96] file:cursor-pointer">
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Drawings or specs that go out with the request. PDF, JPG or PNG, up to 10MB each.') }}</p>
-                        <div wire:loading wire:target="quo_uploads" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Uploading...') }}</div>
-                        @error('quo_uploads.*') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            :hint="__('Drawings or specs that go out with the request. PDF, JPG or PNG, up to 10MB each.')">
+
+                            @error('quo_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            @error('quo_new_uploads') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            @error('quo_new_uploads.*') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                            @if(count($quo_uploads) > 0)
+                                <ul class="divide-y divide-slate-200 dark:divide-slate-700 text-sm border border-slate-200 dark:border-slate-700 rounded-lg">
+                                    @foreach($quo_uploads as $index => $file)
+                                        <li wire:key="quo_uploads-{{ $index }}" class="px-3 py-2 flex items-center justify-between gap-3">
+                                            <span class="min-w-0 flex-1 truncate text-slate-900 dark:text-white">
+                                                {{ $file->getClientOriginalName() }}
+                                            </span>
+                                            <span class="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                                {{ \App\Services\DocumentSettings::formatBytes($file->getSize()) }}
+                                            </span>
+                                            <x-ui.icon-button
+                                                variant="ghost"
+                                                size="sm"
+                                                icon="trash"
+                                                type="button"
+                                                wire:click="discardQuotationUpload({{ $index }})"
+                                                title="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                aria-label="{{ __('Remove :file', ['file' => $file->getClientOriginalName()]) }}"
+                                                class="hover:text-red-600 dark:hover:text-red-400" />
+                                        </li>
+                                    @endforeach
+                                </ul>
+
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ trans_choice(':count file goes up when this is saved.|:count files go up when this is saved.', count($quo_uploads), ['count' => count($quo_uploads)]) }}
+                                </p>
+                            @endif
+                        </x-ui.file-drop>
                     </div>
                 </div>
 
@@ -211,7 +236,7 @@
                                                     <span class="block text-xs text-green-600 dark:text-green-400">
                                                         {{ __('last paid :amount on :date', [
                                                             'amount' => Number::currency($lastPaid->new_cost, config('app.currency'), config('app.locale')),
-                                                            'date' => $lastPaid->changed_at?->format('M d, Y'),
+                                                            'date' => $lastPaid->changed_at?->appDate(),
                                                         ]) }}
                                                     </span>
                                                 @endif

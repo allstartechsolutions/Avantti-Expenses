@@ -1,5 +1,4 @@
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $invited = $quotation->quotationVendors->whereNotIn('status', ['declined']);
 @endphp
 
@@ -20,7 +19,7 @@
                     @if($quotation->requisition)
                         {{ __('Requisition') }}: {{ $quotation->requisition->requisition_number }}<br>
                     @endif
-                    {{ __('Responses Due') }}: {{ $quotation->responses_due_at?->format($dateFormat) ?? __('No date given') }}<br>
+                    {{ __('Responses Due') }}: {{ $quotation->responses_due_at?->appDate() ?? __('No date given') }}<br>
                     {{ __('Proposals') }}: {{ $quotation->respondedCount() }} / {{ $quotation->invitedCount() }}
                 </div>
             </td>

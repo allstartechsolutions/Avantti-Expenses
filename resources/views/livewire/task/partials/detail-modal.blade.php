@@ -6,7 +6,6 @@
 @php
     $task = $this->viewingTask;
     $card = 'bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700';
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $stampFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
     $me = auth()->user();
 @endphp
@@ -440,8 +439,8 @@
 
                             @foreach([
                                 ['label' => __('Created'), 'value' => $task->created_at?->format($stampFormat)],
-                                ['label' => __('Start Date'), 'value' => $task->start_date?->format($dateFormat)],
-                                ['label' => __('Due Date'), 'value' => $task->due_date?->format($dateFormat)],
+                                ['label' => __('Start Date'), 'value' => $task->start_date?->appDate()],
+                                ['label' => __('Due Date'), 'value' => $task->due_date?->appDate()],
                                 ['label' => __('Marked Ready'), 'value' => $task->ready_at?->format($stampFormat)],
                                 ['label' => __('Completed'), 'value' => $task->completed_at?->format($stampFormat)],
                             ] as $row)
@@ -479,7 +478,7 @@
                                         <div class="border-l-2 border-[#3F5189]/30 pl-3" wire:key="mitem-{{ $item->id }}">
                                             <p class="text-xs font-medium text-[#3F5189] dark:text-[#4A5A96]">
                                                 {{ $item->meeting?->number }}
-                                                <span class="text-slate-400">{{ $item->meeting?->meeting_date?->format($dateFormat) }}</span>
+                                                <span class="text-slate-400">{{ $item->meeting?->meeting_date?->appDate() }}</span>
                                             </p>
                                             @if($item->discussion)
                                                 <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ $item->discussion }}</p>

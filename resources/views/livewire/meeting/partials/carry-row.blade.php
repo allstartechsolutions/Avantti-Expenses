@@ -1,6 +1,5 @@
 {{-- One tickable line in the carry-forward panel. Expects: $task, $indent --}}
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $history = app(App\Services\MeetingAgendaService::class)->history($task);
     $indent = $indent ?? false;
 @endphp
@@ -23,7 +22,7 @@
             <span>{{ $task->owner?->name }}</span>
             @if($task->due_date)
                 <span class="{{ $task->isOverdue() ? 'font-semibold text-red-600 dark:text-red-400' : '' }}">
-                    {{ $task->due_date->format($dateFormat) }}
+                    {{ $task->due_date->appDate() }}
                     @if($task->isOverdue())
                         · {{ trans_choice(':count day late|:count days late', $task->daysOverdue(), ['count' => $task->daysOverdue()]) }}
                     @endif

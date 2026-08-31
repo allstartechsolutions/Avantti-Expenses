@@ -200,7 +200,7 @@ class ApprovalShowTest extends TestCase
         ]);
 
         $expiredOn = __('collaboration.message.certificate_expired', [
-            'date' => now()->subDay()->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'),
+            'date' => now()->subDay()->appDate(),
         ]);
 
         Livewire::actingAs($this->admin)

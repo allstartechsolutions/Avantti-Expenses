@@ -68,7 +68,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="{{ $label }}">{{ __('Expires on') }}</label>
-                        <input type="date" wire:model="shareExpiresAt" class="{{ $field }}">
+                        <x-ui.date-input wire:model="shareExpiresAt" class="{{ $field }}" />
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('Leave empty for a link that never expires.') }}</p>
                         @error('shareExpiresAt') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
@@ -137,13 +137,13 @@
                                         </p>
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                             @if($share->expires_at)
-                                                {{ __('Expires :date', ['date' => $share->expires_at->format('d/m/Y')]) }}
+                                                {{ __('Expires :date', ['date' => $share->expires_at->appDate()]) }}
                                             @else
                                                 {{ __('No expiry') }}
                                             @endif
                                             · {{ trans_choice('{0} never opened|{1} :count download|[2,*] :count downloads', $share->download_count, ['count' => $share->download_count]) }}
                                             @if($share->max_downloads) {{ __('of :max', ['max' => $share->max_downloads]) }} @endif
-                                            @if($share->last_accessed_at) · {{ __('last opened :date', ['date' => $share->last_accessed_at->format('d/m/Y H:i')]) }} @endif
+                                            @if($share->last_accessed_at) · {{ __('last opened :date', ['date' => $share->last_accessed_at->appDateTime()]) }} @endif
                                             · {{ __('by :name', ['name' => $share->createdBy?->name ?? __('unknown')]) }}
                                         </p>
                                     </div>

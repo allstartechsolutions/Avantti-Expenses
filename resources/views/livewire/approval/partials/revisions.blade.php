@@ -4,7 +4,6 @@
     survive the next attempt.
 --}}
 @php
-    $dateTimeFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
 @endphp
 
 <div class="space-y-4">
@@ -33,7 +32,7 @@
                     <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                         {{ __('collaboration.label.submitted', [
                             'who' => $revision->submittedBy?->name ?? __('collaboration.label.removed_user'),
-                            'when' => $revision->submitted_at?->format($dateTimeFormat),
+                            'when' => $revision->submitted_at?->appDateTime(),
                         ]) }}
                     </p>
                 </div>
@@ -80,7 +79,7 @@
 
                                     <span class="ml-auto text-xs {{ $reviewer->hasResponded() ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' }}">
                                         {{ $reviewer->hasResponded()
-                                            ? $reviewer->responded_at->format($dateTimeFormat)
+                                            ? $reviewer->responded_at->appDateTime()
                                             : __('collaboration.label.waiting') }}
                                     </span>
                                 </li>
@@ -108,7 +107,7 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __('collaboration.label.answered', [
                             'who' => $revision->respondedBy?->name ?? __('collaboration.label.removed_user'),
-                            'when' => $revision->responded_at->format($dateTimeFormat),
+                            'when' => $revision->responded_at->appDateTime(),
                         ]) }}
                         @if($revision->respondedBy?->company_name) · {{ $revision->respondedBy->company_name }} @endif
                     </p>

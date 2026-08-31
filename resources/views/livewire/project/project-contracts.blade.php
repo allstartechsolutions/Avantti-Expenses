@@ -143,10 +143,10 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $contract->start_date->format('M d, Y') }}
+                                        {{ $contract->start_date->appDate() }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                        {{ $contract->end_date?->format('M d, Y') ?? '-' }}
+                                        {{ $contract->end_date?->appDate() ?? '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                                         {{ Number::currency($contract->amount, config('app.currency'), config('app.locale')) }}

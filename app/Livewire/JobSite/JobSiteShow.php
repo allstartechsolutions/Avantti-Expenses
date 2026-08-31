@@ -392,7 +392,7 @@ class JobSiteShow extends Component
                 'label' => $h->getActionLabel(),
                 'color' => $h->getActionColor(),
                 'user' => $h->changedBy?->name,
-                'date' => $h->created_at->format('M d, Y H:i'),
+                'date' => $h->created_at->appDateTime(),
                 'changes' => $h->changes,
             ])
             ->toArray();
@@ -676,7 +676,7 @@ class JobSiteShow extends Component
             $this->expense_payment_schedule_preview[] = [
                 'number' => $i + 1,
                 'due_date' => $dueDate->format('Y-m-d'),
-                'due_date_formatted' => $dueDate->format('M d, Y'),
+                'due_date_formatted' => $dueDate->appDate(),
                 'amount' => $amounts[$i],
             ];
         }

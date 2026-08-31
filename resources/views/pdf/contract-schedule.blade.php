@@ -45,7 +45,7 @@
             <div style="font-size: 14pt; font-weight: bold; color: #3F5189;">{{ __('PAYMENT SCHEDULE') }}</div>
             <div style="font-size: 10pt; font-weight: bold;">{{ $contract->contract_number }}</div>
             <div style="font-size: 8pt; color: #555;">{{ $contract->subcontractor?->company_name ?? '—' }}</div>
-            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->format('d/m/Y - H:i') }}</div>
+            <div style="font-size: 7pt; color: #888;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
         </td>
     </tr>
 </table>
@@ -94,9 +94,9 @@
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">
                         {{ $item->trigger_type === 'date' ? __('Fixed date') : __('Milestone') }}
-                        @if($item->due_date)<div style="color: #666; font-size: 6.5pt;">{{ $item->due_date->format('d/m/Y') }}</div>@endif
+                        @if($item->due_date)<div style="color: #666; font-size: 6.5pt;">{{ $item->due_date->appDate() }}</div>@endif
                         @if($item->isReleased())
-                            <div style="color: #27ae60; font-size: 6.5pt;">{{ __('Released') }} {{ $item->released_at->format('d/m/Y') }}@if($item->releasedBy) · {{ $item->releasedBy->name }}@endif</div>
+                            <div style="color: #27ae60; font-size: 6.5pt;">{{ __('Released') }} {{ $item->released_at->appDate() }}@if($item->releasedBy) · {{ $item->releasedBy->name }}@endif</div>
                         @endif
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px; text-align: right;">
@@ -147,7 +147,7 @@
 @endif
 
 <div style="margin-top: 18px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 6.5pt; color: #999; text-align: center;">
-    {{ $company?->name }} — {{ __('Payment Schedule') }} — {{ $contract->contract_number }} — {{ $generatedAt->format('d/m/Y') }}
+    {{ $company?->name }} — {{ __('Payment Schedule') }} — {{ $contract->contract_number }} — {{ $generatedAt->appDate() }}
 </div>
 </body>
 </html>

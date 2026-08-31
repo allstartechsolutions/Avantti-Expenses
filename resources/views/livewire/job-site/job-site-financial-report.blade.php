@@ -127,7 +127,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="text-slate-900 dark:text-white truncate">{{ $co['title'] }}</p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                                    {{ $co['date']?->format('M d, Y') }}
+                                    {{ $co['date']?->appDate() }}
                                     @if(($co['status'] ?? 'approved') !== 'approved')
                                         · <span class="text-amber-600 dark:text-amber-400">{{ __('not approved') }}</span>
                                     @endif
@@ -191,7 +191,7 @@
                         @foreach ($expensesDetail as $expense)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                    {{ $expense->expense_date?->format('M d, Y') }}
+                                    {{ $expense->expense_date?->appDate() }}
                                 </td>
                                 <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $expense->item_name }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $expense->supplier?->name ?? '—' }}</td>

@@ -12,7 +12,9 @@
     $model = $attributes->wire('model')->value();
     $uid = 'file-drop-'.\Illuminate\Support\Str::slug(str_replace(['.', '_'], '-', (string) $model));
 
-    $accept = $accept ?? App\Services\DocumentSettings::acceptAttribute();
+    // An explicit empty string means "take anything" — a field whose server
+    // rule has no type restriction must not be narrowed by its picker.
+    $accept = $accept === null ? App\Services\DocumentSettings::acceptAttribute() : $accept;
     $maxLabel = App\Services\DocumentSettings::formatBytes(app(App\Services\FileUploadService::class)->maxBytes());
 @endphp
 
@@ -100,7 +102,7 @@
                type="file"
                @if($multiple) multiple @endif
                @if($disabled) disabled @endif
-               accept="{{ $accept }}"
+               @if($accept !== '') accept="{{ $accept }}" @endif
                {{ $attributes->whereStartsWith('wire:model') }}
                class="sr-only">
     </label>

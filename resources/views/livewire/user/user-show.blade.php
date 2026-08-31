@@ -126,7 +126,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Joined') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $user->created_at->format('F d, Y') }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $user->created_at->appDateLong() }}</p>
                         </div>
                     </div>
                 </div>
@@ -149,7 +149,7 @@
                             </label>
                             @if($user->email_verified_at)
                                 <p class="text-green-600 dark:text-green-400">
-                                    &#10003; {{ __('Verified on :date', ['date' => $user->email_verified_at->format('M d, Y')]) }}
+                                    &#10003; {{ __('Verified on :date', ['date' => $user->email_verified_at->appDate()]) }}
                                 </p>
                             @else
                                 <p class="text-red-600 dark:text-red-400">{{ __('Not verified') }}</p>
@@ -161,7 +161,7 @@
                             <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
                                 {{ __('Last Updated') }}
                             </label>
-                            <p class="text-slate-900 dark:text-white">{{ $user->updated_at->format('F d, Y \a\t g:i A') }}</p>
+                            <p class="text-slate-900 dark:text-white">{{ $user->updated_at->appDateTime() }}</p>
                         </div>
                     </div>
                 </div>

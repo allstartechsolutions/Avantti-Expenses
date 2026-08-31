@@ -78,7 +78,7 @@
                         @endif
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Estimate Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->estimate_date->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->estimate_date->appDate() }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Terms') }}</dt>
@@ -86,7 +86,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Due Date') }}</dt>
-                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->due_date->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->due_date->appDate() }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Created By') }}</dt>
@@ -95,19 +95,19 @@
                         @if($estimate->sent_at)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Sent At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->sent_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->sent_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($estimate->accepted_at)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Accepted At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->accepted_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->accepted_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($estimate->declined_at)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Declined At') }}</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->declined_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $estimate->declined_at->appDateTime() }}</dd>
                             </div>
                         @endif
                         @if($estimate->notes)
@@ -244,7 +244,7 @@
                                 @foreach($estimate->emailsSent as $email)
                                     <tr>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white whitespace-nowrap">
-                                            {{ $email->sent_at->format('M d, Y H:i') }}
+                                            {{ $email->sent_at->appDateTime() }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-slate-900 dark:text-white whitespace-nowrap">
                                             {{ $email->sentBy?->name ?? __('Unknown') }}
@@ -261,7 +261,7 @@
                                         <td class="px-6 py-4 text-sm whitespace-nowrap">
                                             @if($email->opened_at)
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                    Opened {{ $email->opened_at->format('M d, Y H:i') }}
+                                                    Opened {{ $email->opened_at->appDateTime() }}
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
@@ -491,7 +491,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                        {{ $history->created_at->format('M d, Y H:i') }}
+                                                        {{ $history->created_at->appDateTime() }}
                                                     </div>
                                                 </div>
                                             </div>

@@ -1622,24 +1622,53 @@ it), and the **subcontractor document** (`.pdf,.doc,.docx,.jpg,.jpeg,.png`, 10 M
 `clearDocumentFile()`). Each keeps its own `accept` and `hint` rather than the document
 allow-list. None of the three could take a chosen file back off before. Covered by
 `tests/Feature/Uploads/OneOffUploadTest.php`.
+
+**Change orders, quotations, requisitions, the vendor-proposal modal and daily reports** are
+done. The three quotation-side fields and both daily-report image fields were multi-file
+bound straight to their queue, so every one of them lost the first batch when a second was
+dropped: they now write to `quo_new_uploads` / `req_new_uploads` / `prop_new_uploads` /
+`newTaskImages` / `newManpowerImages` and accumulate through an `updated…()` hook, each with
+a discard action. The daily report keeps its thumbnail grid — for photographs, the picture is
+the queue — and the quotation-side screens show name, size and a trash button. The change
+order's `co_file` is single-file and gained `clearChangeOrderFile()`.
+
+`<x-ui.file-drop>` grew one prop behaviour for the change order: **`accept=""` means take
+anything**, because `co_file`'s rule carries no type restriction and the picker must not
+narrow what the server accepts. **Worth a decision:** `co_file` is the only upload in the
+app with no server-side type restriction at all (`nullable|file|max:10240`). Adding
+`mimes:` would be a narrowing, so it is left alone and recorded here.
+
+Covered by `tests/Feature/Uploads/QueueAccumulationTest.php` (six).
+
+**The documents modal's local-upload fallback is done too**, which closes A2. The branch used
+when R2 is not configured now carries the same queue as the cloud branch beside it:
+`localNewUploads` + `updatedLocalNewUploads()` (which applies the allow-list and the size cap
+on the way in, and holds the twenty-file limit rather than letting the save fail on it),
+`discardLocalUpload()`, and the queue emptied when the panel is opened so a batch cannot
+survive into the next upload. Covered by `tests/Feature/Documents/LocalUploadQueueTest.php`
+— which sets `documents.disk` to `local`, because the test environment has R2 configured and
+would otherwise render the other branch.
+
+**Two decisions settled with the owner, 31 Aug 2026:**
+
+- **`co_file` now has a type restriction.** It was `nullable|file|max:10240` — the only upload
+  in the app that took anything at all. Now `mimes:pdf,jpg,jpeg,png`, the same set every other
+  document field takes, with the picker's `accept` matched to it. A change order whose file is
+  a `.docx` can no longer be saved; nothing already stored is touched.
+- **The approvals *Fornecedor* picker searches `Supplier`, not `Vendor`.** A vendor flagged
+  only as a subcontractor is no longer offered, cannot be taken, and is refused on save — the
+  last of those matters because a public property can be set by a crafted payload. **The one
+  exception:** an approval that already points at such a vendor can still be saved, so that
+  records raised before this can have their other fields corrected. Reading a linked name
+  still goes through `Vendor`, so those records keep showing what they have.
+
+**Two things this leaves for whoever picks it up:** the `x-ui.file-drop` slot pattern is now
+repeated across sixteen screens — if a seventeenth is added, consider a `<x-ui.upload-queue>`
+partial rather than another copy. And `docs/permissions-notes.md` remains closed.
 Its Livewire side gained `newUploads` + `updatedNewUploads()`, so a second drop **adds to**
 the queue rather than replacing it — the trap every one of these conversions has to avoid,
 because a plain `wire:model` file input replaces its whole selection on each pick.
 
-**Still plain file inputs, to be converted as each module is reviewed:**
-
-| Module | File |
-|---|---|
-| Documents | `livewire/documents/partials/upload-modal.blade.php` (the local-upload fallback at the bottom; the main zone is already drag-and-drop) |
-| Change orders | `change-order/partials/form-modal.blade.php` |
-| Quotations | `quotation/partials/form-modal.blade.php`, `proposal-modal.blade.php`, `requisition/partials/form-modal.blade.php` |
-| Daily reports | `daily-report/daily-report-form.blade.php` |
-
-Checked, so the next pass does not have to: **change orders** take a single file (`co_file`,
-no `accept` at all today — give it one). **Quotations**, **requisitions** and the quotation
-**proposal modal** are all multi-file (`quo_uploads`, `req_uploads`, `prop_uploads`,
-`.pdf,.jpg,.jpeg,.png`), so each needs the `newUploads` + `updated…()` accumulate hook or a
-second drop will wipe the first. **Daily reports** have two multi-file image fields
-(`taskImages`, `manpowerImages`) with no `accept`. The **documents** fallback is the
-`localUploads` input at the bottom of the modal; the main zone there is already
-drag-and-drop and goes straight to R2.
+**No plain file inputs remain.** The only `type="file"` left in the app is the hidden input
+behind "choose files" inside the cloud uploader's own drop zone — the same shape
+`x-ui.file-drop` uses internally, not a bare field.

@@ -41,7 +41,7 @@
                                         </div>
                                         <span class="text-xs text-slate-500 dark:text-slate-400">
                                             {{ $requisition->requisition_number ?? '#'.$requisition->id }}
-                                            &middot; {{ $requisition->created_at->format('M d, Y') }}
+                                            &middot; {{ $requisition->created_at->appDate() }}
                                             @if($requisition->relationLoaded('quotations') && $requisition->isAlreadyQuoted())
                                                 &middot; {{ trans_choice(':count round|:count rounds', $requisition->liveQuotations()->count(), ['count' => $requisition->liveQuotations()->count()]) }}
                                             @endif
@@ -92,7 +92,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 @if($requisition->needed_by)
                                     <span class="{{ $requisition->isOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-900 dark:text-white' }}">
-                                        {{ $requisition->needed_by->format('M d, Y') }}
+                                        {{ $requisition->needed_by->appDate() }}
                                     </span>
                                     @if($requisition->isOverdue())
                                         <div class="text-xs text-red-600 dark:text-red-400">{{ __('Overdue') }}</div>

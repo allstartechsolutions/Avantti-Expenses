@@ -167,7 +167,7 @@
                     @endif
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Created') }}</span>
-                        <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->created_at->format('M d, Y') }}</span>
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $budget->created_at->appDate() }}</span>
                     </div>
                 </div>
             </div>

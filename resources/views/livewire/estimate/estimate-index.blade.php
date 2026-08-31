@@ -144,12 +144,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $estimate->estimate_date->format('m/d/Y') }}
+                                        {{ $estimate->estimate_date->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $estimate->due_date->format('m/d/Y') }}
+                                        {{ $estimate->due_date->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

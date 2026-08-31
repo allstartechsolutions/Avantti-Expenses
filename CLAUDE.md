@@ -80,6 +80,46 @@ Two rules that hold everywhere and were each learned the hard way:
 - **Reproduce first, then make it revocable.** A change that quietly widens or narrows who
   can do something is a bug even when the new behaviour seems more sensible. Say what moved.
 
+## Dates and Times Come From the Macros, Never From `format()`
+
+**A Brazilian install showed `Aug 31, 2026`** on 144 screens until the sweep of 31 Aug 2026:
+US order *and* English month names, which no locale setting fixes because `format()` never
+translates. Four habits were in the codebase at once — 133 hardcoded `M d, Y`, 11 `m/d/Y`, 29
+`d/m/Y` (wrong the other way round, on a US install), and 39 copies of the same country
+ternary. There is one answer now, registered in `AppServiceProvider::registerDateMacros()`:
+
+| Call | Brazil | United States |
+|---|---|---|
+| `->appDate()` | 31 ago 2026 | Aug 31, 2026 |
+| `->appTime()` | 14:30 | 2:30 PM |
+| `->appDateTime()` | 31 ago 2026 14:30 | Aug 31, 2026 2:30 PM |
+| `->appDateLong()` | 31 de agosto de 2026 | August 31, 2026 |
+| `->appDateShort()` | 31 ago | Aug 31 |
+| `->appDateNumeric()` | 31/08/2026 | 08/31/2026 |
+
+They work on every Carbon flavour — `Carbon\Carbon`, `Illuminate\Support\Carbon`,
+`CarbonImmutable` — so a model attribute, `now()` and a parsed string all take them.
+
+The month is a word on purpose — it is what this product has always shown, and it cannot be
+misread the way a bare `08/31` can. `appDateNumeric()` is for the date **input** and nothing
+else.
+
+### Date fields are `<x-ui.date-input>`, never `<input type="date">`
+
+A native date input renders in the **browser's** locale, which has nothing to do with
+`app.country`: a Brazilian company whose staff run an en-US browser were typing into
+`mm/dd/yyyy` all day, and no attribute can change that. `<x-ui.date-input wire:model="…">`
+is a text field in this install's order (`dd/mm/aaaa` / `mm/dd/yyyy`) with the native control
+kept beside it, hidden, for its picker alone. **The value crossing to Livewire is `Y-m-d`
+exactly as before**, so nothing server-side changes; `.live` is carried through.
+
+**Machine formats stay as they are.** `Y-m-d` fills a date input, `Y-m` is a grouping key,
+`G` is an hour of the day. None is read by a person, and none may move when the country does.
+
+`DateFormatSweepTest` fails if a display format is written by hand again, or if a native
+`type="date"` comes back, anywhere in `app/` or `resources/views/` — PDFs and e-mail templates
+included, which is where a wrong date is most likely to reach a client.
+
 ## Every Module Ships Translated
 
 **A screen is not built until it is translatable.** The pt_BR sweep of 24 Aug 2026 found

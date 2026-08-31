@@ -66,7 +66,7 @@
                                 </p>
                                 <p class="mt-1 text-xs text-green-800 dark:text-green-300">
                                     {{ $viewingQuotation->awardedBy?->name ?? __('Unknown') }}
-                                    &middot; {{ $viewingQuotation->awarded_at?->format('M d, Y H:i') }}
+                                    &middot; {{ $viewingQuotation->awarded_at?->appDateTime() }}
                                 </p>
                                 @if($viewingQuotation->award_reason)
                                     <p class="mt-3 text-sm text-green-900 dark:text-green-200 whitespace-pre-line">{{ $viewingQuotation->award_reason }}</p>
@@ -208,12 +208,12 @@
                                 </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Needed On Site') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->needed_by?->format('M d, Y') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->needed_by?->appDate() ?? '—' }}</dd>
                                 </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Responses Due') }}</dt>
                                     <dd class="{{ $factValue }} {{ $viewingQuotation->responsesOverdue() ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
-                                        {{ $viewingQuotation->responses_due_at?->format('M d, Y') ?? '—' }}
+                                        {{ $viewingQuotation->responses_due_at?->appDate() ?? '—' }}
                                         @if($viewingQuotation->responsesOverdue())
                                             <span class="block text-xs">{{ __('Overdue') }}</span>
                                         @endif
@@ -266,11 +266,11 @@
                                 </div>
                                 <div>
                                     <dt class="{{ $factLabel }}">{{ __('Created') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->created_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->created_at?->appDateTime() ?? '—' }}</dd>
                                 </div>
                                 <div class="col-span-2">
                                     <dt class="{{ $factLabel }}">{{ __('Last Updated') }}</dt>
-                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->updated_at?->format('M d, Y H:i') ?? '—' }}</dd>
+                                    <dd class="{{ $factValue }}">{{ $viewingQuotation->updated_at?->appDateTime() ?? '—' }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -366,7 +366,7 @@
                                                     } }}
                                                 </p>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                    {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->format('M d, Y H:i') }}
+                                                    {{ $history->changedBy?->name ?? __('Unknown') }} &middot; {{ $history->created_at?->appDateTime() }}
                                                 </p>
                                                 @if($history->reason)
                                                     <p class="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{{ $history->reason }}</p>
@@ -457,7 +457,7 @@
                                                     </td>
                                                     <td class="py-3 pr-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                                         @if($row->invited_at)
-                                                            {{ $row->invited_at->format('M d, Y') }}
+                                                            {{ $row->invited_at->appDate() }}
                                                             <div class="text-xs">{{ $row->getInviteMethodLabel() }}</div>
                                                         @else
                                                             {{ __('Not yet') }}
@@ -509,7 +509,7 @@
                                                             @endif
                                                             @if($row->proposal_valid_until)
                                                                 <div class="{{ $row->proposalExpired() ? 'text-red-600 dark:text-red-400 font-semibold' : '' }}">
-                                                                    {{ $row->proposalExpired() ? __('Expired :date', ['date' => $row->proposal_valid_until->format('M d, Y')]) : __('Valid to :date', ['date' => $row->proposal_valid_until->format('M d, Y')]) }}
+                                                                    {{ $row->proposalExpired() ? __('Expired :date', ['date' => $row->proposal_valid_until->appDate()]) : __('Valid to :date', ['date' => $row->proposal_valid_until->appDate()]) }}
                                                                 </div>
                                                             @endif
                                                         @else
@@ -524,7 +524,7 @@
                                                             <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                                                 {{ __('by :channel', ['channel' => $row->getSourceLabel()]) }}
                                                                 @if($row->received_at)
-                                                                    &middot; {{ $row->received_at->format('M d') }}
+                                                                    &middot; {{ $row->received_at->appDateShort() }}
                                                                 @endif
                                                             </div>
                                                         @endif
@@ -607,7 +607,7 @@
                                                             </p>
                                                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                                                 {{ $negotiation->negotiatedBy?->name ?? __('Unknown') }}
-                                                                &middot; {{ $negotiation->negotiated_at?->format('M d, Y H:i') }}
+                                                                &middot; {{ $negotiation->negotiated_at?->appDateTime() }}
                                                             </p>
                                                             <p class="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{{ $negotiation->note }}</p>
                                                         </div>
@@ -676,7 +676,7 @@
                                                 </span>
                                             </div>
                                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                {{ $email->sent_at?->format('M d, Y H:i') }} &middot; {{ $email->sentBy?->name ?? __('Unknown') }}
+                                                {{ $email->sent_at?->appDateTime() }} &middot; {{ $email->sentBy?->name ?? __('Unknown') }}
                                             </p>
                                             @if($email->failed() && $email->error)
                                                 <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $email->error }}</p>

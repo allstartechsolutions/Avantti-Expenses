@@ -42,11 +42,11 @@
                                             </tr>
                                             <tr>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Date:') }}</td>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->estimate_date->format('M d, Y') }}</td>
+                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->estimate_date->appDate() }}</td>
                                             </tr>
                                             <tr>
                                                 <td style="padding: 4px 0; font-size: 13px; color: #666;">{{ __('Due Date:') }}</td>
-                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->due_date->format('M d, Y') }}</td>
+                                                <td style="padding: 4px 0; font-size: 13px; color: #333; text-align: right;">{{ $estimate->due_date->appDate() }}</td>
                                             </tr>
                                             <tr>
                                                 <td colspan="2" style="padding: 8px 0 0;">

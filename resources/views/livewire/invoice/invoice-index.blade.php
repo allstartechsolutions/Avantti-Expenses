@@ -152,12 +152,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $invoice->invoice_date->format('m/d/Y') }}
+                                        {{ $invoice->invoice_date->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white">
-                                        {{ $invoice->due_date->format('m/d/Y') }}
+                                        {{ $invoice->due_date->appDate() }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

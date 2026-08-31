@@ -7,7 +7,6 @@
     matters most.
 --}}
 @php
-    $dateFormat = config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y';
     $stampFormat = config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A';
     $showSpec = $showSpec ?? false;
 @endphp
@@ -27,7 +26,7 @@
         <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('Supplier') }}</strong></td>
         <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->supplier?->name ?: '—' }}</td>
         <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('collaboration.label.due') }}</strong></td>
-        <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->due_date?->format($dateFormat) ?: '—' }}</td>
+        <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->due_date?->appDate() ?: '—' }}</td>
     </tr>
     @if($showSpec)
         <tr>
@@ -57,10 +56,10 @@
         </tr>
         <tr>
             <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('collaboration.label.issued_2') }}</strong></td>
-            <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->certificate->issued_at?->format($dateFormat) ?: '—' }}</td>
+            <td style="border: 1px solid #ddd; padding: 5px;">{{ $document->certificate->issued_at?->appDate() ?: '—' }}</td>
             <td style="border: 1px solid #ddd; padding: 5px; background: #f8fafc;"><strong>{{ __('collaboration.label.valid_until') }}</strong></td>
             <td style="border: 1px solid #ddd; padding: 5px; {{ $document->certificate->hasExpired() ? 'color: #b91c1c; font-weight: bold;' : '' }}">
-                {{ $document->certificate->valid_until?->format($dateFormat) ?: '—' }}
+                {{ $document->certificate->valid_until?->appDate() ?: '—' }}
                 @if($document->certificate->hasExpired()) — {{ __('collaboration.label.certificate_expired') }}@endif
             </td>
         </tr>
