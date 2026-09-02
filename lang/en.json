@@ -3189,5 +3189,8 @@
     "Discard": "Discard",
     "Remove this image and go back to the default?": "Remove this image and go back to the default?",
     "Drop the image here, or": "Drop the image here, or",
-    "Printed at the top of estimates, invoices and reports. Use a wide logo here — the square icon on screen is set under Branding below. Max 2MB.": "Printed at the top of estimates, invoices and reports. Use a wide logo here — the square icon on screen is set under Branding below. Max 2MB."
+    "Printed at the top of estimates, invoices and reports. Use a wide logo here — the square icon on screen is set under Branding below. Max 2MB.": "Printed at the top of estimates, invoices and reports. Use a wide logo here — the square icon on screen is set under Branding below. Max 2MB.",
+    "Document expired": "Expired",
+    "Document expiring soon": "Expiring Soon",
+    "Document valid": "Valid"
 }

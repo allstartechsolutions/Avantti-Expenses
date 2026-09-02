@@ -9,6 +9,9 @@ use Carbon\Carbon;
 
 class SubcontractorDocument extends Model
 {
+    /** Days before the expiration date at which a document is flagged as expiring soon. */
+    public const EXPIRING_SOON_DAYS = 30;
+
     protected $fillable = [
         'subcontractor_id',
         'document_type_id',
@@ -58,14 +61,13 @@ class SubcontractorDocument extends Model
             return 'valid';
         }
 
-        $now = Carbon::now();
-        $expiration = $this->expiration_date;
+        $expiration = $this->expiration_date->startOfDay();
 
-        if ($expiration->isPast()) {
+        if ($expiration->lt(Carbon::today())) {
             return 'expired';
         }
 
-        if ($expiration->diffInDays($now) <= 30) {
+        if ($expiration->lte(Carbon::today()->addDays(self::EXPIRING_SOON_DAYS))) {
             return 'expiring_soon';
         }
 
@@ -78,10 +80,9 @@ class SubcontractorDocument extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'expired' => 'Expired',
-            'expiring_soon' => 'Expiring Soon',
-            'valid' => 'Valid',
-            default => 'Valid',
+            'expired' => __('Document expired'),
+            'expiring_soon' => __('Document expiring soon'),
+            default => __('Document valid'),
         };
     }
 
