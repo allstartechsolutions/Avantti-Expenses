@@ -34,7 +34,7 @@
     </table>
 
     <p style="margin: 0 0 8px; font-size: 13px; color: #777;">
-        {{ __('The link works once and stops working on :date.', ['date' => $invitation->expires_at?->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y')]) }}
+        {{ __('The link works once and stops working on :date.', ['date' => $invitation->expires_at?->appDate()]) }}
     </p>
     <p style="margin: 0; font-size: 13px; color: #777;">
         {{ __('If you were not expecting this, ignore it — no account is created until somebody uses the link.') }}

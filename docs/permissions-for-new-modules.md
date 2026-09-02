@@ -256,6 +256,9 @@ router itself, so a new project-scoped route is covered the moment it is written
 - **Livewire full-page components:** `Livewire::test(X::class, ['project' => $p, 'jobSite' => null])`
   breaks. An unpassed `?Model $x = null` gets container-resolved into a blank truthy model.
   Pass only the key you mean, and guard with `$x?->exists`.
+- **`Rule::exists()->where($column, false)` finds nothing on sqlite.** The presence
+  verifier binds a PHP `false` as an empty string, so every id fails validation under the
+  suite while passing on MariaDB. Write `->where($column, 0)`.
 - **MySQL-only SQL means untested.** `FIELD()`, `DATE_FORMAT()` and friends 500 on sqlite, so
   the test that would have caught the bug never renders the screen. Write portable SQL, or a
   `match (DB::connection()->getDriverName())` helper.

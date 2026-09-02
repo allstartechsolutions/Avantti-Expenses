@@ -33,7 +33,7 @@
                     </td>
                     <td style="border: none; padding: 0; text-align: right; vertical-align: bottom; font-size: 7pt; color: #666;">
                         <div>{{ $signature->getMethodLabel() }}</div>
-                        <div>{{ $signature->signed_at?->format(config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A') }}</div>
+                        <div>{{ $signature->signed_at?->appDateTime() }}</div>
                         @unless($row['intact'])
                             <div style="color: #b91c1c; font-weight: bold; margin-top: 2px;">
                                 {{ __('collaboration.help.document_changed_since_signed') }}

@@ -79,7 +79,7 @@
         <div class="ml-auto text-right sm:ml-0">
             @if($due)
                 <p class="text-xs {{ $task->isOverdue() ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300' }}">
-                    {{ $due->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y') }}
+                    {{ $due->appDate() }}
                 </p>
                 <p class="text-[11px] {{ $task->isOverdue() ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500' }}">
                     @if($task->isOverdue())

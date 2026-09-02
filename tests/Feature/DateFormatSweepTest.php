@@ -121,6 +121,13 @@ class DateFormatSweepTest extends TestCase
                         $offenders[] = str_replace(base_path().'/', '', $file->getPathname())." — {$needle}";
                     }
                 }
+
+                // The same habit in its other costume: a country ternary handed
+                // to format(). Eleven of these sat under the sweep until 2 Sep
+                // 2026 because the format string was built, not written.
+                if (preg_match("/->format\\(\\s*config\\('app\\.country'\\)/", $contents)) {
+                    $offenders[] = str_replace(base_path().'/', '', $file->getPathname())." — format(config('app.country') … ? … : …)";
+                }
             }
         }
 

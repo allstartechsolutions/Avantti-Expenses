@@ -777,6 +777,12 @@ return [
             'actions' => [
                 'view', 'create', 'edit', 'delete',
                 'merge' => ['name' => 'Merge duplicates', 'sensitive' => true],
+                // The vendor's compliance documents (insurance, licences, tax
+                // clearances). Uploading and renewing is routine clerical
+                // work; archiving takes a document out of the expiry watch,
+                // so it is held apart. Deleting stays under `delete`.
+                'renew_documents' => ['name' => 'Upload and renew documents'],
+                'archive_documents' => ['name' => 'Archive and reactivate documents', 'sensitive' => true],
             ],
         ],
 

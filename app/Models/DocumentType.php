@@ -8,15 +8,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DocumentType extends Model
 {
     protected $fillable = [
+        'key',
         'name',
         'description',
         'requires_expiration',
         'sort_order',
+        'is_active',
     ];
 
     protected $casts = [
         'requires_expiration' => 'boolean',
         'sort_order' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -25,6 +28,15 @@ class DocumentType extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(SubcontractorDocument::class);
+    }
+
+    /**
+     * Types still offered on the upload picker. A retired type keeps every
+     * document already filed under it.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     /**

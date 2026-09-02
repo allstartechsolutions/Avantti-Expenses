@@ -1728,3 +1728,82 @@ alone — and the browser would have answered from cache anyway. The stage's `sr
 `saveLocalUploads()` cleared four computed properties but not `viewingDocument`, the one the
 open detail view reads.
 
+
+## Vendor documents — parked during the build, 2026-09-02
+
+Found while building `docs/vendor-document-expiry-plan.md`; none blocks the module.
+
+### V1 — the notifier's `send()` is now the third copy *(decision)*
+
+`TaskNotifier`, `ProcurementNotifier` and now `VendorDocumentNotifier` each carry the same
+forty lines: the three checks, the `notification_log` row, the try/send/stamp. The
+procurement one said it would be extracted "when a third module wants the same". That
+module exists. Not done in this pass because it means editing the two live mail paths;
+schedule it as its own small change with the three test files as the safety net.
+
+### V2 — vendor document files still pass through PHP *(done, 2 Sep 2026)*
+
+New documents go through `FileUploadService` like tasks and RFIs: with a bucket the bytes
+go straight to storage against the vendor (target `vendor`) and the row is written on save;
+without one the drop zone stays and `storeThroughPhp()` records the file the same way.
+Legacy rows keep `file_path` on the private disk and are served by the same new download
+route, so nothing was moved. See `docs/vendor-documents.md` › *Where the file is*. One
+thing learned: the generic `<x-ui.file-uploader>` has no local mode in the browser (plan
+mode `local` throws), so every screen that uses it must fall back to `<x-ui.file-drop>`
+when `DocumentSettings::isCloudConfigured()` is false — the vendor dialog does; the task,
+RFI and approval screens do **not**, which is a pre-existing gap on installs without R2
+(V9).
+
+### V3 — no blocking on an expired document *(decision, owner, 2 Sep 2026)*
+
+Purchase orders and contracts can still be raised on a vendor whose required document has
+expired. The owner chose to flag, not block. If that changes, the badge state
+(`document_health`) is already on the vendor and the procurement screens would gate on it.
+
+### V4 — the other Notification Settings cards hand-format their "last changed" date *(done, 2 Sep 2026)*
+
+The Task and Purchasing cards printed `updated_at->format(config('app.country') === 'BR'
+? 'd/m/Y H:i' : 'm/d/Y g:i A')`. The sweep did not catch it because the format string was
+built inside a ternary — and the same costume was on **nine more** sites: the invitation
+e-mail, the collaboration PDF footer and signatures, the RFI activity and list, the task
+row, the daily-report delete message, and the subjects of the quotation-due and
+meeting-minute mails. All eleven now use `appDate()` / `appDateTime()`, and
+`DateFormatSweepTest` matches `->format(config('app.country')` so the form cannot return.
+
+### V5 — `Rule::exists()->where($column, false)` silently fails on sqlite
+
+The presence verifier binds a PHP `false` as an empty string, so the rule finds nothing
+and every id is "invalid" under the test suite while passing on MariaDB. Use `0`. Worth a
+line in `docs/permissions-for-new-modules.md`'s testing gotchas.
+
+### V6 — the supplier screens carry no document badge *(decision)*
+
+Documents are a subcontractor feature; a vendor flagged as both shows the badge on the
+Subcontractors page only. If suppliers ever get their own document set, `HasDocumentHealth`
+is already on `Vendor` and the column is one include away.
+
+### V8 — the System Settings notification switches never worked *(found by the owner, fixed 2 Sep 2026)*
+
+`<x-ui.toggle>` forwarded only `wire:model`-style attributes onto its input and never
+rendered `checked`, so the three cards on System Settings › Notifications — built on
+`wire:click="toggle(...)"` — had switches that neither fired nor showed their state, since
+28 Aug. The component now forwards `wire:click` / `@click` / `x-on:click` and carries
+`@checked($checked)`; each row's `wire:key` includes the state so a flip rebuilds the
+input. `VendorDocumentRemindersTest::test_the_company_switches_flip_and_the_page_shows_their_state`
+covers it. Nothing was lost in between: the `wire:model` users (profile notifications, RFI
+form, task lists) were unaffected.
+
+### V9 — the generic uploader has no local mode on the task, RFI and approval screens *(decision: not needed, owner, 2 Sep 2026)*
+
+`createUploader()` in `resources/js/app.js` handles plan modes `single` and `multipart` and
+throws on `local`, and `FileUploadService::storeLocal()` is called from nowhere, so on an
+install with no bucket, attaching a file to a task, an RFI or an approval fails. **Every
+install ships with a bucket attached** — the owner's decision — so this is not a gap to
+close. The vendor dialog's drop-zone fallback stays as it is (harmless, and it is what the
+test suite exercises), but no other screen needs one, and `DocumentSettings::disk()`
+falling back to `local` is a safety net for a misconfigured install, not a supported mode.
+
+### V7 — no in-app guide yet
+
+The documentation library has no article for vendor documents. `docs/vendor-documents.md`
+is the source to condense from.

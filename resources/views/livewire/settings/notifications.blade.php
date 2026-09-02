@@ -18,7 +18,7 @@ new class extends Component {
      */
     public function keys(): array
     {
-        return array_merge(NotificationSetting::KEYS, NotificationSetting::PROCUREMENT_KEYS);
+        return array_merge(NotificationSetting::KEYS, NotificationSetting::PROCUREMENT_KEYS, NotificationSetting::VENDOR_KEYS);
     }
 
     public function mount(): void
@@ -77,6 +77,31 @@ new class extends Component {
             </h3>
 
             @foreach(NotificationSetting::PROCUREMENT_KEYS as $key)
+                @php $sentByCompany = NotificationSetting::enabled($key); @endphp
+                <div class="flex items-start justify-between gap-6" wire:key="pref-{{ $key }}">
+                    <div class="min-w-0">
+                        <p class="font-medium text-slate-900 dark:text-white">{{ NotificationSetting::label($key) }}</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ NotificationSetting::description($key) }}</p>
+                        @unless($sentByCompany)
+                            <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                                {{ __('Switched off for the whole company, so nobody receives it at the moment.') }}
+                            </p>
+                        @endunless
+                    </div>
+                    <div class="shrink-0 pt-1">
+                        <x-ui.toggle wire:model.live="preferences.{{ $key }}"
+                                     :checked="(bool) ($preferences[$key] ?? true)"
+                                     :disabled="! $sentByCompany"
+                                     :label="($preferences[$key] ?? true) ? __('Send it') : __('Do not send')" />
+                    </div>
+                </div>
+            @endforeach
+
+            <h3 class="pt-2 text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700">
+                <span class="block pt-4">{{ __('Vendors') }}</span>
+            </h3>
+
+            @foreach(NotificationSetting::VENDOR_KEYS as $key)
                 @php $sentByCompany = NotificationSetting::enabled($key); @endphp
                 <div class="flex items-start justify-between gap-6" wire:key="pref-{{ $key }}">
                     <div class="min-w-0">

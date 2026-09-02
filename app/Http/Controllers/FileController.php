@@ -13,6 +13,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequisition;
 use App\Models\Quotation;
 use App\Models\QuotationVendor;
+use App\Models\SubcontractorDocument;
 use App\Services\PermissionResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -133,6 +134,11 @@ class FileController extends Controller
             // RFQ's own files, and each vendor row carries the proposal that
             // came back. A row reaches its scope through its quotation.
             'quotations' => ['quotations', $this->attachedTo($path, [Quotation::class, QuotationVendor::class])],
+
+            // A vendor belongs to no project, so the role alone answers; a
+            // superseded or archived document is served on the same grant as
+            // an active one — it is the history the audit wants to see.
+            'subcontractor-documents' => ['vendors', SubcontractorDocument::where('file_path', $path)->first()],
 
             // Not yet swept: the old rule stands, and its own pass adds the
             // line here. Nothing fails if that is forgotten, so it is written

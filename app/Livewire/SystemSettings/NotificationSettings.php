@@ -3,8 +3,12 @@
 namespace App\Livewire\SystemSettings;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Enums\UserStatus;
 use App\Models\NotificationSetting;
+use App\Services\BuyerDirectory;
+use App\Services\VendorDocumentNotifier;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -28,6 +32,9 @@ class NotificationSettings extends Component
     public int $stallMaxReminders = NotificationSetting::DEFAULT_STALL_REMINDERS;
     public int $dueLeadDays = NotificationSetting::DEFAULT_DUE_LEAD_DAYS;
 
+    /** Vendors — who is told about expiring documents. Empty = the fallback. @var array<int, int> */
+    public array $vendorDocumentRecipients = [];
+
     public function mount(): void
     {
         $this->authorizeAbility('settings.view');
@@ -40,6 +47,55 @@ class NotificationSettings extends Component
         $this->stallDays = NotificationSetting::stallDays();
         $this->stallMaxReminders = NotificationSetting::stallMaxReminders();
         $this->dueLeadDays = NotificationSetting::dueLeadDays();
+
+        $this->vendorDocumentRecipients = NotificationSetting::vendorDocumentRecipientIds();
+    }
+
+    /** Active staff, for the recipients picker. Guests are never offered. */
+    #[Computed]
+    public function staff(): Collection
+    {
+        return app(BuyerDirectory::class)->activeStaff()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+    }
+
+    /** Who the fallback reaches right now, so the screen can say so by name. */
+    #[Computed]
+    public function vendorDocumentFallback(): Collection
+    {
+        return app(VendorDocumentNotifier::class)->recipients();
+    }
+
+    public function saveVendorDocumentRecipients(): void
+    {
+        $this->authorizeAbility('settings.edit');
+
+        $this->validate([
+            'vendorDocumentRecipients' => ['array'],
+            'vendorDocumentRecipients.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where('status', UserStatus::ACTIVE->value)->where('is_guest', 0),
+            ],
+        ], [
+            'vendorDocumentRecipients.*.exists' => __('One of the chosen people is no longer an active member of staff.'),
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $this->vendorDocumentRecipients)));
+
+        NotificationSetting::firstOrCreate(['key' => NotificationSetting::VENDOR_DOCUMENT_EXPIRY])
+            ->update([
+                'options' => ['recipients' => $ids],
+                'updated_by' => auth()->id(),
+            ]);
+
+        $this->vendorDocumentRecipients = $ids;
+
+        unset($this->settings, $this->vendorDocumentFallback);
+
+        session()->flash('message', $ids === []
+            ? __('Nobody is chosen: vendor document reminders go to everyone who may upload and renew vendor documents.')
+            : trans_choice('Vendor document reminders go to :count person.|Vendor document reminders go to :count people.', count($ids), ['count' => count($ids)]));
     }
 
     #[Computed]

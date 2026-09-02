@@ -126,7 +126,7 @@
                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                 @if($rfi->due_date)
                                     <span class="{{ $rfi->isOverdue() ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-slate-600 dark:text-slate-300' }}">
-                                        {{ $rfi->due_date->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y') }}
+                                        {{ $rfi->due_date->appDate() }}
                                     </span>
                                     @if($rfi->isOverdue())
                                         <span class="block text-xs text-rose-600 dark:text-rose-400">

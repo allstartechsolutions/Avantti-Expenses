@@ -14,6 +14,7 @@ class Subcontractor extends Model
 {
     use HasFormattedPhone, HasFactory;
     use \App\Models\Concerns\DeletesVendorDocuments;
+    use \App\Models\Concerns\HasDocumentHealth;
 
     /**
      * Subcontractors live in the unified `vendors` table (shared with

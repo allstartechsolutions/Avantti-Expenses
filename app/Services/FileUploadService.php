@@ -10,8 +10,10 @@ use App\Models\ApprovalRevision;
 use App\Models\Rfi;
 use App\Models\RfiReply;
 use App\Models\Task;
+use App\Models\SubcontractorDocument;
 use App\Models\TaskNote;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -51,6 +53,10 @@ class FileUploadService
         // target in its own right — the files of revision 0 must not appear to
         // be the files of revision 1.
         'approval_revision' => ApprovalRevision::class,
+        // A vendor's compliance document. The bytes go up against the vendor
+        // while the dialog is open; saving the dialog creates the document
+        // row and moves the file onto it (see SubcontractorShow).
+        'vendor' => Vendor::class,
     ];
 
     /** Where documentation images live in the bucket. */
@@ -115,6 +121,8 @@ class FileUploadService
             $target instanceof ApprovalRevision => $target->approval !== null
                 && ($resolver->allows($user, 'approvals.submit', $target->approval)
                     || $resolver->allows($user, 'approvals.edit', $target->approval)),
+            // Company-wide, like the vendor itself.
+            $target instanceof Vendor => $resolver->allows($user, 'vendors.renew_documents'),
             default => false,
         };
     }
@@ -168,6 +176,49 @@ class FileUploadService
     }
 
     /**
+     * A file that came through PHP — the drop zone on an install without a
+     * bucket — recorded and stored the same way a presigned upload is, so
+     * everything downstream (download, delete, prune) has one shape to deal
+     * with. The same checks as init(): type, size and the storage quota.
+     */
+    public function storeThroughPhp(Model $target, UploadedFile $upload): FileUpload
+    {
+        $name = $upload->getClientOriginalName();
+
+        if (! $this->isAllowedFile($name, $upload->getMimeType())) {
+            throw new RuntimeException(__('This file type is not allowed.'));
+        }
+
+        if ($upload->getSize() > $this->maxBytes()) {
+            throw new RuntimeException(__('This file is larger than the :size limit.', [
+                'size' => DocumentSettings::formatBytes($this->maxBytes()),
+            ]));
+        }
+
+        if (DocumentSettings::wouldExceedQuota((int) $upload->getSize())) {
+            throw new RuntimeException(__('This install has reached its storage limit of :size.', [
+                'size' => DocumentSettings::formatBytes(DocumentSettings::storageQuotaBytes()),
+            ]));
+        }
+
+        $file = new FileUpload([
+            'uuid' => (string) Str::uuid(),
+            'disk' => DocumentSettings::disk(),
+            'original_name' => DocumentSettings::sanitizeFileName($name),
+            'size_bytes' => (int) $upload->getSize(),
+            'mime_type' => $upload->getMimeType(),
+            'upload_status' => FileUpload::STATUS_PENDING,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        $file->attachable()->associate($target);
+        $file->object_key = $this->objectKey($target, $file->uuid, $file->original_name);
+        $file->save();
+
+        return $this->storeLocal($file, $upload);
+    }
+
+    /**
      * Give up and leave nothing behind — an unfinished multipart upload is
      * billed by R2 until it is aborted.
      */
@@ -202,9 +253,18 @@ class FileUploadService
             FileUpload::STATUS_FAILED,
         ])->where('created_at', '<', $cutoff)->get();
 
+        // A vendor document's file waits on the vendor only while its dialog
+        // is open; one still there after the window is a dialog that was
+        // never saved (a closed tab), and there is no row to ever claim it.
+        $orphans = FileUpload::query()
+            ->where('attachable_type', Vendor::class)
+            ->where('upload_status', FileUpload::STATUS_AVAILABLE)
+            ->where('created_at', '<', $cutoff)
+            ->get();
+
         $aborted = 0;
 
-        foreach ($stale as $file) {
+        foreach ($stale->merge($orphans) as $file) {
             if ($file->isMultipart()) {
                 $aborted++;
             }
@@ -212,7 +272,7 @@ class FileUploadService
             $this->abort($file);
         }
 
-        return ['aborted' => $aborted, 'files' => $stale->count()];
+        return ['aborted' => $aborted, 'files' => $stale->count() + $orphans->count()];
     }
 
     /**
@@ -311,6 +371,10 @@ class FileUploadService
             $target instanceof Approval => 'approvals/'.$target->project_id.'/'.$target->id,
             $target instanceof ApprovalRevision => 'approvals/'.($target->approval?->project_id ?? 'unknown')
                 .'/'.$target->approval_id.'/rev-'.$target->id,
+            // Not served by FileController either: SubcontractorDocumentController
+            // is the only way out, behind `vendors.view` and the vendor in the URL.
+            $target instanceof Vendor => 'vendors/'.$target->id,
+            $target instanceof SubcontractorDocument => 'vendors/'.$target->subcontractor_id,
             default => throw new RuntimeException('Unsupported upload target.'),
         };
 

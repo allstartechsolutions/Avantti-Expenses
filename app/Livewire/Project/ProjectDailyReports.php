@@ -43,7 +43,7 @@ class ProjectDailyReports extends Component
             __('This daily report has been locked. It is the record of that day and cannot be deleted.'),
         );
 
-        $date = $report->report_date?->format(config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y');
+        $date = $report->report_date?->appDate();
 
         $report->delete();
 

@@ -52,7 +52,7 @@
                         @endif
 
                         <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                            {{ $entry->created_at?->format(config('app.country') === 'BR' ? 'd/m/Y H:i' : 'm/d/Y g:i A') }}
+                            {{ $entry->created_at?->appDateTime() }}
                         </p>
                     </div>
                 </li>

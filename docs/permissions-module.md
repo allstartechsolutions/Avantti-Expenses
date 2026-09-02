@@ -1,7 +1,7 @@
 # Permissions module — as built
 
 **Status: COMPLETE and deployed, 2026-08-21.** Engine E1–E4, eighteen module passes M1–M18,
-and three closing phases F0–F2. **All 33 areas and 170 abilities are enforced.** (30 and 147
+and three closing phases F0–F2. **All 33 areas and 172 abilities are enforced.** (30 and 147
 at the end of the sweep; the collaboration and procurement-assignment modules added the rest.)
 The legacy
 bridge that made the rollout possible has been deleted. Only **F3 — review and improvements**
@@ -16,7 +16,7 @@ know what to do about permissions, neither of these is the right file — read
 
 ## What the module is, in one page
 
-Three flat roles (`is_admin` / `is_manager`) became a catalogue of **33 areas and 170
+Three flat roles (`is_admin` / `is_manager`) became a catalogue of **33 areas and 172
 abilities**, granted four ways:
 
 | Granted on | Covers | Screen |
@@ -129,7 +129,7 @@ administrator deliberately emptied.
 It finishes by printing where the build is up to:
 
 ```
-Catalogue: 33 areas, 170 abilities. Swept: 33/33.
+Catalogue: 33 areas, 172 abilities. Swept: 33/33.
 Grants: 188 role, 121 template, 58 membership.
 ```
 

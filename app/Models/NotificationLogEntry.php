@@ -50,6 +50,9 @@ class NotificationLogEntry extends Model
     /** The response date passed and the round is still open. */
     public const QUOTATION_OVERDUE = 'quotation_overdue';
 
+    /** A morning's vendor document reminders — one row per person per day. */
+    public const VENDOR_DOCUMENT_EXPIRY = 'vendor_document_expiry';
+
     /** Every procurement trigger, in the order the settings screen lists them. */
     public const PROCUREMENT_KEYS = [
         self::REQUISITION_SUBMITTED,

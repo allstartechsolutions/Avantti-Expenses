@@ -34,3 +34,8 @@ Schedule::command('tasks:send-weekly-digest')->hourly()->withoutOverlapping()->s
 // a customer's server is otherwise completely silent.
 Schedule::command('procurement:notify-stalled')->dailyAt('07:05')->withoutOverlapping()->sentryMonitor();
 Schedule::command('procurement:notify-due')->dailyAt('07:10')->withoutOverlapping()->sentryMonitor();
+
+// Vendor document expiry (docs/vendor-document-expiry-plan.md §7). Four fixed
+// stages stamped on the document, one mail per person per morning, and the
+// notification log refuses a second copy the same day — a double run is safe.
+Schedule::command('vendors:notify-document-expiry')->dailyAt('07:15')->withoutOverlapping()->sentryMonitor();

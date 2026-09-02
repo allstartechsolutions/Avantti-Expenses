@@ -85,6 +85,8 @@ class OneOffUploadTest extends TestCase
     public function test_a_dropped_subcontractor_document_can_be_taken_back_off(): void
     {
         Storage::fake('local');
+        // The drop zone is the path an install without a bucket takes.
+        config(['documents.disk' => 'local']);
 
         // `company_name` is the legacy alias for the unified `name` column.
         $subcontractor = Subcontractor::create([
@@ -94,9 +96,9 @@ class OneOffUploadTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(SubcontractorShow::class, ['subcontractor' => $subcontractor])
-            // The documents tab, then the form inside it.
+            // The documents tab, then the upload dialog.
             ->set('activeTab', 'documents')
-            ->call('toggleUploadForm')
+            ->call('startUpload')
             ->set('document_file', UploadedFile::fake()->create('contrato.pdf', 20, 'application/pdf'))
             ->assertSee('contrato.pdf')
             ->call('clearDocumentFile')

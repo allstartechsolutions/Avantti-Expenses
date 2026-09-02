@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 class Vendor extends Model
 {
     use \App\Models\Concerns\DeletesVendorDocuments;
+    use \App\Models\Concerns\HasDocumentHealth;
 
     /**
      * Every table referencing vendors, by FK column. Any new table with a

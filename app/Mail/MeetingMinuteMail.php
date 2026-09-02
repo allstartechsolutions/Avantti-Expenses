@@ -34,9 +34,7 @@ class MeetingMinuteMail extends Mailable
             subject: __(':number — :title, :date', [
                 'number' => $this->meeting->number,
                 'title' => $this->meeting->title,
-                'date' => $this->meeting->meeting_date->format(
-                    config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'
-                ),
+                'date' => $this->meeting->meeting_date->appDate(),
             ]),
         );
     }

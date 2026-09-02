@@ -36,9 +36,7 @@ class QuotationDueSoonMail extends Mailable
             ])
             : __('Chase :number — responses due :date', [
                 'number' => $this->quotation->quotation_number,
-                'date' => $this->quotation->responses_due_at?->format(
-                    config('app.country') === 'BR' ? 'd/m/Y' : 'm/d/Y'
-                ),
+                'date' => $this->quotation->responses_due_at?->appDate(),
             ]));
     }
 

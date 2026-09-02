@@ -17,6 +17,9 @@ class SubcontractorIndex extends Component
     public $search = '';
     public $perPage = 10;
 
+    /** Filter on the documents badge: expired | expiring_soon | valid | none, or '' for everyone. */
+    public $documentHealth = '';
+
     // Delete modal
     public $showDeleteModal = false;
     public $deletingSubcontractorId = null;
@@ -24,10 +27,23 @@ class SubcontractorIndex extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'documentHealth' => ['except' => '', 'as' => 'documents'],
     ];
 
     public function updatingSearch()
     {
+        $this->resetPage();
+    }
+
+    public function updatingDocumentHealth()
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->documentHealth = '';
         $this->resetPage();
     }
 
@@ -98,9 +114,15 @@ class SubcontractorIndex extends Component
 
     public function render()
     {
+        $health = in_array($this->documentHealth, Subcontractor::documentHealthStates(), true)
+            ? $this->documentHealth
+            : null;
+
         $subcontractors = Subcontractor::query()
             ->with('createdBy')
             ->withCount(['contracts', 'paymentBatches'])
+            ->withDocumentHealth()
+            ->documentHealth($health)
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -114,6 +136,8 @@ class SubcontractorIndex extends Component
 
         return view('livewire.subcontractor.subcontractor-index', [
             'subcontractors' => $subcontractors,
+            'healthOptions' => collect(Subcontractor::documentHealthStates())
+                ->mapWithKeys(fn ($state) => [$state => Subcontractor::documentHealthLabel($state)]),
         ])->layout('components.layouts.app');
     }
 }

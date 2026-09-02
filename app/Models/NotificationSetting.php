@@ -34,6 +34,11 @@ class NotificationSetting extends Model
     public const QUOTATION_OVERDUE = 'quotation_overdue';
     public const QUOTATION_CANCELLED = 'quotation_cancelled';
 
+    // --- Vendors: compliance documents running out ---------------------------
+    // One switch for the whole sequence (30, 15, 7 days before, the day
+    // after); who receives it lives in `options.recipients`.
+    public const VENDOR_DOCUMENT_EXPIRY = 'vendor_document_expiry';
+
     /** Every task trigger, in the order the settings screen lists them. */
     public const KEYS = [self::TASK_CREATED, self::TASK_CLOSED, self::TASK_OVERDUE, self::TASK_WEEKLY_DIGEST];
 
@@ -50,6 +55,9 @@ class NotificationSetting extends Model
         self::QUOTATION_OVERDUE,
         self::QUOTATION_CANCELLED,
     ];
+
+    /** Every vendor trigger, in the order the settings screen lists them. */
+    public const VENDOR_KEYS = [self::VENDOR_DOCUMENT_EXPIRY];
 
     /**
      * How long a submitted requisition may wait before its approver is chased.
@@ -162,6 +170,20 @@ class NotificationSetting extends Model
         return max(1, (int) (static::optionsFor(self::QUOTATION_DUE_SOON)['lead_days'] ?? self::DEFAULT_DUE_LEAD_DAYS));
     }
 
+    /**
+     * The people chosen for the vendor document reminders. Empty means "fall
+     * back to everyone who may upload and renew vendor documents".
+     *
+     * @return array<int, int>
+     */
+    public static function vendorDocumentRecipientIds(): array
+    {
+        return array_values(array_map(
+            'intval',
+            (array) (static::optionsFor(self::VENDOR_DOCUMENT_EXPIRY)['recipients'] ?? []),
+        ));
+    }
+
     public static function label(string $key): string
     {
         return match ($key) {
@@ -179,6 +201,7 @@ class NotificationSetting extends Model
             self::QUOTATION_DUE_SOON => __('Quotation responses are due soon'),
             self::QUOTATION_OVERDUE => __('Quotation responses are past due'),
             self::QUOTATION_CANCELLED => __('A quotation round you were working on was cancelled'),
+            self::VENDOR_DOCUMENT_EXPIRY => __('A vendor document is expiring or has expired'),
             default => $key,
         };
     }
@@ -200,6 +223,7 @@ class NotificationSetting extends Model
             self::QUOTATION_DUE_SOON => __('Goes to the owner and collaborators before the response date, once, and again if the date moves.'),
             self::QUOTATION_OVERDUE => __('Goes to the owner and collaborators once the response date has passed and the round is still open.'),
             self::QUOTATION_CANCELLED => __('Goes to the owner and collaborators when a round is cancelled, so nobody keeps chasing vendors for it.'),
+            self::VENDOR_DOCUMENT_EXPIRY => __('One e-mail per morning listing every subcontractor document that reached a stage: 30, 15 and 7 days before its date, and the day after. Renewing or archiving a document stops its reminders.'),
             default => '',
         };
     }

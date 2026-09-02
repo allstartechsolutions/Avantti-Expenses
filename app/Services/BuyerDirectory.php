@@ -78,7 +78,7 @@ class BuyerDirectory
      * A guest is never a buyer: an outsider invited to answer one RFI has no
      * business being handed the company's purchasing.
      */
-    protected function activeStaff()
+    public function activeStaff()
     {
         return User::query()
             ->where('status', UserStatus::ACTIVE)

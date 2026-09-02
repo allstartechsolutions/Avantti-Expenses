@@ -233,6 +233,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('subcontractors/create', SubcontractorCreate::class)
         ->middleware('ability:vendors.create')->name('subcontractors.create');
     Route::get('subcontractors/{subcontractor}', SubcontractorShow::class)->name('subcontractors.show');
+    // Legacy files and uploaded ones alike; the vendor in the URL is checked against the document.
+    Route::get('subcontractors/{subcontractor}/documents/{document}/download', [\App\Http\Controllers\SubcontractorDocumentController::class, 'download'])
+        ->middleware('ability:vendors.view')
+        ->name('subcontractors.documents.download');
     Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)
         ->middleware('ability:vendors.edit')->name('subcontractors.edit');
 

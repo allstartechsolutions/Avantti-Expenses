@@ -54,13 +54,27 @@
                     </div>
                 </div>
 
+                <!-- Documents filter -->
+                <div class="w-full md:w-auto">
+                    <label for="documentHealth" class="sr-only">{{ __('Filter by documents') }}</label>
+                    <select
+                        id="documentHealth"
+                        wire:model.live="documentHealth"
+                        class="block w-full md:w-56 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]">
+                        <option value="">{{ __('Documents: all') }}</option>
+                        @foreach($healthOptions as $state => $label)
+                            <option value="{{ $state }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Clear Filters -->
-                @if($search)
+                @if($search || $documentHealth)
                     <x-ui.button
                         variant="secondary"
-                        wire:click="$set('search', '')"
+                        wire:click="clearFilters"
                         icon="x">
-                        {{ __('Clear Search') }}
+                        {{ __('Clear Filters') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -88,6 +102,9 @@
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Location') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                {{ __('Documents') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Actions') }}
@@ -145,9 +162,16 @@
                                         @if($subcontractor->city || $subcontractor->state)
                                             {{ $subcontractor->city }}{{ $subcontractor->city && $subcontractor->state ? ', ' : '' }}{{ $subcontractor->state }}
                                         @else
-                                            N/A
+                                            {{ __('N/A') }}
                                         @endif
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <x-vendor.document-health
+                                        :state="$subcontractor->document_health"
+                                        :expired="$subcontractor->expired_documents_count"
+                                        :expiring="$subcontractor->expiring_documents_count"
+                                        mode="full" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
@@ -197,20 +221,24 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                    @if($search)
+                    @if($search || $documentHealth)
                         {{ __('No subcontractors found') }}
                     @else
                         {{ __('No subcontractors yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    @if($search)
+                    @if($search && $documentHealth)
+                        {{ __('No subcontractor matches both the search and the documents filter.') }}
+                    @elseif($documentHealth)
+                        {{ __('No subcontractor is in that documents state right now.') }}
+                    @elseif($search)
                         {{ __('Try adjusting your search terms.') }}
                     @else
                         {{ __('Get started by adding a new subcontractor.') }}
                     @endif
                 </p>
-                @if(!$search)
+                @if(!$search && !$documentHealth)
                     <div class="mt-6">
                         <x-ui.button
                             variant="primary"

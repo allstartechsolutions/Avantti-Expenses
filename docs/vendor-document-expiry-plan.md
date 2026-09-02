@@ -1,7 +1,7 @@
 # Vendor Documents — Renewal, Expiry Badges and Reminder E-mails
 
-Implementation plan, written 2 Sep 2026. Status: **planned, not built** (phase 1 status fix
-landed the same day, see §9).
+Implementation plan, written 2 Sep 2026. Status: **built and reviewed** on branch
+`vendor-document-expiry` (see §9); only the owner's screen walk remains.
 
 ## 1. Why
 
@@ -52,8 +52,10 @@ is_active   boolean default true
 ```
 
 A retired type disappears from the upload picker but keeps every document already filed
-under it. The seeder switches to *add-only* (`firstOrCreate` by name): it may add the
-Brazilian list on a BR install, it never renames or removes a row that exists. The BR list
+under it. The seeder switches to *add-only*, keyed by a stable `document_types.key` rather
+than the name the screen can change: it may add the Brazilian list on a BR install, it never
+renames or removes a row that exists, and (once, from migration `130006`) it retires the
+other country's types that hold no documents. The BR list
 (to confirm with the owner before seeding): CND Federal, CND Estadual, CND Municipal, CRF do
 FGTS, CNDT (Trabalhista), Alvará de Funcionamento, Contrato Social, Apólice de Seguro RC,
 PCMSO/PGR. Seeded names get both lang entries so the picker translates; a custom name typed
@@ -165,28 +167,164 @@ edit in a `2xl` dialog. Guarded by `settings.view` / `settings.edit`.
 ## 8. Phases (one page at a time, tested before the next)
 
 1. **Status fix** — done 2 Sep 2026: signed-diff bug, constant, translated labels.
-2. **Data + permissions** — migrations §3, abilities §5 with the reproduce-first seed,
-   model scopes and `renew()` / `archive()`, permission test.
-3. **Vendor detail documents section** — §6.1, pt_BR in the same change.
-4. **Badges** — vendor header + index column + filter, §6.2.
-5. **Reminders** — settings section §6.3, notifier, mail, command, schedule, tests for the
-   four stages and the stop-on-renew rule.
-6. **Document Types screen + country-aware seeder** — §6.4 and §3.2. Owner confirms the BR
-   list first.
-7. **Review and Improvements** — the standard closing phase: code review of the whole
-   module, screen walk in both themes / locales / phone, docs level with what shipped,
-   backlog in `docs/review-and-improvements.md` worked.
+2. **Data + permissions** — done 2 Sep 2026: migrations §3, abilities §5 with the
+   reproduce-first grant, model scopes and lifecycle, guards, file guard, permission test.
+3. **Vendor detail documents section** — done 2 Sep 2026: §6.1 as built (see §9).
+4. **Badges** — done 2 Sep 2026: vendor header + index column + filter (see §9).
+5. **Reminders** — done 2 Sep 2026: settings section §6.3, notifier, mail, command,
+   schedule, per-user opt-out, tests (see §9).
+6. **Document Types screen + country-aware seeder** — done 2 Sep 2026; BR list confirmed by
+   the owner the same day (see §9).
+7. **Review and Improvements** — code review done 2 Sep 2026 (see §9); docs level
+   (`docs/vendor-documents.md`, changelog, backlog V1–V7 in
+   `docs/review-and-improvements.md`); **the screen walk in both themes / locales / phone is
+   the owner's**, nothing here was viewed in a browser.
 
 ## 9. Already done (2 Sep 2026)
 
-- `SubcontractorDocument::getStatusAttribute()` compares against `today + 30` on whole days;
-  `EXPIRING_SOON_DAYS` constant; labels through `__()` with `Document expired` /
-  `Document expiring soon` / `Document valid` in `en.json` and `pt_BR.json`
-  (Vencido / Vencendo em breve / Válido — masculine, *documento*).
+**Phase 1** — the expiry accessor compares against `today + 30` on whole days;
+`EXPIRING_SOON_DAYS` constant; labels through `__()` with `Document expired` /
+`Document expiring soon` / `Document valid` in `en.json` and `pt_BR.json`
+(Vencido / Vencendo em breve / Válido — masculine, *documento*).
+
+**Phase 2** — branch `vendor-document-expiry`:
+
+- Migrations `2026_09_02_130000` (lifecycle + reminder stamps on `subcontractor_documents`),
+  `130001` (`document_types.is_active`) and `130002` (the grant). Run on the local database.
+- `SubcontractorDocument`: `status` is now the **lifecycle** column (`active` /
+  `superseded` / `archived`); the derived expiry moved to `expiry_status`,
+  `expiry_status_label`, `expiry_status_color`, `days_until_expiry`. Scopes `active()`,
+  `requiringExpiry()`, `expired()`, `expiringWithin()`. `supersedeWith()`, `archive()`,
+  `reactivate()`. `DocumentType::active()`.
+- `vendors.renew_documents` and `vendors.archive_documents` (sensitive) declared. Catalogue is
+  now 33 areas / **172** abilities.
+- `SubcontractorShow`: `uploadDocument()` guarded by `renew_documents` (it had **no guard**
+  before — any `vendors.view` holder could upload), `deleteDocument()` by `vendors.delete`
+  (also unguarded before). New server actions `startRenewal()`, `startArchive()`,
+  `archiveDocument()`, `cancelArchive()`, `reactivateDocument()`; the upload picker only
+  offers active types; a renewal keeps the old document's type whatever the browser sends.
+  **The buttons for these arrive in phase 3** — the methods exist so the abilities guard
+  something real from the first commit.
+- `FileController::authorizeFile()` now claims `subcontractor-documents/` for `vendors.view`;
+  an unclaimed path is a 404. It fell through to "signed in" before.
+- `tests/Feature/Permissions/VendorDocumentsTest.php` — 14 tests: catalogue, fresh seed,
+  the grant migration (idempotent, roles and per-person overrides), reader cannot upload,
+  renew chain keeps type, cross-vendor id refused, retired type refused, archive needs its
+  own grant and records who/why, superseded cannot be renewed or archived, delete answers to
+  `vendors.delete`, file served on view and refused without, the 30-day line.
+
+**Phase 3** — the Documents tab of the subcontractor page, rebuilt:
+
+- **Required documents** card on top: one tile per active type that requires a date, with
+  the state (Missing / Expired / Expiring Soon / Valid), the date and "expires in N days" /
+  "expired N days ago", and an Upload or Renew shortcut where the holder may act.
+- **Documents** card: summary counts (active / expiring / expired / in history), then one
+  block per type: heading with the worst active state, a table of the active documents
+  (file, size, notes, what it replaced; expiry date + countdown; state chip; uploaded by /
+  on; Download · History · Renew · Archive · Delete), and an **Archived** list per type.
+  **History is per document** (the owner's correction, 2 Sep 2026: a dialog, and one chain
+  per document — two policies of the same type must not share a history): `chainOf()` walks
+  the "replaced by" pointers up to the head and down through every predecessor; the button
+  carries the version count. Superseded rows are reached only through History.
+- **Upload / Renew** is a `2xl` dialog (was an inline form). Renewing shows a banner naming
+  the document being replaced and locks the type. **Archive** is a small dialog with a
+  required reason. Both follow the page's existing "modal rendered while its flag is set"
+  pattern with explicit Cancel buttons.
+- Buttons appear only with the matching ability (`@can` on top of the server guards).
+  Every string through `__()`, pt_BR added, dates through the macros. Two render tests
+  cover every state and the reader's view.
+- Not in this phase: the **header badge** on the vendor page and the index column (phase 4).
+
+**Phase 4** — badges:
+
+- `App\Models\Concerns\HasDocumentHealth` on `Subcontractor` and `Vendor`:
+  `withDocumentHealth()` (three `withCount` sub-selects: expired, expiring, tracked),
+  `documentHealth($state)` filter scope, `document_health` accessor (`expired` >
+  `expiring_soon` > `valid` > `none`) that reads the loaded counts or falls back to the
+  database, and `documentHealthLabel()`.
+- `<x-vendor.document-health>` blade component: chip with icon, label and a tooltip of the
+  counts; `mode="quiet"` shows nothing when all is current (lists), `mode="full"` always.
+- Subcontractor **index**: a Documents column (full mode), a *Documents: all / expired /
+  expiring soon / current / no dated documents* filter carried in the query string as
+  `documents=`, a Clear Filters button, and empty states that name which filter emptied the
+  list. An unknown filter value is ignored. Tested to add no query per row.
+- Subcontractor **detail header**: the same chip beside the company name, clickable to jump
+  to the Documents tab.
+- Supplier screens are untouched: documents are a subcontractor feature.
+
+**Phase 5** — reminders:
+
+- `App\Services\VendorDocumentNotifier::sendExpiryReminders()`: four fixed stages
+  (`STAGES` 30/15/7 → `notified_*_at`, `EXPIRED_STAGE` → `notified_expired_at`), "on or
+  before" so a missed morning is caught the next one; a document inside several windows is
+  listed once under the tightest stage and every passed stage is stamped; stamps written
+  whether or not anybody could be mailed. One `VendorDocumentExpiryMail` per recipient per
+  morning (window `digest:<date>` in `notification_log`, so a double run mails nobody twice),
+  grouped by vendor with links to each vendor page and to the index pre-filtered.
+- Recipients: `NotificationSetting::vendorDocumentRecipientIds()` from
+  `options.recipients`, else `BuyerDirectory::holdersOf('vendors.renew_documents', null)`
+  (active, non-guest). Personal opt-out through the existing `wantsNotification()`.
+- Key `vendor_document_expiry` (`NotificationSetting::VENDOR_KEYS`) — no migration: an
+  unknown key is "on" and the screen `firstOrCreate`s the row on first save.
+- `vendors:notify-document-expiry` scheduled `dailyAt('07:15')`.
+- System Settings › Notification Settings: a **Vendor E-mails** card with the switch and a
+  **Who receives the reminders** checkbox grid of active staff; empty shows the fallback
+  names, or an amber warning when nobody holds the ability. Guests and inactive people are
+  refused on save. (Note: `Rule::exists()->where('is_guest', false)` fails on sqlite —
+  the verifier binds `false` as an empty string — so the rule uses `0`.)
+- Profile › Notifications gains a *Vendors* group with the one switch.
+- `tests/Feature/Permissions/VendorDocumentRemindersTest.php` — 11 tests.
+
+**Phase 6** — document types:
+
+- `DocumentTypeSeeder` is **add-only**, keyed (`us.w9`, `br.cnd_federal`, `other`) and
+  **country-aware**: `typesFor('US')` is the original eight, `typesFor('BR')` the nine
+  certidões plus *Other*. Migration `130004` adds the key and seeds; `130006` claims keys for
+  rows from either list and retires the other country's types that hold no documents, once
+  (the owner did not want W9 and friends on the BR install). A type holding documents stays
+  active; the screen retires or reactivates anything after that. `130003` never shipped.
+- System Settings › **Document Types** tab (`SystemSettings\DocumentTypeSettings`): name,
+  description, requires-expiration, sort order, active, and the count of documents filed
+  under each. Create/edit in an `lg` dialog. **Retire / Reactivate** on every row; **Delete**
+  only when nothing was ever filed under the type (the trash icon is greyed with a tooltip
+  otherwise, and the server refuses it regardless). `settings.view` to look,
+  `settings.edit` for every action.
+- Seeded names and descriptions are translated on display through `__()`; every seeded
+  string has both lang entries, and a test fails if a future seeded row lacks one. A custom
+  name typed on the screen shows as typed.
+- `tests/Feature/Permissions/DocumentTypeSettingsTest.php` — 5 tests.
+
+**Phase 7** — the code review (14 confirmed findings, all fixed the same day):
+
+| Finding | Fix |
+|---|---|
+| Digest crashed for every recipient when a candidate's vendor had lost `is_subcontractor` (scoped relation → null), and stamped the stages anyway | `requiringExpiry()` requires the owning vendor to be flagged; the mail uses the unscoped `vendor()` relation and is null-safe |
+| Deleting an active renewal left its predecessor stuck as superseded | `deleting` hook restores the predecessor to active |
+| Renewing under a retired type always failed validation | Renewals validate the type's existence only; first filings still need a live type |
+| Stages stamped even when every delivery failed | Stamped unless `sent === 0 && failures > 0` |
+| Unique rule saw the untrimmed name | Trimmed before validating |
+| Required card ignored retired types; badge, filter and reminders counted them | Retired types are out of the watch everywhere (`requiringExpiry()`, `expiry_status`); the page marks the group *Retired type* |
+| Undated document under a dated type read as valid and could be the Renew target | New `undated` state, ranked between expiring and valid; the shortcut targets the soonest dated document |
+| Seeder keyed by a renameable name | `document_types.key`; migration `130004`; pre-key rows claimed by name once; `130003` emptied |
+| `whereDate()` defeated the indexes; `whereHas` nested `EXISTS` per row | Plain comparisons and `whereIn` sub-selects; "before the day after" upper bound for sqlite |
+| Third copy of `send()`; dead `usesFallbackRecipients()` | Dead method removed; the copy is V1 in the backlog (a deliberate decision, not an oversight) |
+| Stamps never shown on the page | `reminded_stages` line under the status chip |
+| `toggleUploadForm()` dead and unguarded | Removed |
+| Expiry precedence written in several places | `SubcontractorDocument::worstExpiry()` |
+| Active-staff predicate written three times | `BuyerDirectory::activeStaff()` made public and reused |
+| Tests hard-coded seeded counts under the `APP_COUNTRY=US` pin | Country-agnostic names; seeder tests clear the table first |
+
+**V2 (same day)** — new files through the shared upload path (`file_upload_id`), legacy
+`file_path` rows untouched, one download route for both, drop-zone fallback without a
+bucket, orphans pruned. See `docs/vendor-documents.md` › *Where the file is*.
+
+**What moved on production, in one line:** uploading a vendor document now needs
+`vendors.renew_documents` (granted to every role and override holding `vendors.edit`), and
+deleting one needs `vendors.delete` — both were open to anyone who could open the page.
 
 ## 10. Open questions for the owner
 
-- Confirm the Brazilian document type list in §3.2 before it is seeded.
+- ~~Confirm the Brazilian document type list in §3.2 before it is seeded.~~ Confirmed 2 Sep 2026.
 - Should the vendor index badge also count documents of types that do **not** require
   expiry but carry a date anyway? Plan says no: only required types drive badges and mails.
 - Later: blocking POs / contracts on an expired required document (declined for now).
