@@ -11,12 +11,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A change to the work agreed with the client, at project or job site level.
  *
- * It carries two sides with independent amounts:
- *  - `amount` is the revenue side: what the client is now billed. Every change
- *    order counts towards it, whatever its status, which is what the contract
- *    value rollups have always done.
+ * It carries two sides with independent amounts, and since 1 Sep 2026 both
+ * wait for the same signal:
+ *  - `amount` is the revenue side: what the client is now billed. **Only an
+ *    approved change order counts towards the contract value.** It used to
+ *    count whatever its status, which meant an offer the client had rejected
+ *    still moved the project's contract value and its profit.
  *  - `items` are the cost side: what the change does to each cost code's
  *    budget. Only an approved change order revises the budget.
+ *
+ * What is still awaiting a decision is reported beside the contract value, by
+ * `Project::getPendingChangeOrdersTotal()` and its job-site twin — held back
+ * from the total, never hidden from the screen.
  *
  * The difference between the two is the margin on the change. It is shown,
  * never enforced — a change order sold at a loss is a fact, not a validation
@@ -148,6 +154,29 @@ class ChangeOrder extends Model
     // =========================================================================
     // STATUS
     // =========================================================================
+
+    /**
+     * The status as a person reads it. The stored value is never printed —
+     * `draft` is not a word this product shows anybody, and pt_BR needs its
+     * own. The static form labels a filter value or a report row where there
+     * is no instance to ask. An aditivo is masculine, so the shared masculine
+     * status words are the right ones.
+     */
+    public function getStatusLabel(): string
+    {
+        return static::statusLabel($this->status);
+    }
+
+    public static function statusLabel(?string $value): string
+    {
+        return match ($value) {
+            self::STATUS_DRAFT => __('Draft'),
+            self::STATUS_PENDING => __('Pending'),
+            self::STATUS_APPROVED => __('Approved'),
+            self::STATUS_REJECTED => __('Rejected'),
+            default => (string) $value,
+        };
+    }
 
     public function isDraft(): bool
     {

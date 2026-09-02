@@ -754,19 +754,23 @@ trait ManagesChangeOrders
     /**
      * Headline figures for the cards above the list: what the client is billed,
      * what it costs, and what is still waiting on a decision.
+     *
+     * `approved_revenue` is what the "Billed to the Client" card shows, so it
+     * cannot disagree with the contract value on the financial report — only an
+     * approved change order reaches either. `count` is every record on the
+     * screen, which is what the card compares itself against to say how many
+     * were raised but are not counted.
      */
     protected function changeOrderSummary(Collection $changeOrders): array
     {
         $approved = $changeOrders->where('status', ChangeOrder::STATUS_APPROVED);
         $awaiting = $changeOrders->whereIn('status', [ChangeOrder::STATUS_DRAFT, ChangeOrder::STATUS_PENDING]);
 
-        $revenue = round($changeOrders->sum('amount'), 2);
         $approvedRevenue = round($approved->sum('amount'), 2);
         $approvedCost = round($approved->sum('cost_impact'), 2);
 
         return [
             'count' => $changeOrders->count(),
-            'revenue' => $revenue,
             'approved_count' => $approved->count(),
             'approved_revenue' => $approvedRevenue,
             'approved_cost' => $approvedCost,

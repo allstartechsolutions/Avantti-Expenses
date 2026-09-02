@@ -117,6 +117,9 @@ grid, with a one-click "allocate now" action. No guessing on production data.
 2. Revenue rollups (`getAdjustedContractValue`, the financial reports) keep summing `amount`
    for **every** change order regardless of status — exactly as today, so no live project
    number moves when this ships. Status gates the **cost** side only.
+   **Superseded 1 Sep 2026:** status now gates the revenue side too — only an approved change
+   order reaches the contract value. See
+   `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
 3. A cost line may point at any code in that location's budget; a CO on a job site can only
    use that job site's budget codes; a project-level CO uses the project budget codes.
 4. Cost lines are **not** required to add up to the revenue amount — the gap is the margin,
@@ -351,7 +354,8 @@ to **pending**: the cost lines are recorded and reach the budget when someone ap
 Approving stamps `approved_by` and `approved_at`.
 
 The client contract value still counts every change order, whatever its status — unchanged
-from before this work.
+from before this work. **Superseded 1 Sep 2026:** only approved change orders count. See
+`docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
 
 ### The list
 

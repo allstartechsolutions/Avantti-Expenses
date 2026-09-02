@@ -75,14 +75,54 @@ class Project extends Model implements PermissionScope
     }
 
     /**
-     * Current contract value including all change orders (both project-level
-     * and jobsite-level, signed). Returns dollars.
+     * Current contract value: the base plus the change orders the client has
+     * agreed to, project-level and jobsite-level together, signed.
+     *
+     * **Only an approved change order counts.** A draft is unfinished, a
+     * pending one is an offer the client has not answered, and a rejected one
+     * is an offer they turned down — none of the three has changed what this
+     * project is worth, and letting them move the contract value made the
+     * profit figure react to a change order that was refused. This is the same
+     * rule the cost side has always used (`ChangeOrder::scopeApproved`), so
+     * both halves of a change order now land together.
+     *
+     * What is still awaiting a decision is not lost — it is reported beside
+     * the contract value by `getPendingChangeOrdersTotal()`.
      */
     public function getAdjustedContractValue(): float
     {
-        $changeOrdersTotal = round($this->changeOrders()->sum('amount') / 100, 2);
+        return round($this->getContractValue() + $this->getApprovedChangeOrdersTotal(), 2);
+    }
 
-        return round($this->getContractValue() + $changeOrdersTotal, 2);
+    /**
+     * The change orders that revise the contract value, in dollars. Signed.
+     */
+    public function getApprovedChangeOrdersTotal(): float
+    {
+        if ($this->relationLoaded('changeOrders')) {
+            return round($this->changeOrders
+                ->where('status', ChangeOrder::STATUS_APPROVED)
+                ->sum(fn (ChangeOrder $co) => (int) $co->getRawOriginal('amount')) / 100, 2);
+        }
+
+        return round($this->changeOrders()->approved()->sum('amount') / 100, 2);
+    }
+
+    /**
+     * Raised but not yet decided (draft or pending), in dollars. Signed.
+     *
+     * Shown next to the contract value so nobody has to wonder where a change
+     * order they filed went. Never added into it.
+     */
+    public function getPendingChangeOrdersTotal(): float
+    {
+        if ($this->relationLoaded('changeOrders')) {
+            return round($this->changeOrders
+                ->whereIn('status', [ChangeOrder::STATUS_DRAFT, ChangeOrder::STATUS_PENDING])
+                ->sum(fn (ChangeOrder $co) => (int) $co->getRawOriginal('amount')) / 100, 2);
+        }
+
+        return round($this->changeOrders()->pendingDecision()->sum('amount') / 100, 2);
     }
 
     /**

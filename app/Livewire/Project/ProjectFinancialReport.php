@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\ChangeOrder;
 use App\Models\Project;
 use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
@@ -27,10 +28,13 @@ class ProjectFinancialReport extends Component
 
     public function getFinancialsProperty(): array
     {
-        // Revenue: base contract value + all change orders (signed, project + jobsite level)
+        // Revenue: base contract value + the approved change orders (signed,
+        // project + jobsite level). Draft, pending and rejected ones do not
+        // move it; what is still awaiting a decision is reported beside it.
         $contractValue = $this->project->getAdjustedContractValue();
         $baseContractValue = $this->project->getContractValue();
         $changeOrdersTotal = round($contractValue - $baseContractValue, 2);
+        $pendingChangeOrdersTotal = $this->project->getPendingChangeOrdersTotal();
 
         // Cost: expenses (includes jobsite-level and PO-converted; sum via accessor returns dollars)
         $expenses = $this->project->expenses;
@@ -52,6 +56,7 @@ class ProjectFinancialReport extends Component
         return [
             'base_contract_value' => $baseContractValue,
             'change_orders_total' => $changeOrdersTotal,
+            'pending_change_orders_total' => $pendingChangeOrdersTotal,
             'contract_value' => $contractValue,
             'total_expenses' => $totalExpenses,
             'expenses_count' => $expenses->count(),
@@ -67,8 +72,9 @@ class ProjectFinancialReport extends Component
     {
         $rows = [];
 
-        // Project-level row (resources with job_site_id IS NULL)
-        $projectLevelChangeOrders = $this->project->projectLevelChangeOrders()->sum('amount');
+        // Project-level row (resources with job_site_id IS NULL). Approved
+        // change orders only, matching the headline cards.
+        $projectLevelChangeOrders = $this->project->projectLevelChangeOrders()->approved()->sum('amount');
         $projectLevelExpenses = $this->project->projectLevelExpenses->sum('total_amount');
 
         $projectLevelContracts = $this->project->projectLevelContracts()->with(['changeOrders', 'payments'])->get();
@@ -100,8 +106,7 @@ class ProjectFinancialReport extends Component
 
         // One row per jobsite
         foreach ($this->project->jobSites as $jobSite) {
-            $jsCoTotal = $jobSite->changeOrders()->sum('amount');
-            $jsContractValue = round((float) $jobSite->job_amount + ($jsCoTotal / 100), 2);
+            $jsContractValue = $jobSite->getAdjustedContractValue();
 
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
@@ -180,14 +185,20 @@ class ProjectFinancialReport extends Component
                     'scope' => $co->jobSite?->job_site_name ?? __('Project-level'),
                     'cost' => (float) $co->cost_impact,
                     'status' => $co->status,
+                    'status_label' => $co->getStatusLabel(),
                     'amount' => (float) $co->amount,
                 ];
-            })
-            ->all();
+            });
 
+        // Split, so the breakdown can add up the ones that count and still
+        // account for the ones that do not. A change order that vanished from
+        // the report would be read as a change order that was lost.
         return [
             'base_lines' => $baseLines,
-            'change_orders' => $changeOrders,
+            'change_orders' => $changeOrders
+                ->where('status', ChangeOrder::STATUS_APPROVED)->values()->all(),
+            'uncounted_change_orders' => $changeOrders
+                ->where('status', '!=', ChangeOrder::STATUS_APPROVED)->values()->all(),
         ];
     }
 

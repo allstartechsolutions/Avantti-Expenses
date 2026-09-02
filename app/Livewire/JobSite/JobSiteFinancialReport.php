@@ -3,6 +3,7 @@
 namespace App\Livewire\JobSite;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\ChangeOrder;
 use App\Models\JobSite;
 use App\Services\CostCodeLedger;
 use App\Services\PaymentScheduleService;
@@ -23,10 +24,13 @@ class JobSiteFinancialReport extends Component
 
     public function getFinancialsProperty(): array
     {
-        // Revenue: base (job_amount) + jobsite-level change orders
-        $baseContractValue = (float) $this->jobSite->job_amount;
-        $changeOrdersTotal = round($this->jobSite->changeOrders()->sum('amount') / 100, 2);
-        $contractValue = round($baseContractValue + $changeOrdersTotal, 2);
+        // Revenue: base (job_amount) + the jobsite-level change orders the
+        // client has approved. What is still awaiting a decision is reported
+        // separately so the screen can show it without counting it.
+        $baseContractValue = $this->jobSite->getContractValue();
+        $changeOrdersTotal = $this->jobSite->getApprovedChangeOrdersTotal();
+        $pendingChangeOrdersTotal = $this->jobSite->getPendingChangeOrdersTotal();
+        $contractValue = $this->jobSite->getAdjustedContractValue();
 
         // Cost: expenses scoped to this jobsite
         $expenses = $this->jobSite->expenses;
@@ -47,6 +51,7 @@ class JobSiteFinancialReport extends Component
         return [
             'base_contract_value' => $baseContractValue,
             'change_orders_total' => $changeOrdersTotal,
+            'pending_change_orders_total' => $pendingChangeOrdersTotal,
             'contract_value' => $contractValue,
             'total_expenses' => $totalExpenses,
             'expenses_count' => $expenses->count(),
@@ -90,12 +95,18 @@ class JobSiteFinancialReport extends Component
                 'title' => $co->title,
                 'cost' => (float) $co->cost_impact,
                 'status' => $co->status,
+                'status_label' => $co->getStatusLabel(),
                 'amount' => (float) $co->amount,
-            ])
-            ->all();
+            ]);
 
+        // Split, so the breakdown can add up the ones that count and still
+        // account for the ones that do not. A change order that vanished from
+        // the report would be read as a change order that was lost.
         return [
-            'change_orders' => $changeOrders,
+            'change_orders' => $changeOrders
+                ->where('status', ChangeOrder::STATUS_APPROVED)->values()->all(),
+            'uncounted_change_orders' => $changeOrders
+                ->where('status', '!=', ChangeOrder::STATUS_APPROVED)->values()->all(),
         ];
     }
 

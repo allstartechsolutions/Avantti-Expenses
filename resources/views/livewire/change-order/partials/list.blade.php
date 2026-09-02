@@ -11,12 +11,6 @@
         'approved' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
         'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     ];
-    $statusLabels = [
-        'draft' => __('Draft'),
-        'pending' => __('Pending'),
-        'approved' => __('Approved'),
-        'rejected' => __('Rejected'),
-    ];
 @endphp
 
 @if($changeOrders->count() > 0)
@@ -73,7 +67,7 @@
                             @endif
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusStyles[$changeOrder->status] ?? $statusStyles['draft'] }}">
-                                    {{ $statusLabels[$changeOrder->status] ?? $changeOrder->status }}
+                                    {{ $changeOrder->getStatusLabel() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $changeOrder->amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">

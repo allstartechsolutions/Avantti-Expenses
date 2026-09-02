@@ -12,10 +12,14 @@
 
     <!-- Summary Cards -->
     @php
-        $totalContractValue = $jobSite->job_amount + $totalChangeOrdersAmount;
+        // Approved change orders only — a draft, an offer the client has not
+        // answered, and one they turned down have not changed what this job
+        // site is worth. The pending figure is shown below, never added in.
+        $totalContractValue = $contractValue;
         $profitLoss = $totalContractValue - $totalExpensesAmount - $totalContractsAdjusted;
         $isProfit = $profitLoss >= 0;
         $cardBgClass = $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600';
+        $signedMoney = fn ($value) => ((float) $value >= 0 ? '+' : '') . Number::currency((float) $value, config('app.currency'), config('app.locale'));
     @endphp
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         <!-- Total Contract Value Card -->
@@ -31,7 +35,18 @@
                     </svg>
                 </div>
             </div>
-            <p class="mt-4 text-sm text-white/80">{{ __('Job Amount') }} + {{ trans_choice(':count change order|:count change orders', $changeOrders->count(), ['count' => $changeOrders->count()]) }}</p>
+            <p class="mt-4 text-sm text-white/80">
+                {{ __('Job Amount') }} + {{ trans_choice(':count approved change order|:count approved change orders', $approvedChangeOrdersCount, ['count' => $approvedChangeOrdersCount]) }}
+            </p>
+            @if ($pendingChangeOrdersCount > 0)
+                <p class="mt-1 text-sm text-white/70">
+                    {{ trans_choice(
+                        ':count change order awaiting a decision (:amount, not counted)|:count change orders awaiting a decision (:amount, not counted)',
+                        $pendingChangeOrdersCount,
+                        ['count' => $pendingChangeOrdersCount, 'amount' => $signedMoney($pendingChangeOrdersAmount)]
+                    ) }}
+                </p>
+            @endif
         </div>
 
         <!-- Total Expenses Card -->

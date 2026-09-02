@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChangeOrder;
 use App\Models\Company;
 use App\Models\JobSite;
 use App\Services\CostCodeLedger;
@@ -35,9 +36,11 @@ class JobSiteFinancialReportPdfController extends Controller
     {
         $jobSite->load(['project.client', 'supervisor']);
 
-        $baseContractValue = (float) $jobSite->job_amount;
-        $changeOrdersTotal = round($jobSite->changeOrders()->sum('amount') / 100, 2);
-        $contractValue = round($baseContractValue + $changeOrdersTotal, 2);
+        // Approved change orders only — the same rule as the screen.
+        $baseContractValue = $jobSite->getContractValue();
+        $changeOrdersTotal = $jobSite->getApprovedChangeOrdersTotal();
+        $pendingChangeOrdersTotal = $jobSite->getPendingChangeOrdersTotal();
+        $contractValue = $jobSite->getAdjustedContractValue();
 
         $expensesCollection = $jobSite->expenses()
             ->with('supplier:id,name')
@@ -61,7 +64,7 @@ class JobSiteFinancialReportPdfController extends Controller
 
         $profit = round($contractValue - $totalExpenses - $contractsAdjusted, 2);
 
-        $changeOrders = $jobSite->changeOrders()
+        $changeOrderRows = $jobSite->changeOrders()
             ->with('items')
             ->orderBy('requested_date')
             ->get()
@@ -70,9 +73,16 @@ class JobSiteFinancialReportPdfController extends Controller
                 'title' => $co->title,
                 'cost' => (float) $co->cost_impact,
                 'status' => $co->status,
+                'status_label' => $co->getStatusLabel(),
                 'amount' => (float) $co->amount,
-            ])
-            ->all();
+            ]);
+
+        // Split, so the breakdown adds up the ones that count and still
+        // accounts for the ones that do not.
+        $changeOrders = $changeOrderRows
+            ->where('status', ChangeOrder::STATUS_APPROVED)->values()->all();
+        $uncountedChangeOrders = $changeOrderRows
+            ->where('status', '!=', ChangeOrder::STATUS_APPROVED)->values()->all();
 
         $ledger = $jobSite->budget ? CostCodeLedger::for($jobSite->budget) : null;
 
@@ -82,6 +92,7 @@ class JobSiteFinancialReportPdfController extends Controller
             'financials' => [
                 'base_contract_value' => $baseContractValue,
                 'change_orders_total' => $changeOrdersTotal,
+                'pending_change_orders_total' => $pendingChangeOrdersTotal,
                 'contract_value' => $contractValue,
                 'total_expenses' => $totalExpenses,
                 'expenses_count' => $expensesCollection->count(),
@@ -92,6 +103,7 @@ class JobSiteFinancialReportPdfController extends Controller
                 'profit' => $profit,
             ],
             'changeOrders' => $changeOrders,
+            'uncountedChangeOrders' => $uncountedChangeOrders,
             'expenses' => $expensesCollection,
             'contracts' => $contractsCollection,
             'costCodes' => [

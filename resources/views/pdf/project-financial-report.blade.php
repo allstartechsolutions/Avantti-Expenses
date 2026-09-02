@@ -74,7 +74,10 @@
                 <div style="font-size: 6.5pt; color: #888; margin-top: 2px;">
                     {{ __('Base') }}: ${{ number_format($financials['base_contract_value'], 2) }}
                     @if($financials['change_orders_total'] != 0)
-                        · {{ $financials['change_orders_total'] >= 0 ? '+' : '' }}${{ number_format($financials['change_orders_total'], 2) }} CO
+                        · {{ $financials['change_orders_total'] >= 0 ? '+' : '' }}${{ number_format($financials['change_orders_total'], 2) }} {{ __('approved CO') }}
+                    @endif
+                    @if($financials['pending_change_orders_total'] != 0)
+                        <br>{{ __(':amount awaiting a decision, not counted', ['amount' => ($financials['pending_change_orders_total'] >= 0 ? '+' : '') . '$' . number_format($financials['pending_change_orders_total'], 2)]) }}
                     @endif
                 </div>
             </td>
@@ -125,15 +128,12 @@
                 <td style="border: 1px solid #ddd; padding: 4px 8px; text-align: right; font-weight: bold;">${{ number_format($financials['base_contract_value'], 2) }}</td>
             </tr>
 
-            <tr><td colspan="3" style="border: 1px solid #ddd; padding: 4px 8px; background-color: #fafafa; font-weight: bold; color: #555;">{{ __('Change Orders') }}</td></tr>
+            <tr><td colspan="3" style="border: 1px solid #ddd; padding: 4px 8px; background-color: #fafafa; font-weight: bold; color: #555;">{{ __('Approved Change Orders') }}</td></tr>
             @forelse($revenueDetail['change_orders'] as $co)
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 4px 8px;">{{ $co['title'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 8px; color: #666;">
                         {{ $co['date']?->appDate() }} · {{ $co['scope'] }}
-                        @if(($co['status'] ?? 'approved') !== 'approved')
-                            · <span style="color: #b7791f;">{{ __('not approved') }}</span>
-                        @endif
                         @if(($co['cost'] ?? 0.0) != 0.0)
                             · {{ __('cost') }} ${{ number_format($co['cost'], 2) }}
                             · {{ __('margin') }} ${{ number_format($co['amount'] - $co['cost'], 2) }}
@@ -147,7 +147,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 6px 8px; text-align: center; color: #999; font-style: italic;">{{ __('No change orders.') }}</td>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 6px 8px; text-align: center; color: #999; font-style: italic;">{{ __('No approved change orders.') }}</td>
                 </tr>
             @endforelse
             <tr>
@@ -156,6 +156,29 @@
                     {{ $financials['change_orders_total'] >= 0 ? '+' : '' }}${{ number_format($financials['change_orders_total'], 2) }}
                 </td>
             </tr>
+
+            {{-- Listed but never added: a change order missing from the client's
+                 copy of the report would be read as one that was lost. --}}
+            @if(count($revenueDetail['uncounted_change_orders']) > 0)
+                <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 4px 8px; background-color: #fafafa; font-weight: bold; color: #555;">
+                        {{ __('Not Counted') }} —
+                        <span style="font-weight: normal; color: #888;">{{ __('not approved, so they do not change the contract value or the profit') }}</span>
+                    </td>
+                </tr>
+                @foreach($revenueDetail['uncounted_change_orders'] as $co)
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 4px 8px; color: #888;">{{ $co['title'] }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px 8px; color: #888;">
+                            {{ $co['date']?->appDate() }} · {{ $co['scope'] }}
+                            · <span style="color: {{ $co['status'] === 'rejected' ? '#e74c3c' : '#b7791f' }};">{{ $co['status_label'] }}</span>
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 4px 8px; text-align: right; color: #999; text-decoration: line-through;">
+                            {{ $co['amount'] >= 0 ? '+' : '' }}${{ number_format($co['amount'], 2) }}
+                        </td>
+                    </tr>
+                @endforeach
+            @endif
 
             <tr style="background-color: #f3f4f6;">
                 <td colspan="2" style="border: 1px solid #ddd; padding: 6px 8px; font-weight: bold; color: #3F5189;">{{ __('Net Contract Value') }}</td>

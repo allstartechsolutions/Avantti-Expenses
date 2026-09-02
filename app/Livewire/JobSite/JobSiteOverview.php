@@ -130,8 +130,19 @@ class JobSiteOverview extends Component
 
     public function render()
     {
-        $changeOrders = $this->jobSite->changeOrders()->get();
-        $totalChangeOrdersAmount = $changeOrders->sum('amount');
+        // Loaded onto the model so the contract-value helpers read this same
+        // collection instead of firing their own queries.
+        $this->jobSite->load('changeOrders');
+        $changeOrders = $this->jobSite->changeOrders;
+
+        // Only what the client approved revises the contract value; what is
+        // still awaiting a decision is shown beside it, never inside it.
+        $totalChangeOrdersAmount = $this->jobSite->getApprovedChangeOrdersTotal();
+        $pendingChangeOrdersAmount = $this->jobSite->getPendingChangeOrdersTotal();
+        $approvedChangeOrdersCount = $changeOrders->where('status', ChangeOrder::STATUS_APPROVED)->count();
+        $pendingChangeOrdersCount = $changeOrders
+            ->whereIn('status', [ChangeOrder::STATUS_DRAFT, ChangeOrder::STATUS_PENDING])
+            ->count();
 
         $expenses = $this->jobSite->expenses()->get();
         $totalExpensesAmount = $expenses->sum('total_amount');
@@ -148,6 +159,10 @@ class JobSiteOverview extends Component
         return view('livewire.job-site.job-site-overview', [
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
+            'pendingChangeOrdersAmount' => $pendingChangeOrdersAmount,
+            'approvedChangeOrdersCount' => $approvedChangeOrdersCount,
+            'pendingChangeOrdersCount' => $pendingChangeOrdersCount,
+            'contractValue' => $this->jobSite->getAdjustedContractValue(),
             'expenses' => $expenses,
             'totalExpensesAmount' => $totalExpensesAmount,
             'contracts' => $contracts,

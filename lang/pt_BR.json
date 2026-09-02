@@ -4620,5 +4620,16 @@
     "No suppliers are registered yet, so there is none to name here.": "Ainda não há fornecedores cadastrados, portanto não há nenhum a indicar aqui.",
     "dd/mm/aaaa": "dd/mm/aaaa",
     "mm/dd/yyyy": "mm/dd/yyyy",
-    "Open the calendar": "Abrir o calendário"
+    "Open the calendar": "Abrir o calendário",
+    "approved CO": "em ordens de alteração aprovadas",
+    "Approved Change Orders": "Ordens de Alteração Aprovadas",
+    "No approved change orders.": "Nenhuma ordem de alteração aprovada.",
+    "Not Counted": "Não Contabilizadas",
+    ":amount in change orders is awaiting a decision and is not counted here.": ":amount em ordens de alteração aguarda decisão e não é contabilizado aqui.",
+    ":amount awaiting a decision, not counted": ":amount aguardando decisão, não contabilizado",
+    "These change orders have not been approved, so they do not change the contract value or the profit. Approve one and it moves into the total above.": "Estas ordens de alteração não foram aprovadas, portanto não alteram o valor do contrato nem o lucro. Ao aprovar uma, ela passa para o total acima.",
+    "not approved, so they do not change the contract value or the profit": "não aprovadas, portanto não alteram o valor do contrato nem o lucro",
+    ":count approved change order|:count approved change orders": ":count ordem de alteração aprovada|:count ordens de alteração aprovadas",
+    ":count change order awaiting a decision (:amount, not counted)|:count change orders awaiting a decision (:amount, not counted)": ":count ordem de alteração aguardando decisão (:amount, não contabilizada)|:count ordens de alteração aguardando decisão (:amount, não contabilizadas)",
+    ":count more raised, not counted|:count more raised, not counted": ":count outra registrada, não contabilizada|:count outras registradas, não contabilizadas"
 }

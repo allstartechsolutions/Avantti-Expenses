@@ -164,6 +164,59 @@ class JobSite extends Model implements PermissionScope
     }
 
     /**
+     * Base contract value, before change orders. Dollars.
+     *
+     * Named to match `Project::getContractValue()`: every screen that reports
+     * on a location asks the same three questions of it, and four of them were
+     * spelling the sum out by hand before this.
+     */
+    public function getContractValue(): float
+    {
+        return (float) $this->job_amount;
+    }
+
+    /**
+     * Current contract value: the job amount plus the change orders the client
+     * has agreed to. Signed.
+     *
+     * **Only an approved change order counts** — see
+     * `Project::getAdjustedContractValue()` for why.
+     */
+    public function getAdjustedContractValue(): float
+    {
+        return round($this->getContractValue() + $this->getApprovedChangeOrdersTotal(), 2);
+    }
+
+    /**
+     * The change orders that revise the contract value, in dollars. Signed.
+     */
+    public function getApprovedChangeOrdersTotal(): float
+    {
+        if ($this->relationLoaded('changeOrders')) {
+            return round($this->changeOrders
+                ->where('status', ChangeOrder::STATUS_APPROVED)
+                ->sum(fn (ChangeOrder $co) => (int) $co->getRawOriginal('amount')) / 100, 2);
+        }
+
+        return round($this->changeOrders()->approved()->sum('amount') / 100, 2);
+    }
+
+    /**
+     * Raised but not yet decided (draft or pending), in dollars. Signed.
+     * Reported beside the contract value, never inside it.
+     */
+    public function getPendingChangeOrdersTotal(): float
+    {
+        if ($this->relationLoaded('changeOrders')) {
+            return round($this->changeOrders
+                ->whereIn('status', [ChangeOrder::STATUS_DRAFT, ChangeOrder::STATUS_PENDING])
+                ->sum(fn (ChangeOrder $co) => (int) $co->getRawOriginal('amount')) / 100, 2);
+        }
+
+        return round($this->changeOrders()->pendingDecision()->sum('amount') / 100, 2);
+    }
+
+    /**
      * Get the expenses for this job site
      */
     public function expenses(): HasMany

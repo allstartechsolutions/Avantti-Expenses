@@ -20,6 +20,7 @@
         $locale = config('app.locale');
         $isProfit = $financials['profit'] >= 0;
         $profitCardBg = $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600';
+        $signed = fn ($value) => ((float) $value >= 0 ? '+' : '') . Number::currency((float) $value, $currency, $locale);
     @endphp
 
     <!-- Summary Cards -->
@@ -40,9 +41,14 @@
             <p class="mt-4 text-sm text-white/80">
                 {{ __('Base') }}: {{ Number::currency($financials['base_contract_value'], $currency, $locale) }}
                 @if ($financials['change_orders_total'] != 0)
-                    · {{ $financials['change_orders_total'] >= 0 ? '+' : '' }}{{ Number::currency($financials['change_orders_total'], $currency, $locale) }} {{ __('CO') }}
+                    · {{ $signed($financials['change_orders_total']) }} {{ __('approved CO') }}
                 @endif
             </p>
+            @if ($financials['pending_change_orders_total'] != 0)
+                <p class="mt-1 text-sm text-white/70">
+                    {{ __(':amount in change orders is awaiting a decision and is not counted here.', ['amount' => $signed($financials['pending_change_orders_total'])]) }}
+                </p>
+            @endif
         </div>
 
         <!-- Total Expenses Card -->
@@ -117,9 +123,9 @@
                 <span class="font-medium text-slate-900 dark:text-white">{{ Number::currency($financials['base_contract_value'], $currency, $locale) }}</span>
             </div>
 
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-5 mb-2">{{ __('Change Orders') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-5 mb-2">{{ __('Approved Change Orders') }}</p>
             @if (count($revenueDetail['change_orders']) === 0)
-                <p class="text-sm text-slate-500 dark:text-slate-400 italic">{{ __('No change orders.') }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 italic">{{ __('No approved change orders.') }}</p>
             @else
                 <div class="divide-y divide-slate-100 dark:divide-slate-700">
                     @foreach ($revenueDetail['change_orders'] as $co)
@@ -128,9 +134,6 @@
                                 <p class="text-slate-900 dark:text-white truncate">{{ $co['title'] }}</p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">
                                     {{ $co['date']?->appDate() }}
-                                    @if(($co['status'] ?? 'approved') !== 'approved')
-                                        · <span class="text-amber-600 dark:text-amber-400">{{ __('not approved') }}</span>
-                                    @endif
                                     @if(($co['cost'] ?? 0.0) != 0.0)
                                         · {{ __('cost') }} {{ Number::currency($co['cost'], $currency, $locale) }}
                                         · {{ __('margin') }} {{ Number::currency($co['amount'] - $co['cost'], $currency, $locale) }}
@@ -140,7 +143,7 @@
                                 </p>
                             </div>
                             <span class="font-medium whitespace-nowrap {{ $co['amount'] < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                {{ $co['amount'] >= 0 ? '+' : '' }}{{ Number::currency($co['amount'], $currency, $locale) }}
+                                {{ $signed($co['amount']) }}
                             </span>
                         </div>
                     @endforeach
@@ -148,8 +151,33 @@
                 <div class="flex justify-between py-2 mt-1 border-t border-slate-200 dark:border-slate-700 text-sm font-semibold">
                     <span class="text-slate-700 dark:text-slate-300">{{ __('Subtotal') }}</span>
                     <span class="{{ $financials['change_orders_total'] < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">
-                        {{ $financials['change_orders_total'] >= 0 ? '+' : '' }}{{ Number::currency($financials['change_orders_total'], $currency, $locale) }}
+                        {{ $signed($financials['change_orders_total']) }}
                     </span>
+                </div>
+            @endif
+
+            {{-- Raised but not agreed. Listed, never added: a change order that
+                 disappeared from the report would be read as one that was lost. --}}
+            @if (count($revenueDetail['uncounted_change_orders']) > 0)
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-5 mb-1">{{ __('Not Counted') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                    {{ __('These change orders have not been approved, so they do not change the contract value or the profit. Approve one and it moves into the total above.') }}
+                </p>
+                <div class="divide-y divide-slate-100 dark:divide-slate-700 opacity-75">
+                    @foreach ($revenueDetail['uncounted_change_orders'] as $co)
+                        <div class="flex justify-between gap-4 py-1.5 text-sm">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-slate-700 dark:text-slate-300 truncate">{{ $co['title'] }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    {{ $co['date']?->appDate() }}
+                                    · <span class="{{ $co['status'] === 'rejected' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400' }}">{{ $co['status_label'] }}</span>
+                                </p>
+                            </div>
+                            <span class="font-medium whitespace-nowrap text-slate-400 dark:text-slate-500 line-through">
+                                {{ $signed($co['amount']) }}
+                            </span>
+                        </div>
+                    @endforeach
                 </div>
             @endif
 

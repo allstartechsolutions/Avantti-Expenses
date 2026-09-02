@@ -16,12 +16,6 @@
         'approved' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
         'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     ];
-    $statusLabels = [
-        'draft' => __('Draft'),
-        'pending' => __('Pending'),
-        'approved' => __('Approved'),
-        'rejected' => __('Rejected'),
-    ];
     $costTotal = $this->changeOrderCostTotal();
     $margin = $this->changeOrderMargin();
     $marginPercent = $this->changeOrderMarginPercent();
@@ -47,7 +41,7 @@
                             <span class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ $co_number }}</span>
                         @endif
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusStyles[$co_status] ?? $statusStyles['draft'] }}">
-                            {{ $statusLabels[$co_status] ?? $co_status }}
+                            {{ \App\Models\ChangeOrder::statusLabel($co_status) }}
                         </span>
                     </div>
                     <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ $contextName }}</p>
@@ -105,7 +99,7 @@
                             <div>
                                 <label class="{{ $label }}">{{ __('Status') }}</label>
                                 @if($viewing)
-                                    <p class="text-slate-900 dark:text-white">{{ $statusLabels[$co_status] ?? $co_status }}</p>
+                                    <p class="text-slate-900 dark:text-white">{{ \App\Models\ChangeOrder::statusLabel($co_status) }}</p>
                                 @else
                                     <select wire:model.live="co_status" class="{{ $field }}">
                                         <option value="draft">{{ __('Draft') }}</option>

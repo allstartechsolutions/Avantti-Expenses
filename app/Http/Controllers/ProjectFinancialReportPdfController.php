@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChangeOrder;
 use App\Models\Company;
 use App\Models\Project;
 use App\Services\CostCodeLedger;
@@ -39,9 +40,11 @@ class ProjectFinancialReportPdfController extends Controller
             'jobSites',
         ]);
 
+        // Approved change orders only — the same rule as the screen.
         $contractValue = $project->getAdjustedContractValue();
         $baseContractValue = $project->getContractValue();
         $changeOrdersTotal = round($contractValue - $baseContractValue, 2);
+        $pendingChangeOrdersTotal = $project->getPendingChangeOrdersTotal();
 
         $expensesCollection = $project->expenses()
             ->with(['supplier:id,name', 'jobSite:id,job_site_name'])
@@ -73,6 +76,7 @@ class ProjectFinancialReportPdfController extends Controller
         $financials = [
             'base_contract_value' => $baseContractValue,
             'change_orders_total' => $changeOrdersTotal,
+            'pending_change_orders_total' => $pendingChangeOrdersTotal,
             'contract_value' => $contractValue,
             'total_expenses' => $totalExpenses,
             'expenses_count' => $expensesCollection->count(),
@@ -104,7 +108,8 @@ class ProjectFinancialReportPdfController extends Controller
     {
         $rows = [];
 
-        $projectLevelCOTotal = $project->projectLevelChangeOrders()->sum('amount');
+        // Approved change orders only, matching the headline figures.
+        $projectLevelCOTotal = $project->projectLevelChangeOrders()->approved()->sum('amount');
         $projectLevelExpenses = $project->projectLevelExpenses->sum('total_amount');
 
         $projectLevelContracts = $project->projectLevelContracts()->with(['changeOrders', 'payments'])->get();
@@ -131,8 +136,7 @@ class ProjectFinancialReportPdfController extends Controller
         ];
 
         foreach ($project->jobSites as $jobSite) {
-            $jsCoTotal = $jobSite->changeOrders()->sum('amount');
-            $jsContractValue = round((float) $jobSite->job_amount + ($jsCoTotal / 100), 2);
+            $jsContractValue = $jobSite->getAdjustedContractValue();
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
             $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
@@ -185,13 +189,18 @@ class ProjectFinancialReportPdfController extends Controller
                 'scope' => $co->jobSite?->job_site_name ?? __('Project-level'),
                 'cost' => (float) $co->cost_impact,
                 'status' => $co->status,
+                'status_label' => $co->getStatusLabel(),
                 'amount' => (float) $co->amount,
-            ])
-            ->all();
+            ]);
 
+        // Split, so the breakdown adds up the ones that count and still
+        // accounts for the ones that do not.
         return [
             'base_lines' => $baseLines,
-            'change_orders' => $changeOrders,
+            'change_orders' => $changeOrders
+                ->where('status', ChangeOrder::STATUS_APPROVED)->values()->all(),
+            'uncounted_change_orders' => $changeOrders
+                ->where('status', '!=', ChangeOrder::STATUS_APPROVED)->values()->all(),
         ];
     }
 }

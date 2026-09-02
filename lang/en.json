@@ -3146,5 +3146,16 @@
     "No suppliers are registered yet, so there is none to name here.": "No suppliers are registered yet, so there is none to name here.",
     "dd/mm/aaaa": "dd/mm/aaaa",
     "mm/dd/yyyy": "mm/dd/yyyy",
-    "Open the calendar": "Open the calendar"
+    "Open the calendar": "Open the calendar",
+    "approved CO": "approved CO",
+    "Approved Change Orders": "Approved Change Orders",
+    "No approved change orders.": "No approved change orders.",
+    "Not Counted": "Not Counted",
+    ":amount in change orders is awaiting a decision and is not counted here.": ":amount in change orders is awaiting a decision and is not counted here.",
+    ":amount awaiting a decision, not counted": ":amount awaiting a decision, not counted",
+    "These change orders have not been approved, so they do not change the contract value or the profit. Approve one and it moves into the total above.": "These change orders have not been approved, so they do not change the contract value or the profit. Approve one and it moves into the total above.",
+    "not approved, so they do not change the contract value or the profit": "not approved, so they do not change the contract value or the profit",
+    ":count approved change order|:count approved change orders": ":count approved change order|:count approved change orders",
+    ":count change order awaiting a decision (:amount, not counted)|:count change orders awaiting a decision (:amount, not counted)": ":count change order awaiting a decision (:amount, not counted)|:count change orders awaiting a decision (:amount, not counted)",
+    ":count more raised, not counted|:count more raised, not counted": ":count more raised, not counted|:count more raised, not counted"
 }

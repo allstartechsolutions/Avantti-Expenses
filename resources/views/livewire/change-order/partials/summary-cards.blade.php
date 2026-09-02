@@ -7,12 +7,23 @@
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    {{-- Approved only, so this card and the contract value on the financial
+         report can never disagree. --}}
     <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-5 text-white">
         <p class="text-sm font-medium text-white/80">{{ __('Billed to the Client') }}</p>
-        <p class="text-2xl font-bold mt-1">{{ $signed($summary['revenue']) }}</p>
+        <p class="text-2xl font-bold mt-1">{{ $signed($summary['approved_revenue']) }}</p>
         <p class="mt-2 text-xs text-white/80">
-            {{ trans_choice(':count change order|:count change orders', $summary['count'], ['count' => $summary['count']]) }}
+            {{ trans_choice(':count approved change order|:count approved change orders', $summary['approved_count'], ['count' => $summary['approved_count']]) }}
         </p>
+        @if($summary['count'] > $summary['approved_count'])
+            <p class="mt-1 text-xs text-white/70">
+                {{ trans_choice(
+                    ':count more raised, not counted|:count more raised, not counted',
+                    $summary['count'] - $summary['approved_count'],
+                    ['count' => $summary['count'] - $summary['approved_count']]
+                ) }}
+            </p>
+        @endif
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">

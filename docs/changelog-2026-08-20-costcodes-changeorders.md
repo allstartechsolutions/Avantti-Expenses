@@ -40,6 +40,9 @@ trail is worse than a blank one.
 The client contract value still counts **every** change order regardless of status, exactly as
 before. Approval gates the cost side only.
 
+> **Superseded 1 Sep 2026.** Approval now gates *both* sides: only an approved change order
+> reaches the contract value. See `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
+
 ---
 
 ## 2. The service everything reads from
