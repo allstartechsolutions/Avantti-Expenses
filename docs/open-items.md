@@ -395,8 +395,12 @@ written to history, and the financial reports and their PDFs report against the 
   order ones, not the meeting ones with the same timestamps) then `php artisan view:clear`.
   **No live figure moves on deploy** — existing change orders default to `approved` with no cost
   lines, and the client contract value still counts every change order as it always did.
+  (**From 1 Sep 2026** only approved change orders count toward the contract value; that
+  `approved` backfill is why no historical figure moved then either — see `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.)
 - **Read:** `docs/changelog-2026-08-20-costcodes-changeorders.md` for the deploy-facing summary,
-  `docs/expense-changeorder-costcode-plan.md` for the design (§8–§13 are the per-phase build logs).
+  `docs/expense-changeorder-costcode-plan.md` for the design (§8–§13 are the per-phase build logs),
+  and `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md` for the 1 Sep 2026
+  change that made approval gate the revenue side as well as the cost side.
 - **Phase 7 is written out as a checklist in §14 of the plan**: what exists, the twelve screens to
   walk, the backlog grouped by cost, the wording claims to verify. Nothing in it has been done —
   in particular **the screen walk has never happened** for any of these screens.

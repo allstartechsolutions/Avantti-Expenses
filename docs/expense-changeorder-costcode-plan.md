@@ -34,7 +34,7 @@ There are two unrelated things called "change order" in this codebase:
 | Attached to | a subcontract | a project or a job site |
 | Cost code | **yes** — `budget_item_id` already | **no** |
 | Meaning | raises/lowers what we owe the sub (cost) | raises/lowers **what we bill the client** |
-| Feeds | `Contract::costCodeSchedule()` → the budget cost grid | `Project::getAdjustedContractValue()` = contract value + Σ CO, and the job-site row `job_amount + Σ CO` in the financial reports |
+| Feeds | `Contract::costCodeSchedule()` → the budget cost grid | `Project::getAdjustedContractValue()` = contract value + Σ CO, and the job-site row `job_amount + Σ CO` in the financial reports (**since 1 Sep 2026 Σ CO is the *approved* ones only** — see `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`) |
 
 `change_orders.amount` is signed (a deductive CO is negative — already supported).
 It has **no status**: a change order is effective the moment it is saved.
@@ -195,6 +195,9 @@ everything with no code, and it is clickable so the user can fix the strays.
    `approved` change orders revise the cost budget. The client contract value keeps counting
    every change order as it does today, so **no existing project total moves**. Existing rows
    backfill to `approved`.
+   **Superseded 1 Sep 2026:** approval gates the revenue side too — only an approved change
+   order reaches the contract value. Still no historical total moved, because of that same
+   backfill. See `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
 4. **Paid expenses — admins only, logged.** The cost code on a paid expense is editable by
    admins, matching the existing rule for editing paid expenses, and every change writes to
    `ExpenseChangeHistory` (the model exists today and is never written to).
@@ -296,6 +299,7 @@ budget has no default at all.
 - **The client contract value is unchanged**: draft, pending, rejected and approved change
   orders all still count toward `Project::getAdjustedContractValue()`, and a change order
   created without a status is `approved`, exactly as before.
+  **Superseded 1 Sep 2026:** only approved change orders count toward it now. See `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
 
 ### Not in phase 1
 
@@ -747,7 +751,9 @@ Per the standard: wording that promises something the code does not enforce is a
 least these claims —
 
 - "Only an approved change order revises the budget." (true; verify on screen)
-- "The client contract value counts it either way." (true; verify against the reports)
+- ~~"The client contract value counts it either way."~~ **No longer true from 1 Sep 2026** —
+  only an approved change order reaches the contract value. The screens say so; verify that
+  wording against the reports instead. See `docs/changelog-2026-09-01-change-order-approval-gates-revenue.md`.
 - "Cost codes can still be corrected." on a locked expense (true; verify the save path)
 - "Lifetime figures, whatever the report dates say elsewhere." on the report section
 - The three cost grid footnotes about Changes, Committed and Projected
