@@ -13,8 +13,9 @@
                     <!-- Header -->
                     <tr>
                         <td style="background-color: #3F5189; padding: 25px 30px; text-align: center;">
+                            <x-email-brand :size="44" />
                             <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: bold;">
-                                {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+                                {{ App\Services\Branding::name() }}
                             </h1>
                         </td>
                     </tr>

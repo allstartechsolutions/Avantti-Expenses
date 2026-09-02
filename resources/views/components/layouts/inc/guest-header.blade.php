@@ -10,13 +10,11 @@
 <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 px-4 sm:px-6 py-3">
     <div class="flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 shrink-0 bg-[#3F5189] rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-sm leading-none">
-                    {{ mb_substr(\App\Models\Company::first()?->name ?? config('app.name'), 0, 1) }}
-                </span>
+            <div class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-1">
+                <x-app-logo-icon class="h-full w-full" />
             </div>
             <span class="text-base font-semibold text-slate-900 dark:text-white truncate">
-                {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+                {{ App\Services\Branding::name() }}
             </span>
         </div>
 

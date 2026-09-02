@@ -1,10 +1,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>{{ $title ?? config('app.name') }}</title>
+<title>{{ $title ?? App\Services\Branding::name() }}</title>
 
-<link rel="icon" href="{{ config('app.logo_url') }}" type="image/png">
-<link rel="apple-touch-icon" href="{{ config('app.logo_url') }}">
+<link rel="icon" href="{{ App\Services\Branding::faviconUrl() }}" type="{{ App\Services\Branding::faviconType() }}">
+<link rel="apple-touch-icon" href="{{ App\Services\Branding::iconUrl() }}">
 
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

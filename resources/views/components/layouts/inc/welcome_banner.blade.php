@@ -18,7 +18,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-3xl font-bold mb-2">{{ __('Good Morning, John! 👋') }}</h2>
-                    <p class="text-white/80 text-lg">{{ __('Welcome to your :app dashboard. Here\'s what\'s happening today.', ['app' => config('app.name')]) }}</p>
+                    <p class="text-white/80 text-lg">{{ __('Welcome to your :app dashboard. Here\'s what\'s happening today.', ['app' => App\Services\Branding::name()]) }}</p>
                 </div>
                 <div class="hidden lg:block">
                     <svg class="w-24 h-24 text-white/30" fill="currentColor" viewBox="0 0 24 24">

@@ -14,8 +14,9 @@
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="background-color: #3F5189; padding: 25px 30px; text-align: center;">
+                            <x-email-brand :size="44" />
                             <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: bold;">
-                                {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+                                {{ App\Services\Branding::name() }}
                             </h1>
                             <p style="margin: 6px 0 0; color: #dbe1f2; font-size: 13px;">{{ __('Meeting Minutes') }}</p>
                         </td>

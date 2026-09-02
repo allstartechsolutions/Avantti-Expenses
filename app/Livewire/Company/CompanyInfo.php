@@ -17,6 +17,7 @@ class CompanyInfo extends Component
 
     public ?Company $company = null;
     public $name = '';
+    public $brand_name = '';
     public $street = '';
     public $city = '';
     public $state = '';
@@ -30,8 +31,35 @@ class CompanyInfo extends Component
     public $logoPreview;
     public $existingLogo = null;
 
+    /**
+     * The three marks that appear on screen rather than on paper: the square
+     * icon in the header, sidebar and login card, its dark-mode twin, and the
+     * browser-tab favicon. Each is optional — whatever is left empty falls
+     * back to the product's own icon, so this screen can be ignored entirely.
+     */
+    public $app_icon;
+    public $appIconPreview;
+    public $existingAppIcon = null;
+
+    public $app_icon_dark;
+    public $appIconDarkPreview;
+    public $existingAppIconDark = null;
+
+    public $favicon;
+    public $faviconPreview;
+    public $existingFavicon = null;
+
+    /** The upload fields this screen owns, and where each one is stored. */
+    private const BRAND_FILES = [
+        'logo' => ['column' => 'logo', 'existing' => 'existingLogo', 'preview' => 'logoPreview', 'folder' => 'company-logos'],
+        'app_icon' => ['column' => 'app_icon', 'existing' => 'existingAppIcon', 'preview' => 'appIconPreview', 'folder' => 'company-branding'],
+        'app_icon_dark' => ['column' => 'app_icon_dark', 'existing' => 'existingAppIconDark', 'preview' => 'appIconDarkPreview', 'folder' => 'company-branding'],
+        'favicon' => ['column' => 'favicon', 'existing' => 'existingFavicon', 'preview' => 'faviconPreview', 'folder' => 'company-branding'],
+    ];
+
     protected $rules = [
         'name' => 'required|string|max:255',
+        'brand_name' => 'nullable|string|max:60',
         'street' => 'required|string|max:255',
         'city' => 'required|string|max:255',
         'state' => 'required|string|max:255',
@@ -42,13 +70,22 @@ class CompanyInfo extends Component
         'mobile' => 'nullable|string|max:20',
         'fax' => 'nullable|string|max:20',
         'logo' => 'nullable|image|max:2048',
+        'app_icon' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:1024',
+        'app_icon_dark' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:1024',
+        // Not `image`: that rule rejects .ico, which is still the only format
+        // every browser is guaranteed to accept for a favicon.
+        'favicon' => 'nullable|file|mimes:ico,png|max:512',
     ];
 
     public function validationAttributes()
     {
         return [
             'name' => __('company name'),
+            'brand_name' => __('display name'),
             'postal_code' => __('postal code'),
+            'app_icon' => __('app icon'),
+            'app_icon_dark' => __('dark mode icon'),
+            'favicon' => __('favicon'),
         ];
     }
 
@@ -61,6 +98,7 @@ class CompanyInfo extends Component
 
         if ($this->company) {
             $this->name = $this->company->name;
+            $this->brand_name = $this->company->brand_name;
             $this->street = $this->company->street;
             $this->city = $this->company->city;
             $this->state = $this->company->state;
@@ -71,6 +109,9 @@ class CompanyInfo extends Component
             $this->mobile = $this->company->mobile;
             $this->fax = $this->company->fax;
             $this->existingLogo = $this->company->logo;
+            $this->existingAppIcon = $this->company->app_icon;
+            $this->existingAppIconDark = $this->company->app_icon_dark;
+            $this->existingFavicon = $this->company->favicon;
         }
     }
 
@@ -88,23 +129,84 @@ class CompanyInfo extends Component
         }
     }
 
+    public function updatedAppIcon()
+    {
+        $this->previewUpload('app_icon');
+    }
+
+    public function updatedAppIconDark()
+    {
+        $this->previewUpload('app_icon_dark');
+    }
+
+    public function updatedFavicon()
+    {
+        $this->previewUpload('favicon');
+    }
+
+    /**
+     * Show what was just dropped, before it is saved. A rejected file leaves no
+     * preview behind — the drop zone would otherwise show a picture of a file
+     * the save is about to refuse.
+     *
+     * `.ico` is the catch: Livewire refuses to make a preview URL for it and
+     * throws, so a perfectly valid favicon would take the screen down. The tile
+     * says "ready to save" without a thumbnail in that case.
+     */
+    private function previewUpload(string $field): void
+    {
+        $config = self::BRAND_FILES[$field];
+
+        $this->{$config['preview']} = null;
+        $this->validateOnly($field);
+
+        $this->{$config['preview']} = $this->{$field} && $this->{$field}->isPreviewable()
+            ? $this->{$field}->temporaryUrl()
+            : null;
+    }
+
+    /** Drop a file that has been chosen but not yet saved. */
+    public function discardUpload(string $field)
+    {
+        abort_unless(isset(self::BRAND_FILES[$field]), 404);
+
+        $config = self::BRAND_FILES[$field];
+
+        $this->{$field} = null;
+        $this->{$config['preview']} = null;
+        $this->resetErrorBag($field);
+    }
+
+    /** Remove a mark that is already saved, so this install falls back again. */
+    public function removeStoredFile(string $field)
+    {
+        $this->authorizeAbility('company.edit');
+
+        abort_unless(isset(self::BRAND_FILES[$field]), 404);
+
+        $config = self::BRAND_FILES[$field];
+        $column = $config['column'];
+
+        if ($this->company && $this->company->{$column}) {
+            Storage::disk('public')->delete($this->company->{$column});
+            $this->company->{$column} = null;
+            $this->company->save();
+            $this->{$config['existing']} = null;
+
+            session()->flash('message', $field === 'logo'
+                ? __('Logo removed successfully!')
+                : __('Image removed. The default is being used again.'));
+        }
+    }
+
     public function removeLogo()
     {
-        $this->logo = null;
-        $this->logoPreview = null;
+        $this->discardUpload('logo');
     }
 
     public function removeExistingLogo()
     {
-        $this->authorizeAbility('company.edit');
-
-        if ($this->company && $this->company->logo) {
-            Storage::disk('public')->delete($this->company->logo);
-            $this->company->logo = null;
-            $this->company->save();
-            $this->existingLogo = null;
-            session()->flash('message', __('Logo removed successfully!'));
-        }
+        $this->removeStoredFile('logo');
     }
 
     public function saveCompany()
@@ -123,6 +225,7 @@ class CompanyInfo extends Component
         }
 
         $company->name = $this->name;
+        $company->brand_name = $this->brand_name ?: null;
         $company->street = $this->street;
         $company->city = $this->city;
         $company->state = $this->state;
@@ -133,12 +236,18 @@ class CompanyInfo extends Component
         $company->mobile = $this->mobile;
         $company->fax = $this->fax;
 
-        if ($this->logo) {
-            // Delete old logo if updating
-            if ($company->logo) {
-                Storage::disk('public')->delete($company->logo);
+        foreach (self::BRAND_FILES as $field => $config) {
+            if (! $this->{$field}) {
+                continue;
             }
-            $company->logo = $this->logo->store('company-logos', 'public');
+
+            // Replace rather than accumulate: the old file is nobody's once the
+            // column stops pointing at it.
+            if ($company->{$config['column']}) {
+                Storage::disk('public')->delete($company->{$config['column']});
+            }
+
+            $company->{$config['column']} = $this->{$field}->store($config['folder'], 'public');
         }
 
         $company->save();

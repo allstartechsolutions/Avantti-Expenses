@@ -10,7 +10,7 @@
                     <span class="mb-1 flex size-[54px] items-center justify-center">
                         <x-app-logo-icon class="size-[54px]" />
                     </span>
-                    <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+                    <span class="sr-only">{{ App\Services\Branding::name() }}</span>
                 </a>
                 <div class="flex flex-col gap-6">
                     {{ $slot }}

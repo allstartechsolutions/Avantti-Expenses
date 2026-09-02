@@ -5,9 +5,9 @@
 
     <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #555;">
         @if($invitedBy)
-            {{ __(':who has given you access to :company.', ['who' => $invitedBy->name, 'company' => config('app.name')]) }}
+            {{ __(':who has given you access to :company.', ['who' => $invitedBy->name, 'company' => App\Services\Branding::name()]) }}
         @else
-            {{ __('You have been given access to :company.', ['company' => config('app.name')]) }}
+            {{ __('You have been given access to :company.', ['company' => App\Services\Branding::name()]) }}
         @endif
         {{ __('Choose a password and you are in.') }}
     </p>

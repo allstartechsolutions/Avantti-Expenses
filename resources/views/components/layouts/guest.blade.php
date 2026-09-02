@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name') }}</title>
-    <link rel="icon" href="{{ config('app.logo_url') }}" type="image/png">
-    <link rel="apple-touch-icon" href="{{ config('app.logo_url') }}">
+    <title>{{ $title ?? App\Services\Branding::name() }}</title>
+    <link rel="icon" href="{{ App\Services\Branding::faviconUrl() }}" type="{{ App\Services\Branding::faviconType() }}">
+    <link rel="apple-touch-icon" href="{{ App\Services\Branding::iconUrl() }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -25,7 +25,7 @@
                 <x-app-logo-icon class="h-full w-full" />
             </div>
             <span class="text-lg font-semibold">
-                {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+                {{ App\Services\Branding::name() }}
             </span>
         </div>
     </header>
@@ -39,7 +39,7 @@
 
     <!-- Footer -->
     <footer class="py-4 text-center text-sm text-slate-400">
-        &copy; {{ date('Y') }} {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+        &copy; {{ date('Y') }} {{ App\Services\Branding::name() }}
     </footer>
 
     @stack('scripts')

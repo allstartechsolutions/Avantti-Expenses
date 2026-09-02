@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $heading ?? config('app.name') }}</title>
+    <title>{{ $heading ?? App\Services\Branding::name() }}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f5f7; color: #333;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f5f7; padding: 30px 0;">
@@ -18,8 +18,9 @@
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="background-color: {{ $accent }}; padding: 22px 30px; text-align: center;">
+                            <x-email-brand :size="38" />
                             <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: bold;">
-                                {{ \App\Models\Company::first()?->name ?? config('app.name') }}
+                                {{ App\Services\Branding::name() }}
                             </h1>
                             @if($heading)
                                 <p style="margin: 5px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">{{ $heading }}</p>

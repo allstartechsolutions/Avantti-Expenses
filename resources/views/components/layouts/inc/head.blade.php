@@ -2,9 +2,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{config('app.name')}}</title>
-    <link rel="icon" href="{{ config('app.logo_url') }}" type="image/png">
-    <link rel="apple-touch-icon" href="{{ config('app.logo_url') }}">
+    <title>{{ $title ?? App\Services\Branding::name() }}</title>
+    <link rel="icon" href="{{ App\Services\Branding::faviconUrl() }}" type="{{ App\Services\Branding::faviconType() }}">
+    <link rel="apple-touch-icon" href="{{ App\Services\Branding::iconUrl() }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

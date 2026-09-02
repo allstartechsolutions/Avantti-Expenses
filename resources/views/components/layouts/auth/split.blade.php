@@ -11,7 +11,7 @@
                     <span class="flex h-10 w-10 items-center justify-center rounded-md">
                         <x-app-logo-icon class="me-2 size-7" />
                     </span>
-                    {{ config('app.name', 'Laravel') }}
+                    {{ App\Services\Branding::name() }}
                 </a>
 
                 @php
@@ -32,7 +32,7 @@
                             <x-app-logo-icon class="size-9" />
                         </span>
 
-                        <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+                        <span class="sr-only">{{ App\Services\Branding::name() }}</span>
                     </a>
                     {{ $slot }}
                 </div>

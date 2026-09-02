@@ -53,9 +53,16 @@
    - Lazy loading - zero queries on page load
    - Keyboard nav (arrows / enter / escape), loading, empty and below-minimum states
 
+7. **[Company Branding](./company-branding.md)** - Per-install display name, app icon, dark-mode icon and favicon
+   - Set on the Company Information screen; falls back to the product's own mark when empty
+   - `App\Services\Branding` is the only place a view reads the app name, icon or favicon
+   - Cached and wrapped — the sign-in page reads it before a session exists
+   - The `.ico` traps: Laravel's `image` rule rejects it, Livewire's `temporaryUrl()` throws on it
+   - What is deliberately untouched: PDFs, transactional e-mail subjects, the accent colour
+
 ### Data Management
 
-7. **[Delete Functionality](./delete-functionality.md)** - Project & Job Site deletion with confirmation modals
+8. **[Delete Functionality](./delete-functionality.md)** - Project & Job Site deletion with confirmation modals
    - Confirmation modal with related data counts (not just `wire:confirm`)
    - Manual file cleanup before cascade delete (Eloquent events won't fire on cascade)
    - Polymorphic image cleanup (DailyReportImage)
@@ -64,17 +71,17 @@
 
 ### Modules
 
-8. **[Purchase Order Module](./purchase-order-module.md)** - Complete PO workflow with approval, expense creation, and revision support
-9. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, message templates, PDF generation, email sending with tracking pixel open detection, email history log, and status change tracking
-10. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Partial → Paid)
-11. **[Invoice Payments & CardPointe](./invoice-payments-module.md)** - Payment recording (manual + credit card), CardPointe Gateway integration, client saved payment methods, partial payment tracking, void/refund support
-12. **[Contract Module](./contract-module.md)** - Subcontractor contracts with status workflow, change orders (additions/deductions), file attachments, and audit trail
-13. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions for all non-cancelled statuses (including active), balance calculated from adjusted amount (original + change orders)
-14. **[Contract Payments Dashboard](./contract-payments-dashboard.md)** - Batch payment processing with filters, change orders column with expandable details, CSV export with change order detail rows, PDF export (summary and detailed with payment history)
-15. **[Payment Batch Module](./payment-batch-module.md)** - Pre-payment staging system with draft/approve lifecycle, saved contract filters per batch, individual and bulk approval, automatic ContractPayment creation on approval
-16. **[Income Module](./income-module.md)** - Money coming in at project and job site level, received vs expected receivables, and distribution of one project-level income across several job sites
-17. **[File Repository (Documents)](./file-repository-plan.md)** - The document repository at project and job site level: folders, categories and tags, versioning with full history, a preview stage with full screen for PDFs, images and video, soft delete with a trash and a purge command, an activity trail on every action, and expiring public share links for clients and vendors. Files go straight from the browser to Cloudflare R2 (multi-gigabyte uploads, multipart with progress and retry), with a local-disk fallback for installs that have no bucket. Setup: **[Cloudflare R2 deployment](./deployment-cloudflare-r2.md)**
-18. **[Cost Codes on Expenses and Change Orders](./expense-changeorder-costcode-plan.md)** - A change order carries two sides: what the client is billed and what it does to each cost code's budget, with an approval that gates the cost side only. One service (`CostCodeLedger`) answers Original → Changes → Revised → Committed → Actual → Remaining per code; every budget screen, a cost code drill-down, the financial reports and their PDFs read from it. Expenses can be edited at last, so a wrong cost code can be corrected, with the change written to history. Phases 1-6 built 2026-08-19/20; **phase 7, the review, is what remains** (§14 of the plan). Deploy summary: **[changelog](./changelog-2026-08-20-costcodes-changeorders.md)**.
+9. **[Purchase Order Module](./purchase-order-module.md)** - Complete PO workflow with approval, expense creation, and revision support
+10. **[Estimate Module](./estimate-module.md)** - Client estimates with catalog/custom items, discounts, tax, payment terms, message templates, PDF generation, email sending with tracking pixel open detection, email history log, and status change tracking
+11. **[Invoice Module](./invoice-module.md)** - Client invoices with the same feature set as estimates, plus conversion from accepted estimates, past due detection, and status change tracking (Draft → Sent → Pending → Partial → Paid)
+12. **[Invoice Payments & CardPointe](./invoice-payments-module.md)** - Payment recording (manual + credit card), CardPointe Gateway integration, client saved payment methods, partial payment tracking, void/refund support
+13. **[Contract Module](./contract-module.md)** - Subcontractor contracts with status workflow, change orders (additions/deductions), file attachments, and audit trail
+14. **[Contract Payments](./contract-payments.md)** - Payment tracking for subcontractor contracts, automatic status transitions for all non-cancelled statuses (including active), balance calculated from adjusted amount (original + change orders)
+15. **[Contract Payments Dashboard](./contract-payments-dashboard.md)** - Batch payment processing with filters, change orders column with expandable details, CSV export with change order detail rows, PDF export (summary and detailed with payment history)
+16. **[Payment Batch Module](./payment-batch-module.md)** - Pre-payment staging system with draft/approve lifecycle, saved contract filters per batch, individual and bulk approval, automatic ContractPayment creation on approval
+17. **[Income Module](./income-module.md)** - Money coming in at project and job site level, received vs expected receivables, and distribution of one project-level income across several job sites
+18. **[File Repository (Documents)](./file-repository-plan.md)** - The document repository at project and job site level: folders, categories and tags, versioning with full history, a preview stage with full screen for PDFs, images and video, soft delete with a trash and a purge command, an activity trail on every action, and expiring public share links for clients and vendors. Files go straight from the browser to Cloudflare R2 (multi-gigabyte uploads, multipart with progress and retry), with a local-disk fallback for installs that have no bucket. Setup: **[Cloudflare R2 deployment](./deployment-cloudflare-r2.md)**
+19. **[Cost Codes on Expenses and Change Orders](./expense-changeorder-costcode-plan.md)** - A change order carries two sides: what the client is billed and what it does to each cost code's budget, with an approval that gates the cost side only. One service (`CostCodeLedger`) answers Original → Changes → Revised → Committed → Actual → Remaining per code; every budget screen, a cost code drill-down, the financial reports and their PDFs read from it. Expenses can be edited at last, so a wrong cost code can be corrected, with the change written to history. Phases 1-6 built 2026-08-19/20; **phase 7, the review, is what remains** (§14 of the plan). Deploy summary: **[changelog](./changelog-2026-08-20-costcodes-changeorders.md)**.
 
 ### Planned
 
@@ -99,6 +106,7 @@
 
 ### Quality
 
+- **[Changelog 2026-09-02 — company branding](./changelog-2026-09-02-company-branding.md)** - The customer's own display name, app icon, dark-mode icon and favicon, with the product's mark as the fallback
 - **[Changelog 2026-08-27 — nav grouping](./changelog-2026-08-27-nav-grouping.md)** - The project / job-site tab bar grouped into four dropdowns, menu wording moved to `lang/*/navigation.php`, and the untranslated breadcrumb fixed
 - **[Changelog 2026-08-24](./changelog-2026-08-24.md)** - Branding (ManagerPro mark), the Forge scheduler entry, and the pt_BR translation sweep
 - **[pt_BR translation audit](./pt-br-translation-audit.md)** - 24 Aug 2026 sweep of every module: 773 unwrapped user-facing strings, the six patterns behind most of them, and a suggested order of work

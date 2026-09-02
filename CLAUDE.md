@@ -120,6 +120,29 @@ exactly as before**, so nothing server-side changes; `.live` is carried through.
 `type="date"` comes back, anywhere in `app/` or `resources/views/` — PDFs and e-mail templates
 included, which is where a wrong date is most likely to reach a client.
 
+## The App's Own Name and Icon Come From `Branding`
+
+**A customer's install shows the customer's mark.** The display name, the square app icon,
+its dark-mode twin and the favicon are set on the Company Information screen and read
+through one service:
+
+```blade
+{{ App\Services\Branding::name() }}      {{-- brand_name → company name → config('app.name') --}}
+<x-app-logo-icon class="size-8" />       {{-- app_icon → the product mark, dark twin handled --}}
+```
+
+**Never write `config('app.name')` or `config('app.logo_url')` in a view again**, and never
+add another inline `Company::first()?->name` — both bypass the customer's own branding, and
+the inline lookup costs a query per template. `Branding` is cached, memoised per request and
+wrapped so it cannot fail: the sign-in page reads it before a session exists.
+
+Two traps this cost a debugging round to find, both relevant to any upload field:
+Laravel's `image` validation rule **rejects `.ico`**, and Livewire's `temporaryUrl()`
+**throws** for any file it cannot preview — check `isPreviewable()` before calling it.
+
+PDFs are the exception and stay as they are: they print `companies.logo` (the wide wordmark)
+and the legal `companies.name`. See `docs/company-branding.md`.
+
 ## Every Module Ships Translated
 
 **A screen is not built until it is translatable.** The pt_BR sweep of 24 Aug 2026 found

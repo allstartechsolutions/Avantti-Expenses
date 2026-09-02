@@ -11,7 +11,7 @@
                         <x-app-logo-icon class="size-9" />
                     </span>
 
-                    <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+                    <span class="sr-only">{{ App\Services\Branding::name() }}</span>
                 </a>
 
                 <div class="flex flex-col gap-6">

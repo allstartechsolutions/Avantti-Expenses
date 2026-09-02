@@ -25,7 +25,7 @@ class InvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $company = config('app.name');
+        $company = \App\Services\Branding::name();
 
         return new Envelope(subject: $this->invitation->is_guest
             ? __('You have been given access to :company', ['company' => $company])

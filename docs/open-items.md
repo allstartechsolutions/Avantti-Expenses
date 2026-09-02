@@ -4,7 +4,13 @@ Rewritten **2026-08-21**, after the permissions module was completed and deploye
 eighteen module passes and the three closing phases. Read this first; every finished piece of
 work has its own file (index at the bottom).
 
-Last touched **2026-08-26**: the meetings agenda order and structure work — owner feedback that
+Last touched **2026-09-02**: company branding — a customer's own display name, app icon,
+dark-mode icon and favicon, with the product's mark as the fallback. Built, tested (12 new
+tests; full suite green apart from three failures that pre-date it) and documented;
+**the working tree is not committed and nothing is deployed**. See
+`docs/company-branding.md` and `docs/changelog-2026-09-02-company-branding.md`.
+
+Before that, **2026-08-26**: the meetings agenda order and structure work — owner feedback that
 carried items came back sorted by due date and with their groups flattened. Built, tested and
 reviewed; **the working tree is not committed and nothing is deployed**. See §2b.
 
@@ -622,9 +628,12 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 - **`welcome.blade.php`** — a layout reference page with hardcoded demo data (`JD` initials, a
   fake profile). ~53 untranslated strings, deliberately skipped in the pt_BR sweep. Decide
   whether it is still a reference worth keeping or dead code to delete.
-- **`/favicon.ico` now 404s.** The branding change deleted the old Laravel `.ico` and points
-  the `<link>` tags at the CDN PNG. Browsers are fine; anything probing the conventional path
-  is not, and the tab icon is a downscaled PNG rather than a purpose-built 16px icon.
+- **`/favicon.ico` still 404s.** The 2026-08-24 branding change deleted the old Laravel `.ico`
+  and points the `<link>` tags at the CDN PNG. Browsers are fine; anything probing the
+  conventional path is not. **Half of this closed on 2026-09-02**: a customer can now upload a
+  purpose-built `.ico` on the Company Information screen, so the tab icon need no longer be a
+  downscaled PNG — see `docs/company-branding.md`. What remains is the conventional path
+  itself, which is served by no route on any install.
 
 - **Meetings M4, M6, M7, M10** — query shapes on `Meeting::openActionCount()`,
   `MyTasks::stats()` and `MeetingAgenda::scopeCandidates()`, all acceptable today and all wrong at
@@ -710,6 +719,8 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 | **Meetings — the user guide, also published in-app** | `docs/meetings-module-guide.md` |
 | **Meetings — agenda order and structure (2026-08-26, uncommitted)** | `docs/meetings-agenda-order-plan.md` |
 | **Documentation module (the in-app library)** | `docs/documentation-module.md` |
+| **Company branding (display name, app icon, dark icon, favicon) — as built** | `docs/company-branding.md` |
+| That work's deploy-facing changelog | `docs/changelog-2026-09-02-company-branding.md` |
 | **Review and Improvements — the standing final phase + the whole backlog** | `docs/review-and-improvements.md` |
 | **Permissions — HOW TO DO IT FOR A NEW MODULE** | **`docs/permissions-for-new-modules.md`** |
 | Permissions — what was built, step by step (complete, deployed) | `docs/permissions-module.md` |
