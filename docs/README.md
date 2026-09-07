@@ -83,6 +83,8 @@
 18. **[File Repository (Documents)](./file-repository-plan.md)** - The document repository at project and job site level: folders, categories and tags, versioning with full history, a preview stage with full screen for PDFs, images and video, soft delete with a trash and a purge command, an activity trail on every action, and expiring public share links for clients and vendors. Files go straight from the browser to Cloudflare R2 (multi-gigabyte uploads, multipart with progress and retry), with a local-disk fallback for installs that have no bucket. Setup: **[Cloudflare R2 deployment](./deployment-cloudflare-r2.md)**
 19. **[Cost Codes on Expenses and Change Orders](./expense-changeorder-costcode-plan.md)** - A change order carries two sides: what the client is billed and what it does to each cost code's budget, with an approval that gates the cost side only. One service (`CostCodeLedger`) answers Original → Changes → Revised → Committed → Actual → Remaining per code; every budget screen, a cost code drill-down, the financial reports and their PDFs read from it. Expenses can be edited at last, so a wrong cost code can be corrected, with the change written to history. Phases 1-6 built 2026-08-19/20; **phase 7, the review, is what remains** (§14 of the plan). Deploy summary: **[changelog](./changelog-2026-08-20-costcodes-changeorders.md)**.
 
+20. **[Workers](./workers-module.md)** - One worker per human across every subcontractor: each company keeps its own employee record (name, tax id, period as given there), linking merges the workers behind them, the worker page is the "every contract this worker was on" report. The **Directory** sidebar group holds the unified **Vendors** list (suppliers + subcontractors) and **Workers**. Deploy summary: **[changelog](./changelog-2026-09-07-workers-directory.md)**; first iteration as People: [changelog](./changelog-2026-09-07-people.md).
+
 ### Planned
 
 - **[Quotation Module plan](./quotation-module-plan.md)** - Buy-side quotations (BR: *Cotação*): requisition → quote several vendors → comparative map with equalization → negotiation rounds → justified award → contract (service) or purchase order (material). Researched against Brazilian practice; **phase 1 built**, phases 2–8 planned.
@@ -106,6 +108,7 @@
 
 ### Quality
 
+- **[Changelog 2026-09-07 — workers and the Directory menu](./changelog-2026-09-07-workers-directory.md)** - People renamed Workers, a worker for every employee row, the Directory group with one Vendors list; what moved in the sidebar and in pt_BR
 - **[Changelog 2026-09-02 — company branding](./changelog-2026-09-02-company-branding.md)** - The customer's own display name, app icon, dark-mode icon and favicon, with the product's mark as the fallback
 - **[Changelog 2026-08-27 — nav grouping](./changelog-2026-08-27-nav-grouping.md)** - The project / job-site tab bar grouped into four dropdowns, menu wording moved to `lang/*/navigation.php`, and the untranslated breadcrumb fixed
 - **[Changelog 2026-08-24](./changelog-2026-08-24.md)** - Branding (ManagerPro mark), the Forge scheduler entry, and the pt_BR translation sweep

@@ -288,7 +288,7 @@ public function scopeOrdered($query)
 
 ## Show Page Tabs
 
-The subcontractor show page has two tabs:
+The subcontractor show page has three tabs:
 
 ### Overview Tab
 - Company Information (name, website, avatar)
@@ -307,6 +307,14 @@ The subcontractor show page has two tabs:
   - Upload date and uploader
   - Download and Delete actions
 - Empty state when no documents
+
+### Employees Tab (2026-09-07 — see `workers-module.md`)
+- One inline form adds and edits: name, title, phone, e-mail, tax id (as given to this company), started, ended, notes
+- As the details are typed, lookalikes at other companies are offered for linking as the same worker
+- Table with every field, a Worker column ("Also at …" / "Only here", linking to the worker page, *Tax ids differ* badge), contracts count, and Edit / Link / Unlink / Delete
+- Link opens a full-page dialog with suggestions, a search over other companies' employees, and a reason
+- Adding, editing and deleting need `vendors.edit`; linking and unlinking need `workers.link`
+- `?tab=employees` opens the tab directly
 
 ---
 
