@@ -196,6 +196,12 @@ class PermissionSeeder extends Seeder
         // employee keeps every task of their own, and the ones they raised.
         'tasks.edit_any',
 
+        // --- People (2026-09-07). Saying two employee rows are one human is a
+        //     judgement signed with a reason, and it changes what a report of
+        //     "every contract this person was on" returns. A manager decides;
+        //     an employee sees the result.
+        'people.link',
+
         // --- Collaboration (RFIs and approvals), new in this module ---------
         // Closing an RFI freezes its answer, the same weight meetings.freeze
         // carries. An employee raises and answers; somebody else closes.

@@ -244,6 +244,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)
         ->middleware('ability:vendors.merge')->name('vendors.duplicates');
 
+    // People: one human across several subcontractors (docs/people-module.md)
+    Route::get('people', \App\Livewire\People\PeopleIndex::class)
+        ->middleware('ability:people.view')->name('people.index');
+    Route::get('people/{person}', \App\Livewire\People\PersonShow::class)
+        ->middleware('ability:people.view')->name('people.show');
+
     // Project routes
     // The project list and its own record. The per-project screens are guarded
     // by EnsureScopeIsVisible, which covers every route carrying a project.

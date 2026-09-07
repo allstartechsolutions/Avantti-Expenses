@@ -137,6 +137,25 @@ class Contract extends Model
         return static::statusLabel($this->status);
     }
 
+    /**
+     * The contracts this person may see across projects: everything for a
+     * company-wide person, the projects and sites they belong to for a
+     * confined one. A person page lists contracts from every project, so it
+     * cannot rely on the project screen's own guard.
+     */
+    public function scopeVisibleTo($query, ?User $user)
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if (! $user->isConfined()) {
+            return $query;
+        }
+
+        return $query->whereIn('contracts.project_id', Project::visibleTo($user)->select('projects.id'));
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

@@ -181,6 +181,16 @@ return [
             'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
         ],
         [
+            'key' => 'people',
+            'name' => 'People',
+            'group' => 'projects',
+            'order' => 25,
+            'route' => 'people.index',
+            'ability' => 'people.view',
+            'active' => ['people.*'],
+            'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+        ],
+        [
             'key' => 'clients',
             'name' => 'Clients',
             'group' => 'projects',
@@ -783,6 +793,25 @@ return [
                 // so it is held apart. Deleting stays under `delete`.
                 'renew_documents' => ['name' => 'Upload and renew documents'],
                 'archive_documents' => ['name' => 'Archive and reactivate documents', 'sensitive' => true],
+            ],
+        ],
+
+        // One human across several subcontractors: the person record that
+        // ties an employee row at company A to the same person's row at
+        // company B, with whatever name and tax id they presented at each.
+        // Reading is the people list and the person page (every company,
+        // every contract, every tax id side by side); linking is a judgement
+        // somebody signs with a reason, so it is held apart and sensitive.
+        // The employee rows themselves stay under `vendors.edit`.
+        'people' => [
+            'name' => 'People',
+            'module' => 'projects',
+            'levels' => ['global'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view',
+                'link' => ['name' => 'Link, unlink and edit people', 'sensitive' => true],
             ],
         ],
 

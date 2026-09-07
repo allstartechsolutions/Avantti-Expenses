@@ -51,13 +51,31 @@ class SubcontractorShow extends Component
     // History dialog: one document's chain — what it replaced, what replaced it
     public ?int $history_document_id = null;
 
-    // Employee form
+    // Employee form — one form for adding and editing
+    public ?int $editing_employee_id = null;
     public $employee_title = '';
     public $employee_name = '';
     public $employee_phone = '';
     public $employee_email = '';
+    public $employee_tax_id = '';
+    public $employee_started_at = '';
+    public $employee_ended_at = '';
     public $employee_notes = '';
     public bool $showEmployeeForm = false;
+
+    /**
+     * A row at another company the form has been told is the same person.
+     * Chosen from the lookalikes the form shows as the details are typed;
+     * the link is made when the employee is saved.
+     */
+    public ?int $employee_link_to = null;
+    public string $employee_link_reason = '';
+
+    // Link dialog: tie an existing row to one at another company
+    public ?int $linking_employee_id = null;
+    public string $link_search = '';
+    public ?int $link_target_id = null;
+    public string $link_reason = '';
 
     // Delete modal
     public $showDeleteModal = false;
@@ -71,6 +89,13 @@ class SubcontractorShow extends Component
     {
         return [
             'employee_email' => __('email'),
+            'employee_tax_id' => __('tax id'),
+            'employee_started_at' => __('start date'),
+            'employee_ended_at' => __('end date'),
+            'employee_link_to' => __('linked person'),
+            'employee_link_reason' => __('reason'),
+            'link_target_id' => __('record to link'),
+            'link_reason' => __('reason'),
         ];
     }
 
@@ -422,66 +447,347 @@ class SubcontractorShow extends Component
         session()->flash('message', __('Document reactivated.'));
     }
 
-    public function toggleEmployeeForm()
+    /*
+    |---------------------------------------------------------------------------
+    | Employees
+    |---------------------------------------------------------------------------
+    */
+
+    /** Open the form empty, for a new employee. */
+    public function startEmployee()
     {
-        $this->showEmployeeForm = !$this->showEmployeeForm;
-        if (!$this->showEmployeeForm) {
-            $this->resetEmployeeForm();
-        }
+        $this->authorizeAbility('vendors.edit');
+
+        $this->resetEmployeeForm();
+        $this->showEmployeeForm = true;
+    }
+
+    /** Open the form filled with one of this vendor's rows. */
+    public function editEmployee(int $employeeId)
+    {
+        $this->authorizeAbility('vendors.edit');
+
+        $employee = $this->ownEmployee($employeeId);
+
+        $this->resetEmployeeForm();
+        $this->editing_employee_id = $employee->id;
+        $this->employee_title = $employee->title ?? '';
+        $this->employee_name = $employee->name;
+        $this->employee_phone = $employee->phone ?? '';
+        $this->employee_email = $employee->email ?? '';
+        $this->employee_tax_id = $employee->tax_id ?? '';
+        $this->employee_started_at = $employee->started_at?->format('Y-m-d') ?? '';
+        $this->employee_ended_at = $employee->ended_at?->format('Y-m-d') ?? '';
+        $this->employee_notes = $employee->notes ?? '';
+        $this->showEmployeeForm = true;
+    }
+
+    /** Close the form. Not guarded: leaving is always allowed. */
+    public function cancelEmployeeForm()
+    {
+        $this->resetEmployeeForm();
+        $this->showEmployeeForm = false;
     }
 
     public function resetEmployeeForm()
     {
+        $this->editing_employee_id = null;
         $this->employee_title = '';
         $this->employee_name = '';
         $this->employee_phone = '';
         $this->employee_email = '';
+        $this->employee_tax_id = '';
+        $this->employee_started_at = '';
+        $this->employee_ended_at = '';
         $this->employee_notes = '';
+        $this->employee_link_to = null;
+        $this->employee_link_reason = '';
         $this->resetValidation([
             'employee_title',
             'employee_name',
             'employee_phone',
             'employee_email',
+            'employee_tax_id',
+            'employee_started_at',
+            'employee_ended_at',
             'employee_notes',
+            'employee_link_to',
+            'employee_link_reason',
         ]);
+    }
+
+    /** Choose, or clear, the row at another company the new employee is the same person as. */
+    public function chooseEmployeeLink(?int $employeeId)
+    {
+        $this->authorizeAbility('people.link');
+
+        $this->employee_link_to = $this->employee_link_to === $employeeId ? null : $employeeId;
+        $this->resetValidation(['employee_link_to', 'employee_link_reason']);
+    }
+
+    /**
+     * Rows at other companies that look like the person being typed into the
+     * form. Shown only to somebody who may link, because there is nothing
+     * else to do with them.
+     *
+     * @return \Illuminate\Support\Collection<int, array{employee: SubcontractorEmployee, reasons: array<int, string>}>
+     */
+    public function getEmployeeSuggestionsProperty()
+    {
+        if (! $this->showEmployeeForm || ! $this->allowsAbility('people.link')) {
+            return collect();
+        }
+
+        $editing = $this->editing_employee_id
+            ? $this->subcontractor->employees()->find($this->editing_employee_id)
+            : null;
+
+        return SubcontractorEmployee::lookalikes([
+            'name' => $this->employee_name,
+            'phone' => $this->employee_phone,
+            'email' => $this->employee_email,
+            'tax_id' => $this->employee_tax_id,
+        ], $this->subcontractor->id, $editing?->person_id);
     }
 
     public function saveEmployee()
     {
+        $this->authorizeAbility('vendors.edit');
+
+        $editing = $this->editing_employee_id ? $this->ownEmployee($this->editing_employee_id) : null;
+
+        // The link is a separate grant: without it the form never offered a
+        // row to choose, and whatever the browser sends is ignored.
+        if (! $this->allowsAbility('people.link')) {
+            $this->employee_link_to = null;
+            $this->employee_link_reason = '';
+        }
+
         $this->validate([
             'employee_name' => 'required|string|max:255',
             'employee_title' => 'nullable|string|max:255',
             'employee_phone' => 'nullable|string|max:50',
             'employee_email' => 'nullable|email|max:255',
+            'employee_tax_id' => 'nullable|string|max:50',
+            'employee_started_at' => 'nullable|date',
+            'employee_ended_at' => 'nullable|date|after_or_equal:employee_started_at',
             'employee_notes' => 'nullable|string|max:1000',
+            'employee_link_to' => [
+                'nullable',
+                Rule::exists('subcontractor_employees', 'id')->where(
+                    fn ($query) => $query->where('subcontractor_id', '!=', $this->subcontractor->id),
+                ),
+            ],
+            'employee_link_reason' => 'nullable|string|max:255',
         ]);
 
-        SubcontractorEmployee::create([
-            'subcontractor_id' => $this->subcontractor->id,
+        $attributes = [
             'title' => $this->employee_title ?: null,
-            'name' => $this->employee_name,
+            'name' => trim($this->employee_name),
             'phone' => $this->employee_phone ?: null,
             'email' => $this->employee_email ?: null,
+            'tax_id' => trim($this->employee_tax_id) ?: null,
+            'started_at' => $this->employee_started_at ?: null,
+            'ended_at' => $this->employee_ended_at ?: null,
             'notes' => $this->employee_notes ?: null,
-        ]);
+        ];
+
+        $linkTarget = $this->employee_link_to
+            ? SubcontractorEmployee::where('subcontractor_id', '!=', $this->subcontractor->id)->find($this->employee_link_to)
+            : null;
+
+        $employee = DB::transaction(function () use ($editing, $attributes, $linkTarget) {
+            if ($editing) {
+                $editing->update($attributes);
+                $employee = $editing;
+            } else {
+                $employee = SubcontractorEmployee::create(['subcontractor_id' => $this->subcontractor->id] + $attributes);
+            }
+
+            if ($linkTarget) {
+                $employee->linkWith($linkTarget, Auth::user(), trim($this->employee_link_reason) ?: null);
+            }
+
+            return $employee;
+        });
+
+        $wasEditing = $editing !== null;
 
         $this->resetEmployeeForm();
         $this->showEmployeeForm = false;
 
-        session()->flash('message', __('Employee added successfully!'));
+        session()->flash('message', match (true) {
+            $linkTarget && $wasEditing => __('Employee updated and linked to :name at :company.', ['name' => $linkTarget->name, 'company' => $linkTarget->subcontractor?->company_name]),
+            $linkTarget !== null => __('Employee added and linked to :name at :company.', ['name' => $linkTarget->name, 'company' => $linkTarget->subcontractor?->company_name]),
+            $wasEditing => __('Employee updated successfully!'),
+            default => __('Employee added successfully!'),
+        });
     }
 
     public function deleteEmployee(int $employeeId)
     {
         $this->authorizeAbility('vendors.edit');
 
-        $employee = SubcontractorEmployee::where('id', $employeeId)
-            ->where('subcontractor_id', $this->subcontractor->id)
-            ->firstOrFail();
-
-        $employee->delete();
+        $this->ownEmployee($employeeId)->delete();
 
         session()->flash('message', __('Employee deleted successfully!'));
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | Linking an employee to the same person at another company
+    |---------------------------------------------------------------------------
+    */
+
+    public function startLink(int $employeeId)
+    {
+        $this->authorizeAbility('people.link');
+
+        $this->linking_employee_id = $this->ownEmployee($employeeId)->id;
+        $this->link_search = '';
+        $this->link_target_id = null;
+        $this->link_reason = '';
+        $this->resetValidation(['link_target_id', 'link_reason']);
+        $this->dispatch('open-modal', 'link-employee-modal');
+    }
+
+    public function cancelLink()
+    {
+        $this->linking_employee_id = null;
+        $this->link_search = '';
+        $this->link_target_id = null;
+        $this->link_reason = '';
+        $this->resetValidation(['link_target_id', 'link_reason']);
+        $this->dispatch('close-modal', 'link-employee-modal');
+    }
+
+    public function chooseLinkTarget(int $employeeId)
+    {
+        $this->authorizeAbility('people.link');
+
+        $this->link_target_id = $this->link_target_id === $employeeId ? null : $employeeId;
+        $this->resetValidation('link_target_id');
+    }
+
+    /** The row the dialog is linking, with its person and their companies. */
+    public function getLinkingEmployeeProperty(): ?SubcontractorEmployee
+    {
+        return $this->linking_employee_id
+            ? $this->subcontractor->employees()->with('person.employees.subcontractor')->find($this->linking_employee_id)
+            : null;
+    }
+
+    /**
+     * What the dialog offers: the lookalikes of the row first, then whatever
+     * the search box finds at other companies. Rows already on the same
+     * person are left out of both.
+     *
+     * @return array{suggested: \Illuminate\Support\Collection, found: \Illuminate\Support\Collection}
+     */
+    public function getLinkCandidatesProperty(): array
+    {
+        $employee = $this->linkingEmployee;
+
+        if (! $employee) {
+            return ['suggested' => collect(), 'found' => collect()];
+        }
+
+        $suggested = SubcontractorEmployee::lookalikes(
+            $employee->only(['name', 'phone', 'email', 'tax_id']),
+            $this->subcontractor->id,
+            $employee->person_id,
+        );
+
+        $term = trim($this->link_search);
+        $found = collect();
+
+        if (mb_strlen($term) >= 2) {
+            $found = SubcontractorEmployee::query()
+                ->with(['subcontractor', 'person.employees.subcontractor'])
+                ->where('subcontractor_id', '!=', $this->subcontractor->id)
+                ->when($employee->person_id, fn ($q) => $q->where(
+                    fn ($q) => $q->whereNull('person_id')->orWhere('person_id', '!=', $employee->person_id),
+                ))
+                ->whereNotIn('id', $suggested->pluck('employee.id'))
+                ->where(function ($q) use ($term) {
+                    $like = '%'.$term.'%';
+                    $q->where('name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('phone', 'like', $like)
+                        ->orWhere('tax_id', 'like', $like)
+                        ->orWhereHas('subcontractor', fn ($v) => $v->where('name', 'like', $like));
+                })
+                ->orderBy('name')
+                ->limit(25)
+                ->get();
+        }
+
+        return ['suggested' => $suggested, 'found' => $found];
+    }
+
+    public function linkEmployee()
+    {
+        $this->authorizeAbility('people.link');
+
+        $employee = $this->ownEmployee((int) $this->linking_employee_id);
+
+        $this->validate([
+            'link_target_id' => [
+                'required',
+                Rule::exists('subcontractor_employees', 'id')->where(
+                    fn ($query) => $query->where('subcontractor_id', '!=', $this->subcontractor->id),
+                ),
+            ],
+            'link_reason' => 'nullable|string|max:255',
+        ], [
+            'link_target_id.required' => __('Choose the record at the other company first.'),
+        ]);
+
+        $target = SubcontractorEmployee::with('subcontractor')
+            ->where('subcontractor_id', '!=', $this->subcontractor->id)
+            ->findOrFail($this->link_target_id);
+
+        if ($employee->person_id && $employee->person_id === $target->person_id) {
+            $this->addError('link_target_id', __('These two records are already the same person.'));
+
+            return;
+        }
+
+        $employee->linkWith($target, Auth::user(), trim($this->link_reason) ?: null);
+
+        $this->cancelLink();
+
+        session()->flash('message', __(':name is now linked to :other at :company.', [
+            'name' => $employee->name,
+            'other' => $target->name,
+            'company' => $target->subcontractor?->company_name,
+        ]));
+    }
+
+    public function unlinkEmployee(int $employeeId)
+    {
+        $this->authorizeAbility('people.link');
+
+        $employee = $this->ownEmployee($employeeId);
+
+        if (! $employee->isLinked()) {
+            return;
+        }
+
+        $employee->unlink();
+
+        session()->flash('message', __(':name is no longer linked to any other record.', ['name' => $employee->name]));
+    }
+
+    /**
+     * An employee by id, but only one of this vendor's — the id came from the
+     * browser and proves nothing on its own.
+     */
+    protected function ownEmployee(int $employeeId): SubcontractorEmployee
+    {
+        return SubcontractorEmployee::where('id', $employeeId)
+            ->where('subcontractor_id', $this->subcontractor->id)
+            ->firstOrFail();
     }
 
     public function deleteDocument(int $documentId)
@@ -633,8 +939,12 @@ class SubcontractorShow extends Component
         };
 
         $employees = $this->subcontractor->employees()
+            ->with(['person.employees.subcontractor', 'linkedBy'])
+            ->withCount('contracts')
             ->orderBy('name')
             ->get();
+
+        $linkedEmployees = $employees->filter->isLinked()->count();
 
         $linkedContracts = $this->subcontractor->contracts()->count();
         $linkedPaymentBatches = $this->subcontractor->paymentBatches()->count();
@@ -656,6 +966,7 @@ class SubcontractorShow extends Component
             'documentCounts' => $documentCounts,
             'documentHealth' => $documentHealth,
             'employees' => $employees,
+            'linkedEmployees' => $linkedEmployees,
             'linkedContracts' => $linkedContracts,
             'linkedPaymentBatches' => $linkedPaymentBatches,
         ])->layout('components.layouts.app');
