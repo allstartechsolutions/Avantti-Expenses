@@ -1807,3 +1807,17 @@ falling back to `local` is a safety net for a misconfigured install, not a suppo
 
 The documentation library has no article for vendor documents. `docs/vendor-documents.md`
 is the source to condense from.
+
+---
+
+## People across subcontractors (2026-09-07) — PE1–PE4
+
+Built end to end on `feature/employee-people-link` (`docs/people-module.md`). Noted while
+building, to be worked in the module's review phase:
+
+| | |
+|---|---|
+| **PE1** | **Vendor merge and people.** `Vendor::mergeInto()` repoints employee rows to the survivor. Two rows of one person can then sit at the same company; nothing breaks, but the person page shows the company twice. Decide: collapse them, or leave and badge. |
+| **PE2** | **Cascade deletes bypass `dissolveIfLonely()`.** Deleting a vendor removes its employees at the database level, so a person can be left with one row until something else touches it. A scheduled sweep, or a delete that walks the rows, would close it. |
+| **PE3** | **Lookalikes run in PHP over every employee row.** Right for a few hundred contacts; wrong for tens of thousands. If an install grows that far, add `tax_id_key` / `phone_key` columns set on save and query them. |
+| **PE4** | **Export.** The person page is the "every contract this person was on" report, on screen only. A PDF or CSV would need the same `people.view` grant and the same `Contract::visibleTo()` filter. |

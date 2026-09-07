@@ -43,7 +43,7 @@ class NavigationTest extends TestCase
             'Company: Company Info, Users, Roles & Access',
             // My Quotations joined at phase 6 of the procurement assignment
             // module: the buying queue, gated on `quotations.view`.
-            'Projects: All Projects, Subcontractors, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Subcontractors, People, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',
@@ -54,7 +54,7 @@ class NavigationTest extends TestCase
         'manager' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Subcontractors, People, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',
@@ -64,7 +64,7 @@ class NavigationTest extends TestCase
         'employee' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Subcontractors, People, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Catalog: All Items, Categories, Suppliers',
             'Estimates',
             'Invoices',

@@ -111,6 +111,13 @@
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Contact') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">
                                 {{ $contract->subcontractorEmployee?->name ?? __('Not specified') }}@if($contract->subcontractorEmployee?->title) ({{ $contract->subcontractorEmployee->title }})@endif
+                                @if($contract->subcontractorEmployee?->person_id)
+                                    @can('people.view')
+                                        <a href="{{ route('people.show', $contract->subcontractorEmployee->person_id) }}" class="block text-xs text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ __('Also known at other companies — see every contract this person was on') }}</a>
+                                    @else
+                                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Also known at other companies') }}</span>
+                                    @endcan
+                                @endif
                             </dd>
                         </div>
                         <div>

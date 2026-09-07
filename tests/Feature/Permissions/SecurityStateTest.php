@@ -151,7 +151,7 @@ class SecurityStateTest extends TestCase
                 'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
-                'meetings', 'payments', 'project',
+                'meetings', 'payments', 'people', 'project',
                 'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
                 'requisitions', 'rfis', 'settings', 'tasks', 'team', 'users', 'vendors',
             ],
