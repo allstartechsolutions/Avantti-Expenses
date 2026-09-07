@@ -76,13 +76,23 @@ return [
         'projects' => [
             'name' => 'Projects',
             'order' => 30,
-            'active' => ['projects.*', 'clients.*', 'subcontractors.*', 'cost-codes.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
+            'active' => ['projects.*', 'clients.*', 'cost-codes.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
             'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        ],
+        // Suppliers, subcontractors and the workers who move between them:
+        // one address book. Suppliers used to sit under Catalog and
+        // subcontractors under Projects, which hid that they are one table
+        // (docs/vendor-unification.md) and gave workers no home.
+        'directory' => [
+            'name' => 'Directory',
+            'order' => 35,
+            'active' => ['vendors.*', 'suppliers.*', 'subcontractors.*', 'workers.*'],
+            'icon' => 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
         ],
         'catalog' => [
             'name' => 'Catalog',
             'order' => 40,
-            'active' => ['catalog.*', 'suppliers.*'],
+            'active' => ['catalog.*'],
             'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
         ],
         'meetings' => [
@@ -171,24 +181,24 @@ return [
             'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
         ],
         [
-            'key' => 'subcontractors',
-            'name' => 'Subcontractors',
-            'group' => 'projects',
-            'order' => 20,
-            'route' => 'subcontractors.index',
+            'key' => 'vendors',
+            'name' => 'Vendors',
+            'group' => 'directory',
+            'order' => 10,
+            'route' => 'vendors.index',
             'ability' => 'vendors.view',
-            'active' => ['subcontractors.*'],
-            'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+            'active' => ['vendors.index', 'vendors.duplicates', 'suppliers.*', 'subcontractors.*'],
+            'icon' => 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z',
         ],
         [
-            'key' => 'people',
-            'name' => 'People',
-            'group' => 'projects',
-            'order' => 25,
-            'route' => 'people.index',
-            'ability' => 'people.view',
-            'active' => ['people.*'],
-            'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+            'key' => 'workers',
+            'name' => 'Workers',
+            'group' => 'directory',
+            'order' => 20,
+            'route' => 'workers.index',
+            'ability' => 'workers.view',
+            'active' => ['workers.*'],
+            'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
         ],
         [
             'key' => 'clients',
@@ -261,17 +271,6 @@ return [
             'active' => ['catalog.categories.*'],
             'icon' => 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
         ],
-        [
-            'key' => 'suppliers',
-            'name' => 'Suppliers',
-            'group' => 'catalog',
-            'order' => 30,
-            'route' => 'suppliers.index',
-            'ability' => 'vendors.view',
-            'active' => ['suppliers.*'],
-            'icon' => 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z',
-        ],
-
         [
             'key' => 'estimates',
             'name' => 'Estimates',
@@ -796,22 +795,23 @@ return [
             ],
         ],
 
-        // One human across several subcontractors: the person record that
-        // ties an employee row at company A to the same person's row at
-        // company B, with whatever name and tax id they presented at each.
-        // Reading is the people list and the person page (every company,
-        // every contract, every tax id side by side); linking is a judgement
-        // somebody signs with a reason, so it is held apart and sensitive.
-        // The employee rows themselves stay under `vendors.edit`.
-        'people' => [
-            'name' => 'People',
+        // One human across several subcontractors. Every employee row is a
+        // worker; linking two rows at different companies merges them, so a
+        // worker known at A, B and C is one record with three rows, each
+        // keeping the name and tax id presented there. Reading is the
+        // Workers list and the worker page (every company, every contract,
+        // every tax id side by side); linking is a judgement somebody signs
+        // with a reason, so it is held apart and sensitive. The employee
+        // rows themselves stay under `vendors.edit`.
+        'workers' => [
+            'name' => 'Workers',
             'module' => 'projects',
             'levels' => ['global'],
             'money' => true,
             'swept' => true,
             'actions' => [
                 'view',
-                'link' => ['name' => 'Link, unlink and edit people', 'sensitive' => true],
+                'link' => ['name' => 'Link, unlink and edit workers', 'sensitive' => true],
             ],
         ],
 

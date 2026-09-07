@@ -5,19 +5,19 @@ namespace Tests\Feature\Permissions;
 use App\Enums\AccessScope;
 use App\Enums\MembershipStatus;
 use App\Enums\ProjectStatus;
-use App\Livewire\People\PeopleIndex;
-use App\Livewire\People\PersonShow;
 use App\Livewire\Subcontractor\SubcontractorShow;
+use App\Livewire\Worker\WorkerIndex;
+use App\Livewire\Worker\WorkerShow;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Membership;
-use App\Models\Person;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\Subcontractor;
 use App\Models\SubcontractorEmployee;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\Worker;
 use App\Services\PermissionResolver;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -27,13 +27,14 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * People: one human across several subcontractors (docs/people-module.md).
+ * Workers: one human across several subcontractors (docs/workers-module.md).
  *
- * The employee rows stay under `vendors.*`; the person record — the link
- * between rows at different companies — answers to `people.view` for the
- * list and the page, and `people.link` for making, breaking and editing.
+ * The employee rows stay under `vendors.*`; the worker record — one per
+ * human, merged when rows at different companies are linked — answers to
+ * `workers.view` for the list and the page, and `workers.link` for making,
+ * breaking and editing links.
  */
-class PeopleTest extends TestCase
+class WorkerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -144,9 +145,9 @@ class PeopleTest extends TestCase
         $rowA = $this->makeEmployee($a, ['tax_id' => '123.456.789-09']);
         $rowB = $this->makeEmployee($b, ['tax_id' => '987.654.321-00']);
 
-        $person = $rowA->linkWith($rowB, $this->admin, 'Same foreman');
+        $worker = $rowA->linkWith($rowB, $this->admin, 'Same foreman');
 
-        return [$a, $b, $rowA, $rowB, $person];
+        return [$a, $b, $rowA, $rowB, $worker];
     }
 
     /*
@@ -155,31 +156,31 @@ class PeopleTest extends TestCase
     |---------------------------------------------------------------------------
     */
 
-    public function test_the_people_screens_answer_for_every_seeded_role(): void
+    public function test_the_worker_screens_answer_for_every_seeded_role(): void
     {
-        [, , , , $person] = $this->linkedPair();
+        [, , , , $worker] = $this->linkedPair();
 
         foreach (['admin', 'manager', 'employee'] as $role) {
             $user = $this->user($role);
 
-            $this->actingAs($user)->get(route('people.index'))->assertOk();
-            $this->actingAs($user)->get(route('people.show', $person))->assertOk();
+            $this->actingAs($user)->get(route('workers.index'))->assertOk();
+            $this->actingAs($user)->get(route('workers.show', $worker))->assertOk();
         }
     }
 
-    public function test_the_people_screens_can_be_taken_away(): void
+    public function test_the_worker_screens_can_be_taken_away(): void
     {
-        [, , , , $person] = $this->linkedPair();
+        [, , , , $worker] = $this->linkedPair();
 
         $blind = $this->roleWith(['projects.view', 'project.view', 'vendors.view']);
 
-        $this->actingAs($blind)->get(route('people.index'))->assertForbidden();
-        $this->actingAs($blind)->get(route('people.show', $person))->assertForbidden();
+        $this->actingAs($blind)->get(route('workers.index'))->assertForbidden();
+        $this->actingAs($blind)->get(route('workers.show', $worker))->assertForbidden();
 
-        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'people.view']);
+        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'workers.view']);
 
-        $this->actingAs($reader)->get(route('people.index'))->assertOk();
-        $this->actingAs($reader)->get(route('people.show', $person))->assertOk();
+        $this->actingAs($reader)->get(route('workers.index'))->assertOk();
+        $this->actingAs($reader)->get(route('workers.show', $worker))->assertOk();
     }
 
     public function test_linking_is_held_apart_from_reading(): void
@@ -189,7 +190,7 @@ class PeopleTest extends TestCase
         $rowA = $this->makeEmployee($a);
         $rowB = $this->makeEmployee($b);
 
-        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'vendors.edit', 'people.view']);
+        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'vendors.edit', 'workers.view']);
 
         Livewire::actingAs($reader)
             ->test(SubcontractorShow::class, ['subcontractor' => $a])
@@ -203,7 +204,7 @@ class PeopleTest extends TestCase
             ->call('linkEmployee')
             ->assertForbidden();
 
-        $this->assertNull($rowA->fresh()->person_id);
+        $this->assertNotSame($rowA->fresh()->worker_id, $rowB->fresh()->worker_id);
 
         // The seeded employee reads but does not link; the manager does both.
         Livewire::actingAs($this->user('employee'))
@@ -219,8 +220,7 @@ class PeopleTest extends TestCase
             ->call('linkEmployee')
             ->assertHasNoErrors();
 
-        $this->assertNotNull($rowA->fresh()->person_id);
-        $this->assertSame($rowA->fresh()->person_id, $rowB->fresh()->person_id);
+        $this->assertSame($rowA->fresh()->worker_id, $rowB->fresh()->worker_id);
         $this->assertSame('Confirmed on site', $rowB->fresh()->link_reason);
     }
 
@@ -287,9 +287,8 @@ class PeopleTest extends TestCase
             // expected
         }
 
-        $this->assertNull($rowB->fresh()->person_id);
-        $this->assertNull($rowC->fresh()->person_id);
-        $this->assertSame(0, Person::count());
+        $this->assertNotSame($rowB->fresh()->worker_id, $rowC->fresh()->worker_id);
+        $this->assertSame(2, Worker::count());
 
         $this->expectException(ModelNotFoundException::class);
 
@@ -311,13 +310,13 @@ class PeopleTest extends TestCase
             ->call('linkEmployee')
             ->assertHasErrors(['link_target_id']);
 
-        $this->assertNull($one->fresh()->person_id);
-        $this->assertSame(0, Person::count());
+        $this->assertNotSame($one->fresh()->worker_id, $two->fresh()->worker_id);
+        $this->assertSame(2, Worker::count());
     }
 
-    public function test_the_person_page_shows_a_confined_member_only_their_own_projects_contracts(): void
+    public function test_the_worker_page_shows_a_confined_member_only_their_own_projects_contracts(): void
     {
-        [, , $rowA, $rowB, $person] = $this->linkedPair();
+        [, , $rowA, $rowB, $worker] = $this->linkedPair();
 
         $theirs = $this->makeProject('Theirs');
         $someoneElses = $this->makeProject('Someone else');
@@ -326,18 +325,18 @@ class PeopleTest extends TestCase
         $hidden = $this->makeContract($someoneElses, $rowB);
 
         $member = $this->confinedMemberOf($theirs, ['project.view', 'contracts.view']);
-        $member->role->syncAbilities(['people.view', 'vendors.view']);
+        $member->role->syncAbilities(['workers.view', 'vendors.view']);
         app(PermissionResolver::class)->flush();
 
         $this->actingAs($member)
-            ->get(route('people.show', $person))
+            ->get(route('workers.show', $worker))
             ->assertOk()
             ->assertSee($visible->contract_number)
             ->assertDontSee($hidden->contract_number);
 
         // The administrator sees both.
         $this->actingAs($this->admin)
-            ->get(route('people.show', $person))
+            ->get(route('workers.show', $worker))
             ->assertOk()
             ->assertSee($visible->contract_number)
             ->assertSee($hidden->contract_number);
@@ -349,38 +348,61 @@ class PeopleTest extends TestCase
     |---------------------------------------------------------------------------
     */
 
-    public function test_linking_two_rows_creates_the_person_and_records_who_decided(): void
+    public function test_every_employee_is_a_worker_from_the_start(): void
     {
-        [, , $rowA, $rowB, $person] = $this->linkedPair();
+        $a = $this->makeSubcontractor('Company A');
+        $row = $this->makeEmployee($a, ['name' => 'Maria Souza']);
 
-        $this->assertSame(1, Person::count());
-        $this->assertSame($person->id, $rowA->fresh()->person_id);
-        $this->assertSame($person->id, $rowB->fresh()->person_id);
+        $this->assertNotNull($row->worker_id);
+        $this->assertSame('Maria Souza', $row->worker->name);
+        $this->assertSame(1, Worker::count());
+
+        // And is on the list, linked or not.
+        Livewire::actingAs($this->admin)
+            ->test(WorkerIndex::class)
+            ->assertSee('Maria Souza')
+            ->assertSee(route('workers.show', $row->worker));
+
+        // Deleting the only row takes the worker with it.
+        $row->delete();
+
+        $this->assertSame(0, Worker::count());
+    }
+
+    public function test_linking_two_rows_merges_their_workers_and_records_who_decided(): void
+    {
+        [, , $rowA, $rowB, $worker] = $this->linkedPair();
+
+        $this->assertSame(1, Worker::count());
+        $this->assertSame($worker->id, $rowA->fresh()->worker_id);
+        $this->assertSame($worker->id, $rowB->fresh()->worker_id);
         $this->assertSame($this->admin->id, $rowA->fresh()->linked_by);
         $this->assertSame('Same foreman', $rowA->fresh()->link_reason);
         $this->assertNotNull($rowA->fresh()->linked_at);
 
         // Two tax ids, side by side — the fact the page exists to show.
-        $this->assertCount(2, $person->fresh()->distinctTaxIds());
+        $this->assertCount(2, $worker->fresh()->distinctTaxIds());
 
         // The name travels with the first row; each company keeps its own.
-        $this->assertSame('João Silva', $person->name);
+        $this->assertSame('João Silva', $worker->name);
     }
 
-    public function test_linking_a_third_row_joins_the_existing_person(): void
+    public function test_linking_a_third_row_joins_the_existing_worker(): void
     {
-        [, , $rowA, , $person] = $this->linkedPair();
+        [, , $rowA, , $worker] = $this->linkedPair();
         $c = $this->makeSubcontractor('Company C');
         $rowC = $this->makeEmployee($c, ['name' => 'Joao Silva']);
 
-        $rowC->linkWith($rowA, $this->admin);
+        $this->assertSame(2, Worker::count());
 
-        $this->assertSame(1, Person::count());
-        $this->assertSame($person->id, $rowC->fresh()->person_id);
-        $this->assertSame(3, $person->employees()->count());
+        $rowA->fresh()->linkWith($rowC, $this->admin);
+
+        $this->assertSame(1, Worker::count());
+        $this->assertSame($worker->id, $rowC->fresh()->worker_id);
+        $this->assertSame(3, $worker->employees()->count());
     }
 
-    public function test_linking_rows_of_two_different_people_folds_them_into_one(): void
+    public function test_linking_rows_of_two_different_workers_folds_them_into_one(): void
     {
         [, , $rowA, $rowB, $first] = $this->linkedPair();
 
@@ -390,84 +412,92 @@ class PeopleTest extends TestCase
         $rowD = $this->makeEmployee($d);
         $second = $rowC->linkWith($rowD, $this->admin);
 
-        $this->assertSame(2, Person::count());
+        $this->assertSame(2, Worker::count());
 
         $rowA->fresh()->linkWith($rowC->fresh(), $this->admin, 'They are one');
 
-        $this->assertSame(1, Person::count());
-        $this->assertNull(Person::find($second->id));
+        $this->assertSame(1, Worker::count());
+        $this->assertNull(Worker::find($second->id));
 
         foreach ([$rowA, $rowB, $rowC, $rowD] as $row) {
-            $this->assertSame($first->id, $row->fresh()->person_id);
+            $this->assertSame($first->id, $row->fresh()->worker_id);
         }
     }
 
-    public function test_unlinking_down_to_one_row_dissolves_the_person(): void
+    public function test_unlinking_gives_the_row_a_worker_of_its_own(): void
     {
-        [$a, , $rowA, $rowB, $person] = $this->linkedPair();
+        [$a, , $rowA, $rowB, $worker] = $this->linkedPair();
 
         Livewire::actingAs($this->admin)
             ->test(SubcontractorShow::class, ['subcontractor' => $a])
             ->call('unlinkEmployee', $rowA->id);
 
-        $this->assertNull($rowA->fresh()->person_id);
-        $this->assertNull($rowB->fresh()->person_id);
-        $this->assertNull(Person::find($person->id));
+        $this->assertSame(2, Worker::count());
+        $this->assertNotSame($worker->id, $rowA->fresh()->worker_id);
+        $this->assertSame($worker->id, $rowB->fresh()->worker_id);
+        $this->assertNull($rowA->fresh()->linked_at);
 
         // Both rows are still there — only the thread between them is gone.
         $this->assertSame(2, SubcontractorEmployee::count());
+
+        // A row that is alone on its worker has nothing to unlink.
+        Livewire::actingAs($this->admin)
+            ->test(SubcontractorShow::class, ['subcontractor' => $a])
+            ->call('unlinkEmployee', $rowA->id);
+
+        $this->assertSame(2, Worker::count());
     }
 
     public function test_unlinking_one_of_three_keeps_the_other_two_together(): void
     {
-        [, , $rowA, $rowB, $person] = $this->linkedPair();
+        [, , $rowA, $rowB, $worker] = $this->linkedPair();
         $c = $this->makeSubcontractor('Company C');
         $rowC = $this->makeEmployee($c);
-        $rowC->linkWith($rowA, $this->admin);
+        $rowA->fresh()->linkWith($rowC, $this->admin);
 
         Livewire::actingAs($this->admin)
-            ->test(PersonShow::class, ['person' => $person])
+            ->test(WorkerShow::class, ['worker' => $worker])
             ->call('unlinkEmployee', $rowC->id)
             ->assertHasNoErrors();
 
-        $this->assertNull($rowC->fresh()->person_id);
-        $this->assertSame($person->id, $rowA->fresh()->person_id);
-        $this->assertSame($person->id, $rowB->fresh()->person_id);
-        $this->assertNotNull(Person::find($person->id));
+        $this->assertNotSame($worker->id, $rowC->fresh()->worker_id);
+        $this->assertSame($worker->id, $rowA->fresh()->worker_id);
+        $this->assertSame($worker->id, $rowB->fresh()->worker_id);
+        $this->assertSame(2, Worker::count());
     }
 
-    public function test_deleting_a_linked_employee_dissolves_a_person_left_alone(): void
+    public function test_deleting_a_linked_employee_keeps_the_worker_for_the_other_row(): void
     {
-        [$a, , $rowA, $rowB, $person] = $this->linkedPair();
+        [$a, , $rowA, $rowB, $worker] = $this->linkedPair();
 
         Livewire::actingAs($this->admin)
             ->test(SubcontractorShow::class, ['subcontractor' => $a])
             ->call('deleteEmployee', $rowA->id);
 
         $this->assertNull(SubcontractorEmployee::find($rowA->id));
-        $this->assertNull($rowB->fresh()->person_id);
-        $this->assertNull(Person::find($person->id));
+        $this->assertSame($worker->id, $rowB->fresh()->worker_id);
+        $this->assertNotNull(Worker::find($worker->id));
     }
 
-    public function test_unlinking_from_the_person_page_needs_the_link_grant(): void
+    public function test_unlinking_from_the_worker_page_needs_the_link_grant(): void
     {
-        [, , $rowA, , $person] = $this->linkedPair();
+        [, , $rowA, , $worker] = $this->linkedPair();
 
-        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'people.view']);
+        $reader = $this->roleWith(['projects.view', 'project.view', 'vendors.view', 'workers.view']);
 
         Livewire::actingAs($reader)
-            ->test(PersonShow::class, ['person' => $person])
+            ->test(WorkerShow::class, ['worker' => $worker])
             ->call('unlinkEmployee', $rowA->id)
             ->assertForbidden();
 
         Livewire::actingAs($reader)
-            ->test(PersonShow::class, ['person' => $person])
-            ->set('person_name', 'Renamed')
-            ->call('savePerson')
+            ->test(WorkerShow::class, ['worker' => $worker])
+            ->set('worker_name', 'Renamed')
+            ->call('saveWorker')
             ->assertForbidden();
 
-        $this->assertSame($person->id, $rowA->fresh()->person_id);
-        $this->assertSame('João Silva', $person->fresh()->name);
+        $this->assertSame($worker->id, $rowA->fresh()->worker_id);
+        $this->assertSame('João Silva', $worker->fresh()->name);
     }
 
     /*
@@ -503,10 +533,10 @@ class PeopleTest extends TestCase
 
         $rowB = $b->employees()->first();
 
-        $this->assertNotNull($rowB->person_id);
-        $this->assertSame($rowB->person_id, $rowA->fresh()->person_id);
+        $this->assertSame($rowB->worker_id, $rowA->fresh()->worker_id);
         $this->assertSame('Moved over in March', $rowB->link_reason);
-        $this->assertCount(2, $rowB->person->distinctTaxIds());
+        $this->assertCount(2, $rowB->worker->distinctTaxIds());
+        $this->assertSame(1, Worker::count());
     }
 
     public function test_a_link_chosen_without_the_grant_is_ignored_on_save(): void
@@ -525,12 +555,11 @@ class PeopleTest extends TestCase
             ->call('saveEmployee')
             ->assertHasNoErrors();
 
-        $this->assertNull($b->employees()->first()->person_id);
-        $this->assertNull($rowA->fresh()->person_id);
-        $this->assertSame(0, Person::count());
+        $this->assertNotSame($b->employees()->first()->worker_id, $rowA->fresh()->worker_id);
+        $this->assertSame(2, Worker::count());
     }
 
-    public function test_the_people_page_suggests_rows_sharing_a_tax_id_and_links_them_together(): void
+    public function test_the_workers_page_suggests_rows_sharing_a_tax_id_and_links_them_together(): void
     {
         $a = $this->makeSubcontractor('Company A');
         $b = $this->makeSubcontractor('Company B');
@@ -540,7 +569,7 @@ class PeopleTest extends TestCase
         $unrelated = $this->makeEmployee($c, ['name' => 'Maria', 'tax_id' => '000.000.000-00']);
 
         $component = Livewire::actingAs($this->admin)
-            ->test(PeopleIndex::class)
+            ->test(WorkerIndex::class)
             ->call('setActiveTab', 'suggestions');
 
         $suggestions = $component->viewData('suggestions');
@@ -554,27 +583,49 @@ class PeopleTest extends TestCase
         // The unrelated row was sent by the browser too; it sits at a third
         // company, so it is linked as well — the group is what was asked
         // for. What is never linked is a second row at the same company.
-        $this->assertSame(1, Person::count());
-        $this->assertSame($rowA->fresh()->person_id, $rowB->fresh()->person_id);
+        $this->assertSame(1, Worker::count());
+        $this->assertSame($rowA->fresh()->worker_id, $rowB->fresh()->worker_id);
+        $this->assertSame($rowA->fresh()->worker_id, $unrelated->fresh()->worker_id);
 
         // A seeded employee may see the suggestion but not act on it.
         Livewire::actingAs($this->user('employee'))
-            ->test(PeopleIndex::class)
+            ->test(WorkerIndex::class)
             ->call('linkGroup', [$rowA->id, $rowB->id])
             ->assertForbidden();
     }
 
-    public function test_the_people_list_is_searchable_and_shows_the_tax_id_difference(): void
+    public function test_the_worker_list_is_searchable_filterable_and_shows_the_tax_id_difference(): void
     {
-        [, , , , $person] = $this->linkedPair();
+        [, , , $rowB, $worker] = $this->linkedPair();
+        $c = $this->makeSubcontractor('Company C');
+        $alone = $this->makeEmployee($c, ['name' => 'Pedro Alves', 'ended_at' => '2025-01-31']);
 
         Livewire::actingAs($this->admin)
-            ->test(PeopleIndex::class)
-            ->assertSee($person->name)
+            ->test(WorkerIndex::class)
+            ->assertSee($worker->name)
+            ->assertSee('Pedro Alves')
             ->assertSee(__('2 different tax ids'))
             ->set('search', 'Company B')
-            ->assertSee($person->name)
+            ->assertSee($worker->name)
+            ->assertDontSee('Pedro Alves')
+            ->set('search', '')
+            ->set('companies', 'several')
+            ->assertSee($worker->name)
+            ->assertDontSee('Pedro Alves')
+            ->set('companies', 'one')
+            ->assertSee('Pedro Alves')
+            ->assertDontSee(route('workers.show', $worker))
+            ->set('companies', '')
+            ->set('status', 'former')
+            ->assertSee('Pedro Alves')
+            ->assertDontSee(route('workers.show', $worker))
+            ->set('status', '')
+            ->set('taxIds', 'differ')
+            ->assertSee($worker->name)
+            ->assertDontSee('Pedro Alves')
+            ->call('clearFilters')
             ->set('search', 'nobody-here')
-            ->assertDontSee(route('people.show', $person));
+            ->assertDontSee(route('workers.show', $worker))
+            ->assertDontSee(route('workers.show', $alone->worker));
     }
 }

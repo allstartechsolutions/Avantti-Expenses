@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SubcontractorEmployee extends Model
@@ -16,7 +17,7 @@ class SubcontractorEmployee extends Model
 
     protected $fillable = [
         'subcontractor_id',
-        'person_id',
+        'worker_id',
         'title',
         'name',
         'phone',
@@ -38,10 +39,23 @@ class SubcontractorEmployee extends Model
 
     protected static function booted(): void
     {
-        // Deleting a row that was one half of a link leaves a person tying
-        // one row together, which is nothing; let the record go with it.
+        // Every row is a worker from the start. Linking later merges two
+        // workers; nothing ever has to be created by hand.
+        static::created(function (SubcontractorEmployee $employee) {
+            if ($employee->worker_id === null) {
+                $worker = Worker::create([
+                    'name' => $employee->name,
+                    'created_by' => Auth::id(),
+                ]);
+
+                $employee->forceFill(['worker_id' => $worker->id])->saveQuietly();
+                $employee->setRelation('worker', $worker);
+            }
+        });
+
+        // A worker whose last row is deleted describes nobody.
         static::deleted(function (SubcontractorEmployee $employee) {
-            $employee->person?->dissolveIfLonely();
+            $employee->worker?->deleteIfEmpty();
         });
     }
 
@@ -61,10 +75,10 @@ class SubcontractorEmployee extends Model
         return $this->hasMany(Contract::class);
     }
 
-    /** The human this row describes, once somebody has linked it to another row. */
-    public function person(): BelongsTo
+    /** The human this row describes. Always set once the row has been saved. */
+    public function worker(): BelongsTo
     {
-        return $this->belongsTo(Person::class);
+        return $this->belongsTo(Worker::class);
     }
 
     public function linkedBy(): BelongsTo
@@ -72,9 +86,10 @@ class SubcontractorEmployee extends Model
         return $this->belongsTo(User::class, 'linked_by');
     }
 
+    /** Known at another company too — the worker has more than this one row. */
     public function isLinked(): bool
     {
-        return $this->person_id !== null;
+        return $this->siblings()->isNotEmpty();
     }
 
     /** Still at this company: no end date, or one still ahead. */
@@ -84,130 +99,132 @@ class SubcontractorEmployee extends Model
     }
 
     /**
-     * The other companies this person is known at, for the "also at" line.
-     * Needs `person.employees.subcontractor` loaded to cost nothing.
+     * The same worker's rows at other companies, for the "also at" line.
+     * Needs `worker.employees.subcontractor` loaded to cost nothing.
      *
      * @return Collection<int, SubcontractorEmployee>
      */
     public function siblings(): Collection
     {
-        if (! $this->person) {
+        if (! $this->worker) {
             return collect();
         }
 
-        return $this->person->employees
+        return $this->worker->employees
             ->reject(fn (SubcontractorEmployee $row) => $row->id === $this->id)
             ->sortBy(fn (SubcontractorEmployee $row) => $row->subcontractor?->company_name ?? '')
             ->values();
     }
 
     /**
-     * Declare this row and another one the same person. Whichever of the two
-     * already belongs to a person wins; when both do, the two people are
-     * folded into one; when neither does, the person is created here. The
+     * Declare this row and another one the same worker. This row's worker
+     * survives and takes the other's rows; the other worker is deleted. The
      * caller has already checked the two rows sit at different companies.
      */
-    public function linkWith(SubcontractorEmployee $other, User $user, ?string $reason = null): Person
+    public function linkWith(SubcontractorEmployee $other, User $user, ?string $reason = null): Worker
     {
         return DB::transaction(function () use ($other, $user, $reason) {
-            $person = $this->person ?? $other->person;
+            $worker = $this->worker ?? Worker::create(['name' => $this->name, 'created_by' => $user->id]);
 
-            if (! $person) {
-                $person = Person::create([
-                    'name' => $this->name,
-                    'created_by' => $user->id,
-                ]);
-            } elseif ($this->person && $other->person && $this->person->isNot($other->person)) {
-                $person->absorb($other->person);
-                $other->unsetRelation('person');
+            if ($other->worker && $other->worker->isNot($worker)) {
+                $worker->absorb($other->worker);
+                $other->unsetRelation('worker');
             }
 
             foreach ([$this, $other] as $row) {
-                if ($row->person_id !== $person->id || ! $row->linked_at) {
-                    $row->forceFill([
-                        'person_id' => $person->id,
-                        'linked_by' => $user->id,
-                        'linked_at' => now(),
-                        'link_reason' => $reason ?: $row->link_reason,
-                    ])->save();
-                }
+                $row->forceFill([
+                    'worker_id' => $worker->id,
+                    'linked_by' => $user->id,
+                    'linked_at' => now(),
+                    'link_reason' => $reason ?: $row->link_reason,
+                ])->save();
+                $row->setRelation('worker', $worker);
             }
 
-            $this->setRelation('person', $person);
-            $other->setRelation('person', $person);
+            $worker->unsetRelation('employees');
 
-            return $person;
+            return $worker;
         });
     }
 
-    /** Take this row back off its person; the person dissolves if that leaves it alone. */
-    public function unlink(): void
+    /**
+     * Take this row off a worker known elsewhere: it becomes a worker of its
+     * own again. A row that is its worker's only row has nothing to unlink.
+     */
+    public function unlink(): bool
     {
-        DB::transaction(function () {
-            $person = $this->person;
+        return DB::transaction(function () {
+            $worker = $this->worker;
+
+            if (! $worker || $worker->employees()->where('id', '!=', $this->id)->doesntExist()) {
+                return false;
+            }
+
+            $own = Worker::create(['name' => $this->name, 'created_by' => Auth::id()]);
 
             $this->forceFill([
-                'person_id' => null,
+                'worker_id' => $own->id,
                 'linked_by' => null,
                 'linked_at' => null,
                 'link_reason' => null,
             ])->save();
 
-            $this->unsetRelation('person');
+            $this->setRelation('worker', $own);
+            $worker->unsetRelation('employees');
 
-            $person?->dissolveIfLonely();
+            return true;
         });
     }
 
     /**
-     * Employee rows at other companies that look like the same person as the
+     * Employee rows at other companies that look like the same worker as the
      * details given: same tax id, same phone, same e-mail, or the same name.
-     * Each match says what matched so the person deciding can weigh it —
+     * Each match says what matched so whoever decides can weigh it —
      * a shared tax id is near-certain, a shared name is a hint.
      *
-     * Rows already on the same person as `$excludePersonId` are left out:
-     * they are linked, there is nothing to suggest.
+     * Rows already on the worker `$excludeWorkerId` are left out: they are
+     * linked, there is nothing to suggest.
      *
      * @return Collection<int, array{employee: SubcontractorEmployee, reasons: array<int, string>}>
      */
     public static function lookalikes(
         array $details,
         ?int $excludeSubcontractorId = null,
-        ?int $excludePersonId = null,
+        ?int $excludeWorkerId = null,
     ): Collection {
-        $name = Person::normalizeName($details['name'] ?? null);
-        $phone = Person::normalizePhone($details['phone'] ?? null);
-        $email = Person::normalizeEmail($details['email'] ?? null);
-        $taxId = Person::normalizeTaxId($details['tax_id'] ?? null);
+        $name = Worker::normalizeName($details['name'] ?? null);
+        $phone = Worker::normalizePhone($details['phone'] ?? null);
+        $email = Worker::normalizeEmail($details['email'] ?? null);
+        $taxId = Worker::normalizeTaxId($details['tax_id'] ?? null);
 
         if ($name === '' && $phone === '' && $email === '' && $taxId === '') {
             return collect();
         }
 
-        $query = static::query()->with(['subcontractor', 'person.employees.subcontractor']);
+        $query = static::query()->with(['subcontractor', 'worker.employees.subcontractor']);
 
         if ($excludeSubcontractorId) {
             $query->where('subcontractor_id', '!=', $excludeSubcontractorId);
         }
 
-        if ($excludePersonId) {
-            $query->where(fn (Builder $q) => $q->whereNull('person_id')->orWhere('person_id', '!=', $excludePersonId));
+        if ($excludeWorkerId) {
+            $query->where(fn (Builder $q) => $q->whereNull('worker_id')->orWhere('worker_id', '!=', $excludeWorkerId));
         }
 
         return $query->get()
             ->map(function (SubcontractorEmployee $row) use ($name, $phone, $email, $taxId) {
                 $reasons = [];
 
-                if ($taxId !== '' && Person::normalizeTaxId($row->tax_id) === $taxId) {
+                if ($taxId !== '' && Worker::normalizeTaxId($row->tax_id) === $taxId) {
                     $reasons[] = 'tax_id';
                 }
-                if ($phone !== '' && Person::normalizePhone($row->phone) === $phone) {
+                if ($phone !== '' && Worker::normalizePhone($row->phone) === $phone) {
                     $reasons[] = 'phone';
                 }
-                if ($email !== '' && Person::normalizeEmail($row->email) === $email) {
+                if ($email !== '' && Worker::normalizeEmail($row->email) === $email) {
                     $reasons[] = 'email';
                 }
-                if ($name !== '' && Person::normalizeName($row->name) === $name) {
+                if ($name !== '' && Worker::normalizeName($row->name) === $name) {
                     $reasons[] = 'name';
                 }
 

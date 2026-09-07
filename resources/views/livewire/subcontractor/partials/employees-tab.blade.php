@@ -1,6 +1,6 @@
 {{--
     Employees tab of the subcontractor page.
-    Expects: $employees (with person.employees.subcontractor, linkedBy, contracts_count),
+    Expects: $employees (with worker.employees.subcontractor, linkedBy, contracts_count),
              $linkedEmployees, and the component's employee form state.
 --}}
 @php
@@ -8,8 +8,8 @@
     $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2';
     $th = 'px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap';
     $canEdit = auth()->user()->can('vendors.edit');
-    $canLink = auth()->user()->can('people.link');
-    $canSeePeople = auth()->user()->can('people.view');
+    $canLink = auth()->user()->can('workers.link');
+    $canSeeWorkers = auth()->user()->can('workers.view');
     $suggestions = $this->employeeSuggestions;
 @endphp
 
@@ -75,7 +75,7 @@
                         <div>
                             <label for="employee_tax_id" class="{{ $label }}">{{ __('Tax ID') }}</label>
                             <input type="text" id="employee_tax_id" wire:model.live.debounce.400ms="employee_tax_id" class="{{ $field }}" placeholder="{{ config('app.country') === 'BR' ? __('CPF as presented to this company') : __('SSN or ITIN as presented to this company') }}">
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('The number this person gave this company. It may differ from what they gave another one — that is recorded, not corrected.') }}</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('The number this worker gave this company. It may differ from what they gave another one — that is recorded, not corrected.') }}</p>
                             @error('employee_tax_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
@@ -110,8 +110,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                                 <div>
-                                    <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ __('Same person as someone already in the system?') }}</p>
-                                    <p class="text-xs text-amber-800 dark:text-amber-300">{{ __('These records at other companies share details with what you typed. Pick one to link them as the same person — the records stay separate, one per company.') }}</p>
+                                    <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ __('Same worker as someone already in the system?') }}</p>
+                                    <p class="text-xs text-amber-800 dark:text-amber-300">{{ __('These records at other companies share details with what you typed. Pick one to link them as the same worker — the records stay separate, one per company.') }}</p>
                                 </div>
                             </div>
 
@@ -130,7 +130,7 @@
                                                 @if($candidate->title)<span class="text-sm text-slate-500 dark:text-slate-400"> · {{ $candidate->title }}</span>@endif
                                                 <span class="block text-xs text-slate-500 dark:text-slate-400 truncate">
                                                     {{ __('at :company', ['company' => $candidate->subcontractor?->company_name]) }}
-                                                    @if($candidate->person && $candidate->siblings()->isNotEmpty())
+                                                    @if($candidate->siblings()->isNotEmpty())
                                                         · {{ __('also at :companies', ['companies' => $candidate->siblings()->map(fn ($s) => $s->subcontractor?->company_name)->filter()->join(', ')]) }}
                                                     @endif
                                                 </span>
@@ -149,9 +149,9 @@
 
                             @if($employee_link_to)
                                 <div>
-                                    <label for="employee_link_reason" class="{{ $label }}">{{ __('Why are these the same person?') }}</label>
+                                    <label for="employee_link_reason" class="{{ $label }}">{{ __('Why are these the same worker?') }}</label>
                                     <input type="text" id="employee_link_reason" wire:model="employee_link_reason" class="{{ $field }}" placeholder="{{ __('e.g. Same foreman, confirmed on site') }}">
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Optional, but it is what the next person will read when they wonder who decided this.') }}</p>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Optional, but it is what the next reader will see when they wonder who decided this.') }}</p>
                                     @error('employee_link_reason') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                             @endif
@@ -190,7 +190,7 @@
                                 <th class="{{ $th }}">{{ __('Email') }}</th>
                                 <th class="{{ $th }}">{{ __('Tax ID') }}</th>
                                 <th class="{{ $th }}">{{ __('Period') }}</th>
-                                <th class="{{ $th }}">{{ __('Also at') }}</th>
+                                <th class="{{ $th }}">{{ __('Worker') }}</th>
                                 <th class="{{ $th }}">{{ __('Contracts') }}</th>
                                 <th class="{{ $th }}">{{ __('Notes') }}</th>
                                 <th class="{{ $th }} text-right">{{ __('Actions') }}</th>
@@ -229,24 +229,18 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 text-sm">
-                                        @if($employee->isLinked())
-                                            @php $siblings = $employee->siblings(); @endphp
-                                            @if($canSeePeople)
-                                                <a href="{{ route('people.show', $employee->person) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                            @else
-                                                <span class="text-slate-900 dark:text-white">
-                                            @endif
-                                                @if($siblings->isNotEmpty())
-                                                    {{ $siblings->map(fn ($s) => $s->subcontractor?->company_name)->filter()->join(', ') }}
-                                                @else
-                                                    {{ __('Linked') }}
-                                                @endif
-                                            @if($canSeePeople)</a>@else</span>@endif
-                                            @if($employee->person->distinctTaxIds()->count() > 1)
-                                                <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" title="{{ __('This person has presented more than one tax id.') }}">{{ __('Tax ids differ') }}</span>
-                                            @endif
+                                        @php $siblings = $employee->siblings(); @endphp
+                                        @if($employee->worker && $canSeeWorkers)
+                                            <a href="{{ route('workers.show', $employee->worker) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline" title="{{ __('Open the worker page: every company and every contract') }}">
+                                                {{ $siblings->isNotEmpty() ? __('Also at :companies', ['companies' => $siblings->map(fn ($s) => $s->subcontractor?->company_name)->filter()->join(', ')]) : __('Only here') }}
+                                            </a>
+                                        @elseif($siblings->isNotEmpty())
+                                            <span class="text-slate-900 dark:text-white">{{ __('Also at :companies', ['companies' => $siblings->map(fn ($s) => $s->subcontractor?->company_name)->filter()->join(', ')]) }}</span>
                                         @else
-                                            <span class="text-slate-500 dark:text-slate-400">—</span>
+                                            <span class="text-slate-500 dark:text-slate-400">{{ __('Only here') }}</span>
+                                        @endif
+                                        @if($employee->worker && $employee->worker->distinctTaxIds()->count() > 1)
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" title="{{ __('This worker has presented more than one tax id.') }}">{{ __('Tax ids differ') }}</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 text-sm text-slate-900 dark:text-white">{{ $employee->contracts_count }}</td>
@@ -261,7 +255,7 @@
                                             @if($canLink)
                                                 <x-ui.button variant="outline" size="sm" wire:click="startLink({{ $employee->id }})">{{ __('Link') }}</x-ui.button>
                                                 @if($employee->isLinked())
-                                                    <x-ui.button variant="ghost" size="sm" wire:click="unlinkEmployee({{ $employee->id }})" wire:confirm="{{ __('Unlink this record from the person? The other companies\' records are kept; only this one stops being counted as the same person.') }}">{{ __('Unlink') }}</x-ui.button>
+                                                    <x-ui.button variant="ghost" size="sm" wire:click="unlinkEmployee({{ $employee->id }})" wire:confirm="{{ __('Unlink this record from the worker? The other companies\' records are kept; this one becomes a worker of its own.') }}">{{ __('Unlink') }}</x-ui.button>
                                                 @endif
                                             @endif
                                             @if($canEdit)

@@ -159,16 +159,17 @@ SIDEBAR
 │   └── Roles & Access
 ├── Projects
 │   ├── All Projects
-│   ├── Subcontractors
 │   ├── Clients
 │   ├── Cost Codes
 │   ├── Payments
 │   ├── Contract Payments
 │   └── Payment Batches
+├── Directory            ← 2026-09-07: Vendors (suppliers + subcontractors) and Workers
+│   ├── Vendors
+│   └── Workers
 ├── Catalog
 │   ├── All Items
-│   ├── Categories
-│   └── Suppliers
+│   └── Categories
 ├── Estimates
 ├── Invoices
 ├── Meetings

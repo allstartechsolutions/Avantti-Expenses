@@ -2,7 +2,7 @@
     $th = 'px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap';
     $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
     $label = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
-    $canLink = auth()->user()->can('people.link');
+    $canLink = auth()->user()->can('workers.link');
     $current = $employees->filter->isCurrent();
     $statusBadge = fn ($status) => match ($status) {
         'active' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -15,28 +15,28 @@
 @endphp
 <div>
     <x-ui.breadcrumb :items="[
-        ['label' => __('Subcontractors'), 'url' => route('subcontractors.index')],
-        ['label' => __('People'), 'url' => route('people.index')],
-        ['label' => $person->name],
+        ['label' => __('Vendors'), 'url' => route('vendors.index')],
+        ['label' => __('Workers'), 'url' => route('workers.index')],
+        ['label' => $worker->name],
     ]" />
 
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div class="min-w-0">
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $person->name }}</h1>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $worker->name }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {{ trans_choice('Known at :count company|Known at :count companies', $employees->count(), ['count' => $employees->count()]) }}
                     @if($current->isNotEmpty())
                         · {{ __('currently at :companies', ['companies' => $current->map(fn ($e) => $e->subcontractor?->company_name)->filter()->join(', ')]) }}
                     @endif
                 </p>
-                @if($person->notes)
-                    <p class="mt-2 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{{ $person->notes }}</p>
+                @if($worker->notes)
+                    <p class="mt-2 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{{ $worker->notes }}</p>
                 @endif
             </div>
             <div class="flex items-center space-x-3 shrink-0">
-                <x-ui.button variant="secondary" href="{{ route('people.index') }}" icon="arrow-left">{{ __('Back') }}</x-ui.button>
+                <x-ui.button variant="secondary" href="{{ route('workers.index') }}" icon="arrow-left">{{ __('Back') }}</x-ui.button>
                 @if($canLink)
                     <x-ui.button variant="primary" wire:click="startEdit" icon="edit">{{ __('Edit') }}</x-ui.button>
                 @endif
@@ -46,6 +46,9 @@
 
     @if (session()->has('message'))
         <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">{{ session('message') }}</div>
+    @endif
+    @if (session()->has('error'))
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">{{ session('error') }}</div>
     @endif
 
     <!-- Stats -->
@@ -153,7 +156,11 @@
                             <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400" @if($row->notes) title="{{ $row->notes }}" @endif>{{ $row->notes ? \Illuminate\Support\Str::limit($row->notes, 40) : '—' }}</td>
                             @if($canLink)
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
-                                    <x-ui.button variant="ghost" size="sm" wire:click="unlinkEmployee({{ $row->id }})" wire:confirm="{{ __('Unlink this record from the person? The record itself is kept on its company\'s page.') }}">{{ __('Unlink') }}</x-ui.button>
+                                    @if($employees->count() > 1)
+                                    <x-ui.button variant="ghost" size="sm" wire:click="unlinkEmployee({{ $row->id }})" wire:confirm="{{ __('Unlink this record from the worker? It becomes a worker of its own; the record itself is kept on its company\'s page.') }}">{{ __('Unlink') }}</x-ui.button>
+                                    @else
+                                        <a href="{{ route('subcontractors.show', ['subcontractor' => $row->subcontractor_id, 'tab' => 'employees']) }}" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ __('Link from the company page') }}</a>
+                                    @endif
                                 </td>
                             @endif
                         </tr>
@@ -222,7 +229,7 @@
         @else
             <div class="text-center py-12 px-6">
                 <h3 class="text-sm font-medium text-slate-900 dark:text-white">{{ __('No contracts yet') }}</h3>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('None of this person\'s records is the contact on a contract. Choose them under Contact when creating or editing a contract and it will appear here.') }}</p>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('None of this worker\'s records is the contact on a contract. Choose them under Contact when creating or editing a contract and it will appear here.') }}</p>
             </div>
         @endif
     </div>
@@ -233,33 +240,33 @@
         <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
                 <dt class="text-slate-500 dark:text-slate-400">{{ __('Created') }}</dt>
-                <dd class="text-slate-900 dark:text-white">{{ $person->created_at->appDateTime() }}@if($person->createdBy) · {{ $person->createdBy->name }}@endif</dd>
+                <dd class="text-slate-900 dark:text-white">{{ $worker->created_at->appDateTime() }}@if($worker->createdBy) · {{ $worker->createdBy->name }}@endif</dd>
             </div>
             <div>
                 <dt class="text-slate-500 dark:text-slate-400">{{ __('Last updated') }}</dt>
-                <dd class="text-slate-900 dark:text-white">{{ $person->updated_at->appDateTime() }}</dd>
+                <dd class="text-slate-900 dark:text-white">{{ $worker->updated_at->appDateTime() }}</dd>
             </div>
             <div>
                 <dt class="text-slate-500 dark:text-slate-400">{{ __('How this record works') }}</dt>
-                <dd class="text-slate-900 dark:text-white">{{ __('It exists only while two or more company records are linked. Unlink down to one and it disappears.') }}</dd>
+                <dd class="text-slate-900 dark:text-white">{{ __('One worker, one record per company. Link a record from another company to bring it in; unlink one and it becomes a worker of its own.') }}</dd>
             </div>
         </dl>
     </div>
 
     <!-- Edit dialog -->
-    <x-ui.modal name="edit-person-modal" maxWidth="lg">
-        <form wire:submit="savePerson" class="p-6 space-y-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Edit Person') }}</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('The name and notes of the person. Each company\'s own record keeps the name and details given there.') }}</p>
+    <x-ui.modal name="edit-worker-modal" maxWidth="lg">
+        <form wire:submit="saveWorker" class="p-6 space-y-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Edit Worker') }}</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('The name and notes of the worker. Each company\'s own record keeps the name and details given there.') }}</p>
             <div>
-                <label for="person_name" class="{{ $label }}">{{ __('Name') }} <span class="text-red-500">*</span></label>
-                <input type="text" id="person_name" wire:model="person_name" class="{{ $field }}">
-                @error('person_name') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                <label for="worker_name" class="{{ $label }}">{{ __('Name') }} <span class="text-red-500">*</span></label>
+                <input type="text" id="worker_name" wire:model="worker_name" class="{{ $field }}">
+                @error('worker_name') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
             </div>
             <div>
-                <label for="person_notes" class="{{ $label }}">{{ __('Notes') }}</label>
-                <textarea id="person_notes" wire:model="person_notes" rows="4" class="{{ $field }}" placeholder="{{ __('What is known about this person regardless of the company…') }}"></textarea>
-                @error('person_notes') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                <label for="worker_notes" class="{{ $label }}">{{ __('Notes') }}</label>
+                <textarea id="worker_notes" wire:model="worker_notes" rows="4" class="{{ $field }}" placeholder="{{ __('What is known about this worker regardless of the company…') }}"></textarea>
+                @error('worker_notes') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
             </div>
             <div class="flex justify-end gap-3">
                 <x-ui.button type="button" variant="secondary" wire:click="cancelEdit">{{ __('Cancel') }}</x-ui.button>

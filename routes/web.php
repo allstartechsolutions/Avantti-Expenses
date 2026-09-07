@@ -244,11 +244,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)
         ->middleware('ability:vendors.merge')->name('vendors.duplicates');
 
-    // People: one human across several subcontractors (docs/people-module.md)
-    Route::get('people', \App\Livewire\People\PeopleIndex::class)
-        ->middleware('ability:people.view')->name('people.index');
-    Route::get('people/{person}', \App\Livewire\People\PersonShow::class)
-        ->middleware('ability:people.view')->name('people.show');
+    // Directory: every vendor in one list, and the workers who move between them
+    Route::get('vendors', \App\Livewire\Vendor\VendorIndex::class)
+        ->middleware('ability:vendors.view')->name('vendors.index');
+    Route::get('workers', \App\Livewire\Worker\WorkerIndex::class)
+        ->middleware('ability:workers.view')->name('workers.index');
+    Route::get('workers/{worker}', \App\Livewire\Worker\WorkerShow::class)
+        ->middleware('ability:workers.view')->name('workers.show');
 
     // Project routes
     // The project list and its own record. The per-project screens are guarded

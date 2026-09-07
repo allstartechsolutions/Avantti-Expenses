@@ -43,8 +43,12 @@ class NavigationTest extends TestCase
             'Company: Company Info, Users, Roles & Access',
             // My Quotations joined at phase 6 of the procurement assignment
             // module: the buying queue, gated on `quotations.view`.
-            'Projects: All Projects, Subcontractors, People, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
-            'Catalog: All Items, Categories, Suppliers',
+            'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
+            // Vendors (suppliers + subcontractors) and Workers moved into one
+            // Directory group on 2026-09-07; Suppliers left Catalog and
+            // Subcontractors left Projects the same day.
+            'Directory: Vendors, Workers',
+            'Catalog: All Items, Categories',
             'Estimates',
             'Invoices',
             'Meetings: Minutes, My Tasks, Meeting Series',
@@ -54,8 +58,9 @@ class NavigationTest extends TestCase
         'manager' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, People, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
-            'Catalog: All Items, Categories, Suppliers',
+            'Projects: All Projects, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Directory: Vendors, Workers',
+            'Catalog: All Items, Categories',
             'Estimates',
             'Invoices',
             'Meetings: Minutes, My Tasks, Meeting Series',
@@ -64,8 +69,9 @@ class NavigationTest extends TestCase
         'employee' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Subcontractors, People, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
-            'Catalog: All Items, Categories, Suppliers',
+            'Projects: All Projects, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Directory: Vendors, Workers',
+            'Catalog: All Items, Categories',
             'Estimates',
             'Invoices',
             'Meetings: Minutes, My Tasks',

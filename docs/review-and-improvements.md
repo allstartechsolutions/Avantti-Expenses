@@ -1810,14 +1810,17 @@ is the source to condense from.
 
 ---
 
-## People across subcontractors (2026-09-07) — PE1–PE4
+## Workers across subcontractors and the Directory menu (2026-09-07) — PE1–PE4, DR1–DR2
 
-Built end to end on `feature/employee-people-link` (`docs/people-module.md`). Noted while
-building, to be worked in the module's review phase:
+Built as People on `feature/employee-people-link`, renamed and reshaped into Workers on main
+the same day (`docs/workers-module.md`). Noted while building, to be worked in the module's
+review phase:
 
 | | |
 |---|---|
-| **PE1** | **Vendor merge and people.** `Vendor::mergeInto()` repoints employee rows to the survivor. Two rows of one person can then sit at the same company; nothing breaks, but the person page shows the company twice. Decide: collapse them, or leave and badge. |
-| **PE2** | **Cascade deletes bypass `dissolveIfLonely()`.** Deleting a vendor removes its employees at the database level, so a person can be left with one row until something else touches it. A scheduled sweep, or a delete that walks the rows, would close it. |
+| **PE1** | **Vendor merge and people.** `Vendor::mergeInto()` repoints employee rows to the survivor. Two rows of one worker can then sit at the same company; nothing breaks, but the worker page shows the company twice. Decide: collapse them, or leave and badge. |
+| **PE2** | **Cascade deletes bypass `deleteIfEmpty()`.** Deleting a vendor removes its employees at the database level, so a worker can be left with no rows until something else touches it. A scheduled sweep, or a delete that walks the rows, would close it. |
 | **PE3** | **Lookalikes run in PHP over every employee row.** Right for a few hundred contacts; wrong for tens of thousands. If an install grows that far, add `tax_id_key` / `phone_key` columns set on save and query them. |
-| **PE4** | **Export.** The person page is the "every contract this person was on" report, on screen only. A PDF or CSV would need the same `people.view` grant and the same `Contract::visibleTo()` filter. |
+| **PE4** | **Export.** The worker page is the "every contract this worker was on" report, on screen only. A PDF or CSV would need the same `workers.view` grant and the same `Contract::visibleTo()` filter. |
+| **DR1** | **The Directory follows the `projects` module switch.** `vendors.*` and `workers.*` are owned by `projects`; a company with Catalog on and Projects off loses the Vendors list (the old Suppliers route still works). Either give the Directory its own module key or let `vendors.index` answer to whichever of the two is on. |
+| **DR2** | **One vendor detail page** — step two of the Directory. Today a subcontractor opens the subcontractor page and a pure supplier the supplier page. One page with tabs that appear per classification (documents and employees; catalog items and purchase orders) would finish the unification. |

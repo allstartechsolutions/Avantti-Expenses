@@ -64,7 +64,7 @@ class SubcontractorShow extends Component
     public bool $showEmployeeForm = false;
 
     /**
-     * A row at another company the form has been told is the same person.
+     * A row at another company the form has been told is the same worker.
      * Chosen from the lookalikes the form shows as the details are typed;
      * the link is made when the employee is saved.
      */
@@ -92,7 +92,7 @@ class SubcontractorShow extends Component
             'employee_tax_id' => __('tax id'),
             'employee_started_at' => __('start date'),
             'employee_ended_at' => __('end date'),
-            'employee_link_to' => __('linked person'),
+            'employee_link_to' => __('linked worker'),
             'employee_link_reason' => __('reason'),
             'link_target_id' => __('record to link'),
             'link_reason' => __('reason'),
@@ -137,6 +137,12 @@ class SubcontractorShow extends Component
         $this->authorizeAbility('vendors.view');
 
         $this->subcontractor = $subcontractor->load('createdBy');
+
+        // `?tab=employees` opens a tab directly — the worker page links here.
+        $tab = request()->query('tab');
+        if (in_array($tab, ['overview', 'documents', 'employees'], true)) {
+            $this->activeTab = $tab;
+        }
     }
 
     public function setActiveTab(string $tab)
@@ -516,17 +522,17 @@ class SubcontractorShow extends Component
         ]);
     }
 
-    /** Choose, or clear, the row at another company the new employee is the same person as. */
+    /** Choose, or clear, the row at another company the new employee is the same worker as. */
     public function chooseEmployeeLink(?int $employeeId)
     {
-        $this->authorizeAbility('people.link');
+        $this->authorizeAbility('workers.link');
 
         $this->employee_link_to = $this->employee_link_to === $employeeId ? null : $employeeId;
         $this->resetValidation(['employee_link_to', 'employee_link_reason']);
     }
 
     /**
-     * Rows at other companies that look like the person being typed into the
+     * Rows at other companies that look like the worker being typed into the
      * form. Shown only to somebody who may link, because there is nothing
      * else to do with them.
      *
@@ -534,7 +540,7 @@ class SubcontractorShow extends Component
      */
     public function getEmployeeSuggestionsProperty()
     {
-        if (! $this->showEmployeeForm || ! $this->allowsAbility('people.link')) {
+        if (! $this->showEmployeeForm || ! $this->allowsAbility('workers.link')) {
             return collect();
         }
 
@@ -547,7 +553,7 @@ class SubcontractorShow extends Component
             'phone' => $this->employee_phone,
             'email' => $this->employee_email,
             'tax_id' => $this->employee_tax_id,
-        ], $this->subcontractor->id, $editing?->person_id);
+        ], $this->subcontractor->id, $editing?->worker_id);
     }
 
     public function saveEmployee()
@@ -558,7 +564,7 @@ class SubcontractorShow extends Component
 
         // The link is a separate grant: without it the form never offered a
         // row to choose, and whatever the browser sends is ignored.
-        if (! $this->allowsAbility('people.link')) {
+        if (! $this->allowsAbility('workers.link')) {
             $this->employee_link_to = null;
             $this->employee_link_reason = '';
         }
@@ -635,13 +641,13 @@ class SubcontractorShow extends Component
 
     /*
     |---------------------------------------------------------------------------
-    | Linking an employee to the same person at another company
+    | Linking an employee to the same worker at another company
     |---------------------------------------------------------------------------
     */
 
     public function startLink(int $employeeId)
     {
-        $this->authorizeAbility('people.link');
+        $this->authorizeAbility('workers.link');
 
         $this->linking_employee_id = $this->ownEmployee($employeeId)->id;
         $this->link_search = '';
@@ -663,24 +669,24 @@ class SubcontractorShow extends Component
 
     public function chooseLinkTarget(int $employeeId)
     {
-        $this->authorizeAbility('people.link');
+        $this->authorizeAbility('workers.link');
 
         $this->link_target_id = $this->link_target_id === $employeeId ? null : $employeeId;
         $this->resetValidation('link_target_id');
     }
 
-    /** The row the dialog is linking, with its person and their companies. */
+    /** The row the dialog is linking, with its worker and their companies. */
     public function getLinkingEmployeeProperty(): ?SubcontractorEmployee
     {
         return $this->linking_employee_id
-            ? $this->subcontractor->employees()->with('person.employees.subcontractor')->find($this->linking_employee_id)
+            ? $this->subcontractor->employees()->with('worker.employees.subcontractor')->find($this->linking_employee_id)
             : null;
     }
 
     /**
      * What the dialog offers: the lookalikes of the row first, then whatever
      * the search box finds at other companies. Rows already on the same
-     * person are left out of both.
+     * worker are left out of both.
      *
      * @return array{suggested: \Illuminate\Support\Collection, found: \Illuminate\Support\Collection}
      */
@@ -695,7 +701,7 @@ class SubcontractorShow extends Component
         $suggested = SubcontractorEmployee::lookalikes(
             $employee->only(['name', 'phone', 'email', 'tax_id']),
             $this->subcontractor->id,
-            $employee->person_id,
+            $employee->worker_id,
         );
 
         $term = trim($this->link_search);
@@ -703,10 +709,10 @@ class SubcontractorShow extends Component
 
         if (mb_strlen($term) >= 2) {
             $found = SubcontractorEmployee::query()
-                ->with(['subcontractor', 'person.employees.subcontractor'])
+                ->with(['subcontractor', 'worker.employees.subcontractor'])
                 ->where('subcontractor_id', '!=', $this->subcontractor->id)
-                ->when($employee->person_id, fn ($q) => $q->where(
-                    fn ($q) => $q->whereNull('person_id')->orWhere('person_id', '!=', $employee->person_id),
+                ->when($employee->worker_id, fn ($q) => $q->where(
+                    fn ($q) => $q->whereNull('worker_id')->orWhere('worker_id', '!=', $employee->worker_id),
                 ))
                 ->whereNotIn('id', $suggested->pluck('employee.id'))
                 ->where(function ($q) use ($term) {
@@ -727,7 +733,7 @@ class SubcontractorShow extends Component
 
     public function linkEmployee()
     {
-        $this->authorizeAbility('people.link');
+        $this->authorizeAbility('workers.link');
 
         $employee = $this->ownEmployee((int) $this->linking_employee_id);
 
@@ -747,8 +753,8 @@ class SubcontractorShow extends Component
             ->where('subcontractor_id', '!=', $this->subcontractor->id)
             ->findOrFail($this->link_target_id);
 
-        if ($employee->person_id && $employee->person_id === $target->person_id) {
-            $this->addError('link_target_id', __('These two records are already the same person.'));
+        if ($employee->worker_id && $employee->worker_id === $target->worker_id) {
+            $this->addError('link_target_id', __('These two records are already the same worker.'));
 
             return;
         }
@@ -766,15 +772,15 @@ class SubcontractorShow extends Component
 
     public function unlinkEmployee(int $employeeId)
     {
-        $this->authorizeAbility('people.link');
+        $this->authorizeAbility('workers.link');
 
         $employee = $this->ownEmployee($employeeId);
 
-        if (! $employee->isLinked()) {
+        if (! $employee->unlink()) {
+            session()->flash('error', __('This record is not linked to any other company.'));
+
             return;
         }
-
-        $employee->unlink();
 
         session()->flash('message', __(':name is no longer linked to any other record.', ['name' => $employee->name]));
     }
@@ -939,7 +945,7 @@ class SubcontractorShow extends Component
         };
 
         $employees = $this->subcontractor->employees()
-            ->with(['person.employees.subcontractor', 'linkedBy'])
+            ->with(['worker.employees.subcontractor', 'linkedBy'])
             ->withCount('contracts')
             ->orderBy('name')
             ->get();

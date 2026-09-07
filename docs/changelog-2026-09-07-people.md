@@ -1,5 +1,10 @@
 # Changelog — people across subcontractors (2026-09-07)
 
+> **Superseded the same day.** *People* was renamed **Workers**, reshaped so that every
+> employee row is a worker, and moved into the new Directory menu — see
+> `changelog-2026-09-07-workers-directory.md` and `workers-module.md`. Kept as the record
+> of what the first pull request shipped.
+
 Subcontractor employees move between companies and sometimes present a different tax id at
 each. Each company's record had to stay its own, and there was no way to say "these three
 rows are one person" — so no way to list every contract somebody was on.

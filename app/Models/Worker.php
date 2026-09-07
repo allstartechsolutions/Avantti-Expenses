@@ -11,18 +11,17 @@ use Illuminate\Support\Str;
 
 /**
  * One human being, as distinct from the employee rows that describe them at
- * each subcontractor. A person never exists on their own: the record is born
- * the first time somebody links two employee rows, and it dissolves when
- * fewer than two rows are left on it. Each employee row keeps the name, tax
- * id and contact details the person presented at that company — the person
- * only carries what is true of the human regardless of the company.
+ * each subcontractor. Every employee row has a worker from the moment it is
+ * created; linking two rows at different companies merges their workers
+ * into one, and unlinking a row gives it a worker of its own again. Each
+ * employee row keeps the name, tax id and contact details the worker
+ * presented at that company — the worker carries only what is true of the
+ * human regardless of the company.
  *
- * See docs/people-module.md.
+ * See docs/workers-module.md.
  */
-class Person extends Model
+class Worker extends Model
 {
-    protected $table = 'people';
-
     protected $fillable = [
         'name',
         'notes',
@@ -34,25 +33,37 @@ class Person extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** Every employee row this person is known by, one per company. */
+    /** Every employee row this worker is known by, one per company. */
     public function employees(): HasMany
     {
         return $this->hasMany(SubcontractorEmployee::class);
     }
 
-    /** Every contract any of this person's employee rows was the contact on. */
+    /** Every contract any of this worker's employee rows was the contact on. */
     public function contracts(): HasManyThrough
     {
         return $this->hasManyThrough(
             Contract::class,
             SubcontractorEmployee::class,
-            'person_id',
+            'worker_id',
             'subcontractor_employee_id',
         );
     }
 
+    /** Known at more than one company. Needs `employees` loaded to cost nothing. */
+    public function isAtSeveralCompanies(): bool
+    {
+        return $this->employees->pluck('subcontractor_id')->unique()->count() > 1;
+    }
+
+    /** Still at at least one company. Needs `employees` loaded to cost nothing. */
+    public function isCurrent(): bool
+    {
+        return $this->employees->contains(fn (SubcontractorEmployee $row) => $row->isCurrent());
+    }
+
     /**
-     * The distinct tax ids this person has presented, normalised so that
+     * The distinct tax ids this worker has presented, normalised so that
      * "123.456.789-09" and "12345678909" count as one. Two or more is the
      * compliance fact the page exists to show.
      *
@@ -95,40 +106,17 @@ class Person extends Model
     }
 
     /**
-     * Drop the record when it no longer ties anything together. A person
-     * with one employee row left is just an employee again.
+     * Fold another worker into this one: every employee row moves across,
+     * the other record is deleted. This is what linking two rows does —
+     * somebody has said the two workers are one.
      */
-    public function dissolveIfLonely(): bool
-    {
-        if ($this->employees()->count() >= 2) {
-            return false;
-        }
-
-        $this->employees()->update([
-            'person_id' => null,
-            'linked_by' => null,
-            'linked_at' => null,
-            'link_reason' => null,
-        ]);
-
-        $this->delete();
-
-        return true;
-    }
-
-    /**
-     * Fold another person into this one: every employee row moves across,
-     * the other record is deleted. Used when somebody links two rows that
-     * already belong to two different people — they have just said the two
-     * people are one.
-     */
-    public function absorb(Person $other): void
+    public function absorb(Worker $other): void
     {
         if ($other->id === $this->id) {
             return;
         }
 
-        $other->employees()->update(['person_id' => $this->id]);
+        $other->employees()->update(['worker_id' => $this->id]);
 
         if (! $this->notes && $other->notes) {
             $this->notes = $other->notes;
@@ -136,5 +124,18 @@ class Person extends Model
         }
 
         $other->delete();
+        $this->unsetRelation('employees');
+    }
+
+    /** A worker with no employee row left describes nobody. */
+    public function deleteIfEmpty(): bool
+    {
+        if ($this->employees()->exists()) {
+            return false;
+        }
+
+        $this->delete();
+
+        return true;
     }
 }
