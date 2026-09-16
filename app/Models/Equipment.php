@@ -280,6 +280,27 @@ class Equipment extends Model
         return $expenses > 0 ? ['expenses' => $expenses] : [];
     }
 
+    /** The relations a list counts (`withCount(self::RECORD_COUNTS)`) to know whether a row is a bare entry. */
+    public const RECORD_COUNTS = ['expenses', 'readings', 'assignments', 'plans', 'maintenances', 'findings', 'attachments'];
+
+    /**
+     * Nothing recorded under it yet — no reading, stay, plan, service,
+     * finding, attachment or expense — so it can go from the list with a
+     * confirmation rather than the page's counted modal.
+     */
+    public function hasNoRecords(): bool
+    {
+        foreach (self::RECORD_COUNTS as $relation) {
+            $count = $this->getAttribute($relation.'_count') ?? $this->{$relation}()->count();
+
+            if ($count > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * The expenses this reader may count: every tagged row for somebody
      * company-wide, their projects' rows (and the company's, with the grant)

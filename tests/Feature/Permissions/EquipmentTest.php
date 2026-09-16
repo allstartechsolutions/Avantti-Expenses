@@ -9,6 +9,7 @@ use App\Enums\ProjectStatus;
 use App\Livewire\CompanyExpense\CompanyExpenseCreate;
 use App\Livewire\Equipment\EquipmentCreate;
 use App\Livewire\Equipment\EquipmentEdit;
+use App\Livewire\Equipment\EquipmentIndex;
 use App\Livewire\Equipment\EquipmentShow;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\JobSite\JobSiteEquipment;
@@ -268,6 +269,29 @@ class EquipmentTest extends TestCase
             ->assertRedirect(route('equipment.index'));
 
         $this->assertNull($equipment->fresh());
+    }
+
+    public function test_a_bare_entry_is_deleted_from_the_register_and_one_with_records_is_not(): void
+    {
+        $bare = $this->makeEquipment(['name' => 'Mistake']);
+        $used = $this->makeEquipment(['name' => 'Used']);
+        $used->readings()->create(['reading' => 10, 'read_at' => now()->toDateString(), 'recorded_by' => $this->admin->id]);
+
+        // The button follows the counts; the guard follows the grant.
+        Livewire::actingAs($this->admin)->test(EquipmentIndex::class)
+            ->assertSeeHtml('wire:click="delete('.$bare->id.')"')
+            ->assertDontSeeHtml('wire:click="delete('.$used->id.')"');
+        Livewire::actingAs($this->roleWith(['equipment.view', 'equipment.edit']))->test(EquipmentIndex::class)
+            ->assertDontSeeHtml('wire:click="delete('.$bare->id.')"')
+            ->call('delete', $bare->id)->assertForbidden();
+        $this->assertNotNull($bare->fresh());
+
+        // A stale button is not permission: the counts are checked again on the server.
+        Livewire::actingAs($this->admin)->test(EquipmentIndex::class)->call('delete', $used->id);
+        $this->assertNotNull($used->fresh(), 'A piece with records is deleted from its page, not the list.');
+
+        Livewire::actingAs($this->admin)->test(EquipmentIndex::class)->call('delete', $bare->id)->assertHasNoErrors();
+        $this->assertNull($bare->fresh());
     }
 
     /*

@@ -6,6 +6,7 @@ use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Equipment;
 use App\Models\EquipmentMaintenance;
 use App\Models\Project;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -79,10 +80,37 @@ class EquipmentIndex extends Component
         ];
     }
 
+    /**
+     * A bare entry — registered by mistake, nothing recorded under it — goes
+     * from the list. Anything with history is deleted from its own page,
+     * where the counts are shown, or retired when money is tagged to it.
+     */
+    public function delete(int $id): void
+    {
+        $this->authorizeAbility('equipment.delete');
+
+        $equipment = Equipment::withCount(Equipment::RECORD_COUNTS)->findOrFail($id);
+
+        if (! $equipment->hasNoRecords()) {
+            session()->flash('error', __('This equipment has records under it. Delete it from its page, where they are listed.'));
+
+            return;
+        }
+
+        if ($equipment->photo_path) {
+            Storage::delete($equipment->photo_path);
+        }
+
+        $equipment->delete();
+
+        session()->flash('message', __('Equipment deleted.'));
+    }
+
     public function render()
     {
         $equipment = Equipment::query()
             ->with(['project:id,project_name', 'jobSite:id,job_site_name', 'responsible:id,name'])
+            ->withCount(Equipment::RECORD_COUNTS)
             ->when($this->search !== '', fn ($q) => $q->search($this->search))
             ->when($this->typeFilter !== '', fn ($q) => $q->where('equipment_type', $this->typeFilter))
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))

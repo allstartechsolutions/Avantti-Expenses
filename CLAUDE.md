@@ -207,6 +207,30 @@ final phase — **Review and Improvements** — planned from the start and never
 Items noticed mid-build go into the module's review backlog rather than derailing the
 feature in hand — but the backlog is worked, not archived.
 
+## Every Record Ships With a Delete
+
+**A record that can be created can be deleted.** A customer who registers a machine by
+mistake, a duplicate vendor, a category nobody uses: each of them needs a way out, and "ask
+support" is not one. A module whose only exits are *retire* and *inactive* is unfinished.
+Rules, all learned from the equipment register (16 Sep 2026):
+
+1. **The delete exists from the first screen.** Declare `<area>.delete` (sensitive, admin-only
+   by seed unless the owner says otherwise) with the area, and build the action with the
+   create screen — not in the review phase.
+2. **A bare entry goes from the list.** A row with nothing recorded under it gets a trash
+   button in its actions cell with `wire:confirm` — the confirmation names the record and says
+   nothing hangs off it. Decide "nothing under it" with one `withCount(...)` on the list query
+   and a model method that reads those counts (`Equipment::hasNoRecords()`), never a query
+   per row.
+3. **A record with history goes from its own page**, through the counted modal
+   (`docs/delete-functionality.md`): what is deleted with it, in numbers, and the files
+   cleaned up by hand before the cascade.
+4. **Money blocks the delete; it never cascades.** An expense, a payment, a contract tagged to
+   the record makes it *retired* / *sold* / *inactive* instead, and the screen says why
+   (`deleteBlockers()`). A financial record is never taken out through a foreign key.
+5. **The list action and the page action are the same guard**, and the list action re-checks
+   the counts server-side — a stale button is not permission.
+
 ## Critical Rules
 1. **PRODUCTION CODE ONLY** - Treat all code as production-ready
 2. **NO FRESH MIGRATIONS** - NEVER use `migrate:fresh` or `migrate:refresh`. Only use `php artisan migrate` for incremental changes

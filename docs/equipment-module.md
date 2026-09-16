@@ -77,7 +77,7 @@ Area `equipment`, module **`equipment`** (its own switch on System Settings → 
 | `equipment.edit` | the edit screen, including status | everyone |
 | `equipment.assign` | sending equipment to a project, site or person, and back — only to a project the actor may open (`Project::visibleTo()`) | everyone |
 | `equipment.maintain` | readings, plans, scheduling, starting, completing, cancelling, findings | everyone |
-| `equipment.delete` *(sensitive)* | deleting, refused while expenses are tagged | admins |
+| `equipment.delete` *(sensitive)* | deleting — a bare entry from the register's row, anything with history from its page, refused while expenses are tagged | admins |
 
 Two decisions worth knowing:
 

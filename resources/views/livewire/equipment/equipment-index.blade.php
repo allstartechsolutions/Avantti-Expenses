@@ -7,6 +7,7 @@
         'retired' => 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
         'sold' => 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
     ];
+    $canDelete = auth()->user()->can('equipment.delete');
     $urgencyChip = [
         'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
         'due' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -170,7 +171,12 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <x-ui.view-edit-buttons :viewRoute="route('equipment.show', $item)" :editRoute="auth()->user()->can('equipment.edit') ? route('equipment.edit', $item) : null" />
+                                    <div class="inline-flex items-center gap-2">
+                                        <x-ui.view-edit-buttons :viewRoute="route('equipment.show', $item)" :editRoute="auth()->user()->can('equipment.edit') ? route('equipment.edit', $item) : null" />
+                                        @if($canDelete && $item->hasNoRecords())
+                                            <x-ui.button variant="danger" size="sm" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Delete :name? Nothing has been recorded under it.', ['name' => $item->name]) }}" title="{{ __('Delete') }}"></x-ui.button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

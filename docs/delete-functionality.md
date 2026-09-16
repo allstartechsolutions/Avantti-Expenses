@@ -286,6 +286,14 @@ are removed by hand before the cascade — the photo, every finding's photo, eve
 before the database has to. The modal points at *Retire* or *Sold* instead, which keep the
 history. Deleting a maintenance only nulls `expenses.equipment_maintenance_id`.
 
+**A bare entry goes from the list.** A row with nothing recorded under it — no reading,
+stay, plan, service, finding, attachment or expense (`Equipment::hasNoRecords()`, read from
+one `withCount(Equipment::RECORD_COUNTS)` on the list query) — shows a trash button in the
+register's actions cell with a `wire:confirm` naming it. `EquipmentIndex::delete()` holds the
+same `equipment.delete` guard and re-checks the counts server-side; anything with history is
+sent to its page. This is the rule for every module from now on — see *Every Record Ships
+With a Delete* in `CLAUDE.md`.
+
 ## Client Delete
 
 ### Behavior
