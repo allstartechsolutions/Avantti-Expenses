@@ -8,6 +8,7 @@ use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Services\PaymentDetailReportService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -21,6 +22,7 @@ class PaymentDetailReport extends Component
     public string $fromDate = '';
     public string $toDate = '';
     public string $clientFilter = '';
+    public string $projectManagerFilter = '';
     public string $projectFilter = '';
     public string $jobSiteFilter = '';
     public string $vendorFilter = '';
@@ -37,6 +39,7 @@ class PaymentDetailReport extends Component
         'fromDate' => ['except' => ''],
         'toDate' => ['except' => ''],
         'clientFilter' => ['except' => ''],
+        'projectManagerFilter' => ['except' => ''],
         'projectFilter' => ['except' => ''],
         'jobSiteFilter' => ['except' => ''],
         'vendorFilter' => ['except' => ''],
@@ -72,6 +75,28 @@ class PaymentDetailReport extends Component
     public function updatedProjectFilter(): void
     {
         $this->jobSiteFilter = '';
+    }
+
+    /**
+     * The project and job site lists narrow to the manager's projects, so a
+     * selection outside that set is dropped rather than left pointing at a
+     * project the list no longer offers. "Company (general)" is kept only
+     * while no manager is chosen: company expenses belong to no project.
+     */
+    public function updatedProjectManagerFilter(): void
+    {
+        if ($this->projectManagerFilter === '') {
+            return;
+        }
+
+        $stillListed = $this->projectFilter !== ''
+            && $this->projectFilter !== 'company'
+            && $this->projects->contains('id', (int) $this->projectFilter);
+
+        if (! $stillListed) {
+            $this->projectFilter = '';
+            $this->jobSiteFilter = '';
+        }
     }
 
     public function setCurrentMonth(): void
@@ -110,12 +135,21 @@ class PaymentDetailReport extends Component
             $this->clientFilter,
             $this->statusFilter,
             in_array($this->typeFilter, ['all', 'expenses', 'contracts'], true) ? $this->typeFilter : 'all',
+            $this->projectManagerFilter,
         )->includeCompany($this->allowsAbility('company-expenses.view'));
     }
 
     public function getProjectsProperty(): Collection
     {
-        return Project::orderBy('project_name')->get(['id', 'project_name']);
+        return Project::query()
+            ->when($this->projectManagerFilter, fn ($q) => $q->where('project_manager_id', $this->projectManagerFilter))
+            ->orderBy('project_name')
+            ->get(['id', 'project_name']);
+    }
+
+    public function getProjectManagersProperty(): Collection
+    {
+        return User::whereHas('managedProjects')->orderBy('name')->get(['id', 'name']);
     }
 
     public function getClientsProperty(): Collection
@@ -131,6 +165,7 @@ class PaymentDetailReport extends Component
 
         return JobSite::query()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
             ->orderBy('job_site_name')
             ->get(['id', 'job_site_name']);
     }
@@ -277,6 +312,7 @@ class PaymentDetailReport extends Component
             'byVendor' => $service->byVendor(),
             'projects' => $this->projects,
             'clients' => $this->clients,
+            'projectManagers' => $this->projectManagers,
             'jobSites' => $this->jobSites,
             'vendors' => $this->vendors,
             'subcontractors' => $this->subcontractors,

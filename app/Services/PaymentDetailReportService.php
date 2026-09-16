@@ -49,6 +49,7 @@ class PaymentDetailReportService
         protected string $clientFilter = '',
         protected string|array $statusFilter = 'all',
         protected string $typeFilter = 'all',
+        protected string $projectManagerFilter = '',
     ) {
         $start = Carbon::parse($fromDate)->startOfDay();
         $end = Carbon::parse($toDate)->endOfDay();
@@ -140,7 +141,8 @@ class PaymentDetailReportService
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->vendorFilter, fn ($q) => $q->where('supplier_id', $this->vendorFilter))
-            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)));
+            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
 
         $this->applyCompanyScope($query);
     }
@@ -256,7 +258,8 @@ class PaymentDetailReportService
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
-            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)));
+            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
     }
 
     protected function contractPaymentRows(): Collection

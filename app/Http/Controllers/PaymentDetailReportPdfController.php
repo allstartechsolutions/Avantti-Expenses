@@ -8,6 +8,7 @@ use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Services\PaymentDetailReportService;
 use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -41,6 +42,7 @@ class PaymentDetailReportPdfController extends Controller
         $fromDate = $request->query('fromDate') ?: Carbon::now()->startOfMonth()->toDateString();
         $toDate = $request->query('toDate') ?: Carbon::now()->endOfMonth()->toDateString();
         $clientFilter = $request->query('clientFilter') ?: '';
+        $projectManagerFilter = $request->query('projectManagerFilter') ?: '';
         $projectFilter = $request->query('projectFilter') ?: '';
         $jobSiteFilter = $request->query('jobSiteFilter') ?: '';
         $vendorFilter = $request->query('vendorFilter') ?: '';
@@ -69,6 +71,7 @@ class PaymentDetailReportPdfController extends Controller
             $clientFilter,
             $statusFilter,
             $typeFilter,
+            $projectManagerFilter,
         )->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'));
 
         return [
@@ -84,6 +87,7 @@ class PaymentDetailReportPdfController extends Controller
                 : implode(', ', array_map('ucfirst', $statusFilter)),
             'typeFilter' => $typeFilter,
             'client' => $clientFilter ? Client::find($clientFilter) : null,
+            'projectManager' => $projectManagerFilter ? User::find($projectManagerFilter) : null,
             'project' => $projectFilter ? Project::find($projectFilter) : null,
             'jobSite' => $jobSiteFilter ? JobSite::find($jobSiteFilter) : null,
             'vendor' => $vendorFilter ? Supplier::find($vendorFilter) : null,

@@ -73,6 +73,9 @@
                 @if($client)
                     <div style="font-size: 7pt; color: #888;">{{ __('Client') }}: {{ $client->company_name }}</div>
                 @endif
+                @if($projectManager)
+                    <div style="font-size: 7pt; color: #888;">{{ __('Project Manager') }}: {{ $projectManager->name }}</div>
+                @endif
                 @if($project)
                     <div style="font-size: 7pt; color: #888;">{{ __('Project') }}: {{ $project->project_name }}</div>
                 @endif

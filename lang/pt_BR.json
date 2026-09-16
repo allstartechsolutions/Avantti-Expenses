@@ -5374,5 +5374,6 @@
     "Only a scheduled maintenance can be started.": "Só uma manutenção prevista pode ser iniciada.",
     "This maintenance is already closed.": "Esta manutenção já está encerrada.",
     "At :title": "Em :title",
-    "A finding is recorded on a maintenance that has started or been completed.": "Uma ocorrência é registrada em uma manutenção iniciada ou concluída."
+    "A finding is recorded on a maintenance that has started or been completed.": "Uma ocorrência é registrada em uma manutenção iniciada ou concluída.",
+    "All project managers": "Todos os gerentes de projeto"
 }
