@@ -2,10 +2,11 @@
 
 namespace App\Livewire\SystemSettings;
 
-use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\UserStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\NotificationSetting;
 use App\Services\BuyerDirectory;
+use App\Services\EquipmentMaintenanceNotifier;
 use App\Services\VendorDocumentNotifier;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -23,17 +24,25 @@ class NotificationSettings extends Component
     use AuthorizesAbility;
 
     public int $digestDay = 1;
+
     public int $digestHour = 7;
 
     // Purchasing — how hard the reminders push.
     public int $awaitingDays = NotificationSetting::DEFAULT_AWAITING_DAYS;
+
     public int $awaitingMaxReminders = NotificationSetting::DEFAULT_AWAITING_REMINDERS;
+
     public int $stallDays = NotificationSetting::DEFAULT_STALL_DAYS;
+
     public int $stallMaxReminders = NotificationSetting::DEFAULT_STALL_REMINDERS;
+
     public int $dueLeadDays = NotificationSetting::DEFAULT_DUE_LEAD_DAYS;
 
     /** Vendors — who is told about expiring documents. Empty = the fallback. @var array<int, int> */
     public array $vendorDocumentRecipients = [];
+
+    /** Equipment — who is told about maintenance coming due. Empty = the fallback. @var array<int, int> */
+    public array $equipmentRecipients = [];
 
     public function mount(): void
     {
@@ -49,6 +58,7 @@ class NotificationSettings extends Component
         $this->dueLeadDays = NotificationSetting::dueLeadDays();
 
         $this->vendorDocumentRecipients = NotificationSetting::vendorDocumentRecipientIds();
+        $this->equipmentRecipients = NotificationSetting::equipmentMaintenanceRecipientIds();
     }
 
     /** Active staff, for the recipients picker. Guests are never offered. */
@@ -65,6 +75,44 @@ class NotificationSettings extends Component
     public function vendorDocumentFallback(): Collection
     {
         return app(VendorDocumentNotifier::class)->recipients();
+    }
+
+    /** Who the equipment fallback reaches right now, so the screen can say so by name. */
+    #[Computed]
+    public function equipmentFallback(): Collection
+    {
+        return app(EquipmentMaintenanceNotifier::class)->recipients();
+    }
+
+    public function saveEquipmentRecipients(): void
+    {
+        $this->authorizeAbility('settings.edit');
+
+        $this->validate([
+            'equipmentRecipients' => ['array'],
+            'equipmentRecipients.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where('status', UserStatus::ACTIVE->value)->where('is_guest', 0),
+            ],
+        ], [
+            'equipmentRecipients.*.exists' => __('One of the chosen people is no longer an active member of staff.'),
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $this->equipmentRecipients)));
+
+        NotificationSetting::firstOrCreate(['key' => NotificationSetting::EQUIPMENT_MAINTENANCE_DUE])
+            ->update([
+                'options' => ['recipients' => $ids],
+                'updated_by' => auth()->id(),
+            ]);
+
+        $this->equipmentRecipients = $ids;
+
+        unset($this->settings, $this->equipmentFallback);
+
+        session()->flash('message', $ids === []
+            ? __('Nobody is chosen: equipment maintenance reminders go to everyone who may maintain equipment.')
+            : trans_choice('Equipment maintenance reminders go to :count person.|Equipment maintenance reminders go to :count people.', count($ids), ['count' => count($ids)]));
     }
 
     public function saveVendorDocumentRecipients(): void

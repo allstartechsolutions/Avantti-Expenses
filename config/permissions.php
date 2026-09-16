@@ -1,5 +1,7 @@
 <?php
 
+use App\Livewire\Quotation\MyQuotations;
+
 /**
  * The ability catalogue.
  *
@@ -70,13 +72,13 @@ return [
         'company' => [
             'name' => 'Company',
             'order' => 20,
-            'active' => ['company.*', 'users.*', 'access.*'],
+            'active' => ['company.*', 'users.*', 'access.*', 'company-expenses.*', 'equipment.*'],
             'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
         ],
         'projects' => [
             'name' => 'Projects',
             'order' => 30,
-            'active' => ['projects.*', 'clients.*', 'cost-codes.*', 'company-expenses.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
+            'active' => ['projects.*', 'clients.*', 'cost-codes.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
             'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
         ],
         // Suppliers, subcontractors and the workers who move between them:
@@ -223,8 +225,11 @@ return [
         [
             'key' => 'company-expenses',
             'name' => 'Company Expenses',
-            'group' => 'projects',
-            'order' => 48,
+            // In the Company group with the register and the maintenance
+            // list, by the owner's decision of 16 Sep 2026: overhead and
+            // assets are the company's, not a project's.
+            'group' => 'company',
+            'order' => 40,
             'route' => 'company-expenses.index',
             'ability' => 'company-expenses.view',
             'active' => ['company-expenses.*'],
@@ -261,6 +266,26 @@ return [
             'icon' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
         ],
 
+        [
+            'key' => 'equipment',
+            'name' => 'Equipment',
+            'group' => 'company',
+            'order' => 50,
+            'route' => 'equipment.index',
+            'ability' => 'equipment.view',
+            'active' => ['equipment.index', 'equipment.create', 'equipment.show', 'equipment.edit'],
+            'icon' => 'M8 7h8m-8 4h8m-8 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z',
+        ],
+        [
+            'key' => 'equipment-maintenance',
+            'name' => 'Maintenance',
+            'group' => 'company',
+            'order' => 60,
+            'route' => 'equipment.maintenance.index',
+            'ability' => 'equipment.view',
+            'active' => ['equipment.maintenance.*'],
+            'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+        ],
         [
             'key' => 'catalog-items',
             'name' => 'All Items',
@@ -323,7 +348,7 @@ return [
             'route' => 'quotations.mine',
             'ability' => 'quotations.view',
             'active' => ['quotations.mine'],
-            'badge' => [\App\Livewire\Quotation\MyQuotations::class, 'navBadge'],
+            'badge' => [MyQuotations::class, 'navBadge'],
             'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2',
         ],
         [
@@ -435,7 +460,6 @@ return [
         ],
     ],
 
-
     /*
     |---------------------------------------------------------------------------
     | The groups of the project and job-site tab bar
@@ -476,7 +500,6 @@ return [
             'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
         ],
     ],
-
 
     /*
     |---------------------------------------------------------------------------
@@ -669,6 +692,20 @@ return [
             'job_site_route' => 'jobsites.tasks',
             'job_site_order' => 62,
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+        ],
+        // The equipment on this project or site right now, and what has been
+        // here before. Gated on the equipment grant itself (a company record);
+        // the screen also asks for project.view on the scope.
+        [
+            'key' => 'equipment',
+            'name' => 'Equipment',
+            'ability' => 'equipment.view',
+            'group' => 'field',
+            'project_route' => 'projects.equipment',
+            'project_order' => 63,
+            'job_site_route' => 'jobsites.equipment',
+            'job_site_order' => 63,
+            'icon' => 'M8 7h8m-8 4h8m-8 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z',
         ],
         [
             'key' => 'team',
@@ -987,6 +1024,27 @@ return [
                 'view', 'create', 'edit', 'delete',
                 'pay' => ['name' => 'Mark as paid'],
                 'edit_paid' => ['name' => 'Edit a paid expense', 'sensitive' => true],
+            ],
+        ],
+
+        // Equipment is a company record — being assigned to a project never
+        // makes that project its scope (Equipment::permissionScope()) — but
+        // the project and job-site Equipment tabs are project screens, and a
+        // tab's grant must be one a membership can hold, so the area is
+        // grantable at every level. For somebody confined that is narrower
+        // than the role: they reach the register only if a membership of
+        // theirs says so. docs/equipment-module.md
+        'equipment' => [
+            'name' => 'Equipment',
+            'module' => 'equipment',
+            'levels' => ['global', 'project', 'job_site'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit',
+                'delete' => ['name' => 'Delete', 'sensitive' => true],
+                'assign' => ['name' => 'Assign to a project, site or person'],
+                'maintain' => ['name' => 'Schedule and complete maintenance, log readings and findings'],
             ],
         ],
 

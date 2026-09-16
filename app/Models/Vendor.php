@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeletesVendorDocuments;
+use App\Models\Concerns\HasDocumentHealth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -15,15 +17,15 @@ use Illuminate\Support\Str;
  */
 class Vendor extends Model
 {
-    use \App\Models\Concerns\DeletesVendorDocuments;
-    use \App\Models\Concerns\HasDocumentHealth;
+    use DeletesVendorDocuments;
+    use HasDocumentHealth;
 
     /**
      * Every table referencing vendors, by FK column. Any new table with a
      * supplier_id/subcontractor_id column MUST be added here or merges will
      * strand its rows (SET NULL / CASCADE instead of repointing).
      */
-    public const SUPPLIER_FK_TABLES = ['expenses', 'catalog_items', 'purchase_orders'];
+    public const SUPPLIER_FK_TABLES = ['expenses', 'catalog_items', 'purchase_orders', 'equipment', 'equipment_maintenances'];
 
     public const SUBCONTRACTOR_FK_TABLES = ['contracts', 'payment_batches', 'subcontractor_documents', 'subcontractor_employees'];
 

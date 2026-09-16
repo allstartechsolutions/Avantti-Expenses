@@ -4,6 +4,7 @@ namespace App\Livewire\Shared;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Attachment;
+use App\Models\Equipment;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\PurchaseOrder;
@@ -60,6 +61,7 @@ class Attachments extends Component
             'requisition' => PurchaseRequisition::findOrFail($this->modelId),
             'quotation' => Quotation::findOrFail($this->modelId),
             'quotation-vendor' => QuotationVendor::findOrFail($this->modelId),
+            'equipment' => Equipment::findOrFail($this->modelId),
         };
     }
 
@@ -74,6 +76,7 @@ class Attachments extends Component
             'income' => 'income',
             'requisition' => 'requisitions',
             'quotation', 'quotation-vendor' => 'quotations',
+            'equipment' => 'equipment',
         };
     }
 
@@ -99,6 +102,7 @@ class Attachments extends Component
             'requisition' => 'requisitions',
             'quotation' => 'quotations',
             'quotation-vendor' => 'quotations',
+            'equipment' => 'equipment',
         };
     }
 

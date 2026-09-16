@@ -49,7 +49,7 @@ FKs remapped: `expenses.supplier_id`, `catalog_items.supplier_id`, `purchase_ord
 - **Validation is classification-scoped**: all vendor FK rules use `exists:vendors,id,is_supplier,1` / `...,is_subcontractor,1`, so a tampered payload can't attach the wrong vendor type.
 - **Group merges are atomic**: one outer transaction wraps the whole group; a stale page (record already merged elsewhere) gets a friendly error, not a partial merge.
 - Vendors whose names normalize to an empty string (all symbols) are never grouped as duplicates.
-- The referencing-table list lives in `Vendor::SUPPLIER_FK_TABLES` / `SUBCONTRACTOR_FK_TABLES` — **any new table with a vendor FK must be added there** or merges will strand its rows.
+- The referencing-table list lives in `Vendor::SUPPLIER_FK_TABLES` / `SUBCONTRACTOR_FK_TABLES` — **any new table with a vendor FK must be added there** or merges will strand its rows. (`equipment` and `equipment_maintenances` joined the supplier list on 2026-09-16.)
 - The duplicate check is a shared concern (`ChecksVendorDuplicates` + `livewire/shared/vendor-duplicate-matches` partial) and only queries when the name field changes.
 - `vendors.*` is registered under **both** the `projects` and `catalog` modules, since the merge tool is reachable from both sides.
 

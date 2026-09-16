@@ -39,12 +39,13 @@ class NavigationTest extends TestCase
     protected const SIDEBAR = [
         'admin' => [
             'Dashboard',
-            // Roles & Access joined the Company group in E4.
-            'Company: Company Info, Users, Roles & Access',
+            // Roles & Access joined the Company group in E4. Company Expenses
+            // (managers and admins), Equipment and Maintenance (every role)
+            // joined it on 2026-09-16: overhead and assets are the company's.
+            'Company: Company Info, Users, Roles & Access, Company Expenses, Equipment, Maintenance',
             // My Quotations joined at phase 6 of the procurement assignment
             // module: the buying queue, gated on `quotations.view`.
-            // Company Expenses joined on 2026-09-16, managers and admins only.
-            'Projects: All Projects, Clients, Cost Codes, My Quotations, Company Expenses, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
             // Vendors (suppliers + subcontractors) and Workers moved into one
             // Directory group on 2026-09-07; Suppliers left Catalog and
             // Subcontractors left Projects the same day.
@@ -58,8 +59,8 @@ class NavigationTest extends TestCase
         ],
         'manager' => [
             'Dashboard',
-            'Company: Company Info',
-            'Projects: All Projects, Clients, My Quotations, Company Expenses, Payments, Contract Payments, Payment Batches',
+            'Company: Company Info, Company Expenses, Equipment, Maintenance',
+            'Projects: All Projects, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Directory: Vendors, Workers',
             'Catalog: All Items, Categories',
             'Estimates',
@@ -69,7 +70,7 @@ class NavigationTest extends TestCase
         ],
         'employee' => [
             'Dashboard',
-            'Company: Company Info',
+            'Company: Company Info, Equipment, Maintenance',
             'Projects: All Projects, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
             'Directory: Vendors, Workers',
             'Catalog: All Items, Categories',
@@ -252,7 +253,7 @@ class NavigationTest extends TestCase
         $this->assertSame(
             ['overview', 'jobsites', 'budget', 'expenses', 'income', 'report', 'requisitions',
                 'quotations', 'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis',
-                'approvals', 'daily-reports', 'tasks'],
+                'approvals', 'daily-reports', 'tasks', 'equipment'],
             array_column($this->nav->projectTabs($employee, $project), 'key'),
         );
 
@@ -262,7 +263,7 @@ class NavigationTest extends TestCase
         $this->assertSame(
             ['overview', 'budget', 'expenses', 'income', 'report', 'requisitions', 'quotations',
                 'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
-                'daily-reports', 'tasks'],
+                'daily-reports', 'tasks', 'equipment'],
             array_column($this->nav->jobSiteTabs($employee, $jobSite), 'key'),
         );
     }
@@ -299,7 +300,7 @@ class NavigationTest extends TestCase
                 'financial: budget, expenses, income, report',
                 'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
                 'collaboration: documents, rfis, approvals',
-                'field: daily-reports, tasks',
+                'field: daily-reports, tasks, equipment',
                 'team',
             ],
             $this->describeBar($this->nav->projectTabBar($admin, $project)),
@@ -311,7 +312,7 @@ class NavigationTest extends TestCase
                 'financial: budget, expenses, income, report',
                 'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
                 'collaboration: documents, rfis, approvals',
-                'field: daily-reports, tasks',
+                'field: daily-reports, tasks, equipment',
                 'team',
             ],
             $this->describeBar($this->nav->jobSiteTabBar($admin, $jobSite)),
@@ -360,7 +361,7 @@ class NavigationTest extends TestCase
             [
                 'procurement: requisitions, quotations, purchase-orders, contracts, change-orders',
                 'documents',
-                'field: daily-reports, tasks',
+                'field: daily-reports, tasks, equipment',
             ],
             array_slice($bar, 3, 3),
         );

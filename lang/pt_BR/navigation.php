@@ -52,6 +52,7 @@ return [
         'approvals' => 'Aprovações',
         'daily-reports' => 'Relatórios Diários',
         'tasks' => 'Tarefas',
+        'equipment' => 'Equipamentos',
         'team' => 'Equipe',
     ],
 

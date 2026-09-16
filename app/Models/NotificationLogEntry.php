@@ -53,6 +53,9 @@ class NotificationLogEntry extends Model
     /** A morning's vendor document reminders — one row per person per day. */
     public const VENDOR_DOCUMENT_EXPIRY = 'vendor_document_expiry';
 
+    /** A morning's equipment maintenance reminders — one row per person per day. */
+    public const EQUIPMENT_MAINTENANCE_DUE = 'equipment_maintenance_due';
+
     /** Every procurement trigger, in the order the settings screen lists them. */
     public const PROCUREMENT_KEYS = [
         self::REQUISITION_SUBMITTED,

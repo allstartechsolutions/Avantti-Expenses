@@ -6,6 +6,7 @@ use App\Enums\ProjectStatus;
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Contract;
 use App\Models\ContractPayment;
+use App\Models\EquipmentMaintenance;
 use App\Models\Estimate;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
@@ -17,8 +18,10 @@ use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Task;
 use App\Services\InvitationService;
+use App\Services\Navigation;
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 /**
@@ -62,7 +65,7 @@ class DashboardIndex extends Component
 
     protected bool $projectIdsResolved = false;
 
-    /** @var \Illuminate\Support\Collection|null */
+    /** @var Collection|null */
     protected $overBudgetCache = null;
 
     public function mount()
@@ -122,6 +125,8 @@ class DashboardIndex extends Component
             'projects' => $projects,
             'purchase_orders' => $this->allowsAbility('purchase-orders.view'),
             'payment_batches' => $this->allowsAbility('payments.view'),
+            // Equipment is a company record, by role; nothing to narrow by project.
+            'equipment' => $this->allowsAbility('equipment.view'),
 
             // Over budget compares a project's spend with its contract value,
             // so it discloses both: it needs both grants, not either.
@@ -395,6 +400,39 @@ class DashboardIndex extends Component
             ->get();
     }
 
+    /**
+     * Maintenance that needs attention across the fleet: overdue or due
+     * today, due within the week, due within the month — and the first few
+     * rows for the panel. Equipment is a company record, so nothing here is
+     * narrowed by project.
+     */
+    public function getMaintenanceDueProperty(): array
+    {
+        if (! $this->blocks['equipment']) {
+            return ['overdue' => 0, 'week' => 0, 'month' => 0, 'rows' => collect()];
+        }
+
+        $today = now();
+
+        $open = EquipmentMaintenance::query()
+            ->where('status', 'scheduled')
+            ->whereHas('equipment', fn ($q) => $q->inService())
+            ->with(['equipment:id,name,asset_tag,plate,current_meter,meter_type', 'plan'])
+            ->get()
+            ->map(fn ($m) => ['maintenance' => $m, 'urgency' => $m->urgency($today), 'days' => $m->daysUntilDue($today)]);
+
+        // Three disjoint buckets: overdue or due today (by date or meter);
+        // due soon with a date inside the week; due soon beyond that — the
+        // rest of the 30 days, and meter-only rows inside their margin.
+        $overdue = $open->filter(fn ($r) => in_array($r['urgency'], ['overdue', 'due'], true));
+        $week = $open->filter(fn ($r) => $r['urgency'] === 'due_soon' && $r['days'] !== null && $r['days'] <= 7);
+        $month = $open->filter(fn ($r) => $r['urgency'] === 'due_soon' && ! ($r['days'] !== null && $r['days'] <= 7));
+
+        $rows = $overdue->concat($week)->concat($month)->take(5)->values();
+
+        return ['overdue' => $overdue->count(), 'week' => $week->count(), 'month' => $month->count(), 'rows' => $rows];
+    }
+
     public function getPastDueInvoicesListProperty()
     {
         if (! $this->blocks['invoices']) {
@@ -552,7 +590,7 @@ class DashboardIndex extends Component
     {
         $shortcuts = [];
 
-        foreach (app(\App\Services\Navigation::class)->sidebar(auth()->user()) as $entry) {
+        foreach (app(Navigation::class)->sidebar(auth()->user()) as $entry) {
             foreach ($entry['type'] === 'group' ? $entry['items'] : [$entry] as $item) {
                 if ($item['key'] === 'dashboard') {
                     continue;

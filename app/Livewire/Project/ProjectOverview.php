@@ -7,6 +7,7 @@ use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
@@ -22,6 +23,7 @@ class ProjectOverview extends Component
 
     // Delete Project modal
     public $showDeleteProjectModal = false;
+
     public $deleteProjectData = [];
 
     public function mount(Project $project): void
@@ -63,10 +65,12 @@ class ProjectOverview extends Component
 
         DB::transaction(function () {
             $this->cleanupProjectFiles($this->project->id);
+            EquipmentAssignment::closeFor($this->project);
             $this->project->delete();
         });
 
         session()->flash('message', __('Project deleted successfully!'));
+
         return $this->redirect(route('projects.index'), navigate: true);
     }
 

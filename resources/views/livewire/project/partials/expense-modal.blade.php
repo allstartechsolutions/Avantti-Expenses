@@ -308,6 +308,8 @@
                     </div>
                 </div>
 
+                @include('livewire.expense.partials.equipment-picker')
+
                 <!-- Items Section -->
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-4">

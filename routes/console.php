@@ -39,3 +39,9 @@ Schedule::command('procurement:notify-due')->dailyAt('07:10')->withoutOverlappin
 // stages stamped on the document, one mail per person per morning, and the
 // notification log refuses a second copy the same day — a double run is safe.
 Schedule::command('vendors:notify-document-expiry')->dailyAt('07:15')->withoutOverlapping()->sentryMonitor();
+
+// Equipment maintenance (docs/equipment-module.md). Four fixed stages stamped
+// on the maintenance — 30 and 7 days before, the day it is due by date or by
+// meter, and the day after — one mail per person per morning, and the
+// notification log refuses a second copy the same day — a double run is safe.
+Schedule::command('equipment:notify-maintenance-due')->dailyAt('07:20')->withoutOverlapping()->sentryMonitor();

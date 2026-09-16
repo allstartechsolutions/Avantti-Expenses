@@ -234,4 +234,85 @@
             </p>
         </div>
     </div>
+    {{-- Equipment — maintenance coming due. Same shape as the vendor card:
+         one switch, who receives it, and a fallback. --}}
+    <div class="{{ $card }} mt-6">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Equipment E-mails') }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                {{ __('Oil changes, inspections and repairs come due by date or by meter. These are the warnings before they do, the day they do, and the one after.') }}
+            </p>
+        </div>
+
+        <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            @foreach(\App\Models\NotificationSetting::EQUIPMENT_KEYS as $key)
+                @php $setting = $this->settings[$key] ?? null; @endphp
+                <div class="flex items-start justify-between gap-6 px-6 py-4" wire:key="setting-{{ $key }}-{{ ($setting?->is_enabled ?? true) ? 'on' : 'off' }}">
+                    <div class="min-w-0">
+                        <p class="font-medium text-slate-900 dark:text-white">{{ \App\Models\NotificationSetting::label($key) }}</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ \App\Models\NotificationSetting::description($key) }}</p>
+                        @if($setting?->updatedBy)
+                            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                                {{ __('Last changed by :name on :date', [
+                                    'name' => $setting->updatedBy->name,
+                                    'date' => $setting->updated_at?->appDateTime(),
+                                ]) }}
+                            </p>
+                        @endif
+                    </div>
+
+                    <div class="shrink-0 pt-1">
+                        <x-ui.toggle wire:click="toggle('{{ $key }}')" :checked="(bool) ($setting?->is_enabled ?? true)"
+                                     :label="($setting?->is_enabled ?? true) ? __('On') : __('Off')" />
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="px-6 py-5 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
+            <p class="font-medium text-slate-900 dark:text-white">{{ __('Who receives the reminders') }}</p>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {{ __('Pick the people who should be told. Leave everybody unticked and the reminders go to everyone who may maintain equipment.') }}
+            </p>
+
+            @if($this->staff->isEmpty())
+                <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('There is no active member of staff to choose from.') }}</p>
+            @else
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    @foreach($this->staff as $person)
+                        <label class="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 cursor-pointer hover:border-[#3F5189]/50" wire:key="equipment-recipient-{{ $person->id }}">
+                            <input type="checkbox" value="{{ $person->id }}" wire:model="equipmentRecipients"
+                                   class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-[#3F5189] focus:ring-[#3F5189] dark:bg-slate-700">
+                            <span class="min-w-0">
+                                <span class="block text-sm font-medium text-slate-900 dark:text-white truncate">{{ $person->name }}</span>
+                                <span class="block text-xs text-slate-500 dark:text-slate-400 truncate">{{ $person->email }}</span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+            @endif
+
+            @error('equipmentRecipients') <span class="block mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+            @error('equipmentRecipients.*') <span class="block mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+                <x-ui.button variant="primary" wire:click="saveEquipmentRecipients" icon="save">{{ __('Save') }}</x-ui.button>
+                @if(empty($equipmentRecipients))
+                    @if($this->equipmentFallback->isNotEmpty())
+                        <span class="text-xs text-slate-500 dark:text-slate-400">
+                            {{ __('Nobody is chosen — right now that means: :names', ['names' => $this->equipmentFallback->pluck('name')->join(', ')]) }}
+                        </span>
+                    @else
+                        <span class="text-xs text-amber-600 dark:text-amber-400">
+                            {{ __('Nobody is chosen, and nobody holds the ability to maintain equipment, so these reminders reach no one.') }}
+                        </span>
+                    @endif
+                @endif
+            </div>
+
+            <p class="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                {{ __('The reminders go out each morning and need the scheduler running on the server. A person can still switch them off on their own profile.') }}
+            </p>
+        </div>
+    </div>
 </div>

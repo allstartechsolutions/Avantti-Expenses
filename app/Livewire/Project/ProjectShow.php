@@ -2,21 +2,24 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\JobSiteStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesChangeOrders;
+use App\Livewire\Concerns\PicksEquipment;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
+use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
-use App\Models\DailyReport;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
-use App\Models\ExpenseItem;
+use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\BudgetService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,10 +29,11 @@ use Livewire\WithFileUploads;
 class ProjectShow extends Component
 {
     use AuthorizesAbility;
-
-    use WithFileUploads, ManagesChangeOrders;
+    use ManagesChangeOrders, WithFileUploads;
+    use PicksEquipment;
 
     public Project $project;
+
     public $activeTab = 'overview';
 
     // Job Site search and filters
@@ -37,19 +41,30 @@ class ProjectShow extends Component
 
     // Expense properties
     public $expenseSearch = '';
+
     public $expenseLocationFilter = 'all'; // 'all', 'project', or job_site_id
+
     public $showExpenseModal = false;
+
     public $expenseModalMode = 'create';
+
     public $editingExpense = null;
 
     // Expense form properties
     public $expense_job_site_id = null; // null = project-level
+
     public $expense_supplier_id = null;
+
     public $supplierSearch = '';
+
     public $expense_notes = '';
+
     public $expense_date = '';
+
     public $expense_receipt = null;
+
     public $existingReceiptPath = null;
+
     public $expense_total_amount = 0;
 
     // Expense change history (shown in view modal)
@@ -57,30 +72,46 @@ class ProjectShow extends Component
 
     // Mark-as-paid confirmation state (inline date picker)
     public $markPaidType = null; // 'expense' or 'payment'
+
     public $markPaidId = null;
+
     public $markPaidDate = '';
 
     // Installment due-date editing state
     public $editDueDateId = null;
+
     public $editDueDate = '';
 
     // Expense items (multi-item support)
     public $expenseItems = [];
+
     public $catalogItemSearches = []; // Search text per item row
+
     public $budgetItems = []; // Available budget items for dropdown
 
     // Expense payment properties
     public $expense_status = 'paid';
+
     public $expense_payment_method = null;
+
     public $expense_is_auto_payment = false;
+
     public $expense_has_installments = false;
+
     public $expense_total_installments = 2;
+
     public $expense_payment_frequency = 'monthly';
+
     public $expense_payment_due_date = '';
+
     public $expense_paid_date = '';
+
     public $expense_use_custom_amounts = false;
+
     public $expense_custom_amounts = [];
+
     public $expense_payment_schedule_preview = [];
+
     public $expenseStatusFilter = 'all'; // Filter for expense list
 
     // Change Order list filter (the rest lives in ManagesChangeOrders)
@@ -88,33 +119,52 @@ class ProjectShow extends Component
 
     // Daily Reports properties
     public $dailyReportSearch = '';
+
     public $dailyReportLocationFilter = 'all';
 
     // Delete Project modal
     public $showDeleteProjectModal = false;
+
     public $deleteProjectData = [];
 
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
+
     public $deletingJobSiteId = null;
+
     public $deleteJobSiteData = [];
 
     // Job Site form properties
     public $showJobSiteForm = false;
+
     public $editingJobSite = null;
+
     public $job_site_name = '';
+
     public $street = '';
+
     public $address_2 = '';
+
     public $city = '';
+
     public $state = '';
+
     public $postal_code = '';
+
     public $neighborhood = '';
+
     public $latitude = null;
+
     public $longitude = null;
+
     public $contact_person = '';
+
     public $phone = '';
+
     public $email = '';
+
     public $job_amount = '';
+
     public $status = 'created';
 
     protected function rules()
@@ -136,7 +186,6 @@ class ProjectShow extends Component
             'status' => 'required|in:created,in_progress,completed,on_hold',
         ];
     }
-
 
     public function mount(Project $project, ?string $tab = null)
     {
@@ -411,7 +460,7 @@ class ProjectShow extends Component
     public function updatedCatalogItemSearches($value, $key)
     {
         $index = intval($key);
-        if (isset($this->expenseItems[$index]) && !$this->expenseItems[$index]['catalog_item_id']) {
+        if (isset($this->expenseItems[$index]) && ! $this->expenseItems[$index]['catalog_item_id']) {
             // If no catalog item selected, use the search text as item name
             $this->expenseItems[$index]['item_name'] = $value;
         }
@@ -464,19 +513,19 @@ class ProjectShow extends Component
     }
 
     /** An installment of an expense of THIS project, or a 404. */
-    protected function paymentInScope(int $paymentId): \App\Models\ExpensePayment
+    protected function paymentInScope(int $paymentId): ExpensePayment
     {
-        return \App\Models\ExpensePayment::whereHas(
+        return ExpensePayment::whereHas(
             'expense',
             fn ($q) => $q->where('project_id', $this->project->id)
         )->findOrFail($paymentId);
     }
 
     /** Where the Location picker is currently pointing. */
-    protected function expenseDestination(): \App\Models\JobSite|Project|null
+    protected function expenseDestination(): JobSite|Project|null
     {
         if ($this->expense_job_site_id) {
-            return \App\Models\JobSite::where('project_id', $this->project->id)
+            return JobSite::where('project_id', $this->project->id)
                 ->find($this->expense_job_site_id);
         }
 
@@ -490,12 +539,13 @@ class ProjectShow extends Component
         $this->reset([
             'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseItems', 'catalogItemSearches', 'expense_total_amount',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
-            'expense_custom_amounts', 'expense_payment_schedule_preview'
+            'expense_custom_amounts', 'expense_payment_schedule_preview',
         ]);
 
         // Initialize with one empty item
@@ -524,8 +574,9 @@ class ProjectShow extends Component
         $this->authorizeAbility('expenses.edit', $expense);
 
         // Settled money needs `expenses.edit_paid` on top of `expenses.edit`.
-        if (!$expense->isEditableBy(auth()->user())) {
+        if (! $expense->isEditableBy(auth()->user())) {
             session()->flash('error', __('This expense cannot be edited because it has payments.'));
+
             return;
         }
 
@@ -534,6 +585,7 @@ class ProjectShow extends Component
         $this->expense_supplier_id = $expense->supplier_id;
         $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_notes = $expense->notes;
+        $this->fillEquipmentFrom($expense);
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
         $this->expense_receipt = null;
@@ -612,6 +664,7 @@ class ProjectShow extends Component
         $this->expense_supplier_id = $expense->supplier_id;
         $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_notes = $expense->notes;
+        $this->fillEquipmentFrom($expense);
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
         $this->expense_total_amount = $expense->total_amount;
@@ -729,7 +782,7 @@ class ProjectShow extends Component
             }
         }
 
-        $this->validate($rules, [
+        $this->validate($rules + $this->equipmentRules(), [
             'expenseItems.required' => 'At least one item is required.',
             'expenseItems.*.item_name.required' => 'Item name is required.',
             'expenseItems.*.quantity.required' => 'Quantity is required.',
@@ -756,6 +809,7 @@ class ProjectShow extends Component
                 'supplier_id' => $this->expense_supplier_id ?: null,
                 'total_amount' => $this->expense_total_amount,
                 'notes' => $this->expense_notes,
+            ] + $this->equipmentHeaderData() + [
                 'receipt_path' => $receiptPath,
                 'expense_date' => $this->expense_date,
                 'payment_method' => $this->expense_payment_method,
@@ -786,7 +840,7 @@ class ProjectShow extends Component
             if ($this->expenseModalMode === 'edit' && $this->editingExpense) {
                 $expense = $this->expenseInScope((int) $this->editingExpense);
 
-                if (!$expense->isEditableBy(auth()->user())) {
+                if (! $expense->isEditableBy(auth()->user())) {
                     throw new \Exception('This expense cannot be edited because it has payments.');
                 }
 
@@ -801,7 +855,7 @@ class ProjectShow extends Component
                     $budgetItemId = $itemData['budget_item_id'] ?: null;
 
                     // If no budget item selected, assign to the budget default bucket
-                    if (!$budgetItemId) {
+                    if (! $budgetItemId) {
                         $defaultItem = BudgetService::getDefaultItem(
                             $this->project->id,
                             $this->expense_job_site_id,
@@ -823,7 +877,7 @@ class ProjectShow extends Component
                         'sort_order' => $index,
                     ];
 
-                    if (!empty($itemData['id'])) {
+                    if (! empty($itemData['id'])) {
                         // Update existing item
                         $expense->items()->where('id', $itemData['id'])->update($itemPayload);
                         $updatedItemIds[] = $itemData['id'];
@@ -836,13 +890,13 @@ class ProjectShow extends Component
 
                 // Delete removed items
                 $itemsToDelete = array_diff($existingItemIds, $updatedItemIds);
-                if (!empty($itemsToDelete)) {
+                if (! empty($itemsToDelete)) {
                     $expense->items()->whereIn('id', $itemsToDelete)->delete();
                 }
 
                 // Regenerate payment schedule if installments changed
                 // (locked once any installment has been paid)
-                if (!$expense->hasLockedPayments()) {
+                if (! $expense->hasLockedPayments()) {
                     if ($this->expense_has_installments) {
                         $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
                         $expense->generatePaymentSchedule($customAmounts);
@@ -861,7 +915,7 @@ class ProjectShow extends Component
                     $budgetItemId = $itemData['budget_item_id'] ?: null;
 
                     // If no budget item selected, assign to the budget default bucket
-                    if (!$budgetItemId) {
+                    if (! $budgetItemId) {
                         $defaultItem = BudgetService::getDefaultItem(
                             $this->project->id,
                             $this->expense_job_site_id,
@@ -916,6 +970,7 @@ class ProjectShow extends Component
         $this->reset([
             'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseItems', 'catalogItemSearches', 'budgetItems', 'expense_total_amount', 'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
@@ -923,7 +978,7 @@ class ProjectShow extends Component
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview',
             'markPaidType', 'markPaidId', 'markPaidDate',
-            'editDueDateId', 'editDueDate'
+            'editDueDateId', 'editDueDate',
         ]);
         $this->dispatch('close-modal', 'expense-modal');
     }
@@ -994,15 +1049,16 @@ class ProjectShow extends Component
 
     public function generatePaymentSchedulePreview()
     {
-        if (!$this->expense_has_installments || !$this->expense_total_amount || !$this->expense_total_installments) {
+        if (! $this->expense_has_installments || ! $this->expense_total_amount || ! $this->expense_total_installments) {
             $this->expense_payment_schedule_preview = [];
+
             return;
         }
 
         $total = floatval($this->expense_total_amount);
         $count = intval($this->expense_total_installments);
         $frequency = $this->expense_payment_frequency ?: 'monthly';
-        $startDate = $this->expense_payment_due_date ? \Carbon\Carbon::parse($this->expense_payment_due_date) : now();
+        $startDate = $this->expense_payment_due_date ? Carbon::parse($this->expense_payment_due_date) : now();
 
         // Calculate amounts
         if ($this->expense_use_custom_amounts && count($this->expense_custom_amounts) === $count) {
@@ -1065,7 +1121,7 @@ class ProjectShow extends Component
     {
         $this->validate(['markPaidDate' => 'required|date']);
 
-        $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
+        $paidDate = Carbon::parse($this->markPaidDate);
 
         if ($this->markPaidType === 'payment') {
             $payment = $this->paymentInScope((int) $this->markPaidId);
@@ -1128,8 +1184,8 @@ class ProjectShow extends Component
         $payment = $this->paymentInScope((int) $this->editDueDateId);
         $this->authorizeAbility('expenses.edit', $payment);
 
-        if (!$payment->isPaid()) {
-            $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
+        if (! $payment->isPaid()) {
+            $payment->changeDueDate(Carbon::parse($this->editDueDate));
             session()->flash('message', __('Due date updated.'));
         }
 
@@ -1219,10 +1275,12 @@ class ProjectShow extends Component
         $this->authorizeAbility('projects.delete', $this->project);
         DB::transaction(function () {
             $this->cleanupProjectFiles($this->project->id);
+            EquipmentAssignment::closeFor($this->project);
             $this->project->delete();
         });
 
         session()->flash('message', __('Project deleted successfully!'));
+
         return $this->redirect(route('projects.index'), navigate: true);
     }
 
@@ -1326,6 +1384,7 @@ class ProjectShow extends Component
 
         DB::transaction(function () use ($jobSite) {
             $this->cleanupJobSiteFiles($jobSite->id);
+            EquipmentAssignment::closeFor($jobSite);
             $jobSite->delete();
         });
 
@@ -1398,11 +1457,11 @@ class ProjectShow extends Component
 
         // Apply search filter
         if ($this->jobSiteSearch) {
-            $jobSitesQuery->where(function($query) {
-                $query->where('job_site_name', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('contact_person', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('email', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('city', 'like', '%' . $this->jobSiteSearch . '%');
+            $jobSitesQuery->where(function ($query) {
+                $query->where('job_site_name', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('contact_person', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('email', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('city', 'like', '%'.$this->jobSiteSearch.'%');
             });
         }
 
@@ -1426,13 +1485,13 @@ class ProjectShow extends Component
 
         // Apply search filter - search in items and notes
         if ($this->expenseSearch) {
-            $expensesQuery->where(function($query) {
-                $query->where('notes', 'like', '%' . $this->expenseSearch . '%')
-                    ->orWhereHas('items', function($itemQuery) {
-                        $itemQuery->where('item_name', 'like', '%' . $this->expenseSearch . '%');
+            $expensesQuery->where(function ($query) {
+                $query->where('notes', 'like', '%'.$this->expenseSearch.'%')
+                    ->orWhereHas('items', function ($itemQuery) {
+                        $itemQuery->where('item_name', 'like', '%'.$this->expenseSearch.'%');
                     })
-                    ->orWhereHas('supplier', function($supplierQuery) {
-                        $supplierQuery->where('name', 'like', '%' . $this->expenseSearch . '%');
+                    ->orWhereHas('supplier', function ($supplierQuery) {
+                        $supplierQuery->where('name', 'like', '%'.$this->expenseSearch.'%');
                     });
             });
         }
@@ -1441,17 +1500,17 @@ class ProjectShow extends Component
         $totalExpensesAmount = $expenses->sum('total_amount');
 
         // Calculate payment totals for summary
-        $totalPaidAmount = $expenses->sum(fn($e) => $e->getPaidAmount());
-        $totalPendingAmount = $expenses->sum(fn($e) => $e->getPendingAmount());
+        $totalPaidAmount = $expenses->sum(fn ($e) => $e->getPaidAmount());
+        $totalPendingAmount = $expenses->sum(fn ($e) => $e->getPendingAmount());
 
         // Catalog items for expense form search (search across all catalog item searches)
         $catalogItems = collect();
         $activeSearchIndex = null;
         foreach ($this->catalogItemSearches as $index => $search) {
-            if ($search && strlen($search) >= 2 && !isset($this->expenseItems[$index]['catalog_item_id'])) {
+            if ($search && strlen($search) >= 2 && ! isset($this->expenseItems[$index]['catalog_item_id'])) {
                 $activeSearchIndex = $index;
                 $catalogItems = CatalogItem::where('is_active', true)
-                    ->where('name', 'like', '%' . $search . '%')
+                    ->where('name', 'like', '%'.$search.'%')
                     ->take(10)
                     ->get();
                 break;
@@ -1460,8 +1519,8 @@ class ProjectShow extends Component
 
         // Suppliers for dropdown search
         $suppliers = collect();
-        if ($this->supplierSearch && strlen($this->supplierSearch) >= 2 && !$this->expense_supplier_id) {
-            $suppliers = Supplier::where('name', 'like', '%' . $this->supplierSearch . '%')
+        if ($this->supplierSearch && strlen($this->supplierSearch) >= 2 && ! $this->expense_supplier_id) {
+            $suppliers = Supplier::where('name', 'like', '%'.$this->supplierSearch.'%')
                 ->take(10)
                 ->get();
         }
@@ -1491,11 +1550,11 @@ class ProjectShow extends Component
 
         // Apply search filter (search in tasks descriptions)
         if ($this->dailyReportSearch) {
-            $dailyReportsQuery->where(function($query) {
-                $query->whereHas('tasks', function($taskQuery) {
-                    $taskQuery->where('description', 'like', '%' . $this->dailyReportSearch . '%');
-                })->orWhereHas('preparedBy', function($userQuery) {
-                    $userQuery->where('name', 'like', '%' . $this->dailyReportSearch . '%');
+            $dailyReportsQuery->where(function ($query) {
+                $query->whereHas('tasks', function ($taskQuery) {
+                    $taskQuery->where('description', 'like', '%'.$this->dailyReportSearch.'%');
+                })->orWhereHas('preparedBy', function ($userQuery) {
+                    $userQuery->where('name', 'like', '%'.$this->dailyReportSearch.'%');
                 });
             });
         }
@@ -1515,7 +1574,7 @@ class ProjectShow extends Component
             ->with(['jobSite', 'items'])
             ->get();
 
-        return view('livewire.project.project-show', [
+        return view('livewire.project.project-show', $this->equipmentPickerData() + [
             'jobSites' => $jobSites,
             'statuses' => $statuses,
             'expenses' => $expenses,
@@ -1539,4 +1598,3 @@ class ProjectShow extends Component
         ])->layout('components.layouts.app');
     }
 }
-

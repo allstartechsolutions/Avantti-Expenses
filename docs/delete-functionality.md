@@ -274,6 +274,18 @@ This pattern can be reused for any future buttons that need to appear in the hea
 
 ---
 
+## Equipment Delete
+
+A piece of equipment is deleted from its own page (`EquipmentShow::delete()`,
+`equipment.delete`, administrator-only by seed), with a modal that counts what goes with it:
+meter readings, assignments, maintenance plans, maintenances, findings and attachments. Files
+are removed by hand before the cascade — the photo, every finding's photo, every attachment.
+
+**Refused when an expense is tagged to it.** An expense is a financial record;
+`expenses.equipment_id` is `restrictOnDelete` and `Equipment::deleteBlockers()` says so
+before the database has to. The modal points at *Retire* or *Sold* instead, which keep the
+history. Deleting a maintenance only nulls `expenses.equipment_maintenance_id`.
+
 ## Client Delete
 
 ### Behavior

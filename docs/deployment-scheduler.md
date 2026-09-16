@@ -56,6 +56,10 @@ Registered in `routes/console.php`; `php artisan schedule:list` prints the live 
 | `documents:purge-deleted`    | daily 03:15         | Removes trashed documents past the retention window |
 | `tasks:notify-overdue`       | daily 07:00         | E-mails owner and assignees of tasks that just went past due |
 | `tasks:send-weekly-digest`   | hourly              | Sends the weekly digest — see below |
+| `procurement:notify-stalled` | daily 07:05         | Nudges the buyer while an approved requisition is still not being quoted |
+| `procurement:notify-due`     | daily 07:10         | Warns that quotation responses are due or past due |
+| `vendors:notify-document-expiry` | daily 07:15     | Vendor documents 30/15/7 days before expiry and the day after |
+| `equipment:notify-maintenance-due` | daily 07:20   | Equipment maintenance 30/7 days before, the day it is due by date or meter, and the day after (`docs/equipment-module.md`) |
 
 The weekly digest is scheduled **hourly on purpose**. The command itself checks the day
 and hour configured in System Settings and returns immediately when it is not the moment,

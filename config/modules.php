@@ -51,6 +51,19 @@ return [
 
     // Declared before 'projects' for the same reason as 'documents': the
     // module check stops at the first matching prefix, and 'projects.*' would
+    // otherwise claim projects.equipment and jobsites.equipment.
+    'equipment' => [
+        'name' => 'Equipment',
+        'description' => 'Vehicles, machinery and tools: the asset register, maintenance schedules, findings, assignments and costs.',
+        'route_prefixes' => [
+            'projects.equipment',
+            'jobsites.equipment',
+            'equipment.*',
+        ],
+    ],
+
+    // Declared before 'projects' for the same reason as 'documents': the
+    // module check stops at the first matching prefix, and 'projects.*' would
     // otherwise claim projects.tasks.
     'meetings' => [
         'name' => 'Meetings',

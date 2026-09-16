@@ -7,12 +7,13 @@ use App\Models\BudgetItem;
 use App\Models\CatalogItem;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Models\Supplier;
 use App\Models\JobSite;
 use App\Models\Project;
+use App\Models\Supplier;
 use App\Services\BudgetService;
-use Illuminate\Support\Facades\Auth;
+use App\Services\PermissionResolver;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 /**
@@ -25,44 +26,71 @@ use Illuminate\Validation\Rule;
  */
 trait ManagesExpenseForm
 {
+    use PicksEquipment;
+
     // Header fields
     public $expense_job_site_id = null;
+
     public $expense_category_id = null;
+
     public $expense_supplier_id = null;
+
     public $supplierSearch = '';
+
     public $expense_date;
+
     public $expense_notes = '';
+
     public $expense_receipt = null;
 
     // Payment fields
     public $expense_status = 'paid';
+
     public $expense_payment_method = null;
+
     public $expense_is_auto_payment = false;
+
     public $expense_has_installments = false;
+
     public $expense_total_installments = 2;
+
     public $expense_payment_frequency = 'monthly';
+
     public $expense_payment_due_date;
+
     public $expense_paid_date;
 
     // Items
     public $items = [];
+
     public $expense_total_amount = 0;
 
     // Item modal
     public $showItemModal = false;
+
     public $editingItemIndex = null;
 
     // Item form fields
     public $item_budget_item_id = null;
+
     public $budgetItemSearch = '';
+
     public $item_catalog_item_id = null;
+
     public $catalogItemSearch = '';
+
     public $item_is_custom = true;
+
     public $item_name = '';
+
     public $item_description = '';
+
     public $item_quantity = 1;
+
     public $item_unit = '';
+
     public $item_unit_price = '';
+
     public $item_total = 0;
 
     /**
@@ -78,13 +106,10 @@ trait ManagesExpenseForm
         return $this->expenseProjectId() === null;
     }
 
-    /**
-     * Anything a host component adds to the header — the Equipment module
-     * hangs its equipment tag here. Empty by default.
-     */
+    /** The equipment tag rides on the header (docs/equipment-module.md). */
     protected function extraHeaderData(): array
     {
-        return [];
+        return $this->equipmentHeaderData();
     }
 
     /**
@@ -135,6 +160,7 @@ trait ManagesExpenseForm
 
         $this->expense_job_site_id = $expense->job_site_id;
         $this->expense_category_id = $expense->expense_category_id;
+        $this->fillEquipmentFrom($expense);
         $this->expense_supplier_id = $expense->supplier_id;
         $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_date = $expense->expense_date->format('Y-m-d');
@@ -151,7 +177,7 @@ trait ManagesExpenseForm
 
         $this->items = $expense->items->map(fn ($item) => [
             'budget_item_id' => $item->budget_item_id,
-            'cost_code' => $item->budgetItem ? $item->budgetItem->code . ' - ' . $item->budgetItem->name : null,
+            'cost_code' => $item->budgetItem ? $item->budgetItem->code.' - '.$item->budgetItem->name : null,
             'catalog_item_id' => $item->catalog_item_id,
             'item_name' => $item->item_name,
             'item_type' => $item->item_type ?? 'custom',
@@ -217,7 +243,7 @@ trait ManagesExpenseForm
 
         if ($item['budget_item_id']) {
             $budgetItem = BudgetItem::find($item['budget_item_id']);
-            $this->budgetItemSearch = $budgetItem ? $budgetItem->code . ' - ' . $budgetItem->name : '';
+            $this->budgetItemSearch = $budgetItem ? $budgetItem->code.' - '.$budgetItem->name : '';
         }
 
         if ($item['catalog_item_id']) {
@@ -259,7 +285,7 @@ trait ManagesExpenseForm
 
         if ($budgetItem) {
             $this->item_budget_item_id = $budgetItemId;
-            $this->budgetItemSearch = $budgetItem->code . ' - ' . $budgetItem->name;
+            $this->budgetItemSearch = $budgetItem->code.' - '.$budgetItem->name;
         }
     }
 
@@ -431,7 +457,7 @@ trait ManagesExpenseForm
                 : ['nullable', 'prohibited'],
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',
-        ], [
+        ] + $this->equipmentRules(), [
             'items.required' => __('At least one item is required.'),
             'items.min' => __('At least one item is required.'),
         ]);
@@ -495,7 +521,7 @@ trait ManagesExpenseForm
             return collect();
         }
 
-        $resolver = app(\App\Services\PermissionResolver::class);
+        $resolver = app(PermissionResolver::class);
 
         return JobSite::where('project_id', $this->expenseProjectId())
             ->orderBy('job_site_name')
@@ -598,7 +624,7 @@ trait ManagesExpenseForm
             return collect();
         }
 
-        return Supplier::where('name', 'like', '%' . $this->supplierSearch . '%')->take(10)->get();
+        return Supplier::where('name', 'like', '%'.$this->supplierSearch.'%')->take(10)->get();
     }
 
     protected function budgetItemSearchResults(): Collection
@@ -617,8 +643,8 @@ trait ManagesExpenseForm
 
         return BudgetItem::where('budget_id', $budget->id)
             ->where(function ($q) {
-                $q->where('code', 'like', '%' . $this->budgetItemSearch . '%')
-                    ->orWhere('name', 'like', '%' . $this->budgetItemSearch . '%');
+                $q->where('code', 'like', '%'.$this->budgetItemSearch.'%')
+                    ->orWhere('name', 'like', '%'.$this->budgetItemSearch.'%');
             })
             ->orderBy('sort_order')
             ->take(15)
@@ -632,7 +658,7 @@ trait ManagesExpenseForm
         }
 
         return CatalogItem::where('is_active', true)
-            ->where('name', 'like', '%' . $this->catalogItemSearch . '%')
+            ->where('name', 'like', '%'.$this->catalogItemSearch.'%')
             ->take(10)
             ->get();
     }

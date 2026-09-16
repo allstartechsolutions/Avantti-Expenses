@@ -30,7 +30,7 @@ the Equipment module.
 | `app/Livewire/Report/*Report.php`, `app/Http/Controllers/*ReportPdfController.php` | `->includeCompany($grant)`; "Company (general)" on the Project dropdown; job-site list empty for it |
 | `app/Livewire/Payment/PaymentDashboard.php` + view | `expenseScope()` replaces eight inline project filters; company rows by grant; category under the project; null-safe project names (the first company row would have 500'd) |
 | `app/Livewire/Dashboard/DashboardIndex.php` | `withoutCompanyExpenses()` on cash to pay, the overdue list and the cashflow chart |
-| `config/permissions.php` | Area **`company-expenses`** (global, money, six actions), menu entry order 48 in Projects, group pattern. Catalogue **35 / 180** |
+| `config/permissions.php` | Area **`company-expenses`** (global, money, six actions), menu entry in the Company group, group pattern. Catalogue **35 / 180** |
 | `config/modules.php`, `database/seeders/PermissionSeeder.php` | `company-expenses.*` under `projects`; view/create/edit/pay manager-only, delete/edit_paid admin-only |
 | `routes/web.php` | `company-expenses.index`, `company-expenses.create` behind `ability:` |
 | `lang/en.json`, `lang/pt_BR.json` | ~100 strings; **Company Expenses → Despesas da Empresa**, **Account code → Código contábil**, **Company (general) → Empresa (geral)** |

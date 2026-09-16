@@ -56,6 +56,7 @@ return [
         'approvals' => 'Approvals',
         'daily-reports' => 'Daily Reports',
         'tasks' => 'Tasks',
+        'equipment' => 'Equipment',
         'team' => 'Team',
     ],
 

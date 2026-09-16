@@ -1,156 +1,168 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
-use Livewire\Volt\Volt;
+use App\Http\Controllers\AccountsPayableReportPdfController;
+use App\Http\Controllers\BudgetCostGridPdfController;
+use App\Http\Controllers\CollaborationPdfController;
+use App\Http\Controllers\CompanyFinancialReportPdfController;
+use App\Http\Controllers\ContractMeasurementPdfController;
+use App\Http\Controllers\ContractPaymentsPdfController;
+use App\Http\Controllers\ContractSchedulePdfController;
+use App\Http\Controllers\DailyReportPdfController;
+use App\Http\Controllers\DocumentationFileController;
+use App\Http\Controllers\DocumentationImageController;
+use App\Http\Controllers\DocumentationUploadController;
+use App\Http\Controllers\DocumentFileController;
+use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\EmailTrackingController;
+use App\Http\Controllers\EstimatePdfController;
+use App\Http\Controllers\ExpenseReportPdfController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\JobSiteFinancialReportPdfController;
+use App\Http\Controllers\MeetingMinutePdfController;
+use App\Http\Controllers\PaymentDetailReportPdfController;
+use App\Http\Controllers\PaymentScheduleReportPdfController;
+use App\Http\Controllers\ProjectFinancialReportPdfController;
+use App\Http\Controllers\QuotationMapPdfController;
+use App\Http\Controllers\QuotationRfqPdfController;
+use App\Http\Controllers\SharedDocumentController;
+use App\Http\Controllers\SubcontractorDocumentController;
 use App\Livewire\Access\AccessIndex;
+use App\Livewire\Approval\ApprovalForm;
+use App\Livewire\Approval\ApprovalSeedFromBudget;
+use App\Livewire\Approval\ApprovalShow;
 use App\Livewire\Auth\AcceptInvitation;
-use App\Livewire\JobSite\JobSiteTeam;
-use App\Livewire\Project\ProjectTeam;
-use App\Livewire\Company\CompanyInfo;
-use App\Livewire\User\UserCreate;
-use App\Livewire\User\UserAccess;
-use App\Livewire\User\UserEdit;
-use App\Livewire\User\UserIndex;
-use App\Livewire\User\UserShow;
+use App\Livewire\Budget\BudgetCostGrid;
+use App\Livewire\Budget\BudgetCreate;
+use App\Livewire\Budget\BudgetEdit;
+use App\Livewire\Budget\BudgetShow;
+use App\Livewire\Budget\CostCodeDetail;
+use App\Livewire\Catalog\CatalogCategoryCreate;
+use App\Livewire\Catalog\CatalogCategoryEdit;
+use App\Livewire\Catalog\CatalogCategoryIndex;
+use App\Livewire\Catalog\CatalogItemCreate;
+use App\Livewire\Catalog\CatalogItemEdit;
+use App\Livewire\Catalog\CatalogItemIndex;
 use App\Livewire\Client\ClientCreate;
 use App\Livewire\Client\ClientEdit;
 use App\Livewire\Client\ClientIndex;
 use App\Livewire\Client\ClientShow;
-use App\Livewire\Subcontractor\SubcontractorIndex;
-use App\Livewire\Subcontractor\SubcontractorCreate;
-use App\Livewire\Subcontractor\SubcontractorEdit;
-use App\Livewire\Subcontractor\SubcontractorShow;
-use App\Livewire\Project\ProjectCreate;
-use App\Livewire\Project\ProjectEdit;
-use App\Livewire\Project\ProjectIndex;
-use App\Livewire\Project\ProjectShow;
-use App\Livewire\Project\ProjectOverview;
-use App\Livewire\Project\ProjectDocuments;
-use App\Livewire\Approval\ApprovalForm;
-use App\Livewire\Approval\ApprovalSeedFromBudget;
-use App\Livewire\Approval\ApprovalShow;
-use App\Livewire\Project\ProjectApprovals;
-use App\Livewire\Project\ProjectRfis;
-use App\Livewire\Rfi\RfiForm;
-use App\Livewire\Rfi\RfiShow;
-use App\Livewire\Project\ProjectExpenses;
-use App\Livewire\Project\ProjectIncome;
-use App\Livewire\Project\ProjectJobSites;
-use App\Livewire\Project\ProjectChangeOrders;
-use App\Livewire\Project\ProjectDailyReports;
-use App\Livewire\Project\ProjectBudget;
-use App\Livewire\Project\ProjectFinancialReport;
-use App\Livewire\JobSite\JobSiteFinancialReport;
-use App\Livewire\JobSite\JobSiteShow;
-use App\Livewire\JobSite\JobSiteContracts;
-use App\Livewire\JobSite\JobSiteDocuments;
-use App\Livewire\JobSite\JobSiteApprovals;
-use App\Livewire\JobSite\JobSiteRfis;
-use App\Livewire\JobSite\JobSiteIncome;
-use App\Livewire\JobSite\JobSiteQuotations;
-use App\Livewire\JobSite\JobSiteRequisitions;
-use App\Livewire\JobSite\JobSiteOverview;
+use App\Livewire\Company\CompanyInfo;
 use App\Livewire\CompanyExpense\CompanyExpenseCreate;
 use App\Livewire\CompanyExpense\CompanyExpenseIndex;
-use App\Livewire\Expense\ExpenseCreate;
-use App\Livewire\Expense\ExpenseEdit;
+use App\Livewire\Contract\ContractCreate;
+use App\Livewire\Contract\ContractEdit;
+use App\Livewire\Contract\ContractPayments;
+use App\Livewire\Contract\ContractShow;
+use App\Livewire\CostCode\CostCodeTemplateCreate;
+use App\Livewire\CostCode\CostCodeTemplateEdit;
+use App\Livewire\CostCode\CostCodeTemplateIndex;
+use App\Livewire\CostCode\CostCodeTemplateShow;
 use App\Livewire\DailyReport\DailyReportForm;
-use App\Http\Controllers\ContractPaymentsPdfController;
-use App\Http\Controllers\AccountsPayableReportPdfController;
-use App\Http\Controllers\PaymentDetailReportPdfController;
-use App\Http\Controllers\PaymentScheduleReportPdfController;
-use App\Http\Controllers\ExpenseReportPdfController;
-use App\Http\Controllers\JobSiteFinancialReportPdfController;
-use App\Http\Controllers\QuotationMapPdfController;
-use App\Http\Controllers\QuotationRfqPdfController;
-use App\Http\Controllers\ProjectFinancialReportPdfController;
-use App\Http\Controllers\DailyReportPdfController;
-use App\Http\Controllers\EstimatePdfController;
-use App\Http\Controllers\DocumentFileController;
-use App\Http\Controllers\DocumentUploadController;
-use App\Http\Controllers\DocumentationFileController;
-use App\Http\Controllers\DocumentationImageController;
-use App\Http\Controllers\DocumentationUploadController;
-use App\Http\Controllers\FileUploadController;
-use App\Http\Controllers\CollaborationPdfController;
-use App\Http\Controllers\MeetingMinutePdfController;
+use App\Livewire\Dashboard\DashboardIndex;
 use App\Livewire\Documentation\DocumentationArticle;
 use App\Livewire\Documentation\DocumentationForm;
 use App\Livewire\Documentation\DocumentationIndex;
+use App\Livewire\Equipment\EquipmentCreate;
+use App\Livewire\Equipment\EquipmentEdit;
+use App\Livewire\Equipment\EquipmentIndex;
+use App\Livewire\Equipment\EquipmentShow;
+use App\Livewire\Equipment\MaintenanceIndex;
+use App\Livewire\Estimate\EstimateCreate;
+use App\Livewire\Estimate\EstimateEdit;
+use App\Livewire\Estimate\EstimateIndex;
+use App\Livewire\Estimate\EstimateShow;
+use App\Livewire\Expense\ExpenseCreate;
+use App\Livewire\Expense\ExpenseEdit;
+use App\Livewire\Invoice\InvoiceCreate;
+use App\Livewire\Invoice\InvoiceEdit;
+use App\Livewire\Invoice\InvoiceIndex;
+use App\Livewire\Invoice\InvoiceShow;
+use App\Livewire\Invoice\PublicInvoicePay;
+use App\Livewire\JobSite\JobSiteApprovals;
+use App\Livewire\JobSite\JobSiteContracts;
+use App\Livewire\JobSite\JobSiteDocuments;
+use App\Livewire\JobSite\JobSiteEquipment;
+use App\Livewire\JobSite\JobSiteFinancialReport;
+use App\Livewire\JobSite\JobSiteIncome;
+use App\Livewire\JobSite\JobSiteOverview;
+use App\Livewire\JobSite\JobSiteQuotations;
+use App\Livewire\JobSite\JobSiteRequisitions;
+use App\Livewire\JobSite\JobSiteRfis;
+use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteTasks;
+use App\Livewire\JobSite\JobSiteTeam;
 use App\Livewire\Meeting\MeetingAgenda;
 use App\Livewire\Meeting\MeetingForm;
 use App\Livewire\Meeting\MeetingIndex;
 use App\Livewire\Meeting\MeetingSeriesIndex;
 use App\Livewire\Meeting\MeetingShow;
-use App\Livewire\Project\ProjectTasks;
-use App\Livewire\Quotation\MyQuotations;
-use App\Livewire\Task\MyTasks;
-use App\Http\Controllers\FileController;
-use App\Http\Controllers\SharedDocumentController;
-use App\Livewire\Catalog\CatalogItemIndex;
-use App\Livewire\Catalog\CatalogItemCreate;
-use App\Livewire\Catalog\CatalogItemEdit;
-use App\Livewire\Catalog\CatalogCategoryIndex;
-use App\Livewire\Catalog\CatalogCategoryCreate;
-use App\Livewire\Catalog\CatalogCategoryEdit;
-use App\Livewire\Supplier\SupplierIndex;
-use App\Livewire\Supplier\SupplierCreate;
-use App\Livewire\Supplier\SupplierEdit;
-use App\Livewire\Supplier\SupplierShow;
 use App\Livewire\Payment\PaymentDashboard;
-use App\Livewire\CostCode\CostCodeTemplateIndex;
-use App\Livewire\CostCode\CostCodeTemplateCreate;
-use App\Livewire\CostCode\CostCodeTemplateShow;
-use App\Livewire\CostCode\CostCodeTemplateEdit;
-use App\Livewire\Budget\BudgetCreate;
-use App\Livewire\Budget\BudgetShow;
-use App\Livewire\Budget\BudgetEdit;
-use App\Http\Controllers\BudgetCostGridPdfController;
-use App\Livewire\Budget\BudgetCostGrid;
-use App\Livewire\Budget\CostCodeDetail;
-use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
-use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
-use App\Livewire\PurchaseOrder\PurchaseOrderShow;
-use App\Livewire\Contract\ContractCreate;
-use App\Livewire\Contract\ContractShow;
-use App\Livewire\Contract\ContractEdit;
-use App\Livewire\Contract\ContractPayments;
-use App\Livewire\PaymentBatch\PaymentBatchIndex;
 use App\Livewire\PaymentBatch\PaymentBatchCreate;
-use App\Livewire\PaymentBatch\PaymentBatchShow;
 use App\Livewire\PaymentBatch\PaymentBatchEdit;
+use App\Livewire\PaymentBatch\PaymentBatchIndex;
+use App\Livewire\PaymentBatch\PaymentBatchShow;
+use App\Livewire\Profile\UserProfile;
+use App\Livewire\Project\ProjectApprovals;
+use App\Livewire\Project\ProjectBudget;
+use App\Livewire\Project\ProjectChangeOrders;
 use App\Livewire\Project\ProjectContracts;
+use App\Livewire\Project\ProjectCreate;
+use App\Livewire\Project\ProjectDailyReports;
+use App\Livewire\Project\ProjectDocuments;
+use App\Livewire\Project\ProjectEdit;
+use App\Livewire\Project\ProjectEquipment;
+use App\Livewire\Project\ProjectExpenses;
+use App\Livewire\Project\ProjectFinancialReport;
+use App\Livewire\Project\ProjectIncome;
+use App\Livewire\Project\ProjectIndex;
+use App\Livewire\Project\ProjectJobSites;
+use App\Livewire\Project\ProjectOverview;
 use App\Livewire\Project\ProjectPurchaseOrders;
 use App\Livewire\Project\ProjectQuotations;
 use App\Livewire\Project\ProjectRequisitions;
-use App\Livewire\Estimate\EstimateIndex;
-use App\Livewire\Estimate\EstimateCreate;
-use App\Livewire\Estimate\EstimateShow;
-use App\Livewire\Estimate\EstimateEdit;
-use App\Livewire\Invoice\InvoiceIndex;
-use App\Livewire\Invoice\InvoiceCreate;
-use App\Livewire\Invoice\InvoiceShow;
-use App\Livewire\Invoice\InvoiceEdit;
-use App\Http\Controllers\InvoicePdfController;
-use App\Http\Controllers\EmailTrackingController;
-use App\Livewire\Invoice\PublicInvoicePay;
-use App\Livewire\Share\SharedDocument;
-use App\Livewire\SystemSettings\SettingsIndex;
-use App\Livewire\Profile\UserProfile;
+use App\Livewire\Project\ProjectRfis;
+use App\Livewire\Project\ProjectShow;
+use App\Livewire\Project\ProjectTasks;
+use App\Livewire\Project\ProjectTeam;
+use App\Livewire\PurchaseOrder\PurchaseOrderCreate;
+use App\Livewire\PurchaseOrder\PurchaseOrderEdit;
+use App\Livewire\PurchaseOrder\PurchaseOrderShow;
+use App\Livewire\Quotation\MyQuotations;
 use App\Livewire\Report\AccountsPayableReport;
-use App\Http\Controllers\CompanyFinancialReportPdfController;
-use App\Http\Controllers\ContractMeasurementPdfController;
-use App\Http\Controllers\ContractSchedulePdfController;
 use App\Livewire\Report\CompanyFinancialReport;
+use App\Livewire\Report\ExpenseReport;
 use App\Livewire\Report\PaymentDetailReport;
 use App\Livewire\Report\PaymentScheduleReport;
-use App\Livewire\Report\ExpenseReport;
 use App\Livewire\Report\SalesTaxReport;
-use App\Livewire\Dashboard\DashboardIndex;
+use App\Livewire\Rfi\RfiForm;
+use App\Livewire\Rfi\RfiShow;
 use App\Livewire\Setup\SetupWizard;
+use App\Livewire\Share\SharedDocument;
+use App\Livewire\Subcontractor\SubcontractorCreate;
+use App\Livewire\Subcontractor\SubcontractorEdit;
+use App\Livewire\Subcontractor\SubcontractorIndex;
+use App\Livewire\Subcontractor\SubcontractorShow;
+use App\Livewire\Supplier\SupplierCreate;
+use App\Livewire\Supplier\SupplierEdit;
+use App\Livewire\Supplier\SupplierIndex;
+use App\Livewire\Supplier\SupplierShow;
+use App\Livewire\SystemSettings\SettingsIndex;
+use App\Livewire\Task\MyTasks;
+use App\Livewire\User\UserAccess;
+use App\Livewire\User\UserCreate;
+use App\Livewire\User\UserEdit;
+use App\Livewire\User\UserIndex;
+use App\Livewire\User\UserShow;
+use App\Livewire\Vendor\VendorDuplicates;
+use App\Livewire\Vendor\VendorIndex;
+use App\Livewire\Worker\WorkerIndex;
+use App\Livewire\Worker\WorkerShow;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
+use Livewire\Volt\Volt;
 
 Route::get('/', function () {
     if (! User::query()->exists()) {
@@ -236,22 +248,22 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:vendors.create')->name('subcontractors.create');
     Route::get('subcontractors/{subcontractor}', SubcontractorShow::class)->name('subcontractors.show');
     // Legacy files and uploaded ones alike; the vendor in the URL is checked against the document.
-    Route::get('subcontractors/{subcontractor}/documents/{document}/download', [\App\Http\Controllers\SubcontractorDocumentController::class, 'download'])
+    Route::get('subcontractors/{subcontractor}/documents/{document}/download', [SubcontractorDocumentController::class, 'download'])
         ->middleware('ability:vendors.view')
         ->name('subcontractors.documents.download');
     Route::get('subcontractors/{subcontractor}/edit', SubcontractorEdit::class)
         ->middleware('ability:vendors.edit')->name('subcontractors.edit');
 
     // Vendor merge tool (suppliers + subcontractors share the vendors table)
-    Route::get('vendors/duplicates', \App\Livewire\Vendor\VendorDuplicates::class)
+    Route::get('vendors/duplicates', VendorDuplicates::class)
         ->middleware('ability:vendors.merge')->name('vendors.duplicates');
 
     // Directory: every vendor in one list, and the workers who move between them
-    Route::get('vendors', \App\Livewire\Vendor\VendorIndex::class)
+    Route::get('vendors', VendorIndex::class)
         ->middleware('ability:vendors.view')->name('vendors.index');
-    Route::get('workers', \App\Livewire\Worker\WorkerIndex::class)
+    Route::get('workers', WorkerIndex::class)
         ->middleware('ability:workers.view')->name('workers.index');
-    Route::get('workers/{worker}', \App\Livewire\Worker\WorkerShow::class)
+    Route::get('workers/{worker}', WorkerShow::class)
         ->middleware('ability:workers.view')->name('workers.show');
 
     // Project routes
@@ -318,6 +330,19 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:company-expenses.view')->name('company-expenses.index');
     Route::get('company-expenses/create', CompanyExpenseCreate::class)
         ->middleware('ability:company-expenses.create')->name('company-expenses.create');
+
+    // Equipment — the asset register and its maintenance. `maintenance` is
+    // declared before `{equipment}` so the word is never read as an id.
+    // docs/equipment-module.md
+    Route::get('equipment', EquipmentIndex::class)
+        ->middleware('ability:equipment.view')->name('equipment.index');
+    Route::get('equipment/create', EquipmentCreate::class)
+        ->middleware('ability:equipment.create')->name('equipment.create');
+    Route::get('equipment/maintenance', MaintenanceIndex::class)
+        ->middleware('ability:equipment.view')->name('equipment.maintenance.index');
+    Route::get('equipment/{equipment}', EquipmentShow::class)->name('equipment.show');
+    Route::get('equipment/{equipment}/edit', EquipmentEdit::class)
+        ->middleware('ability:equipment.edit')->name('equipment.edit');
 
     // Daily Report routes (Job Site level)
     Route::get('job-sites/{jobSite}/daily-reports/create', DailyReportForm::class)->name('dailyreports.create');
@@ -526,6 +551,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:tasks.view')->name('tasks.mine');
     Route::get('projects/{project}/tasks', ProjectTasks::class)->name('projects.tasks');
     Route::get('job-sites/{jobSite}/tasks', JobSiteTasks::class)->name('jobsites.tasks');
+
+    // Equipment on a project or a job site (docs/equipment-module.md)
+    Route::get('projects/{project}/equipment', ProjectEquipment::class)->name('projects.equipment');
+    Route::get('job-sites/{jobSite}/equipment', JobSiteEquipment::class)->name('jobsites.equipment');
 
     // A meeting spans several projects through its items, so these are asked
     // without a scope; the components guard their own actions.

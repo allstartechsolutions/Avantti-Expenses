@@ -66,6 +66,11 @@ class PermissionSeeder extends Seeder
         'company-expenses.delete',
         'company-expenses.edit_paid',
 
+        // --- Equipment, new on 2026-09-16: deleting is admin-only like every
+        //     other delete on a company record; everything else — readings,
+        //     maintenance, assignments — is site work and stays with employees.
+        'equipment.delete',
+
         // --- Added in M14: editing a daily report after it has closed. Was a
         //     hard-coded `is_admin` on the form.
         'daily-reports.edit_locked',
@@ -248,7 +253,6 @@ class PermissionSeeder extends Seeder
      *   estimates.delete, invoices.delete               → M15
      *   payments.pay, payments.batch                    → M11
      */
-
     public function run(bool $force = false): void
     {
         $this->syncSystemTemplates($force);
@@ -269,7 +273,7 @@ class PermissionSeeder extends Seeder
      * quietly undo an administrator's decision. That happened in testing,
      * which is why the record exists.
      *
-     * @return array<string, array<int, string>>  role name → abilities added
+     * @return array<string, array<int, string>> role name → abilities added
      */
     public function grantAbilitiesOfNewAreas(): array
     {
@@ -400,6 +404,8 @@ class PermissionSeeder extends Seeder
                     'daily-reports.view', 'daily-reports.create', 'daily-reports.edit',
                     'budget.view', 'budget.create', 'budget.edit',
                     'project-report.view', 'project-report.export',
+                    // The equipment on the project: sees it, sends it, keeps it serviced.
+                    'equipment.view', 'equipment.assign', 'equipment.maintain',
                 ],
             ],
 
@@ -499,6 +505,8 @@ class PermissionSeeder extends Seeder
                     // close an RFI or record a response on either.
                     'rfis.view', 'rfis.create', 'rfis.view_impact',
                     'approvals.view', 'approvals.submit',
+                    // Receives the machines, reads the meters, logs what was found.
+                    'equipment.view', 'equipment.assign', 'equipment.maintain',
                 ],
             ],
 
@@ -513,6 +521,7 @@ class PermissionSeeder extends Seeder
                     'daily-reports.view', 'daily-reports.create',
                     'documents.view',
                     'tasks.view', 'tasks.edit',
+                    'equipment.view', 'equipment.maintain',
                 ],
             ],
 

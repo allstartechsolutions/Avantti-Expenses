@@ -14,7 +14,7 @@ use Livewire\WithFileUploads;
 
 class ExpenseCreate extends Component
 {
-    use WithFileUploads, ManagesExpenseForm, AuthorizesAbility;
+    use AuthorizesAbility, ManagesExpenseForm, WithFileUploads;
 
     public Project $project;
 
@@ -40,6 +40,7 @@ class ExpenseCreate extends Component
         $this->authorizeAbility('expenses.create', $this->expenseScope());
 
         $this->startBlankExpenseForm();
+        $this->preselectEquipmentFromRequest();
     }
 
     protected function expenseProjectId(): ?int
@@ -98,6 +99,6 @@ class ExpenseCreate extends Component
             'catalogItems' => $this->catalogItemSearchResults(),
             'jobSites' => $this->selectableJobSites('expenses.create'),
             'categories' => collect(),
-        ])->layout('components.layouts.app');
+        ] + $this->equipmentPickerData())->layout('components.layouts.app');
     }
 }

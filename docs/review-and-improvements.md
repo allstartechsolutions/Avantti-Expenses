@@ -1842,3 +1842,45 @@ Noted while building, to be worked in the review phase:
 | **CE6** | **`PaymentScheduleService` is covered by the service test, not the screen** — the report is `MYSQL_ONLY` (`DATE_FORMAT`) and cannot run under sqlite. Walk `/reports/payment-schedule` with "Company (general)" on a MySQL copy. |
 | **CE7** | **The Expense Report's *By cost code* tab never sees a company expense** (no cost code) — by design, but nothing on that tab says so. A one-line note when the reader holds the grant and company rows exist in the range would close the gap between what the screen says and what it counts. |
 
+---
+
+## Equipment (2026-09-16) — EQ1–EQ8
+
+Built as the second half of the company-expenses + equipment plan (`docs/equipment-module.md`).
+Noted while building, to be worked in the review phase:
+
+| | |
+|---|---|
+| **EQ1** | **The equipment page's attachments use the PHP-routed `Attachments` component**, not the presigned `x-ui.file-uploader`. Fine for photos and PDFs; a customer attaching gigabyte manuals will need the cloud uploader target (`targetType="equipment"`) the vendor page has. |
+| **EQ2** | **Meter replacement or reset is not modelled.** A new odometer, or an hour meter that rolls over, cannot be logged: readings must not go backwards. Needs a "meter replaced at X" event that starts a new sequence. |
+| **EQ3** | **The Maintenance list is grouped by month, not a calendar.** A real calendar view (week / month grid) was asked for in the plan and deferred. |
+| **EQ4** | **No reminder for insurance, registration or inspection certificates on a vehicle.** Those are attachments today; the vendor-document expiry pattern (a dated document type with stages) would fit and could reuse `EquipmentMaintenanceNotifier`'s shape. |
+| **EQ5** | **The legacy `ProjectShow` / `JobSiteShow` expense modals got the equipment picker as a bare select** so parity holds; the shared form has the same control. When those modals are retired (CE1), the picker should not be forgotten in whatever replaces them. |
+| **EQ6** | **History rows print the assignment as a label but a plan edit as ids-free text only.** Field-level diffs for equipment edits print raw column names through `__(ucfirst(...))`; map them to labels the way `Expense::fieldLabel()` does. |
+| **EQ7** | **Readings and assignments are shown in full on their tabs** (capped at 200 / all). A machine with years of daily readings wants pagination and a chart. |
+| **EQ8** | **The reminder's meter side reads `Equipment::current_meter`**, the denormalised newest reading. A back-dated reading never changes it, which is right, but a deleted newest reading (no screen for that yet) would leave it stale — a `readings()->latest` recompute on delete is the fix when deletion arrives. |
+
+### Review pass (2026-09-16) — what the code review found and what was done
+
+Run before the first commit, as CLAUDE.md asks. Every item below was fixed in the same change
+and has a regression test unless noted.
+
+| Found | Done |
+|---|---|
+| `equipment/` was not in `FileController::ALLOWED_DIRECTORIES`, so every photo and attachment 404'd before authorisation ran | Added; a test serves a photo to a holder of `equipment.view`, refuses somebody else, and 404s a missing file |
+| The legacy `ProjectShow` / `JobSiteShow` modals saved `expense_equipment_id` / `_maintenance_id` unvalidated — a maintenance of another machine could be tagged | Both `saveExpense()` merge `equipmentRules()`; tested through the project modal |
+| `EquipmentShow::assign()` accepted any project id; a confined member could send equipment to a project they cannot open, and the register / maintenance filters listed every project | `Project::visibleTo()` on the rule and on both filter lists; the job site must belong to a visible project; tested |
+| `MaintenanceScheduler::replan()` deleted the open occurrence and made a new one, orphaning tagged expenses (`nullOnDelete`) and reading links, and losing reminder stamps on a mere note edit | The row is updated in place; stamps reset only when the due point moved; tested |
+| `EquipmentMaintenanceNotifier`: the meter fallback for the 7-day stage used `isDueSoon()`, which is true 30 days out by date, so a date+meter row was stamped `notified_7_at` three weeks early | The meter side now tests the meter margin alone; tested |
+| A second run the same day counted "already sent" as nothing-to-do and stamped stages nobody was told about | "Already had today's digest" is counted as deferred and blocks the stamps like a failed delivery; tested |
+| `EquipmentAssignment::closeFor()` bulk-updated rows without history, and the three legacy delete paths (`JobSiteShow`, `ProjectShow` project + site) never called it | `closeFor()` runs `endAssignment()` per piece (history row written); the three paths call it; tested through `JobSiteShow` |
+| `saveCancel()` flashed success after a refused cancel | Returns after the error |
+| `MaintenanceIndex` and the maintenance history tab ran one query per row (`plan->equipment`, `costInCents()`) | `intervalLabel($equipment)` and one grouped cost query passed to the view |
+| The dashboard's three tiles overlapped (a row due in 5 days counted in both "7 days" and "30 days") | Disjoint buckets: overdue/due, 1–7 days, 8–30 days (or meter margin); the list is the three concatenated |
+| `clearFindingPhoto()` / `clearPhoto()` were unguarded `wire:click` endpoints | Guarded by `equipment.maintain` / the screen's grant |
+| The expense picker offered the fleet with the module off or without `equipment.view` | Offered and accepted only where the module is on and the grant held; a row already tagged keeps its tag |
+| Equipment age printed a float on some PHP builds | Cast to int |
+
+Not done, by the owner's instruction: no `pt_BR.json` entries for the new strings — the
+Brazilian build lives in its own repository now.
+

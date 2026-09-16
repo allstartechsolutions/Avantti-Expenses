@@ -7,6 +7,7 @@ use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\JobSite;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class JobSiteOverview extends Component
 
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
+
     public $deleteJobSiteData = [];
 
     public function mount(JobSite $jobSite): void
@@ -67,10 +69,12 @@ class JobSiteOverview extends Component
 
         DB::transaction(function () {
             $this->cleanupJobSiteFiles($this->jobSite->id);
+            EquipmentAssignment::closeFor($this->jobSite);
             $this->jobSite->delete();
         });
 
         session()->flash('message', __('Job site deleted successfully!'));
+
         return $this->redirect(route('projects.jobsites', $projectId), navigate: true);
     }
 

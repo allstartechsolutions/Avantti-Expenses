@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPaymentMethodLabel;
+use App\Services\PermissionResolver;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
-use App\Models\Concerns\HasPaymentMethodLabel;
-use App\Services\PermissionResolver;
-use Illuminate\Database\Eloquent\Builder;
 use LogicException;
 
 class Expense extends Model
@@ -21,6 +21,8 @@ class Expense extends Model
         'project_id',
         'job_site_id',
         'expense_category_id',
+        'equipment_id',
+        'equipment_maintenance_id',
         'supplier_id',
         'catalog_item_id',
         'purchase_order_id',
@@ -63,7 +65,7 @@ class Expense extends Model
         parent::boot();
 
         static::creating(function ($expense) {
-            if ($expense->status === 'paid' && !$expense->paid_by) {
+            if ($expense->status === 'paid' && ! $expense->paid_by) {
                 $expense->paid_by = auth()->id();
             }
         });
@@ -140,6 +142,24 @@ class Expense extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
+
+    /** The piece of equipment this expense was for, if any (docs/equipment-module.md). */
+    public function equipment(): BelongsTo
+    {
+        return $this->belongsTo(Equipment::class);
+    }
+
+    /** The maintenance this expense paid for, if any. */
+    public function equipmentMaintenance(): BelongsTo
+    {
+        return $this->belongsTo(EquipmentMaintenance::class, 'equipment_maintenance_id');
+    }
+
+    /** Expenses tagged to a piece of equipment. */
+    public function scopeForEquipment(Builder $query, Equipment|int $equipment): Builder
+    {
+        return $query->where('equipment_id', $equipment instanceof Equipment ? $equipment->id : $equipment);
     }
 
     /**
@@ -314,7 +334,7 @@ class Expense extends Model
      */
     public function isFromPurchaseOrder(): bool
     {
-        return !is_null($this->purchase_order_id);
+        return ! is_null($this->purchase_order_id);
     }
 
     /**
@@ -338,7 +358,7 @@ class Expense extends Model
      */
     public function recalculateTotal(): void
     {
-        if (!$this->hasItems()) {
+        if (! $this->hasItems()) {
             return;
         }
 
@@ -357,6 +377,7 @@ class Expense extends Model
         } elseif ($this->unit_type_used === 'usage') {
             return $this->usage_unit ?? '';
         }
+
         return $this->usage_unit ?? ''; // fallback for custom items
     }
 
@@ -552,7 +573,7 @@ class Expense extends Model
             return '1x';
         }
 
-        return $this->getPaidInstallmentsCount() . '/' . $this->total_installments;
+        return $this->getPaidInstallmentsCount().'/'.$this->total_installments;
     }
 
     /**
@@ -579,6 +600,8 @@ class Expense extends Model
             'supplier_id' => __('Vendor'),
             'catalog_item_id' => __('Item'),
             'expense_category_id' => __('Category'),
+            'equipment_id' => __('Equipment'),
+            'equipment_maintenance_id' => __('Maintenance'),
             default => null,
         };
 
@@ -645,7 +668,7 @@ class Expense extends Model
     /**
      * Generate payment schedule for installment expense
      *
-     * @param array|null $customAmounts Array of amounts for each payment (optional)
+     * @param  array|null  $customAmounts  Array of amounts for each payment (optional)
      */
     public function generatePaymentSchedule(?array $customAmounts = null): void
     {
@@ -710,7 +733,7 @@ class Expense extends Model
      */
     public function markAsPaid(?string $paymentMethod = null, ?Carbon $paidDate = null): void
     {
-        if (!$this->isOneTime()) {
+        if (! $this->isOneTime()) {
             return;
         }
 
@@ -736,7 +759,7 @@ class Expense extends Model
      */
     public function unmarkAsPaid(): void
     {
-        if (!$this->isOneTime() || $this->status !== 'paid') {
+        if (! $this->isOneTime() || $this->status !== 'paid') {
             return;
         }
 

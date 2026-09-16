@@ -18,7 +18,7 @@ the receipt — and differs in exactly two things:
 | Belongs to | a project, optionally a job site | the company |
 | Broken down by | a cost code on each line (`expense_items.budget_item_id`) | a **category** on the header (`expenses.expense_category_id`); lines carry no cost code |
 | Permission area | `expenses` | `company-expenses` |
-| Where it is filed | the project / job-site Expenses tab | **Projects → Company Expenses** (`/company-expenses`) |
+| Where it is filed | the project / job-site Expenses tab | **Company → Company Expenses** (`/company-expenses`) |
 
 The one rule, enforced by `Expense::booted()` on every driver and by a MySQL `CHECK` as
 belt-and-braces (`2026_09_16_100001`): a company row has **no job site and must carry a

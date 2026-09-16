@@ -2,13 +2,14 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\JobSiteStatus;
 use App\Enums\UserStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -29,27 +30,46 @@ class ProjectJobSites extends Component
 
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
+
     public $deletingJobSiteId = null;
+
     public $deleteJobSiteData = [];
 
     // Form properties
     public $showJobSiteForm = false;
+
     public $editingJobSite = null;
+
     public $job_site_name = '';
+
     public $street = '';
+
     public $address_2 = '';
+
     public $city = '';
+
     public $state = '';
+
     public $postal_code = '';
+
     public $neighborhood = '';
+
     public $latitude = null;
+
     public $longitude = null;
+
     public $contact_person = '';
+
     public $phone = '';
+
     public $email = '';
+
     public $job_amount = '';
+
     public $status = 'created';
+
     public $supervisor_id = null;
+
     public $supervisor_change_note = '';
 
     protected function rules(): array
@@ -98,7 +118,7 @@ class ProjectJobSites extends Component
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
             'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
-            'supervisor_change_note'
+            'supervisor_change_note',
         ]);
 
         // Pre-populate with project data
@@ -186,6 +206,7 @@ class ProjectJobSites extends Component
             }
 
             session()->flash('message', __('Job site updated successfully!'));
+
             return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
         } else {
             $jobSite = JobSite::create([
@@ -218,6 +239,7 @@ class ProjectJobSites extends Component
             }
 
             session()->flash('message', __('Job site created successfully!'));
+
             return $this->redirect(route('jobsites.overview', $jobSite), navigate: true);
         }
     }
@@ -229,7 +251,7 @@ class ProjectJobSites extends Component
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
             'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
-            'supervisor_change_note'
+            'supervisor_change_note',
         ]);
     }
 
@@ -266,6 +288,7 @@ class ProjectJobSites extends Component
 
         DB::transaction(function () use ($jobSite) {
             $this->cleanupJobSiteFiles($jobSite->id);
+            EquipmentAssignment::closeFor($jobSite);
             $jobSite->delete();
         });
 
@@ -334,10 +357,10 @@ class ProjectJobSites extends Component
 
         if ($this->jobSiteSearch) {
             $jobSitesQuery->where(function ($query) {
-                $query->where('job_site_name', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('contact_person', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('email', 'like', '%' . $this->jobSiteSearch . '%')
-                    ->orWhere('city', 'like', '%' . $this->jobSiteSearch . '%');
+                $query->where('job_site_name', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('contact_person', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('email', 'like', '%'.$this->jobSiteSearch.'%')
+                    ->orWhere('city', 'like', '%'.$this->jobSiteSearch.'%');
             });
         }
 

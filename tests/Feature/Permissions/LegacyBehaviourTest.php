@@ -149,7 +149,7 @@ class LegacyBehaviourTest extends TestCase
     // added after the bridge was deleted, so it was never on it: it was
     // declared unswept only while its screens were being written, and flipped
     // once every action guarded itself and every list filtered itself.
-    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard', 'documentation', 'rfis', 'approvals', 'assignment-defaults', 'workers', 'company-expenses'];
+    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard', 'documentation', 'rfis', 'approvals', 'assignment-defaults', 'workers', 'company-expenses', 'equipment'];
 
     public function test_only_the_converted_areas_are_swept(): void
     {

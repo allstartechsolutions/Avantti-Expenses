@@ -6,6 +6,7 @@ use App\Enums\AccessScope;
 use App\Models\Client;
 use App\Models\JobSite;
 use App\Models\Membership;
+use App\Models\ModuleAccess;
 use App\Models\PermissionTemplate;
 use App\Models\Project;
 use App\Models\Role;
@@ -105,11 +106,11 @@ class SecurityStateTest extends TestCase
 
     public function test_a_switched_off_module_still_beats_everybody(): void
     {
-        \App\Models\ModuleAccess::create([
+        ModuleAccess::create([
             'module_key' => 'estimates', 'module_name' => 'Estimates',
             'is_enabled' => false, 'is_core' => false, 'created_by' => $this->admin->id,
         ]);
-        \App\Models\ModuleAccess::clearCache('estimates');
+        ModuleAccess::clearCache('estimates');
 
         $this->actingAs($this->admin)->get(route('estimates.index'))->assertForbidden();
     }
@@ -150,7 +151,7 @@ class SecurityStateTest extends TestCase
             [
                 'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company', 'company-expenses',
                 'contracts', 'cost-codes',
-                'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
+                'daily-reports', 'dashboard', 'documentation', 'documents', 'equipment', 'estimates', 'expenses', 'income', 'invoices',
                 'meetings', 'payments', 'project',
                 'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
                 'requisitions', 'rfis', 'settings', 'tasks', 'team', 'users', 'vendors', 'workers',

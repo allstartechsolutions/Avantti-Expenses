@@ -166,7 +166,10 @@ SIDEBAR
 ├── Company
 │   ├── Company Info
 │   ├── Users
-│   └── Roles & Access
+│   ├── Roles & Access
+│   ├── Company Expenses  ← 2026-09-16: overhead with account codes (managers, admins)
+│   ├── Equipment         ← 2026-09-16: the asset register
+│   └── Maintenance       ← 2026-09-16: the fleet-wide maintenance list
 ├── Projects
 │   ├── All Projects
 │   ├── Clients

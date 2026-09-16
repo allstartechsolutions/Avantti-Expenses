@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -15,8 +16,11 @@ use Illuminate\Support\Facades\Cache;
 class NotificationSetting extends Model
 {
     public const TASK_CREATED = 'task_created';
+
     public const TASK_CLOSED = 'task_closed';
+
     public const TASK_OVERDUE = 'task_overdue';
+
     public const TASK_WEEKLY_DIGEST = 'task_weekly_digest';
 
     // --- Procurement: who runs the cotação -----------------------------------
@@ -24,14 +28,23 @@ class NotificationSetting extends Model
     // it turns the task ones off. They are listed separately on the settings
     // screen because they are a different job, not a different mechanism.
     public const REQUISITION_SUBMITTED = 'requisition_submitted';
+
     public const REQUISITION_AWAITING = 'requisition_awaiting_approval';
+
     public const REQUISITION_DECIDED = 'requisition_decided';
+
     public const REQUISITION_ASSIGNED = 'requisition_assigned';
+
     public const REQUISITION_CANCELLED = 'requisition_cancelled';
+
     public const REQUISITION_STALLED = 'requisition_stalled';
+
     public const QUOTATION_ASSIGNED = 'quotation_assigned';
+
     public const QUOTATION_DUE_SOON = 'quotation_due_soon';
+
     public const QUOTATION_OVERDUE = 'quotation_overdue';
+
     public const QUOTATION_CANCELLED = 'quotation_cancelled';
 
     // --- Vendors: compliance documents running out ---------------------------
@@ -58,6 +71,12 @@ class NotificationSetting extends Model
 
     /** Every vendor trigger, in the order the settings screen lists them. */
     public const VENDOR_KEYS = [self::VENDOR_DOCUMENT_EXPIRY];
+
+    /** Equipment maintenance coming due, due, or overdue. docs/equipment-module.md */
+    public const EQUIPMENT_MAINTENANCE_DUE = 'equipment_maintenance_due';
+
+    /** Every equipment trigger, in the order the settings screen lists them. */
+    public const EQUIPMENT_KEYS = [self::EQUIPMENT_MAINTENANCE_DUE];
 
     /**
      * How long a submitted requisition may wait before its approver is chased.
@@ -101,7 +120,7 @@ class NotificationSetting extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    /** @return \Illuminate\Support\Collection<string, self> */
+    /** @return Collection<string, self> */
     public static function all($columns = ['*'])
     {
         return Cache::remember(self::CACHE_KEY, 300, fn () => static::query()->get()->keyBy('key'));
@@ -184,6 +203,20 @@ class NotificationSetting extends Model
         ));
     }
 
+    /**
+     * Who is told about equipment maintenance coming due. Empty means the
+     * fallback: everyone who may maintain equipment.
+     *
+     * @return array<int, int>
+     */
+    public static function equipmentMaintenanceRecipientIds(): array
+    {
+        return array_values(array_map(
+            'intval',
+            (array) (static::optionsFor(self::EQUIPMENT_MAINTENANCE_DUE)['recipients'] ?? []),
+        ));
+    }
+
     public static function label(string $key): string
     {
         return match ($key) {
@@ -202,6 +235,7 @@ class NotificationSetting extends Model
             self::QUOTATION_OVERDUE => __('Quotation responses are past due'),
             self::QUOTATION_CANCELLED => __('A quotation round you were working on was cancelled'),
             self::VENDOR_DOCUMENT_EXPIRY => __('A vendor document is expiring or has expired'),
+            self::EQUIPMENT_MAINTENANCE_DUE => __('Equipment maintenance is coming due, due, or overdue'),
             default => $key,
         };
     }
@@ -224,6 +258,7 @@ class NotificationSetting extends Model
             self::QUOTATION_OVERDUE => __('Goes to the owner and collaborators once the response date has passed and the round is still open.'),
             self::QUOTATION_CANCELLED => __('Goes to the owner and collaborators when a round is cancelled, so nobody keeps chasing vendors for it.'),
             self::VENDOR_DOCUMENT_EXPIRY => __('One e-mail per morning listing every subcontractor document that reached a stage: 30, 15 and 7 days before its date, and the day after. Renewing or archiving a document stops its reminders.'),
+            self::EQUIPMENT_MAINTENANCE_DUE => __('One e-mail per morning listing every maintenance that reached a stage: 30 and 7 days before its date, the day it is due by date or by meter, and the day after. Completing or cancelling the maintenance stops its reminders.'),
             default => '',
         };
     }

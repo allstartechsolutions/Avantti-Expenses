@@ -22,6 +22,7 @@
     $kpis = $this->kpis;
     $cashflow = $this->cashflowChart;
     $overduePayments = $this->overduePayments;
+    $maintenanceDue = $this->maintenanceDue;
     $pastDueInvoices = $this->pastDueInvoicesList;
     $overBudgetProjects = $this->overBudgetProjects;
     $pendingApprovals = $this->pendingApprovals;
@@ -40,7 +41,7 @@
     $showsAnyCard = $blocks['expenses'] || $blocks['invoices'] || $blocks['estimates']
         || $blocks['projects'] || $blocks['over_budget'] || $blocks['purchase_orders'];
 
-    $showsAnyPanel = $blocks['expenses'] || $blocks['invoices'] || $blocks['over_budget'] || $showsApprovals;
+    $showsAnyPanel = $blocks['expenses'] || $blocks['invoices'] || $blocks['over_budget'] || $showsApprovals || $blocks['equipment'];
 @endphp
 
 <div>
@@ -243,6 +244,52 @@
                         @empty
                             <div class="px-5 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                                 {{ __('No overdue payments') }}
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            @endif
+
+            @if ($blocks['equipment'])
+                {{-- Maintenance Due --}}
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+                    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Maintenance Due') }}</h3>
+                        <a href="{{ route('equipment.maintenance.index', ['view' => $maintenanceDue['overdue'] > 0 ? 'overdue' : 'due_soon']) }}" class="text-xs text-[#3F5189] dark:text-blue-400 hover:underline">{{ __('View all') }}</a>
+                    </div>
+                    <div class="px-5 py-3 grid grid-cols-3 gap-2 text-center border-b border-slate-200 dark:border-slate-700">
+                        <div>
+                            <p class="text-lg font-semibold {{ $maintenanceDue['overdue'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' }}">{{ $maintenanceDue['overdue'] }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Overdue or due') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-lg font-semibold {{ $maintenanceDue['week'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white' }}">{{ $maintenanceDue['week'] }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Within 7 days') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-lg font-semibold text-slate-900 dark:text-white">{{ $maintenanceDue['month'] }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Within 8–30 days') }}</p>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-slate-200 dark:divide-slate-700 flex-1">
+                        @forelse ($maintenanceDue['rows'] as $row)
+                            @php $m = $row['maintenance']; @endphp
+                            <div class="px-5 py-3 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                        <a href="{{ route('equipment.show', ['equipment' => $m->equipment_id, 'tab' => 'maintenance']) }}" class="hover:underline">{{ $m->equipment?->name ?? '—' }}</a>
+                                    </p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ $m->title }} &bull; {{ $m->dueLabel() }}</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-xs font-medium {{ in_array($row['urgency'], ['overdue', 'due'], true) ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                        {{ \App\Models\EquipmentMaintenance::urgencyLabel($row['urgency']) }}
+                                    </p>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="px-5 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                                {{ __('Nothing due in the next 30 days') }}
                             </div>
                         @endforelse
                     </div>

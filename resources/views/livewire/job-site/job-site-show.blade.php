@@ -1171,6 +1171,8 @@
                             placeholder="{{ __('Optional notes about this expense') }}"></textarea>
                     </div>
 
+                    @include('livewire.expense.partials.equipment-picker')
+
                     <!-- Receipt Upload -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

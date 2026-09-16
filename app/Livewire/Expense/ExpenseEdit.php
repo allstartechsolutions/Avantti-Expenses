@@ -19,7 +19,7 @@ use Livewire\WithFileUploads;
  */
 class ExpenseEdit extends Component
 {
-    use WithFileUploads, ManagesExpenseForm, AuthorizesAbility;
+    use AuthorizesAbility, ManagesExpenseForm, WithFileUploads;
 
     public Expense $expense;
 
@@ -159,7 +159,7 @@ class ExpenseEdit extends Component
         return $expense->items->map(fn ($item) => [
             'item_name' => $item->item_name,
             'cost_code' => $item->budgetItem
-                ? $item->budgetItem->code . ' - ' . $item->budgetItem->name
+                ? $item->budgetItem->code.' - '.$item->budgetItem->name
                 : ($expense->isCompanyLevel() ? __('Not applicable') : __('Unassigned')),
             'quantity' => (float) $item->quantity,
             'unit_price' => (float) $item->unit_price,
@@ -200,7 +200,7 @@ class ExpenseEdit extends Component
 
             foreach ($old as $field => $oldValue) {
                 if ($oldValue !== $new[$field]) {
-                    $changes[$label . ' — ' . $field] = ['old' => $oldValue, 'new' => $new[$field]];
+                    $changes[$label.' — '.$field] = ['old' => $oldValue, 'new' => $new[$field]];
                 }
             }
         }
@@ -210,7 +210,7 @@ class ExpenseEdit extends Component
 
     private function describeLine(array $line): string
     {
-        return $line['item_name'] . ' (' . $line['cost_code'] . ')';
+        return $line['item_name'].' ('.$line['cost_code'].')';
     }
 
     public function render()
@@ -221,6 +221,6 @@ class ExpenseEdit extends Component
             'catalogItems' => $this->catalogItemSearchResults(),
             'jobSites' => $this->selectableJobSites('expenses.edit'),
             'categories' => $this->selectableCategories(),
-        ])->layout('components.layouts.app');
+        ] + $this->equipmentPickerData())->layout('components.layouts.app');
     }
 }

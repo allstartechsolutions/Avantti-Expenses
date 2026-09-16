@@ -4,16 +4,19 @@ namespace App\Livewire\JobSite;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\ManagesChangeOrders;
-use App\Services\CostCodeLedger;
+use App\Livewire\Concerns\PicksEquipment;
 use App\Models\CatalogItem;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
 use App\Models\DailyReportManpower;
-use App\Models\DailyReportTask;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
+use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\PurchaseOrder;
+use App\Services\CostCodeLedger;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -22,60 +25,95 @@ use Livewire\WithFileUploads;
 
 class JobSiteShow extends Component
 {
-    use WithFileUploads, AuthorizesAbility, ManagesChangeOrders;
+    use AuthorizesAbility, ManagesChangeOrders, WithFileUploads;
+    use PicksEquipment;
 
     public JobSite $jobSite;
+
     public $activeTab = 'overview';
 
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
+
     public $deleteJobSiteData = [];
 
     // Expense properties
     public $expenseSearch = '';
+
     public $showExpenseModal = false;
+
     public $expenseModalMode = 'create';
+
     public $editingExpense = null;
+
     public $expenseHistory = [];
 
     // Mark-as-paid confirmation state (inline date picker)
     public $markPaidType = null; // 'expense' or 'payment'
+
     public $markPaidId = null;
+
     public $markPaidDate = '';
 
     // Installment due-date editing state
     public $editDueDateId = null;
+
     public $editDueDate = '';
 
     // Expense form properties
     public $catalogItemSearch = '';
+
     public $selectedCatalogItem = null;
+
     public $isCustomItem = false;
+
     public $expense_item_name = '';
+
     public $expense_item_type = '';
+
     public $expense_purchase_unit = '';
+
     public $expense_usage_unit = '';
+
     public $expense_unit_type_used = 'custom'; // 'purchase', 'usage', or 'custom'
+
     public $expense_quantity = '';
+
     public $expense_unit_price = '';
+
     public $expense_total_amount = '';
+
     public $expense_notes = '';
+
     public $expense_date = '';
+
     public $expense_receipt = null;
+
     public $existingReceiptPath = null;
 
     // Expense payment properties
     public $expense_status = 'paid';
+
     public $expense_payment_method = null;
+
     public $expense_is_auto_payment = false;
+
     public $expense_has_installments = false;
+
     public $expense_total_installments = 2;
+
     public $expense_payment_frequency = 'monthly';
+
     public $expense_payment_due_date = '';
+
     public $expense_paid_date = '';
+
     public $expense_use_custom_amounts = false;
+
     public $expense_custom_amounts = [];
+
     public $expense_payment_schedule_preview = [];
+
     public $expenseStatusFilter = 'all';
 
     /** Narrow the expense list to one cost code. */
@@ -98,7 +136,7 @@ class JobSiteShow extends Component
         ];
 
         foreach ($tabMap as $segment => $tab) {
-            if (str_ends_with($path, '/' . $segment)) {
+            if (str_ends_with($path, '/'.$segment)) {
                 $this->activeTab = $tab;
                 $this->activeNavTab = $segment;
                 break;
@@ -150,9 +188,9 @@ class JobSiteShow extends Component
     }
 
     /** An installment of an expense of THIS job site, or a 404. */
-    protected function paymentInScope(int $paymentId): \App\Models\ExpensePayment
+    protected function paymentInScope(int $paymentId): ExpensePayment
     {
-        return \App\Models\ExpensePayment::whereHas(
+        return ExpensePayment::whereHas(
             'expense',
             fn ($q) => $q->where('job_site_id', $this->jobSite->id)
         )->findOrFail($paymentId);
@@ -211,7 +249,7 @@ class JobSiteShow extends Component
 
     public function updatedExpenseUnitTypeUsed()
     {
-        if (!$this->selectedCatalogItem) {
+        if (! $this->selectedCatalogItem) {
             return;
         }
 
@@ -228,7 +266,7 @@ class JobSiteShow extends Component
 
     public function toggleCustomItem()
     {
-        $this->isCustomItem = !$this->isCustomItem;
+        $this->isCustomItem = ! $this->isCustomItem;
 
         if ($this->isCustomItem) {
             $this->reset(['selectedCatalogItem', 'catalogItemSearch', 'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit', 'expense_unit_type_used', 'expense_unit_price', 'expense_quantity', 'expense_total_amount']);
@@ -264,6 +302,7 @@ class JobSiteShow extends Component
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
             'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
@@ -271,7 +310,7 @@ class JobSiteShow extends Component
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview',
             'markPaidType', 'markPaidId', 'markPaidDate',
-            'editDueDateId', 'editDueDate'
+            'editDueDateId', 'editDueDate',
         ]);
         $this->expense_date = now()->format('Y-m-d');
         $this->expense_paid_date = now()->format('Y-m-d');
@@ -292,15 +331,16 @@ class JobSiteShow extends Component
         $this->authorizeAbility('expenses.edit', $expense);
 
         // Settled money needs `expenses.edit_paid` on top of `expenses.edit`.
-        if (!$expense->isEditableBy(auth()->user())) {
+        if (! $expense->isEditableBy(auth()->user())) {
             session()->flash('error', __('This expense cannot be edited because it has payments.'));
+
             return;
         }
 
         $this->editingExpense = $expense->id;
         $this->isCustomItem = $expense->isCustom();
 
-        if (!$this->isCustomItem) {
+        if (! $this->isCustomItem) {
             $this->selectedCatalogItem = $expense->catalog_item_id;
             $this->catalogItemSearch = $expense->catalogItem?->name;
         }
@@ -314,6 +354,7 @@ class JobSiteShow extends Component
         $this->expense_unit_price = $expense->unit_price;
         $this->expense_total_amount = $expense->total_amount;
         $this->expense_notes = $expense->notes;
+        $this->fillEquipmentFrom($expense);
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
         $this->expense_receipt = null;
@@ -349,7 +390,7 @@ class JobSiteShow extends Component
         $this->editingExpense = $expense->id;
         $this->isCustomItem = $expense->isCustom();
 
-        if (!$this->isCustomItem) {
+        if (! $this->isCustomItem) {
             $this->selectedCatalogItem = $expense->catalog_item_id;
             $this->catalogItemSearch = $expense->catalogItem?->name;
         }
@@ -363,6 +404,7 @@ class JobSiteShow extends Component
         $this->expense_unit_price = $expense->unit_price;
         $this->expense_total_amount = $expense->total_amount;
         $this->expense_notes = $expense->notes;
+        $this->fillEquipmentFrom($expense);
         $this->expense_date = $expense->expense_date->format('Y-m-d');
         $this->existingReceiptPath = $expense->receipt_path;
 
@@ -448,7 +490,7 @@ class JobSiteShow extends Component
             }
         }
 
-        $this->validate($rules);
+        $this->validate($rules + $this->equipmentRules());
 
         $receiptPath = $this->existingReceiptPath;
 
@@ -472,6 +514,7 @@ class JobSiteShow extends Component
             'unit_price' => $this->expense_unit_price,
             'total_amount' => $this->expense_total_amount,
             'notes' => $this->expense_notes,
+        ] + $this->equipmentHeaderData() + [
             'receipt_path' => $receiptPath,
             'expense_date' => $this->expense_date,
             // Payment fields
@@ -504,8 +547,9 @@ class JobSiteShow extends Component
             $expense = $this->expenseInScope((int) $this->editingExpense);
 
             // Settled money needs `expenses.edit_paid` on top of `expenses.edit`.
-            if (!$expense->isEditableBy(auth()->user())) {
+            if (! $expense->isEditableBy(auth()->user())) {
                 session()->flash('error', __('This expense cannot be edited because it has payments.'));
+
                 return;
             }
 
@@ -513,7 +557,7 @@ class JobSiteShow extends Component
 
             // Regenerate payment schedule if installments changed
             // (locked once any installment has been paid)
-            if (!$expense->hasLockedPayments()) {
+            if (! $expense->hasLockedPayments()) {
                 if ($this->expense_has_installments) {
                     $customAmounts = $this->expense_use_custom_amounts ? $this->expense_custom_amounts : null;
                     $expense->generatePaymentSchedule($customAmounts);
@@ -561,6 +605,7 @@ class JobSiteShow extends Component
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
             'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
+            'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseHistory',
             // Payment fields
             'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
@@ -568,7 +613,7 @@ class JobSiteShow extends Component
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview',
             'markPaidType', 'markPaidId', 'markPaidDate',
-            'editDueDateId', 'editDueDate'
+            'editDueDateId', 'editDueDate',
         ]);
         $this->dispatch('close-modal', 'expense-modal');
     }
@@ -638,15 +683,16 @@ class JobSiteShow extends Component
 
     public function generatePaymentSchedulePreview()
     {
-        if (!$this->expense_has_installments || !$this->expense_total_amount || !$this->expense_total_installments) {
+        if (! $this->expense_has_installments || ! $this->expense_total_amount || ! $this->expense_total_installments) {
             $this->expense_payment_schedule_preview = [];
+
             return;
         }
 
         $total = floatval($this->expense_total_amount);
         $count = intval($this->expense_total_installments);
         $frequency = $this->expense_payment_frequency ?: 'monthly';
-        $startDate = $this->expense_payment_due_date ? \Carbon\Carbon::parse($this->expense_payment_due_date) : now();
+        $startDate = $this->expense_payment_due_date ? Carbon::parse($this->expense_payment_due_date) : now();
 
         // Calculate amounts
         if ($this->expense_use_custom_amounts && count($this->expense_custom_amounts) === $count) {
@@ -709,7 +755,7 @@ class JobSiteShow extends Component
     {
         $this->validate(['markPaidDate' => 'required|date']);
 
-        $paidDate = \Carbon\Carbon::parse($this->markPaidDate);
+        $paidDate = Carbon::parse($this->markPaidDate);
 
         if ($this->markPaidType === 'payment') {
             $payment = $this->paymentInScope((int) $this->markPaidId);
@@ -774,8 +820,8 @@ class JobSiteShow extends Component
         $payment = $this->paymentInScope((int) $this->editDueDateId);
         $this->authorizeAbility('expenses.edit', $payment);
 
-        if (!$payment->isPaid()) {
-            $payment->changeDueDate(\Carbon\Carbon::parse($this->editDueDate));
+        if (! $payment->isPaid()) {
+            $payment->changeDueDate(Carbon::parse($this->editDueDate));
             session()->flash('message', __('Due date updated.'));
         }
 
@@ -854,10 +900,12 @@ class JobSiteShow extends Component
 
         DB::transaction(function () {
             $this->cleanupJobSiteFiles($this->jobSite->id);
+            EquipmentAssignment::closeFor($this->jobSite);
             $this->jobSite->delete();
         });
 
         session()->flash('message', __('Job site deleted successfully!'));
+
         return $this->redirect(route('projects.jobsites', $projectId), navigate: true);
     }
 
@@ -938,9 +986,9 @@ class JobSiteShow extends Component
         }
 
         if ($this->expenseSearch) {
-            $expensesQuery->where(function($query) {
-                $query->where('item_name', 'like', '%' . $this->expenseSearch . '%')
-                    ->orWhere('notes', 'like', '%' . $this->expenseSearch . '%');
+            $expensesQuery->where(function ($query) {
+                $query->where('item_name', 'like', '%'.$this->expenseSearch.'%')
+                    ->orWhere('notes', 'like', '%'.$this->expenseSearch.'%');
             });
         }
 
@@ -948,14 +996,14 @@ class JobSiteShow extends Component
         $totalExpensesAmount = $expenses->sum('total_amount');
 
         // Calculate payment totals
-        $totalPaidAmount = $expenses->sum(fn($e) => $e->getPaidAmount());
-        $totalPendingAmount = $expenses->sum(fn($e) => $e->getPendingAmount());
+        $totalPaidAmount = $expenses->sum(fn ($e) => $e->getPaidAmount());
+        $totalPendingAmount = $expenses->sum(fn ($e) => $e->getPendingAmount());
 
         // Catalog items for search
         $catalogItems = collect();
         if ($this->catalogItemSearch && strlen($this->catalogItemSearch) >= 2) {
             $catalogItems = CatalogItem::where('is_active', true)
-                ->where('name', 'like', '%' . $this->catalogItemSearch . '%')
+                ->where('name', 'like', '%'.$this->catalogItemSearch.'%')
                 ->take(10)
                 ->get();
         }
@@ -995,7 +1043,7 @@ class JobSiteShow extends Component
             'approvedAmount' => $purchaseOrders->where('status', 'approved')->sum('total_amount'),
         ];
 
-        return view('livewire.job-site.job-site-show', [
+        return view('livewire.job-site.job-site-show', $this->equipmentPickerData() + [
             'changeOrders' => $changeOrders,
             'changeOrderSummary' => $this->changeOrderSummary($changeOrders),
             'coBudget' => $this->changeOrderBudget(),

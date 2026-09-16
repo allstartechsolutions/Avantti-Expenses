@@ -18,6 +18,7 @@ use App\Services\AbilityCatalog;
 use App\Services\PermissionResolver;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -205,7 +206,7 @@ class TeamTabTest extends TestCase
         $this->assertSame(
             ['project', 'budget', 'expenses', 'income', 'project-report', 'requisitions', 'quotations',
                 'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
-                'daily-reports', 'tasks', 'team'],
+                'daily-reports', 'tasks', 'equipment', 'team'],
             array_column($tabbed['areas'], 'key'),
         );
 
@@ -234,7 +235,7 @@ class TeamTabTest extends TestCase
         $this->assertSame(
             ['project', 'budget', 'expenses', 'income', 'project-report', 'requisitions', 'quotations',
                 'purchase-orders', 'contracts', 'change-orders', 'documents', 'rfis', 'approvals',
-                'daily-reports', 'tasks', 'team'],
+                'daily-reports', 'tasks', 'equipment', 'team'],
             array_column($tabbed['areas'], 'key'),
         );
 
@@ -442,7 +443,7 @@ class TeamTabTest extends TestCase
 
         // findMembership() scopes every lookup to this tab's own record, so
         // the id simply does not exist here.
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         try {
             Livewire::actingAs($this->admin)

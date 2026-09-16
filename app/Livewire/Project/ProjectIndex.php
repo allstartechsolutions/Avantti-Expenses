@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Project;
 
-use App\Livewire\Concerns\AuthorizesAbility;
 use App\Enums\ProjectStatus;
+use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\ChangeOrder;
 use App\Models\Client;
+use App\Models\DailyReport;
 use App\Models\DailyReportImage;
+use App\Models\DailyReportManpower;
+use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
@@ -18,17 +21,21 @@ use Livewire\WithPagination;
 class ProjectIndex extends Component
 {
     use AuthorizesAbility;
-
     use WithPagination;
 
     public $search = '';
+
     public $statusFilter = '';
+
     public $clientFilter = '';
+
     public $perPage = 10;
 
     // Delete modal
     public $showDeleteModal = false;
+
     public $deletingProjectId = null;
+
     public $deleteProjectData = [];
 
     protected $queryString = [
@@ -95,6 +102,7 @@ class ProjectIndex extends Component
             // Clean up files before cascade delete (Eloquent events won't fire on cascade)
             $this->cleanupProjectFiles($project->id);
 
+            EquipmentAssignment::closeFor($project);
             $project->delete();
         });
 
@@ -135,12 +143,12 @@ class ProjectIndex extends Component
         }
 
         // Delete daily report images
-        $dailyReportIds = \App\Models\DailyReport::where('project_id', $projectId)
+        $dailyReportIds = DailyReport::where('project_id', $projectId)
             ->pluck('id');
 
         if ($dailyReportIds->isNotEmpty()) {
             $imagePaths = DailyReportImage::whereIn('imageable_id', $dailyReportIds)
-                ->where('imageable_type', \App\Models\DailyReport::class)
+                ->where('imageable_type', DailyReport::class)
                 ->pluck('file_path');
 
             foreach ($imagePaths as $path) {
@@ -148,12 +156,12 @@ class ProjectIndex extends Component
             }
 
             // Also get manpower log images
-            $manpowerIds = \App\Models\DailyReportManpower::whereIn('daily_report_id', $dailyReportIds)
+            $manpowerIds = DailyReportManpower::whereIn('daily_report_id', $dailyReportIds)
                 ->pluck('id');
 
             if ($manpowerIds->isNotEmpty()) {
                 $manpowerImagePaths = DailyReportImage::whereIn('imageable_id', $manpowerIds)
-                    ->where('imageable_type', \App\Models\DailyReportManpower::class)
+                    ->where('imageable_type', DailyReportManpower::class)
                     ->pluck('file_path');
 
                 foreach ($manpowerImagePaths as $path) {
@@ -179,12 +187,12 @@ class ProjectIndex extends Component
             ->with(['client', 'createdBy', 'jobSites'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('project_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('contact_person', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('client', function($q) {
-                          $q->where('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('project_name', 'like', '%'.$this->search.'%')
+                        ->orWhere('contact_person', 'like', '%'.$this->search.'%')
+                        ->orWhere('email', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('client', function ($q) {
+                            $q->where('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->statusFilter, function ($query) {

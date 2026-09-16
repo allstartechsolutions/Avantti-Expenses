@@ -97,6 +97,9 @@
                         placeholder="{{ __('Optional notes about this expense...') }}"></textarea>
                 </div>
 
+                <!-- Equipment (optional tag) -->
+                @include('livewire.expense.partials.equipment-picker')
+
                 <!-- Receipt -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Receipt') }}</label>

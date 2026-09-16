@@ -7,6 +7,8 @@ use App\Models\ChangeOrder;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
 use App\Models\DailyReportImage;
+use App\Models\Equipment;
+use App\Models\EquipmentFinding;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\PurchaseOrder;
@@ -52,6 +54,7 @@ class FileController extends Controller
         'daily_reports',
         'temp_daily_reports',
         'subcontractor-documents',
+        'equipment',
         'company-logos',
         'livewire-tmp',
     ];
@@ -140,6 +143,12 @@ class FileController extends Controller
             // an active one — it is the history the audit wants to see.
             'subcontractor-documents' => ['vendors', SubcontractorDocument::where('file_path', $path)->first()],
 
+            // Equipment — a company record, so the role alone answers. One
+            // directory, three owners: the photo on the equipment itself,
+            // the polymorphic attachments, and a finding's photo; all three
+            // reach the equipment.
+            'equipment' => ['equipment', $this->equipmentFor($path)],
+
             // Not yet swept: the old rule stands, and its own pass adds the
             // line here. Nothing fails if that is forgotten, so it is written
             // down in docs/review-and-improvements.md as well.
@@ -186,6 +195,14 @@ class FileController extends Controller
      *
      * @param  string|array<int, string>  $expected
      */
+    /** The piece of equipment a file under `equipment/` belongs to. */
+    private function equipmentFor(string $path): ?Model
+    {
+        return Equipment::where('photo_path', $path)->first()
+            ?? $this->attachedTo($path, Equipment::class)
+            ?? EquipmentFinding::where('photo_path', $path)->first()?->equipment;
+    }
+
     private function attachedTo(string $path, string|array $expected): ?Model
     {
         $attachment = Attachment::where('file_path', $path)
