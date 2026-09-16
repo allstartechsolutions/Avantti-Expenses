@@ -174,7 +174,7 @@
                                     <div class="inline-flex items-center gap-2">
                                         <x-ui.view-edit-buttons :viewRoute="route('equipment.show', $item)" :editRoute="auth()->user()->can('equipment.edit') ? route('equipment.edit', $item) : null" />
                                         @if($canDelete && $item->hasNoRecords())
-                                            <x-ui.button variant="danger" size="sm" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Delete :name? Nothing has been recorded under it.', ['name' => $item->name]) }}" title="{{ __('Delete') }}"></x-ui.button>
+                                            <x-ui.icon-button variant="danger" size="sm" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Delete :name? Nothing has been recorded under it.', ['name' => $item->name]) }}" title="{{ __('Delete') }}" />
                                         @endif
                                     </div>
                                 </td>

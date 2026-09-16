@@ -219,7 +219,9 @@ Rules, all learned from the equipment register (16 Sep 2026):
    create screen — not in the review phase.
 2. **A bare entry goes from the list.** A row with nothing recorded under it gets a trash
    button in its actions cell with `wire:confirm` — the confirmation names the record and says
-   nothing hangs off it. Decide "nothing under it" with one `withCount(...)` on the list query
+   nothing hangs off it. The button is `<x-ui.icon-button variant="danger" size="sm"
+   icon="trash">`, the same square control `x-ui.view-edit-buttons` uses; an `x-ui.button`
+   with an empty slot keeps its text padding and sits lopsided beside them. Decide "nothing under it" with one `withCount(...)` on the list query
    and a model method that reads those counts (`Equipment::hasNoRecords()`), never a query
    per row.
 3. **A record with history goes from its own page**, through the counted modal
