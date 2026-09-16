@@ -108,6 +108,7 @@
 
 ### Quality
 
+- **[Changelog 2026-09-16 — amounts crossing rows](./changelog-2026-09-16-livewire-row-keys.md)** - Why a *Pay today* amount showed up on other contracts (unkeyed rows, a `wire:model` binding that outlived its row), the same fix on the ability matrix and the receipt modal, and the rule that rows with inputs carry a `wire:key`
 - **[Changelog 2026-09-07 — workers and the Directory menu](./changelog-2026-09-07-workers-directory.md)** - People renamed Workers, a worker for every employee row, the Directory group with one Vendors list; what moved in the sidebar and in pt_BR
 - **[Changelog 2026-09-02 — company branding](./changelog-2026-09-02-company-branding.md)** - The customer's own display name, app icon, dark-mode icon and favicon, with the product's mark as the fallback
 - **[Changelog 2026-08-27 — nav grouping](./changelog-2026-08-27-nav-grouping.md)** - The project / job-site tab bar grouped into four dropdowns, menu wording moved to `lang/*/navigation.php`, and the untranslated breadcrumb fixed

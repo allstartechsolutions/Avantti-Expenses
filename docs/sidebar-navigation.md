@@ -118,12 +118,22 @@ levels unless there is a reason it cannot.
 
 ## How the sidebar submenus open
 
-The sidebar keeps one open group at a time in Alpine state, initialised from the current
-route so the group you are inside is already open on load:
+The sidebar keeps one open group at a time in Alpine state, initialised so the group you
+are inside is already open on load:
 
 ```blade
-<body x-data="{ sidebarOpen: false, sidebarCollapsed: false, activeSubmenu: @js(...), toggleSubmenu(menu) { … } }">
+<body x-data="{ …, activeSubmenu: @js(app(\App\Services\Navigation::class)->activeSidebarGroup(auth()->user())), toggleSubmenu(menu) { … } }">
 ```
+
+`Navigation::activeSidebarGroup()` returns the key of the group whose child is the current
+page, or `null` on a top-level item. A group is **active when its own `active` patterns match
+or when any of its children is active**, so a new entry opens its group by being declared in
+`config/permissions.php` and nothing else. (Until 16 Sep 2026 the layout kept its own list of
+routes for this — `company.*`, `projects.*`, `payments.*`, `catalog.*` and a few more — and
+every entry added after it was written, Contract Payments and Payment Batches among them,
+rendered with its group highlighted but collapsed. `NavigationTest::
+test_opening_a_child_opens_its_group` walks every grouped entry to keep it that way.)
+`Navigation` is a per-request singleton, since the layout and the sidebar both ask it.
 
 When the sidebar is collapsed to the icon rail, a group opens as a **flyout** instead
 (`railFlyout` in `x-layouts.inc.nav.group`), anchored beside the rail and repositioned on

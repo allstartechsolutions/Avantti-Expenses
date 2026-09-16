@@ -76,11 +76,37 @@ class Navigation
             }
 
             $built[$groupKey]['items'][] = $entry;
+
+            // A child that is open lights its parent, whatever the group's own
+            // patterns say — the layout used to keep a second, hand-written
+            // list of routes to decide which group starts expanded, and every
+            // entry added after it was written (Contract Payments, Payment
+            // Batches, the Directory, Meetings, Reports) rendered highlighted
+            // but collapsed.
+            if ($entry['active']) {
+                $built[$groupKey]['active'] = true;
+            }
         }
 
         usort($built, fn ($a, $b) => $a['order'] <=> $b['order']);
 
         return array_values($built);
+    }
+
+    /**
+     * The key of the sidebar group that holds the current page, or null when
+     * the page is a top-level item (or nothing in the menu). The layout opens
+     * this group on load so the selected child is visible.
+     */
+    public function activeSidebarGroup(?User $user): ?string
+    {
+        foreach ($this->sidebar($user) as $entry) {
+            if ($entry['type'] === 'group' && $entry['active']) {
+                return $entry['key'];
+            }
+        }
+
+        return null;
     }
 
     /** The entries that live in the top bar rather than the sidebar. */

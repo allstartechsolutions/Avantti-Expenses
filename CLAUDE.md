@@ -362,6 +362,25 @@ See *Dates and Times Come From the Macros* below, and `docs/date-formatting.md`.
 directive inside a `<x-…>` tag stops the tag compiling and the element vanishes from the page
 with no error. This is true of every component, not just this one.
 
+### Rows with inputs carry a `wire:key`
+
+**A `wire:model` inside a loop needs a `wire:key` on the loop's element**, always:
+
+```blade
+@foreach($contracts as $contract)
+    <tr wire:key="contract-{{ $contract->id }}">
+        <input wire:model.blur="payAmounts.{{ $contract->id }}">
+```
+
+Without one, Livewire matches rows by position. The moment the list shifts — a sub-row
+expands, a filter changes, a row drops out — a row's input is reused for a different record,
+its `wire:model` attribute is rewritten, and the **old binding survives beside the new one**
+(Livewire 4's `wire:model` registers its Alpine bindings with no cleanup). Every keystroke then
+writes to two records. This is what put one contract's *Pay today* amount on other rows on
+`/contract-payments` (fixed 16 Sep 2026, see `docs/changelog-2026-09-16-livewire-row-keys.md`)
+and would have let a tick on the access matrix flip a different ability. Key the loop element
+itself, not only the input, and key nested loops too.
+
 ### Address Format (Country-based)
 Use `config('app.country')` to determine address format:
 - **US**: Street, Address Line 2, City, State, ZIP Code

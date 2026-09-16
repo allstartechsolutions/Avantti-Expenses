@@ -6,6 +6,7 @@ use App\Models\ModuleAccess;
 use App\Models\User;
 use App\Services\AbilityCatalog;
 use App\Services\MeetingAgendaService;
+use App\Services\Navigation;
 use App\Services\PermissionResolver;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Blade;
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         // One resolver per request: it memoises the answers it has already
         // given, and the memberships it loaded to give them.
         $this->app->singleton(PermissionResolver::class);
+
+        // The layout asks which group to open and the sidebar asks for the
+        // menu; one instance answers both from the same build.
+        $this->app->singleton(Navigation::class);
 
         // Likewise the agenda service: it memoises how the earlier meetings of
         // a series were ordered, which the sort asks for once per location on

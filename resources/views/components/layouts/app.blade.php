@@ -5,15 +5,7 @@
     sidebarOpen: false,
     sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     profileDropdownOpen: false,
-    activeSubmenu: @js(
-        request()->routeIs('company.*') || request()->routeIs('users.*')
-            ? 'company'
-            : (request()->routeIs('projects.*') || request()->routeIs('clients.*') || request()->routeIs('subcontractors.*') || request()->routeIs('cost-codes.*') || request()->routeIs('payments.*')
-                ? 'projects'
-                : (request()->routeIs('catalog.*') || request()->routeIs('suppliers.*')
-                    ? 'catalog'
-                    : null))
-    ),
+    activeSubmenu: @js(app(\App\Services\Navigation::class)->activeSidebarGroup(auth()->user())),
     welcomeSectionVisible: localStorage.getItem('welcomeSectionDismissed') !== 'true',
     // Desktop rail: collapsed, and not the mobile drawer.
     get rail() { return this.sidebarCollapsed && ! this.sidebarOpen },

@@ -189,6 +189,52 @@ class NavigationTest extends TestCase
         $this->assertSame([], $this->nav->sidebar(null));
     }
 
+    /**
+     * The layout used to decide which group starts expanded from its own
+     * hand-written list of routes, which stopped at Payments: Contract
+     * Payments, Payment Batches, Roles & Access, the Directory, Meetings and
+     * every report rendered with their group highlighted but collapsed. The
+     * group now opens because its child is the current page.
+     */
+    public function test_opening_a_child_opens_its_group(): void
+    {
+        $admin = $this->user('admin');
+        $checked = 0;
+
+        foreach (config('permissions.menu') as $entry) {
+            if (($entry['group'] ?? null) === null || ($entry['header'] ?? false)) {
+                continue;
+            }
+
+            $response = $this->actingAs($admin)->get(route($entry['route']));
+
+            if ($response->status() !== 200) {
+                continue;
+            }
+
+            $response->assertSee("activeSubmenu: '".$entry['group']."'", false);
+            $checked++;
+        }
+
+        $this->assertGreaterThanOrEqual(15, $checked, 'Too few grouped entries answered 200 to prove anything.');
+
+        // A top-level item opens nothing.
+        $this->actingAs($admin)->get(route('dashboard'))->assertSee('activeSubmenu: null', false);
+    }
+
+    public function test_a_group_lights_up_when_one_of_its_children_is_the_page(): void
+    {
+        $admin = $this->user('admin');
+
+        $this->actingAs($admin)->get(route('payment-batches.index'))->assertOk();
+
+        $projects = collect($this->nav->sidebar($admin))->firstWhere('key', 'projects');
+
+        $this->assertTrue($projects['active']);
+        $this->assertTrue(collect($projects['items'])->firstWhere('key', 'payment-batches')['active']);
+        $this->assertSame('projects', $this->nav->activeSidebarGroup($admin));
+    }
+
     /*
     |---------------------------------------------------------------------------
     | The project and job-site tabs

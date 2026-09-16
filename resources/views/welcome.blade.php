@@ -6,7 +6,7 @@
     sidebarOpen: false,
     sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     profileDropdownOpen: false,
-    activeSubmenu: null,
+    activeSubmenu: @js(app(\App\Services\Navigation::class)->activeSidebarGroup(auth()->user())),
     welcomeSectionVisible: localStorage.getItem('welcomeSectionDismissed') !== 'true',
     // Desktop rail: collapsed, and not the mobile drawer.
     get rail() { return this.sidebarCollapsed && ! this.sidebarOpen },

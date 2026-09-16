@@ -137,6 +137,16 @@ White card with a flex row containing:
 | 11 | Method | Inline `<select>` | `wire:model`, optional, only shown for rows with balance > 0 |
 | 12 | Notes | Inline `<input type="text">` | `wire:model.blur`, only shown for rows with balance > 0 |
 
+#### Row Keys
+
+Every contract row is `wire:key="contract-{id}"`, the expandable sub-row is
+`contract-{id}-change-orders`, and each change-order line inside it is `change-order-{id}`.
+This is not decoration: the rows carry three `wire:model` inputs each, and without keys
+Livewire reused one contract's input for another whenever the list shifted, so a *Pay today*
+amount typed on one row was written to two contracts. See
+`changelog-2026-09-16-livewire-row-keys.md` for the mechanism and
+`tests/Feature/Contract/ContractPaymentsRowKeysTest.php` for the guard.
+
 #### Expandable Change Order Detail Row
 
 When the user clicks the chevron button in the Change Orders column, a sub-row expands below the contract showing:
