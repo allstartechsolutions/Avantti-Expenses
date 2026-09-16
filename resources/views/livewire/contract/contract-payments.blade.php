@@ -300,7 +300,7 @@
                             $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
                             $isExpanded = in_array($contract->id, $expandedContracts);
                         @endphp
-                        <tr class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
+                        <tr wire:key="contract-{{ $contract->id }}" class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50' }}">
                             <!-- Subcontractor -->
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white"
@@ -435,7 +435,7 @@
                         </tr>
                         {{-- Expandable Change Orders Sub-row --}}
                         @if($isExpanded && $contract->changeOrders->count() > 0)
-                            <tr class="bg-slate-50 dark:bg-slate-900/40">
+                            <tr wire:key="contract-{{ $contract->id }}-change-orders" class="bg-slate-50 dark:bg-slate-900/40">
                                 <td colspan="12" class="px-4 py-3">
                                     <div class="ml-4">
                                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">{{ __('Change Orders') }}</p>
@@ -450,7 +450,7 @@
                                             </thead>
                                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                                                 @foreach($contract->changeOrders as $co)
-                                                    <tr>
+                                                    <tr wire:key="change-order-{{ $co->id }}">
                                                         <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->date->appDate() }}</td>
                                                         <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->title }}</td>
                                                         <td class="py-1.5 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ $co->description ?? '-' }}</td>
