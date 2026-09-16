@@ -1,7 +1,11 @@
 {{--
     The expense form body — details, line items and payment terms.
-    Shared by ExpenseCreate and ExpenseEdit.
-    Expects: $jobSites, $suppliers, $amountsLocked
+    Shared by ExpenseCreate, ExpenseEdit and CompanyExpenseCreate.
+    Expects: $jobSites, $suppliers, $categories, $amountsLocked
+
+    A company (general) expense — $this->isCompanyExpense() — belongs to no
+    project: it is filed under a category instead of a location, and its
+    lines carry no cost code.
 --}}
         <!-- Expense Details Card -->
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
@@ -12,18 +16,37 @@
             <div class="p-6 space-y-6">
                 <!-- Location, Supplier, Date -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Location -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Location') }}</label>
-                        <select
-                            wire:model.live="expense_job_site_id"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                            <option value="">{{ __('Project (General)') }}</option>
-                            @foreach($jobSites as $js)
-                                <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @if($this->isCompanyExpense())
+                        <!-- Category (company expense) -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                {{ __('Category') }} <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                wire:model="expense_category_id"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <option value="">{{ __('Select a category…') }}</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->getDisplayLabel() }}{{ $category->is_active ? '' : ' ('.__('Retired').')' }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('The account code is what your accounting software knows this category by.') }}</p>
+                            @error('expense_category_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    @else
+                        <!-- Location -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Location') }}</label>
+                            <select
+                                wire:model.live="expense_job_site_id"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <option value="">{{ __('Project (General)') }}</option>
+                                @foreach($jobSites as $js)
+                                    <option value="{{ $js->id }}">{{ $js->job_site_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
 
                     <!-- Supplier -->
                     <div class="relative">
@@ -137,7 +160,9 @@
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                             <thead class="bg-slate-50 dark:bg-slate-900/50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Cost Code') }}</th>
+                                    @unless($this->isCompanyExpense())
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Cost Code') }}</th>
+                                    @endunless
                                     <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Item') }}</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Qty') }}</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{{ __('Unit Price') }}</th>
@@ -147,14 +172,16 @@
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                                 @foreach($items as $index => $item)
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                        <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
-                                            @if($item['cost_code'] ?? null)
-                                                {{ $item['cost_code'] }}
-                                            @else
-                                                <span class="text-slate-400">{{ __('Unassigned') }}</span>
-                                            @endif
-                                        </td>
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50" wire:key="form-item-{{ $index }}">
+                                        @unless($this->isCompanyExpense())
+                                            <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                                @if($item['cost_code'] ?? null)
+                                                    {{ $item['cost_code'] }}
+                                                @else
+                                                    <span class="text-slate-400">{{ __('Unassigned') }}</span>
+                                                @endif
+                                            </td>
+                                        @endunless
                                         <td class="px-4 py-3">
                                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $item['item_name'] }}</div>
                                             <div class="text-xs text-slate-500">

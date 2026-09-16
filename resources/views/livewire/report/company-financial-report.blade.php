@@ -73,6 +73,9 @@
                 <select wire:model.live="projectFilter"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
                     <option value="">{{ __('All projects') }}</option>
+                    @can('company-expenses.view')
+                        <option value="company">{{ __('Company (general)') }}</option>
+                    @endcan
                     @foreach ($projects as $p)
                         <option value="{{ $p->id }}">{{ $p->project_name }}</option>
                     @endforeach

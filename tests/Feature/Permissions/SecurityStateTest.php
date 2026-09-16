@@ -148,7 +148,7 @@ class SecurityStateTest extends TestCase
 
         $this->assertSame(
             [
-                'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company',
+                'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company', 'company-expenses',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'estimates', 'expenses', 'income', 'invoices',
                 'meetings', 'payments', 'project',

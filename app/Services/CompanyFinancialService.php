@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Income;
 use App\Models\Invoice;
+use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -35,6 +36,8 @@ use Illuminate\Support\Collection;
  */
 class CompanyFinancialService
 {
+    use ScopesCompanyExpenses;
+
     protected Carbon $today;
 
     protected ?Carbon $from = null;
@@ -78,12 +81,28 @@ class CompanyFinancialService
     // SCOPE
     // =====================================================================
 
-    /** Scope a model that belongs to a project (and maybe a job site). */
-    protected function applyScope($query, bool $hasJobSite = true): void
+    /**
+     * Scope a model that belongs to a project (and maybe a job site).
+     *
+     * Only expenses can belong to the company; "Company (general)" on the
+     * Project dropdown therefore empties every other source, and the
+     * company rule itself is applied to expense queries alone.
+     */
+    protected function applyScope($query, bool $hasJobSite = true, bool $isExpense = false): void
     {
+        if ($this->companyOnly && ! $isExpense) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
         $query->when($this->projectId, fn ($q) => $q->where('project_id', $this->projectId))
             ->when($this->jobSiteId && $hasJobSite, fn ($q) => $q->where('job_site_id', $this->jobSiteId))
             ->when($this->clientId, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientId)));
+
+        if ($isExpense) {
+            $this->applyCompanyScope($query);
+        }
     }
 
     protected function inRange(?Carbon $date): bool
@@ -243,14 +262,14 @@ class CompanyFinancialService
     protected function buildOutgoingItems(): array
     {
         $rows = [];
-        $expenseWith = ['project:id,project_name', 'jobSite:id,job_site_name', 'supplier:id,name'];
+        $expenseWith = ['project:id,project_name', 'jobSite:id,job_site_name', 'category:id,name,account_code', 'supplier:id,name'];
 
         // Installments of multi-payment expenses.
         $installments = ExpensePayment::query()
             ->with(['expense' => fn ($q) => $q->with($expenseWith)])
             ->whereHas('expense', function ($q) {
                 $q->where('status', '!=', 'cancelled');
-                $this->applyScope($q);
+                $this->applyScope($q, true, true);
             })
             ->get();
 
@@ -263,14 +282,12 @@ class CompanyFinancialService
                 continue;
             }
 
-            $rows[] = $this->row([
+            $rows[] = $this->row($this->expenseLocation($expense) + [
                 'date' => $date,
                 'direction' => 'out',
                 'source' => 'expense',
                 'party' => $expense?->supplier?->name,
-                'project' => $expense?->project?->project_name,
-                'job_site' => $expense?->jobSite?->job_site_name,
-                'description' => trim(($expense?->item_name ?? __('Expense')).' (#'.$installment->payment_number.')'),
+                'description' => trim(($expense?->item_name ?: ($expense?->category?->getDisplayLabel() ?? __('Expense'))).' (#'.$installment->payment_number.')'),
                 'status' => $paid
                     ? 'settled'
                     : ($installment->due_date && $installment->due_date->lt($this->today) ? 'overdue' : 'open'),
@@ -283,7 +300,7 @@ class CompanyFinancialService
             ->with($expenseWith)
             ->where('total_installments', 1)
             ->where('status', '!=', 'cancelled')
-            ->tap(fn ($q) => $this->applyScope($q))
+            ->tap(fn ($q) => $this->applyScope($q, true, true))
             ->get();
 
         foreach ($oneTime as $expense) {
@@ -295,14 +312,12 @@ class CompanyFinancialService
                 continue;
             }
 
-            $rows[] = $this->row([
+            $rows[] = $this->row($this->expenseLocation($expense) + [
                 'date' => $date,
                 'direction' => 'out',
                 'source' => 'expense',
                 'party' => $expense->supplier?->name,
-                'project' => $expense->project?->project_name,
-                'job_site' => $expense->jobSite?->job_site_name,
-                'description' => $expense->item_name ?: __('Expense'),
+                'description' => $expense->item_name ?: ($expense->category?->getDisplayLabel() ?? __('Expense')),
                 'status' => $paid ? 'settled' : ($due && $due->lt($this->today) ? 'overdue' : 'open'),
                 'amount' => (float) $expense->total_amount,
             ]);

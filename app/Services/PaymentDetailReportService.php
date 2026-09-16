@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\ContractPayment;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
+use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -30,6 +31,8 @@ use Illuminate\Support\Collection;
  */
 class PaymentDetailReportService
 {
+    use ScopesCompanyExpenses;
+
     protected Carbon $start;
     protected Carbon $end;
     protected Carbon $today;
@@ -58,6 +61,12 @@ class PaymentDetailReportService
         $this->start = $start;
         $this->end = $end;
         $this->today = Carbon::now()->startOfDay();
+
+        // "Company (general)" on the Project dropdown.
+        if ($this->projectFilter === 'company') {
+            $this->projectFilter = '';
+            $this->companyOnly = true;
+        }
     }
 
     // =========================================================================
@@ -103,7 +112,7 @@ class PaymentDetailReportService
 
     protected function includesContracts(): bool
     {
-        return $this->typeFilter !== 'expenses' && $this->vendorFilter === '';
+        return $this->typeFilter !== 'expenses' && $this->vendorFilter === '' && ! $this->companyOnly;
     }
 
     /**
@@ -132,6 +141,8 @@ class PaymentDetailReportService
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->vendorFilter, fn ($q) => $q->where('supplier_id', $this->vendorFilter))
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)));
+
+        $this->applyCompanyScope($query);
     }
 
     protected function installmentRows(): Collection
@@ -153,6 +164,7 @@ class PaymentDetailReportService
             ->with([
                 'expense.project:id,project_name',
                 'expense.jobSite:id,job_site_name',
+                'expense.category:id,name,account_code',
                 'expense.supplier:id,name',
                 'paidBy:id,name',
             ])
@@ -161,6 +173,7 @@ class PaymentDetailReportService
                 $e = $p->expense;
                 $isPaid = $p->status === 'paid';
                 $date = $isPaid ? ($p->paid_date ?? $p->due_date) : $p->due_date;
+                $location = $this->expenseLocation($e);
 
                 return [
                     'date' => $date,
@@ -168,10 +181,10 @@ class PaymentDetailReportService
                     'paid_date' => $p->paid_date,
                     'type' => 'expense',
                     'vendor' => $e?->supplier?->name,
-                    'item' => $e?->item_name,
-                    'project' => $e?->project?->project_name,
+                    'item' => $e?->item_name ?? ($e?->project_id === null ? $e?->category?->getDisplayLabel() : null),
+                    'project' => $location['project'],
                     'project_id' => $e?->project_id,
-                    'job_site' => $e?->jobSite?->job_site_name,
+                    'job_site' => $location['job_site'],
                     'installment_label' => $p->payment_number . '/' . $e?->total_installments,
                     'status' => $this->deriveStatus($isPaid, $p->due_date),
                     'paid_by' => $p->paidBy?->name,
@@ -200,6 +213,7 @@ class PaymentDetailReportService
             ->with([
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
+                'category:id,name,account_code',
                 'supplier:id,name',
                 'paidBy:id,name',
             ])
@@ -208,6 +222,7 @@ class PaymentDetailReportService
                 $isPaid = $e->status === 'paid';
                 $due = $e->payment_due_date ?? $e->expense_date;
                 $date = $isPaid ? ($e->paid_date ?? $e->expense_date) : $due;
+                $location = $this->expenseLocation($e);
 
                 return [
                     'date' => $date,
@@ -215,10 +230,10 @@ class PaymentDetailReportService
                     'paid_date' => $e->paid_date,
                     'type' => 'expense',
                     'vendor' => $e->supplier?->name,
-                    'item' => $e->item_name,
-                    'project' => $e->project?->project_name,
+                    'item' => $e->item_name ?? ($e->project_id === null ? $e->category?->getDisplayLabel() : null),
+                    'project' => $location['project'],
                     'project_id' => $e->project_id,
-                    'job_site' => $e->jobSite?->job_site_name,
+                    'job_site' => $location['job_site'],
                     'installment_label' => '1x',
                     'status' => $this->deriveStatus($isPaid, $due),
                     'paid_by' => $e->paidBy?->name,

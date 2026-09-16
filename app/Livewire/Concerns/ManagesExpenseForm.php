@@ -6,6 +6,7 @@ use App\Models\Budget;
 use App\Models\BudgetItem;
 use App\Models\CatalogItem;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Supplier;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -26,6 +27,7 @@ trait ManagesExpenseForm
 {
     // Header fields
     public $expense_job_site_id = null;
+    public $expense_category_id = null;
     public $expense_supplier_id = null;
     public $supplierSearch = '';
     public $expense_date;
@@ -63,8 +65,48 @@ trait ManagesExpenseForm
     public $item_unit_price = '';
     public $item_total = 0;
 
-    /** The project the form is writing to. */
-    abstract protected function expenseProjectId(): int;
+    /**
+     * The project the form is writing to — null for a company (general)
+     * expense, which belongs to no project and is categorised instead of
+     * cost-coded.
+     */
+    abstract protected function expenseProjectId(): ?int;
+
+    /** Whether this form is filing a company (general) expense. */
+    public function isCompanyExpense(): bool
+    {
+        return $this->expenseProjectId() === null;
+    }
+
+    /**
+     * Anything a host component adds to the header — the Equipment module
+     * hangs its equipment tag here. Empty by default.
+     */
+    protected function extraHeaderData(): array
+    {
+        return [];
+    }
+
+    /**
+     * The category the expense already carries — the one retired category a
+     * form may keep. Null on a new expense; ExpenseEdit answers from the row.
+     */
+    protected function originalCategoryId(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * The categories a company expense may be filed under: the active ones,
+     * plus the one it already carries if that has since been retired.
+     */
+    protected function selectableCategories(): Collection
+    {
+        return ExpenseCategory::query()
+            ->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $this->originalCategoryId() ?? 0))
+            ->ordered()
+            ->get();
+    }
 
     /**
      * Whether the line amounts may be changed. An expense that came from a
@@ -92,6 +134,7 @@ trait ManagesExpenseForm
         $expense->loadMissing(['items.budgetItem', 'items.catalogItem', 'supplier']);
 
         $this->expense_job_site_id = $expense->job_site_id;
+        $this->expense_category_id = $expense->expense_category_id;
         $this->expense_supplier_id = $expense->supplier_id;
         $this->supplierSearch = $expense->supplier?->name ?? '';
         $this->expense_date = $expense->expense_date->format('Y-m-d');
@@ -367,12 +410,25 @@ trait ManagesExpenseForm
         $this->validate([
             'expense_date' => 'required|date',
             'expense_supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
-            'expense_job_site_id' => [
-                'nullable',
-                // A job site of THIS project and no other. Without the
-                // project_id clause the picker accepted any id in the table.
-                Rule::exists('job_sites', 'id')->where('project_id', $this->expenseProjectId()),
-            ],
+            'expense_job_site_id' => $this->isCompanyExpense()
+                // A company expense belongs to no job site, whatever the browser sends.
+                ? ['nullable', 'prohibited']
+                : [
+                    'nullable',
+                    // A job site of THIS project and no other. Without the
+                    // project_id clause the picker accepted any id in the table.
+                    Rule::exists('job_sites', 'id')->where('project_id', $this->expenseProjectId()),
+                ],
+            'expense_category_id' => $this->isCompanyExpense()
+                // An active category, or the retired one it already carries.
+                // `1`, not `true`: a boolean here finds nothing on sqlite.
+                ? [
+                    'required',
+                    Rule::exists('expense_categories', 'id')->where(
+                        fn ($q) => $q->where('is_active', 1)->orWhere('id', $this->originalCategoryId() ?? 0)
+                    ),
+                ]
+                : ['nullable', 'prohibited'],
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'items' => 'required|array|min:1',
         ], [
@@ -416,6 +472,10 @@ trait ManagesExpenseForm
      */
     protected function expenseDestination(): JobSite|Project|null
     {
+        if ($this->isCompanyExpense()) {
+            return null;
+        }
+
         if ($this->expense_job_site_id) {
             return JobSite::where('project_id', $this->expenseProjectId())
                 ->find($this->expense_job_site_id);
@@ -431,6 +491,10 @@ trait ManagesExpenseForm
      */
     protected function selectableJobSites(string $ability): Collection
     {
+        if ($this->isCompanyExpense()) {
+            return collect();
+        }
+
         $resolver = app(\App\Services\PermissionResolver::class);
 
         return JobSite::where('project_id', $this->expenseProjectId())
@@ -451,7 +515,8 @@ trait ManagesExpenseForm
     {
         $data = [
             'project_id' => $this->expenseProjectId(),
-            'job_site_id' => $this->expense_job_site_id ?: null,
+            'job_site_id' => $this->isCompanyExpense() ? null : ($this->expense_job_site_id ?: null),
+            'expense_category_id' => $this->isCompanyExpense() ? (int) $this->expense_category_id : null,
             'supplier_id' => $this->expense_supplier_id ?: null,
             'expense_date' => $this->expense_date,
             'notes' => $this->expense_notes,
@@ -459,6 +524,8 @@ trait ManagesExpenseForm
             'payment_method' => $this->expense_payment_method,
             'is_auto_payment' => $this->expense_is_auto_payment,
         ];
+
+        $data += $this->extraHeaderData();
 
         if ($this->expense_has_installments) {
             $data['status'] = 'unpaid';
@@ -494,7 +561,11 @@ trait ManagesExpenseForm
         foreach (array_values($this->items) as $index => $item) {
             $budgetItemId = $item['budget_item_id'];
 
-            if (! $budgetItemId) {
+            // A company expense has no budget: its lines stay uncoded, and
+            // the category on the header is what the reports group by.
+            if ($this->isCompanyExpense()) {
+                $budgetItemId = null;
+            } elseif (! $budgetItemId) {
                 $budgetItemId = BudgetService::getDefaultItem(
                     $this->expenseProjectId(),
                     $this->expense_job_site_id ?: null,
@@ -532,7 +603,7 @@ trait ManagesExpenseForm
 
     protected function budgetItemSearchResults(): Collection
     {
-        if (! $this->budgetItemSearch || $this->item_budget_item_id) {
+        if ($this->isCompanyExpense() || ! $this->budgetItemSearch || $this->item_budget_item_id) {
             return collect();
         }
 

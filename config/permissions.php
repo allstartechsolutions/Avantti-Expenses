@@ -76,7 +76,7 @@ return [
         'projects' => [
             'name' => 'Projects',
             'order' => 30,
-            'active' => ['projects.*', 'clients.*', 'cost-codes.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
+            'active' => ['projects.*', 'clients.*', 'cost-codes.*', 'company-expenses.*', 'payments.*', 'contract-payments.*', 'payment-batches.*'],
             'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
         ],
         // Suppliers, subcontractors and the workers who move between them:
@@ -219,6 +219,16 @@ return [
             'ability' => 'cost-codes.view',
             'active' => ['cost-codes.*'],
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+        ],
+        [
+            'key' => 'company-expenses',
+            'name' => 'Company Expenses',
+            'group' => 'projects',
+            'order' => 48,
+            'route' => 'company-expenses.index',
+            'ability' => 'company-expenses.view',
+            'active' => ['company-expenses.*'],
+            'icon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4m-4 4h.01M9 15h.01M13 15h.01M13 11h.01M13 19h.01M9 19h.01',
         ],
         [
             'key' => 'payments',
@@ -952,6 +962,25 @@ return [
             'name' => 'Expenses',
             'module' => 'projects',
             'levels' => ['global', 'project', 'job_site'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit', 'delete',
+                'pay' => ['name' => 'Mark as paid'],
+                'edit_paid' => ['name' => 'Edit a paid expense', 'sensitive' => true],
+            ],
+        ],
+
+        // Company (general) expenses — rent, utilities, insurance — live in
+        // the same table as project expenses with no project at all. They
+        // are a separate area on purpose: `expenses.*` is project-scoped, and
+        // a row with no project asked about it would be answered by any
+        // membership the person holds anywhere (heldOnAnyScope). A global
+        // area takes the company-wide branch instead. docs/company-expenses.md
+        'company-expenses' => [
+            'name' => 'Company Expenses',
+            'module' => 'projects',
+            'levels' => ['global'],
             'money' => true,
             'swept' => true,
             'actions' => [

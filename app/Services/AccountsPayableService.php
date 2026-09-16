@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\ContractPayment;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
+use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -30,6 +31,8 @@ use Illuminate\Support\Collection;
  */
 class AccountsPayableService
 {
+    use ScopesCompanyExpenses;
+
     protected Carbon $start;
     protected Carbon $end;
     protected Carbon $today;
@@ -48,6 +51,12 @@ class AccountsPayableService
         $this->start = Carbon::parse($fromDate)->startOfDay();
         $this->end = Carbon::parse($toDate)->endOfDay();
         $this->today = Carbon::now()->startOfDay();
+
+        // "Company (general)" on the Project dropdown.
+        if ($this->projectFilter === 'company') {
+            $this->projectFilter = '';
+            $this->companyOnly = true;
+        }
     }
 
     // =========================================================================
@@ -65,10 +74,7 @@ class AccountsPayableService
             ->where('status', '!=', 'paid')
             ->whereHas('expense', function ($q) {
                 $q->where('status', '!=', 'cancelled');
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
-                $this->applyClientScope($q);
+                $this->applyExpenseScope($q);
             });
     }
 
@@ -78,10 +84,7 @@ class AccountsPayableService
             ->where('status', 'paid')
             ->whereHas('expense', function ($q) {
                 $q->where('status', '!=', 'cancelled');
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
-                $this->applyClientScope($q);
+                $this->applyExpenseScope($q);
             });
     }
 
@@ -90,8 +93,7 @@ class AccountsPayableService
         return Expense::query()
             ->where('total_installments', 1)
             ->whereNotIn('status', ['paid', 'cancelled'])
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->tap(fn ($q) => $this->applyClientScope($q));
+            ->tap(fn ($q) => $this->applyExpenseScope($q));
     }
 
     protected function paidOneTime()
@@ -99,16 +101,34 @@ class AccountsPayableService
         return Expense::query()
             ->where('total_installments', 1)
             ->where('status', 'paid')
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->tap(fn ($q) => $this->applyClientScope($q));
+            ->tap(fn ($q) => $this->applyExpenseScope($q));
+    }
+
+    /** The project, client and company rules, on a query over `expenses`. */
+    protected function applyExpenseScope($q): void
+    {
+        if ($this->projectFilter) {
+            $q->where('project_id', $this->projectFilter);
+        }
+
+        $this->applyClientScope($q, true);
+        $this->applyCompanyScope($q);
     }
 
     /**
      * Constrain a query whose model belongs to a Project (Expense or Contract)
      * to a single client, since payables link to clients through their project.
+     * Only an expense can belong to the company, so "Company (general)" on the
+     * Project dropdown empties the contracts.
      */
-    protected function applyClientScope($q): void
+    protected function applyClientScope($q, bool $isExpense = false): void
     {
+        if ($this->companyOnly && ! $isExpense) {
+            $q->whereRaw('1 = 0');
+
+            return;
+        }
+
         if ($this->clientFilter) {
             $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter));
         }
@@ -176,10 +196,10 @@ class AccountsPayableService
             'type' => 'installment',
             'due_date' => $p->due_date,
             'vendor' => $expense?->supplier?->name,
-            'item' => $expense?->item_name . ' (#' . $p->payment_number . ')',
-            'project' => $expense?->project?->project_name,
+            'item' => ($expense?->item_name ?: ($expense?->category?->getDisplayLabel() ?? '')) . ' (#' . $p->payment_number . ')',
+            'project' => $this->expenseLocation($expense)['project'],
             'project_id' => $expense?->project_id,
-            'job_site' => $expense?->jobSite?->job_site_name,
+            'job_site' => $this->expenseLocation($expense)['job_site'],
             'job_site_id' => $expense?->job_site_id,
             'status' => $status,
             'amount' => (float) $p->amount,
@@ -199,10 +219,10 @@ class AccountsPayableService
             'type' => 'one_time',
             'due_date' => $due,
             'vendor' => $e->supplier?->name,
-            'item' => $e->item_name,
-            'project' => $e->project?->project_name,
+            'item' => $e->item_name ?? ($e->project_id === null ? $e->category?->getDisplayLabel() : null),
+            'project' => $this->expenseLocation($e)['project'],
             'project_id' => $e->project_id,
-            'job_site' => $e->jobSite?->job_site_name,
+            'job_site' => $this->expenseLocation($e)['job_site'],
             'job_site_id' => $e->job_site_id,
             'status' => $e->status === 'unpaid' ? 'pending' : $e->status,
             'amount' => (float) $e->total_amount,
@@ -274,8 +294,8 @@ class AccountsPayableService
 
         $rows = collect();
 
-        $instWith = ['expense.project:id,project_name', 'expense.jobSite:id,job_site_name', 'expense.supplier:id,name'];
-        $oneWith = ['project:id,project_name', 'jobSite:id,job_site_name', 'supplier:id,name'];
+        $instWith = ['expense.project:id,project_name', 'expense.jobSite:id,job_site_name', 'expense.category:id,name,account_code', 'expense.supplier:id,name'];
+        $oneWith = ['project:id,project_name', 'jobSite:id,job_site_name', 'category:id,name,account_code', 'supplier:id,name'];
 
         // ---- Open (unpaid) expense items, matched by DUE date ----
         if ($wantOpen) {

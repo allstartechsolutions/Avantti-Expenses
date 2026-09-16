@@ -211,6 +211,27 @@ class DashboardIndex extends Component
             : $query->whereHas($relation, fn ($related) => $related->whereIn('project_id', $ids));
     }
 
+    protected ?bool $seesCompanyExpenses = null;
+
+    /**
+     * Company (general) expenses — the rows with no project — are the
+     * company's own picture, shown only to somebody holding the grant.
+     * A confined reader is already narrowed to their projects above; a
+     * company-wide reader without the grant is narrowed here.
+     */
+    protected function withoutCompanyExpenses(Builder $query, ?string $relation = null): Builder
+    {
+        $this->seesCompanyExpenses ??= $this->allowsAbility('company-expenses.view');
+
+        if ($this->seesCompanyExpenses) {
+            return $query;
+        }
+
+        return $relation === null
+            ? $query->whereNotNull('project_id')
+            : $query->whereHas($relation, fn ($related) => $related->whereNotNull('project_id'));
+    }
+
     /*
     |---------------------------------------------------------------------------
     | The month selector
@@ -253,18 +274,18 @@ class DashboardIndex extends Component
         $cashToPay = 0;
 
         if ($blocks['expenses']) {
-            $cashToPayInstallments = $this->onlyVisibleThrough(
+            $cashToPayInstallments = $this->withoutCompanyExpenses($this->onlyVisibleThrough(
                 ExpensePayment::where('status', '!=', 'paid')
                     ->whereBetween('due_date', [$start, $end])
                     ->whereHas('expense', fn ($q) => $q->where('status', '!=', 'cancelled')),
                 'expense',
-            )->sum('amount');
+            ), 'expense')->sum('amount');
 
-            $cashToPayOneTime = $this->onlyVisible(
+            $cashToPayOneTime = $this->withoutCompanyExpenses($this->onlyVisible(
                 Expense::where('status', 'unpaid')
                     ->where('total_installments', 1)
                     ->whereBetween('payment_due_date', [$start, $end]),
-            )->sum('total_amount');
+            ))->sum('total_amount');
 
             $contractBalances = 0;
             $unpaidContracts = $this->onlyVisible(
@@ -364,11 +385,11 @@ class DashboardIndex extends Component
             return collect();
         }
 
-        return $this->onlyVisibleThrough(
+        return $this->withoutCompanyExpenses($this->onlyVisibleThrough(
             ExpensePayment::where('status', 'overdue')
-                ->with(['expense.project:id,project_name', 'expense.supplier:id,name']),
+                ->with(['expense.project:id,project_name', 'expense.category:id,name,account_code', 'expense.supplier:id,name']),
             'expense',
-        )
+        ), 'expense')
             ->orderBy('due_date')
             ->limit(10)
             ->get();
@@ -480,11 +501,11 @@ class DashboardIndex extends Component
             $monthEnd = (clone $monthStart)->endOfMonth();
 
             if ($blocks['expenses']) {
-                $expensePayments = $this->onlyVisibleThrough(
+                $expensePayments = $this->withoutCompanyExpenses($this->onlyVisibleThrough(
                     ExpensePayment::where('status', 'paid')
                         ->whereBetween('paid_date', [$monthStart, $monthEnd]),
                     'expense',
-                )->sum('amount');
+                ), 'expense')->sum('amount');
 
                 $contractPayments = $this->onlyVisibleThrough(
                     ContractPayment::whereBetween('payment_date', [$monthStart, $monthEnd]),

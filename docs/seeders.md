@@ -93,6 +93,21 @@ This document describes all database seeders in the application and how to run t
 
 ---
 
+### 5. ExpenseCategorySeeder
+
+**Purpose**: The categories a company (general) expense is filed under, each with the
+4-digit account code the customer's accounting software knows it by.
+
+**Add-only and country-aware.** Each seeded row is found by its stable `key`
+(`overhead.rent`), never by the name or the code, so a rename, recode, reorder or retire on
+Settings → Expense Categories is never undone by a later seed. Both countries share the
+same 6xxx overhead range (6100 Rent … 6990 Other overhead); a Brazilian install also gets
+**6820 Pró-labore**. If the owner had already taken a seeded code for a category of their
+own, the seeded row gets a generated code instead. Also run by
+`2026_09_16_100000_create_expense_categories_table`, so an existing install gets the rows on
+deploy. Names are stored in English and translated on display; `ExpenseCategorySettingsTest`
+fails if a seeded name has no pt_BR value. See `docs/company-expenses.md`.
+
 ## How to Run Seeders
 
 ### Run All Seeders (DatabaseSeeder)

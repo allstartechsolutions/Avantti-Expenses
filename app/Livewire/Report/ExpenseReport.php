@@ -109,7 +109,7 @@ class ExpenseReport extends Component
             $this->clientFilter,
             $this->statusFilter,
             in_array($this->dateBasis, ['expense', 'due'], true) ? $this->dateBasis : 'expense',
-        );
+        )->includeCompany($this->allowsAbility('company-expenses.view'));
     }
 
     public function getProjectsProperty(): Collection
@@ -124,6 +124,10 @@ class ExpenseReport extends Component
 
     public function getJobSitesProperty(): Collection
     {
+        if ($this->projectFilter === 'company') {
+            return collect();
+        }
+
         return JobSite::query()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->orderBy('job_site_name')

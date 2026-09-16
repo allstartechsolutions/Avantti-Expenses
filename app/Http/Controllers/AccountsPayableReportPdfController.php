@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Company;
 use App\Models\Project;
 use App\Services\AccountsPayableService;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -45,7 +46,8 @@ class AccountsPayableReportPdfController extends Controller
         $clientFilter = $request->query('clientFilter') ?: '';
         $statusFilter = $request->query('statusFilter') ?: 'unpaid';
 
-        $service = new AccountsPayableService($fromDate, $toDate, $projectFilter, $statusFilter, $clientFilter);
+        $service = (new AccountsPayableService($fromDate, $toDate, $projectFilter, $statusFilter, $clientFilter))
+            ->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'));
 
         return [
             'rows' => $service->rows(),

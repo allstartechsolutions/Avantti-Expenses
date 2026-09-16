@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\Concerns\HasPaymentMethodLabel;
+use App\Services\PermissionResolver;
+use Illuminate\Database\Eloquent\Builder;
+use LogicException;
 
 class Expense extends Model
 {
@@ -17,6 +20,7 @@ class Expense extends Model
     protected $fillable = [
         'project_id',
         'job_site_id',
+        'expense_category_id',
         'supplier_id',
         'catalog_item_id',
         'purchase_order_id',
@@ -62,6 +66,26 @@ class Expense extends Model
             if ($expense->status === 'paid' && !$expense->paid_by) {
                 $expense->paid_by = auth()->id();
             }
+        });
+
+        // The one rule that tells a company expense from a project expense,
+        // enforced here on every driver (the MySQL CHECK is belt-and-braces):
+        // a company row has no job site and must carry a category; a project
+        // row carries its cost code on the line and never a category.
+        static::saving(function (Expense $expense) {
+            if ($expense->project_id === null) {
+                if ($expense->job_site_id !== null) {
+                    throw new LogicException('A company expense cannot belong to a job site.');
+                }
+
+                if ($expense->expense_category_id === null) {
+                    throw new LogicException('A company expense must carry an expense category.');
+                }
+
+                return;
+            }
+
+            $expense->expense_category_id = null;
         });
 
         static::deleting(function ($expense) {
@@ -110,6 +134,15 @@ class Expense extends Model
     }
 
     /**
+     * The category of a company (general) expense — the one that belongs to
+     * no project and so has no cost code. Null on every project expense.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
+
+    /**
      * Get the supplier for this expense (optional)
      */
     public function supplier(): BelongsTo
@@ -123,6 +156,88 @@ class Expense extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ExpenseItem::class)->orderBy('sort_order');
+    }
+
+    /**
+     * A company (general) expense belongs to no project: rent, utilities,
+     * insurance. It is categorised rather than cost-coded, and it answers to
+     * the `company-expenses` area rather than `expenses`.
+     */
+    public function isCompanyLevel(): bool
+    {
+        return $this->project_id === null;
+    }
+
+    /**
+     * The permission area this row answers to. Every guard on an expense goes
+     * through here: `expenses.*` is scoped to a project, so a company row
+     * asked about it would be answered by any membership the person holds
+     * anywhere (PermissionResolver::heldOnAnyScope()) — the wrong question.
+     */
+    public function permissionArea(): string
+    {
+        return $this->isCompanyLevel() ? 'company-expenses' : 'expenses';
+    }
+
+    /** `expenses.pay` on a project row, `company-expenses.pay` on a company row. */
+    public function ability(string $action): string
+    {
+        return $this->permissionArea().'.'.$action;
+    }
+
+    /** Company (general) expenses only. */
+    public function scopeCompany(Builder $query): Builder
+    {
+        return $query->whereNull('project_id');
+    }
+
+    /** Expenses on a project or one of its job sites. */
+    public function scopeOnProjects(Builder $query): Builder
+    {
+        return $query->whereNotNull('project_id');
+    }
+
+    /**
+     * The expenses this person may see across the company.
+     *
+     * Project rows follow the memberships of somebody confined and are open
+     * to everybody else, as every other `visibleTo()` does. Company rows are
+     * the deliberate inversion of the Task precedent: a row with no project
+     * is the company's, not the reader's, so it is shown only to somebody who
+     * holds `company-expenses.view` — whether confined or not.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user || ! $user->isActive()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $resolver = app(PermissionResolver::class);
+        $seesCompany = $resolver->allows($user, 'company-expenses.view');
+
+        if (! $user->isConfined()) {
+            return $seesCompany ? $query : $query->whereNotNull('project_id');
+        }
+
+        $projectIds = [];
+        $jobSiteIds = [];
+
+        foreach ($resolver->membershipsOf($user) as $membership) {
+            if ($membership->scopeable_type === Project::class) {
+                $projectIds[] = $membership->scopeable_id;
+            } elseif ($membership->scopeable_type === JobSite::class) {
+                $jobSiteIds[] = $membership->scopeable_id;
+            }
+        }
+
+        return $query->where(function (Builder $q) use ($projectIds, $jobSiteIds, $seesCompany) {
+            $q->whereIn('project_id', $projectIds)
+                ->orWhereIn('job_site_id', $jobSiteIds);
+
+            if ($seesCompany) {
+                $q->orWhereNull('project_id');
+            }
+        });
     }
 
     /**
@@ -306,7 +421,7 @@ class Expense extends Model
         // Settled money is a grant of its own — `expenses.edit_paid` — rather
         // than a hard-coded administrator check.
         return $user !== null
-            && app(\App\Services\PermissionResolver::class)->allows($user, 'expenses.edit_paid', $this);
+            && app(PermissionResolver::class)->allows($user, $this->ability('edit_paid'), $this);
     }
 
     /**
@@ -463,6 +578,7 @@ class Expense extends Model
         $override = match ($field) {
             'supplier_id' => __('Vendor'),
             'catalog_item_id' => __('Item'),
+            'expense_category_id' => __('Category'),
             default => null,
         };
 

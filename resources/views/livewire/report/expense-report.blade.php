@@ -68,6 +68,9 @@
                 <select wire:model.live="projectFilter"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
                     <option value="">{{ __('All projects') }}</option>
+                    @can('company-expenses.view')
+                        <option value="company">{{ __('Company (general)') }}</option>
+                    @endcan
                     @foreach ($projects as $p)
                         <option value="{{ $p->id }}">{{ $p->project_name }}</option>
                     @endforeach
@@ -217,6 +220,9 @@
                                         <td class="px-6 py-2 pl-10 text-sm">
                                             @if ($js['job_site_id'])
                                                 <a href="{{ route('jobsites.overview', $js['job_site_id']) }}" target="_blank" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $js['job_site'] }}</a>
+                                            @elseif ($js['job_site'])
+                                                {{-- A company bucket is nested by category; the label rides in job_site. --}}
+                                                <span class="text-slate-700 dark:text-slate-200">{{ $js['job_site'] }}</span>
                                             @else
                                                 <span class="text-slate-500 dark:text-slate-400 italic">{{ __('Project-level') }}</span>
                                             @endif

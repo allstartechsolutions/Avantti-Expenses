@@ -11,6 +11,7 @@ use App\Models\Subcontractor;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Number;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -130,8 +131,14 @@ class ContractPayments extends Component
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
 
-        // Total contract value (all non-cancelled)
-        $totalValueCents = (clone $baseQuery)->whereNot('status', 'cancelled')->sum('amount');
+        // Total contract value (all non-cancelled) — the adjusted value, which
+        // is what the table's "Adjusted Amount" column and every balance use:
+        // original amount plus or minus the change orders.
+        $totalValueCents = (clone $baseQuery)
+            ->whereNot('status', 'cancelled')
+            ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->get()
+            ->sum(fn ($c) => $c->amount * 100 + ($c->change_orders_total_cents ?? 0));
 
         // Active contracts count
         $activeCount = (clone $baseQuery)->where('status', 'active')->count();
@@ -140,9 +147,12 @@ class ContractPayments extends Component
         $contracts = (clone $baseQuery)
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->withSum('payments as total_paid_cents', 'amount')
+            ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->get();
 
-        $pendingBalanceCents = $contracts->sum(fn ($c) => $c->amount * 100 - ($c->total_paid_cents ?? 0));
+        $pendingBalanceCents = $contracts->sum(
+            fn ($c) => $c->amount * 100 + ($c->change_orders_total_cents ?? 0) - ($c->total_paid_cents ?? 0)
+        );
 
         // Paid this month
         $startOfMonth = now()->startOfMonth();
@@ -183,7 +193,7 @@ class ContractPayments extends Component
         // Validate each row
         $errors = [];
         foreach ($rowsToProcess as $contractId => $amount) {
-            $contract = Contract::withSum('payments as total_paid_cents', 'amount')->find($contractId);
+            $contract = Contract::find($contractId);
             if (!$contract) {
                 $errors[] = __('Contract #:id not found.', ['id' => $contractId]);
                 continue;
@@ -196,11 +206,15 @@ class ContractPayments extends Component
                 continue;
             }
 
-            $balance = $contract->amount - (($contract->total_paid_cents ?? 0) / 100);
+            // The balance due is the ADJUSTED amount — original plus or minus
+            // the change orders — less what was paid, exactly as the table
+            // shows it. Checking against the original amount refused a
+            // payment on a contract whose whole value came from change orders.
+            $balance = $contract->getBalanceDue();
             if ((float) $amount > $balance + 0.01) {
-                $errors[] = __('Payment for :number exceeds balance due ($:balance).', [
+                $errors[] = __('Payment for :number exceeds the balance due of :balance.', [
                     'number' => $contract->contract_number,
-                    'balance' => number_format($balance, 2),
+                    'balance' => Number::currency($balance, config('app.currency'), config('app.locale')),
                 ]);
             }
 

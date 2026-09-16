@@ -43,7 +43,8 @@ class NavigationTest extends TestCase
             'Company: Company Info, Users, Roles & Access',
             // My Quotations joined at phase 6 of the procurement assignment
             // module: the buying queue, gated on `quotations.view`.
-            'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
+            // Company Expenses joined on 2026-09-16, managers and admins only.
+            'Projects: All Projects, Clients, Cost Codes, My Quotations, Company Expenses, Payments, Contract Payments, Payment Batches',
             // Vendors (suppliers + subcontractors) and Workers moved into one
             // Directory group on 2026-09-07; Suppliers left Catalog and
             // Subcontractors left Projects the same day.
@@ -58,7 +59,7 @@ class NavigationTest extends TestCase
         'manager' => [
             'Dashboard',
             'Company: Company Info',
-            'Projects: All Projects, Clients, My Quotations, Payments, Contract Payments, Payment Batches',
+            'Projects: All Projects, Clients, My Quotations, Company Expenses, Payments, Contract Payments, Payment Batches',
             'Directory: Vendors, Workers',
             'Catalog: All Items, Categories',
             'Estimates',

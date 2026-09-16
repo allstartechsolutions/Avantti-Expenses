@@ -37,9 +37,9 @@ Concretely, for every feature:
 ## Every Module Ships With Its Permissions
 
 **A new module is not finished when its screens work.** The permission module
-(`docs/permissions-module.md`) is complete and deployed: **34 areas, 174 abilities**, no role
+(`docs/permissions-module.md`) is complete and deployed: **35 areas, 180 abilities**, no role
 checks left anywhere in the application. (It was 30/147 when the sweep finished; the
-collaboration and procurement-assignment modules added the rest.) Anything built from now on joins it **as it is
+collaboration, procurement-assignment and company-expenses modules added the rest.) Anything built from now on joins it **as it is
 built**, never afterwards — retro-fitting permissions onto eighteen modules took a week and
 found forty-odd holes that had been live in production.
 

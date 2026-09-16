@@ -15,7 +15,7 @@
                     </span>
                 </div>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    {{ $expense->project->project_name }}
+                    {{ $expense->project?->project_name ?? __('Company (general)') }}
                     @if($expense->jobSite) / {{ $expense->jobSite->job_site_name }} @endif
                     &bull; {{ $expense->expense_date->translatedFormat('d M Y') }}
                     &bull; {{ $fmt($expense->total_amount) }}

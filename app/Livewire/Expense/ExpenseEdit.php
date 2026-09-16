@@ -27,22 +27,29 @@ class ExpenseEdit extends Component
 
     public function mount(Expense $expense)
     {
-        $expense->load(['items.budgetItem', 'items.catalogItem', 'supplier', 'payments', 'purchaseOrder', 'jobSite', 'project']);
+        $expense->load(['items.budgetItem', 'items.catalogItem', 'supplier', 'payments', 'purchaseOrder', 'jobSite', 'project', 'category']);
 
-        $this->authorizeAbility('expenses.edit', $expense);
+        // The row says which area it answers to: `expenses.*` on a project
+        // expense, `company-expenses.*` on a company one.
+        $this->authorizeAbility($expense->ability('edit'), $expense);
 
         // Correcting money that has already been settled is a grant of its own.
         if ($this->expenseIsSettled($expense)) {
-            $this->authorizeAbility('expenses.edit_paid', $expense);
+            $this->authorizeAbility($expense->ability('edit_paid'), $expense);
         }
 
         $this->expense = $expense;
         $this->fillFormFromExpense($expense);
     }
 
-    protected function expenseProjectId(): int
+    protected function expenseProjectId(): ?int
     {
         return $this->expense->project_id;
+    }
+
+    protected function originalCategoryId(): ?int
+    {
+        return $this->expense->expense_category_id;
     }
 
     /**
@@ -80,6 +87,10 @@ class ExpenseEdit extends Component
 
     public function getBackUrlProperty(): string
     {
+        if ($this->expense->isCompanyLevel()) {
+            return route('company-expenses.index');
+        }
+
         return $this->expense->job_site_id
             ? route('jobsites.show', ['jobSite' => $this->expense->job_site_id, 'tab' => 'expenses'])
             : route('projects.expenses', $this->expense->project_id);
@@ -89,14 +100,17 @@ class ExpenseEdit extends Component
     {
         $this->validateExpenseForm();
 
-        $this->authorizeAbility('expenses.edit', $this->expense);
+        $this->authorizeAbility($this->expense->ability('edit'), $this->expense);
 
         if ($this->expenseIsSettled($this->expense)) {
-            $this->authorizeAbility('expenses.edit_paid', $this->expense);
+            $this->authorizeAbility($this->expense->ability('edit_paid'), $this->expense);
         }
 
-        // Moving an expense to another job site is filing it there.
-        $this->authorizeAbility('expenses.edit', $this->expenseDestination());
+        // Moving an expense to another job site is filing it there. A company
+        // expense has no destination to move to.
+        if (! $this->expense->isCompanyLevel()) {
+            $this->authorizeAbility('expenses.edit', $this->expenseDestination());
+        }
 
         $beforeLines = $this->lineSnapshot($this->expense);
 
@@ -144,7 +158,9 @@ class ExpenseEdit extends Component
     {
         return $expense->items->map(fn ($item) => [
             'item_name' => $item->item_name,
-            'cost_code' => $item->budgetItem ? $item->budgetItem->code . ' - ' . $item->budgetItem->name : __('Unassigned'),
+            'cost_code' => $item->budgetItem
+                ? $item->budgetItem->code . ' - ' . $item->budgetItem->name
+                : ($expense->isCompanyLevel() ? __('Not applicable') : __('Unassigned')),
             'quantity' => (float) $item->quantity,
             'unit_price' => (float) $item->unit_price,
             'total_amount' => (float) $item->total_amount,
@@ -204,6 +220,7 @@ class ExpenseEdit extends Component
             'budgetItems' => $this->budgetItemSearchResults(),
             'catalogItems' => $this->catalogItemSearchResults(),
             'jobSites' => $this->selectableJobSites('expenses.edit'),
+            'categories' => $this->selectableCategories(),
         ])->layout('components.layouts.app');
     }
 }

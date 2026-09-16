@@ -42,7 +42,7 @@ class ExpenseCreate extends Component
         $this->startBlankExpenseForm();
     }
 
-    protected function expenseProjectId(): int
+    protected function expenseProjectId(): ?int
     {
         return $this->project->id;
     }
@@ -97,6 +97,7 @@ class ExpenseCreate extends Component
             'budgetItems' => $this->budgetItemSearchResults(),
             'catalogItems' => $this->catalogItemSearchResults(),
             'jobSites' => $this->selectableJobSites('expenses.create'),
+            'categories' => collect(),
         ])->layout('components.layouts.app');
     }
 }

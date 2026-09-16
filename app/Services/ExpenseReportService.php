@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\ExpenseItem;
 use App\Models\ExpensePayment;
+use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -34,6 +35,8 @@ use Illuminate\Support\Collection;
  */
 class ExpenseReportService
 {
+    use ScopesCompanyExpenses;
+
     protected Carbon $start;
     protected Carbon $end;
     protected Carbon $today;
@@ -56,6 +59,12 @@ class ExpenseReportService
         $this->start = Carbon::parse($fromDate)->startOfDay();
         $this->end = Carbon::parse($toDate)->endOfDay();
         $this->today = Carbon::now()->startOfDay();
+
+        // "Company (general)" on the Project dropdown.
+        if ($this->projectFilter === 'company') {
+            $this->projectFilter = '';
+            $this->companyOnly = true;
+        }
     }
 
     // =========================================================================
@@ -90,9 +99,11 @@ class ExpenseReportService
             ->when($this->vendorFilter, fn ($q) => $q->where('supplier_id', $this->vendorFilter))
             ->when($this->categoryFilter, fn ($q) => $q->where('item_type', $this->categoryFilter))
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->tap(fn ($q) => $this->applyCompanyScope($q))
             ->with([
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
+                'category:id,name,account_code',
                 'supplier:id,name',
                 'payments',
                 'items:id,expense_id,budget_item_id,item_name,total_amount',
@@ -136,15 +147,18 @@ class ExpenseReportService
             $dueDate = $e->payment_due_date ?? $e->expense_date;
         }
 
+        $location = $this->expenseLocation($e);
+
         return [
             'expense' => $e,
             'expense_date' => $e->expense_date,
             'due_date' => $dueDate,
-            'item' => $e->item_name,
-            'project' => $e->project?->project_name,
+            'item' => $e->item_name ?? ($e->project_id === null ? $e->category?->getDisplayLabel() : null),
+            'project' => $location['project'],
             'project_id' => $e->project_id,
-            'job_site' => $e->jobSite?->job_site_name,
+            'job_site' => $location['job_site'],
             'job_site_id' => $e->job_site_id,
+            'expense_category_id' => $e->expense_category_id,
             'vendor' => $e->supplier?->name,
             'vendor_id' => $e->supplier_id,
             'category' => $e->item_type,
@@ -196,14 +210,18 @@ class ExpenseReportService
     /**
      * Expenses rolled up per project, each with its job sites nested.
      * Project-level expenses (no job site) appear under a null job_site_id.
+     * Company (general) expenses form one more bucket, nested by category —
+     * the `job_site` of those rows carries the category label.
      */
     public function byProject(): Collection
     {
         return $this->expenses()
-            ->groupBy('project_id')
+            ->groupBy(fn (array $r) => $r['project_id'] ?? 0)
             ->map(function (Collection $group) {
                 $jobsites = $group
-                    ->groupBy(fn (array $r) => $r['job_site_id'] ?? 0)
+                    ->groupBy(fn (array $r) => $r['project_id'] === null
+                        ? 'category-'.($r['expense_category_id'] ?? 0)
+                        : ($r['job_site_id'] ?? 0))
                     ->map(fn (Collection $g) => array_merge([
                         'job_site' => $g->first()['job_site'],
                         'job_site_id' => $g->first()['job_site_id'],
@@ -246,7 +264,8 @@ class ExpenseReportService
     {
         return $this->vendorFilter === ''
             && $this->categoryFilter === ''
-            && $this->statusFilter === 'all';
+            && $this->statusFilter === 'all'
+            && ! $this->companyOnly;
     }
 
     /**
@@ -256,6 +275,10 @@ class ExpenseReportService
      */
     protected function contracts(): Collection
     {
+        if ($this->companyOnly) {
+            return $this->contractCache ??= collect();
+        }
+
         return $this->contractCache ??= Contract::query()
             ->committed()
             ->whereDate('start_date', '<=', $this->end)

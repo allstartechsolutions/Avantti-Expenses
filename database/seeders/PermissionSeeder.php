@@ -61,6 +61,11 @@ class PermissionSeeder extends Seeder
         // --- admin-only today: admin-edits-a-paid-expense -------------------
         'expenses.edit_paid',
 
+        // --- Company (general) expenses, new on 2026-09-16: the same two
+        //     actions held back for the same reasons as on project expenses.
+        'company-expenses.delete',
+        'company-expenses.edit_paid',
+
         // --- Added in M14: editing a daily report after it has closed. Was a
         //     hard-coded `is_admin` on the form.
         'daily-reports.edit_locked',
@@ -160,6 +165,14 @@ class PermissionSeeder extends Seeder
      * and the meeting series screen.
      */
     protected const MANAGER_ONLY_ABILITIES = [
+        // Company (general) expenses, new on 2026-09-16 — rent, insurance,
+        // payroll: the company's own financial picture rather than the site
+        // costs field staff key in. The owner's decision; a bookkeeper on the
+        // employee role gets it by a per-person override.
+        'company-expenses.view',
+        'company-expenses.create',
+        'company-expenses.edit',
+        'company-expenses.pay',
         'requisitions.approve',
         'quotations.award',
         'quotations.convert',

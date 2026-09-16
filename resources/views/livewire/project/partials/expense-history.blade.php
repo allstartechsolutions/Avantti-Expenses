@@ -7,7 +7,7 @@
     to an auditor. Whether it should instead follow `expenses.view` is an open
     question for the owner; see docs/review-and-improvements.md.
 --}}
-@can('expenses.edit_paid', $viewingExpense)
+@can($viewingExpense->ability('edit_paid'), $viewingExpense)
     @if(!empty($expenseHistory))
         <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
             <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">{{ __('History') }}</h4>

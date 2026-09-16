@@ -23,6 +23,7 @@
                     </div>
 
                     <div class="space-y-4">
+                        @unless($this->isCompanyExpense())
                         <!-- Cost Code Search -->
                         <div class="relative">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Cost Code') }}</label>
@@ -49,6 +50,7 @@
                             @endif
                             <p class="mt-1 text-xs text-slate-500">{{ __('Leave empty to use "Miscellaneous" (auto-created)') }}</p>
                         </div>
+                        @endunless
 
                         <!-- Item Type Toggle -->
                         <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">

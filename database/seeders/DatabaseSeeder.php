@@ -22,6 +22,10 @@ class DatabaseSeeder extends Seeder
             // own migration, so an existing install gets it on deploy without
             // anybody remembering to seed.
             CollaborationResponseCodeSeeder::class,
+            // Company-expense categories with their account codes. Also
+            // applied by their own migration, add-only, so an existing
+            // install gets them on deploy.
+            ExpenseCategorySeeder::class,
         ]);
 
         // Create default admin user

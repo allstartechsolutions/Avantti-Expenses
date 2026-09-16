@@ -51,6 +51,8 @@ use App\Livewire\JobSite\JobSiteIncome;
 use App\Livewire\JobSite\JobSiteQuotations;
 use App\Livewire\JobSite\JobSiteRequisitions;
 use App\Livewire\JobSite\JobSiteOverview;
+use App\Livewire\CompanyExpense\CompanyExpenseCreate;
+use App\Livewire\CompanyExpense\CompanyExpenseIndex;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\Expense\ExpenseEdit;
 use App\Livewire\DailyReport\DailyReportForm;
@@ -309,6 +311,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/{project}/expenses/create', ExpenseCreate::class)->name('expenses.project.create');
     Route::get('job-sites/{jobSite}/expenses/create', ExpenseCreate::class)->name('expenses.jobsite.create');
     Route::get('expenses/{expense}/edit', ExpenseEdit::class)->name('expenses.edit');
+
+    // Company (general) expenses — no project, a category instead of a cost
+    // code, their own area. docs/company-expenses.md
+    Route::get('company-expenses', CompanyExpenseIndex::class)
+        ->middleware('ability:company-expenses.view')->name('company-expenses.index');
+    Route::get('company-expenses/create', CompanyExpenseCreate::class)
+        ->middleware('ability:company-expenses.create')->name('company-expenses.create');
 
     // Daily Report routes (Job Site level)
     Route::get('job-sites/{jobSite}/daily-reports/create', DailyReportForm::class)->name('dailyreports.create');

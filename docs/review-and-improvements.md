@@ -1824,3 +1824,21 @@ review phase:
 | **PE4** | **Export.** The worker page is the "every contract this worker was on" report, on screen only. A PDF or CSV would need the same `workers.view` grant and the same `Contract::visibleTo()` filter. |
 | **DR1** | **The Directory follows the `projects` module switch.** `vendors.*` and `workers.*` are owned by `projects`; a company with Catalog on and Projects off loses the Vendors list (the old Suppliers route still works). Either give the Directory its own module key or let `vendors.index` answer to whichever of the two is on. |
 | **DR2** | **One vendor detail page** — step two of the Directory. Today a subcontractor opens the subcontractor page and a pure supplier the supplier page. One page with tabs that appear per classification (documents and employees; catalog items and purchase orders) would finish the unification. |
+
+---
+
+## Company (general) expenses (2026-09-16) — CE1–CE7
+
+Built as the first half of the company-expenses + equipment plan (`docs/company-expenses.md`).
+Noted while building, to be worked in the review phase:
+
+| | |
+|---|---|
+| **CE1** | **The two legacy expense modals still carry their own copies of the payment actions.** `ProjectShow::saveExpense()` and `JobSiteShow::saveExpense()` predate `HandlesExpensePaymentActions`; `ProjectExpenses` adopted the trait, they did not. Either adopt it or retire the modals (the job-site tab migration in `docs/jobsite-tabs-to-pages.md` is the natural moment). |
+| **CE2** | **`FileController` matches an expense file by `receipt_path` only**, while the `Attachments` component also writes expense attachments under `expenses/`. If those are served through `files.show` they 404 today. Pre-existing; verify and, if real, add an `attachedTo($path, Expense::class)` fallback the way income does. |
+| **CE3** | **History rows print the category change as ids.** `expense_category_id: 3 → 5` under *Category*. Map the values to labels the way `fieldLabel()` maps the field, or record the label in the diff. |
+| **CE4** | **The shared view modal is `maxWidth="4xl"`**, the width the project screen always had; the design standard asks for a full-page modal with a sticky header and footer for a detail view. Consistency kept it; upgrade both screens together. |
+| **CE5** | **The company list loads every row in the date range and sums in PHP**, as the project tab does. Fine for a year of overhead; paginate and sum in SQL if an install files hundreds a month. |
+| **CE6** | **`PaymentScheduleService` is covered by the service test, not the screen** — the report is `MYSQL_ONLY` (`DATE_FORMAT`) and cannot run under sqlite. Walk `/reports/payment-schedule` with "Company (general)" on a MySQL copy. |
+| **CE7** | **The Expense Report's *By cost code* tab never sees a company expense** (no cost code) — by design, but nothing on that tab says so. A one-line note when the reader holds the grant and company rows exist in the range would close the gap between what the screen says and what it counts. |
+

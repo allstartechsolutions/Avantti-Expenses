@@ -62,6 +62,12 @@ class BudgetService
         }
 
         $expense = $expenseItem->expense;
+
+        // A company expense has no budget to code against; its category is
+        // on the header and its lines stay uncoded.
+        if ($expense === null || $expense->project_id === null) {
+            return;
+        }
         $defaultItem = self::getDefaultItem(
             $expense->project_id,
             $expense->job_site_id,

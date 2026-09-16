@@ -95,6 +95,7 @@ return [
             'clients.*',
             'cost-codes.*',
             'payments.*',
+            'company-expenses.*',
             'jobsites.*',
             'expenses.*',
             'dailyreports.*',

@@ -50,6 +50,33 @@ class PaymentDashboard extends Component
         $this->resetPage();
     }
 
+    /**
+     * The project filter, and the company rule, on a query over `expenses`.
+     *
+     * "Company (general)" on the dropdown narrows the screen to the rows with
+     * no project; otherwise those rows appear only for somebody holding
+     * `company-expenses.view`. A project filter excludes them by construction.
+     */
+    protected function expenseScope($q): void
+    {
+        if ($this->projectFilter === 'company') {
+            $q->whereNull('project_id');
+        } elseif ($this->projectFilter) {
+            $q->where('project_id', $this->projectFilter);
+        }
+
+        if (! $this->seesCompanyExpenses()) {
+            $q->whereNotNull('project_id');
+        }
+    }
+
+    protected ?bool $seesCompany = null;
+
+    public function seesCompanyExpenses(): bool
+    {
+        return $this->seesCompany ??= $this->allowsAbility('company-expenses.view');
+    }
+
     public function updatingStatusFilter()
     {
         $this->resetPage();
@@ -69,32 +96,28 @@ class PaymentDashboard extends Component
         $pendingInstallments = ExpensePayment::where('status', 'pending')
             ->whereHas('expense', function ($q) {
                 $q->whereNotIn('status', ['cancelled']);
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
+                $this->expenseScope($q);
             })
             ->sum('amount');
 
         // Pending one-time expenses (unpaid)
         $pendingOneTime = Expense::where('status', 'unpaid')
             ->where('total_installments', 1)
-            ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->expenseScope($q))
             ->sum('total_amount');
 
         // Overdue installment payments
         $overdueInstallments = ExpensePayment::where('status', 'overdue')
             ->whereHas('expense', function ($q) {
                 $q->whereNotIn('status', ['cancelled']);
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
+                $this->expenseScope($q);
             })
             ->sum('amount');
 
         // Overdue one-time expenses
         $overdueOneTime = Expense::where('status', 'overdue')
             ->where('total_installments', 1)
-            ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->expenseScope($q))
             ->sum('total_amount');
 
         // Due this month (installments)
@@ -102,9 +125,7 @@ class PaymentDashboard extends Component
             ->whereBetween('due_date', [$today, $endOfMonth])
             ->whereHas('expense', function ($q) {
                 $q->whereNotIn('status', ['cancelled']);
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
+                $this->expenseScope($q);
             })
             ->sum('amount');
 
@@ -112,24 +133,20 @@ class PaymentDashboard extends Component
         $thisMonthOneTime = Expense::where('status', 'unpaid')
             ->where('total_installments', 1)
             ->whereBetween('payment_due_date', [$today, $endOfMonth])
-            ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->expenseScope($q))
             ->sum('total_amount');
 
         // Paid this month (installments)
         $paidInstallments = ExpensePayment::where('status', 'paid')
             ->whereBetween('paid_date', [now()->startOfMonth(), $endOfMonth])
-            ->whereHas('expense', function ($q) {
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
-            })
+            ->whereHas('expense', fn ($q) => $this->expenseScope($q))
             ->sum('amount');
 
         // Paid this month (one-time)
         $paidOneTime = Expense::whereIn('status', ['paid'])
             ->where('total_installments', 1)
             ->whereBetween('paid_date', [now()->startOfMonth(), $endOfMonth])
-            ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter))
+            ->tap(fn ($q) => $this->expenseScope($q))
             ->sum('total_amount');
 
         return [
@@ -145,19 +162,17 @@ class PaymentDashboard extends Component
         $today = now()->startOfDay();
 
         // Build query for installment payments
-        $installmentQuery = ExpensePayment::with(['expense.project', 'expense.jobSite'])
+        $installmentQuery = ExpensePayment::with(['expense.project', 'expense.jobSite', 'expense.category'])
             ->whereHas('expense', function ($q) {
                 $q->whereNotIn('status', ['cancelled']);
-                if ($this->projectFilter) {
-                    $q->where('project_id', $this->projectFilter);
-                }
+                $this->expenseScope($q);
             });
 
         // Build query for one-time unpaid expenses
-        $oneTimeQuery = Expense::with(['project', 'jobSite'])
+        $oneTimeQuery = Expense::with(['project', 'jobSite', 'category'])
             ->where('total_installments', 1)
             ->whereIn('status', ['unpaid', 'overdue'])
-            ->when($this->projectFilter, fn($q) => $q->where('project_id', $this->projectFilter));
+            ->tap(fn ($q) => $this->expenseScope($q));
 
         // Apply view mode filters
         if ($this->viewMode === 'upcoming') {
@@ -207,8 +222,10 @@ class PaymentDashboard extends Component
                 'type' => 'installment',
                 'expense_id' => $payment->expense_id,
                 'description' => $payment->expense->item_name,
-                'project' => $payment->expense->project->project_name,
-                'job_site' => $payment->expense->jobSite?->job_site_name,
+                'project' => $payment->expense->project?->project_name ?? __('Company (general)'),
+                'job_site' => $payment->expense->project_id === null
+                    ? $payment->expense->category?->getDisplayLabel()
+                    : $payment->expense->jobSite?->job_site_name,
                 'payment_label' => $payment->getPaymentLabel(),
                 'amount' => $payment->amount,
                 'due_date' => $payment->due_date,
@@ -225,8 +242,10 @@ class PaymentDashboard extends Component
                 'type' => 'one_time',
                 'expense_id' => $expense->id,
                 'description' => $expense->item_name,
-                'project' => $expense->project->project_name,
-                'job_site' => $expense->jobSite?->job_site_name,
+                'project' => $expense->project?->project_name ?? __('Company (general)'),
+                'job_site' => $expense->project_id === null
+                    ? $expense->category?->getDisplayLabel()
+                    : $expense->jobSite?->job_site_name,
                 'payment_label' => '1/1',
                 'amount' => (float) $expense->total_amount,
                 'due_date' => $expense->payment_due_date,

@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\Supplier;
 use App\Services\PaymentDetailReportService;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -68,7 +69,7 @@ class PaymentDetailReportPdfController extends Controller
             $clientFilter,
             $statusFilter,
             $typeFilter,
-        );
+        )->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'));
 
         return [
             'view' => $view,

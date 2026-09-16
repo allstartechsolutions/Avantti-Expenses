@@ -110,7 +110,7 @@ class PaymentDetailReport extends Component
             $this->clientFilter,
             $this->statusFilter,
             in_array($this->typeFilter, ['all', 'expenses', 'contracts'], true) ? $this->typeFilter : 'all',
-        );
+        )->includeCompany($this->allowsAbility('company-expenses.view'));
     }
 
     public function getProjectsProperty(): Collection
@@ -125,6 +125,10 @@ class PaymentDetailReport extends Component
 
     public function getJobSitesProperty(): Collection
     {
+        if ($this->projectFilter === 'company') {
+            return collect();
+        }
+
         return JobSite::query()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->orderBy('job_site_name')

@@ -154,6 +154,13 @@ class FileController extends Controller
         // nobody can be shown to have a right to it.
         abort_if($record === null, 404, 'File not found');
 
+        // A company (general) expense answers to its own area: `expenses.*`
+        // is project-scoped, and a row with no project would otherwise be
+        // answered by any membership the person holds anywhere.
+        if ($record instanceof Expense) {
+            $area = $record->permissionArea();
+        }
+
         abort_unless(
             app(PermissionResolver::class)->allows($request->user(), $area.'.view', $record),
             403,

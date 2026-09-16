@@ -8,6 +8,7 @@ use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Services\ExpenseReportService;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class ExpenseReportPdfController extends Controller
             $clientFilter,
             $statusFilter,
             $dateBasis,
-        );
+        )->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'));
 
         return [
             'view' => $view,
@@ -77,7 +78,8 @@ class ExpenseReportPdfController extends Controller
             'statusFilter' => $statusFilter,
             'dateBasis' => $dateBasis,
             'categoryFilter' => $categoryFilter,
-            'project' => $projectFilter ? Project::find($projectFilter) : null,
+            'project' => is_numeric($projectFilter) ? Project::find($projectFilter) : null,
+            'companyOnly' => $service->isCompanyOnly(),
             'jobSite' => $jobSiteFilter ? JobSite::find($jobSiteFilter) : null,
             'client' => $clientFilter ? Client::find($clientFilter) : null,
             'vendor' => $vendorFilter ? Supplier::find($vendorFilter) : null,

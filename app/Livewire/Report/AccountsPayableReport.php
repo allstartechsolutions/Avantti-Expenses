@@ -75,7 +75,7 @@ class AccountsPayableReport extends Component
             $this->projectFilter,
             $this->statusFilter,
             $this->clientFilter,
-        );
+        )->includeCompany($this->allowsAbility('company-expenses.view'));
     }
 
     public function getSelectedPeriodRowsProperty(): Collection

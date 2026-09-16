@@ -75,7 +75,13 @@ Balance is computed in the view: `$contract->amount + $changeOrdersTotal - $tota
 
 - Payment date is required
 - At least one row must have an amount > 0
-- Each row's amount must not exceed the contract's remaining balance
+- Each row's amount must not exceed the contract's remaining balance — the **adjusted**
+  balance, `Contract::getBalanceDue()` = original amount ± change orders − paid, the same
+  figure the table shows. (Until 16 Sep 2026 the check used the original amount alone, so
+  a contract raised at zero and valued by change orders could never be paid from this
+  screen: "exceeds balance due (0.00)". The summary cards had the same blind spot; both
+  now use the adjusted figure. `tests/Feature/Contract/ContractPaymentBalanceTest.php`
+  pins it, on this screen and on the single contract screen.)
 - Payment method is **optional** (can be left blank)
 - Rows with blank/zero amounts are skipped entirely
 - All payments are created inside a single DB transaction for data integrity
@@ -244,7 +250,8 @@ Route::get('contract-payments', ContractPayments::class)->name('contract-payment
 | Scenario | Behavior |
 |---|---|
 | Active contracts fully paid | Auto-transitions to `paid` via `updateStatusFromPayments()` |
-| Contract with change orders | Balance includes change orders: `amount + CO total - paid` |
+| Contract with change orders | Balance includes change orders: `amount + CO total - paid` — in the table, the summary cards **and** the validation on save |
+| Contract with a zero original amount and change orders | Payable up to the change orders' total |
 | No change orders on contract | Change Orders column shows "—", no expand button |
 | Null subcontractor | Displays "-" in the table |
 | Null job site | Displays "Project General" |

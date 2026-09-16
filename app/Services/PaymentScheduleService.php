@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
+use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -33,6 +34,8 @@ use Illuminate\Support\Facades\DB;
  */
 class PaymentScheduleService
 {
+    use ScopesCompanyExpenses;
+
     public const PROJECTION_CAP_MONTHS = 24;
 
     protected Carbon $today;
@@ -110,6 +113,10 @@ class PaymentScheduleService
         $q->when($this->projectId, fn ($q) => $q->where('project_id', $this->projectId))
             ->when($this->jobSiteId, fn ($q) => $q->where('job_site_id', $this->jobSiteId))
             ->when($this->clientId, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientId)));
+
+        // Contracts always carry a project, so the company rule only ever
+        // bites on expenses — and "Company (general)" empties the contracts.
+        $this->applyCompanyScope($q);
     }
 
     protected function openInstallments()

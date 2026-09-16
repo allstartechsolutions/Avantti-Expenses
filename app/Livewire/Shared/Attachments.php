@@ -49,9 +49,11 @@ class Attachments extends Component
 
     public array $newUploads = [];
 
+    protected ?Model $resolved = null;
+
     protected function resolveModel(): Model
     {
-        return match ($this->modelType) {
+        return $this->resolved ??= match ($this->modelType) {
             'expense' => Expense::findOrFail($this->modelId),
             'purchase-order' => PurchaseOrder::findOrFail($this->modelId),
             'income' => Income::findOrFail($this->modelId),
@@ -65,7 +67,9 @@ class Attachments extends Component
     protected function area(): string
     {
         return match ($this->modelType) {
-            'expense' => 'expenses',
+            // A company (general) expense answers to `company-expenses`, a
+            // project expense to `expenses`; the row knows which it is.
+            'expense' => $this->resolveModel()->permissionArea(),
             'purchase-order' => 'purchase-orders',
             'income' => 'income',
             'requisition' => 'requisitions',

@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Services\PaymentScheduleService;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -40,6 +41,8 @@ class PaymentScheduleReportPdfController extends Controller
 
         $paymentSchedule = PaymentScheduleService::forSystem($clientFilter, $projectFilter, $jobSiteFilter)
             ->between($fromDate, $toDate)
+            ->companyScopeFrom($request->query('projectFilter'))
+            ->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'))
             ->build();
 
         return [

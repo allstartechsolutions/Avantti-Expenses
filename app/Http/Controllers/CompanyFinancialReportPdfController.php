@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Services\CompanyFinancialService;
+use App\Services\PermissionResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -47,6 +48,8 @@ class CompanyFinancialReportPdfController extends Controller
 
         $data = CompanyFinancialService::forFilters($clientFilter, $projectFilter, $jobSiteFilter)
             ->between($fromDate, $toDate)
+            ->companyScopeFrom($request->query('projectFilter'))
+            ->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'))
             ->build();
 
         $rows = $data['items']
