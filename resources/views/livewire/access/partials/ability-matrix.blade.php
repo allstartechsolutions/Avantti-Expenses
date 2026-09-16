@@ -26,7 +26,7 @@
     </div>
 
     @foreach($sections as $section)
-        <div class="{{ $matrixCard }} overflow-hidden">
+        <div wire:key="matrix-section-{{ $section['key'] }}" class="{{ $matrixCard }} overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ $section['name'] }}</h3>
@@ -44,7 +44,7 @@
             </div>
 
             @forelse($section['areas'] as $area)
-                <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <div wire:key="matrix-area-{{ $area['key'] }}" class="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 grid grid-cols-1 lg:grid-cols-4 gap-3">
                     <div class="lg:col-span-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $area['name'] }}</span>
@@ -73,7 +73,7 @@
 
                     <div class="lg:col-span-3 flex flex-wrap gap-x-5 gap-y-2">
                         @foreach($area['actions'] as $action)
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <label wire:key="matrix-action-{{ $area['key'] }}-{{ $action['key'] }}" class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" wire:model.live="granted.{{ $area['key'] }}.{{ $action['key'] }}"
                                        class="h-4 w-4 rounded border-slate-300 text-[#3F5189] focus:ring-[#3F5189] dark:border-slate-600 dark:bg-slate-700"
                                        @disabled($readOnly)>

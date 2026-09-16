@@ -735,7 +735,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach($purchaseOrder->items as $item)
-                                <tr class="{{ $item->isFullyReceived() ? 'opacity-50' : '' }}">
+                                <tr wire:key="receipt-item-{{ $item->id }}" class="{{ $item->isFullyReceived() ? 'opacity-50' : '' }}">
                                     <td class="px-4 py-2 text-sm text-slate-900 dark:text-white">{{ $item->item_name }}</td>
                                     <td class="px-4 py-2 text-right text-sm text-slate-600 dark:text-slate-300">
                                         {{ rtrim(rtrim(number_format($item->outstandingQuantity(), 2, '.', ''), '0'), '.') }} {{ $item->unit }}
