@@ -298,6 +298,7 @@ Copy this into the module's plan document and tick it off.
 - [ ] Menu entry / project tab declared in the same file
 - [ ] `ADMIN_ONLY_ABILITIES` / `MANAGER_ONLY_ABILITIES` updated, each with a reason
 - [ ] Added to a system template if it belongs in one
+- [ ] `<area>.delete` declared and **built with the create screen**: a bare entry from its list row (`x-ui.icon-button`, `wire:confirm`, one `withCount` on the list), a record with history from its page through the counted modal, money blocking rather than cascading — `docs/delete-functionality.md`
 - [ ] `mount()` guarded on every component
 - [ ] **Every** action method guarded — not just the destructive ones
 - [ ] `limited` actions use `authorizeAbilityWithin()`

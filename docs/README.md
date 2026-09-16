@@ -62,8 +62,9 @@
 
 ### Data Management
 
-8. **[Delete Functionality](./delete-functionality.md)** - Project & Job Site deletion with confirmation modals
-   - Confirmation modal with related data counts (not just `wire:confirm`)
+8. **[Delete Functionality](./delete-functionality.md)** - Project, Job Site, Client, Subcontractor & Equipment deletion
+   - The rule: every record that can be created can be deleted (`CLAUDE.md`, *Every Record Ships With a Delete*)
+   - Confirmation modal with related data counts for anything with history; a bare entry goes from its list row with `wire:confirm`
    - Manual file cleanup before cascade delete (Eloquent events won't fire on cascade)
    - Polymorphic image cleanup (DailyReportImage)
    - DB transaction wrapping

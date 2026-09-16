@@ -130,7 +130,8 @@ the reader may see.
 
 - `tests/Feature/Permissions/EquipmentTest.php` — reproduced, revocable, separate (create /
   edit / delete / assign / maintain), the project and site tab under confinement, the
-  whole maintenance cycle through the page, tagging and the Costs tab, delete refused.
+  whole maintenance cycle through the page, tagging and the Costs tab, delete refused with
+  expenses, a bare entry deleted from the register's row and one with records sent to its page.
 - `tests/Feature/Equipment/MaintenanceScheduleTest.php` — the eight rules above.
 - `tests/Feature/Permissions/EquipmentMaintenanceRemindersTest.php` — stages, idempotency,
   meter stages, ending the sequence, recipients, switches, the command, the mail.

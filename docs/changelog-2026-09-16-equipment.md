@@ -28,7 +28,7 @@ plan that began with [company expenses](./changelog-2026-09-16-company-expenses.
 | `database/seeders/PermissionSeeder.php` | `equipment.delete` admin-only; `view` / `assign` / `maintain` on the Project Manager, Site Supervisor and Site Team templates |
 | `routes/web.php` | Five `equipment.*` routes and the two tab routes |
 | `lang/en.json` | ~330 strings, including the namespaced enum labels. **No pt_BR** — the owner keeps a separate repository for the Brazilian version from here on |
-| `tests/Feature/Permissions/EquipmentTest.php` (15), `tests/Feature/Equipment/MaintenanceScheduleTest.php` (8), `tests/Feature/Permissions/EquipmentMaintenanceRemindersTest.php` (9) | The tests, including the regressions from the review pass |
+| `tests/Feature/Permissions/EquipmentTest.php` (16), `tests/Feature/Equipment/MaintenanceScheduleTest.php` (8), `tests/Feature/Permissions/EquipmentMaintenanceRemindersTest.php` (9) | The tests, including the regressions from the review pass |
 | `tests/Feature/Permissions/{Navigation,TeamTab,SecurityState,LegacyBehaviour}Test.php`, `tests/TestCase.php` | Bookkeeping |
 | `docs/equipment-module.md`, `docs/delete-functionality.md`, `docs/deployment-scheduler.md`, `docs/vendor-unification.md`, `docs/sidebar-navigation.md`, `docs/review-and-improvements.md`, `docs/README.md`, `CLAUDE.md` | Docs |
 

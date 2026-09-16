@@ -1,8 +1,13 @@
-# Delete Functionality: Projects, Job Sites, Clients & Subcontractors
+# Delete Functionality: Projects, Job Sites, Clients, Subcontractors & Equipment
 
 ## Overview
 
-Delete functionality for Projects, Job Sites, Clients, and Subcontractors with confirmation modals that warn about irreversible data loss. Project and Job Site modals display counts of all related data that will be permanently deleted, with file cleanup before cascade delete. Client delete is only allowed when the client has no linked projects. Subcontractor delete is admin-only and only allowed when the subcontractor has no linked contracts or payment batches.
+Delete functionality for Projects, Job Sites, Clients, Subcontractors and Equipment with confirmation modals that warn about irreversible data loss. Project and Job Site modals display counts of all related data that will be permanently deleted, with file cleanup before cascade delete. Client delete is only allowed when the client has no linked projects. Subcontractor delete is admin-only and only allowed when the subcontractor has no linked contracts or payment batches. Equipment delete is admin-only, refused while expenses are tagged, and offered from the list row when nothing is recorded under the piece.
+
+**The rule since 16 Sep 2026 (`CLAUDE.md`, *Every Record Ships With a Delete*):** a record
+that can be created can be deleted. The delete is declared and built with the create screen;
+a bare entry goes from its list row, a record with history from its own page through the
+counted modal, and money blocks the delete rather than cascading.
 
 ---
 
@@ -10,10 +15,17 @@ Delete functionality for Projects, Job Sites, Clients, and Subcontractors with c
 
 ### Why Not `wire:confirm`?
 
-A simple `wire:confirm` browser dialog was explicitly avoided. Instead, a proper `<x-ui.modal>` is used to:
+A simple `wire:confirm` browser dialog was explicitly avoided for anything with history. Instead, a proper `<x-ui.modal>` is used to:
 - Show a warning icon and bold "cannot be undone" message
 - List all related data that will be permanently deleted (with counts)
 - Provide Cancel and Delete buttons within the modal
+
+**The one exception is a bare entry on a list** — a row with nothing recorded under it, decided
+by one `withCount(...)` on the list query. There is nothing to count, so it gets an
+`<x-ui.icon-button variant="danger" size="sm" icon="trash">` in the actions cell (the same
+square control `x-ui.view-edit-buttons` uses) with a `wire:confirm` that names the record.
+The server re-checks the counts before deleting; a stale button is not permission. The
+equipment register is the reference implementation.
 
 ### Why Manual File Cleanup?
 
