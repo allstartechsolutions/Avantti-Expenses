@@ -316,6 +316,11 @@ class PaymentDetailReportService
                 'subcontractor:id,name',
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
+                // getBalanceDue() sums both in PHP when they are loaded;
+                // without them it ran two aggregate queries per contract
+                // (AVANTTI-CONSTRUCTION-2).
+                'changeOrders:id,contract_id,amount',
+                'payments:id,contract_id,amount',
             ])
             ->get()
             ->map(function (Contract $c) {

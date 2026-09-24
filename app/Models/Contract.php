@@ -243,6 +243,10 @@ class Contract extends Model
 
     public function getAmountPaid(): float
     {
+        if ($this->relationLoaded('payments')) {
+            return round($this->payments->sum(fn ($p) => $p->getRawOriginal('amount')) / 100, 2);
+        }
+
         return round($this->payments()->sum('amount') / 100, 2);
     }
 

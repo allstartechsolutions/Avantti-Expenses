@@ -37,30 +37,35 @@ class ModuleAccess extends Model
     }
 
     /**
-     * Answers already given during this request, keyed by module.
+     * Every module's answer, loaded once per request and kept for it.
      *
-     * The store behind `Cache` is the database, so every `remember()` is a
-     * round trip of its own — and this is asked once per permission decision.
-     * One meeting screen asked it 54 times for 9 modules. The shared cache
-     * still carries the answer between requests; this only stops the same
-     * request asking twice.
+     * The store behind `Cache` is the database, so each cache read is a round
+     * trip of its own. This used to be one cache entry per module, asked once
+     * per permission decision: the sidebar alone put nine `cache` selects on
+     * every page, and Sentry flagged it as an N+1 on the job-site contracts
+     * screen (AVANTTI-CONSTRUCTION-3). Now the whole table is one entry —
+     * `module_key => enabled` — read once and memoised here.
      *
      * Static, so it must be emptied when the application is built rather than
      * left to the end of the process — `AppServiceProvider::register()` does
      * it. One process serves one request, but it serves *every* test, and a
      * test that switches a module off would otherwise be believed by the tests
      * that follow it.
+     *
+     * @var array<string, bool>|null
      */
-    protected static array $enabled = [];
+    protected static ?array $enabled = null;
+
+    protected const CACHE_KEY = 'module_access.enabled';
 
     /** Start of an application: nothing has been asked yet. */
     public static function flushEnabled(): void
     {
-        static::$enabled = [];
+        static::$enabled = null;
     }
 
     /**
-     * A row that moves takes its own answer down with it.
+     * A row that moves takes the whole answer down with it.
      *
      * `clearCache()` is still the call the settings screen makes, but hanging
      * this off the model as well means no future call site can forget: a
@@ -69,7 +74,7 @@ class ModuleAccess extends Model
      */
     protected static function booted(): void
     {
-        $forget = fn (self $module) => static::clearCache($module->module_key);
+        $forget = fn () => static::clearCache();
 
         static::saved($forget);
         static::deleted($forget);
@@ -77,29 +82,29 @@ class ModuleAccess extends Model
 
     public static function isEnabled(string $moduleKey): bool
     {
-        return static::$enabled[$moduleKey] ??= Cache::remember("module_access.{$moduleKey}", 300, function () use ($moduleKey) {
-            $module = static::where('module_key', $moduleKey)->first();
+        static::$enabled ??= Cache::remember(self::CACHE_KEY, 300, fn () => static::query()
+            ->get(['module_key', 'is_enabled', 'is_core'])
+            ->mapWithKeys(fn (self $module) => [
+                $module->module_key => $module->is_core || $module->is_enabled,
+            ])
+            ->all());
 
-            if (!$module) {
-                return true;
-            }
-
-            if ($module->is_core) {
-                return true;
-            }
-
-            return $module->is_enabled;
-        });
+        // A module with no row has never been switched off.
+        return static::$enabled[$moduleKey] ?? true;
     }
 
-    public static function clearCache(string $moduleKey): void
+    /**
+     * The map is one entry for every module, so any change empties all of it.
+     * The key is accepted for the callers that still pass one.
+     */
+    public static function clearCache(?string $moduleKey = null): void
     {
         // Both, and in this order: a module switched off re-renders the screen
         // inside the same request, and the memo would otherwise keep saying
         // the module is still on until the next click.
-        unset(static::$enabled[$moduleKey]);
+        static::$enabled = null;
 
-        Cache::forget("module_access.{$moduleKey}");
+        Cache::forget(self::CACHE_KEY);
     }
 
     public static function logHistory(?int $moduleAccessId, string $action, ?string $field = null, ?string $oldValue = null, ?string $newValue = null): void
