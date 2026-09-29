@@ -232,7 +232,7 @@ class DashboardTest extends TestCase
             ->assertSee('Cash to Pay')          // expenses.view
             ->assertDontSee('Receivables')      // invoices.view
             ->assertDontSee('Open Estimates')   // estimates.view
-            ->assertDontSee('Active Projects'); // projects.view
+            ->assertDontSee(__('Active Projects')); // projects.view
     }
 
     public function test_each_block_arrives_with_its_own_grant(): void
@@ -249,7 +249,7 @@ class DashboardTest extends TestCase
 
             $this->actingAs($user)->get(route('dashboard'))
                 ->assertOk()
-                ->assertSee($heading, false);
+                ->assertSee(__($heading), false);
         }
     }
 

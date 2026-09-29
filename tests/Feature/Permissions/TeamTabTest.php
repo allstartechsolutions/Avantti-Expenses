@@ -265,7 +265,7 @@ class TeamTabTest extends TestCase
 
         $hints = collect($component->get('matrix'))->pluck('hint')->implode(' ');
 
-        $this->assertStringContainsString(__('One row per tab of this project.'), $hints);
+        $this->assertStringContainsString(__('One row per tab of this project. Anything not ticked is not on their menu at all — and it covers every job site under the project unless that site gives them something of its own.'), $hints);
         // The role editor's line — telling somebody standing on a Team tab to
         // go to the Team tab — must not appear here.
         $this->assertStringNotContainsString('apply on every project', $hints);
