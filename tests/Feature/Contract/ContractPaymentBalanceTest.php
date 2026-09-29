@@ -120,6 +120,71 @@ class ContractPaymentBalanceTest extends TestCase
         $this->assertSame('paid', $contract->fresh()->status);
     }
 
+    public function test_each_row_names_the_employee_assigned_to_the_contract(): void
+    {
+        $contract = $this->makeContract(1000);
+        $employee = \App\Models\SubcontractorEmployee::create([
+            'subcontractor_id' => $contract->subcontractor_id,
+            'name' => 'Maria Souza',
+            'title' => 'Foreman',
+        ]);
+        $contract->update(['subcontractor_employee_id' => $employee->id]);
+
+        Livewire::actingAs($this->admin)
+            ->test(ContractPayments::class)
+            ->assertSee($contract->subcontractor->company_name)
+            ->assertSee('Maria Souza');
+    }
+
+    public function test_the_table_sorts_by_lot_contract_amount_paid_and_balance(): void
+    {
+        $site = fn (string $name) => \App\Models\JobSite::create([
+            'project_id' => $this->project->id,
+            'job_site_name' => $name,
+            'contact_person' => 'C',
+            'email' => str()->random(6).'@example.test',
+            'status' => \App\Enums\JobSiteStatus::CREATED,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $small = $this->makeContract(1000);
+        $small->update(['contract_number' => 'CTR-0010', 'job_site_id' => $site('Lot 2')->id]);
+        $large = $this->makeContract(5000);
+        $large->update(['contract_number' => 'CTR-0009', 'job_site_id' => $site('Lot 10')->id]);
+        $general = $this->makeContract(3000);
+        $general->update(['contract_number' => 'CTR-0011']);
+
+        // Paid: small 900 (balance 100), large 1000 (balance 4000), general 0 (balance 3000).
+        foreach ([[$small, 900], [$large, 1000]] as [$contract, $amount]) {
+            $contract->payments()->create(['amount' => $amount, 'payment_date' => now()->toDateString(), 'payment_method' => 'cash', 'created_by' => $this->admin->id]);
+        }
+
+        $component = Livewire::actingAs($this->admin)->test(ContractPayments::class);
+        $order = fn () => $component->instance()->contracts()->pluck('id')->all();
+
+        $component->call('sort', 'job_site');
+        $this->assertSame([$small->id, $large->id, $general->id], $order(), 'Natural order, project level last.');
+        $component->call('sort', 'job_site');
+        $this->assertSame([$large->id, $small->id, $general->id], $order(), 'Project level stays last descending.');
+
+        $component->call('sort', 'contract');
+        $this->assertSame([$large->id, $small->id, $general->id], $order());
+
+        $component->call('sort', 'amount');
+        $this->assertSame([$large->id, $general->id, $small->id], $order(), 'Money starts largest first.');
+
+        $component->call('sort', 'paid');
+        $this->assertSame([$large->id, $small->id, $general->id], $order());
+
+        $component->call('sort', 'balance');
+        $this->assertSame([$large->id, $general->id, $small->id], $order());
+        $component->call('sort', 'balance');
+        $this->assertSame([$small->id, $general->id, $large->id], $order());
+
+        $component->call('sort', 'project_id; drop table contracts');
+        $this->assertSame('balance', $component->get('sortField'), 'Unknown columns are ignored.');
+    }
+
     public function test_the_summary_cards_count_the_adjusted_value_and_balance(): void
     {
         $zero = $this->makeContract(0);

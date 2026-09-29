@@ -38,6 +38,15 @@ class ContractPayments extends Component
     #[Url(except: false)]
     public bool $showZeroBalance = false;
 
+    /** Column the table is sorted by; empty keeps the project / job site grouping. */
+    #[Url(as: 'sort', except: '')]
+    public string $sortField = '';
+
+    #[Url(as: 'dir', except: 'asc')]
+    public string $sortDirection = 'asc';
+
+    public const SORTABLE = ['job_site', 'contract', 'amount', 'paid', 'balance'];
+
     public string $paymentDate = '';
     public array $payAmounts = [];
     public array $payMethods = [];
@@ -49,6 +58,26 @@ class ContractPayments extends Component
         $this->authorizeAbility('payments.view');
 
         $this->paymentDate = now()->format('Y-m-d');
+    }
+
+    /**
+     * Sort by a column; clicking it again flips the direction. Money columns
+     * start with the largest figure, text columns with A.
+     */
+    public function sort(string $field): void
+    {
+        if (! in_array($field, self::SORTABLE, true)) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = in_array($field, ['amount', 'paid', 'balance'], true) ? 'desc' : 'asc';
+        }
+
+        unset($this->contracts);
     }
 
     public function toggleChangeOrders(int $contractId): void
@@ -106,8 +135,8 @@ class ContractPayments extends Component
     #[Computed]
     public function contracts()
     {
-        return Contract::committed()
-            ->with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
+        $contracts = Contract::committed()
+            ->with(['project.client', 'jobSite', 'subcontractor', 'subcontractorEmployee', 'latestPayment', 'changeOrders'])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
@@ -119,6 +148,40 @@ class ContractPayments extends Component
             ->orderBy('project_id')
             ->orderBy('job_site_id')
             ->get();
+
+        return $this->sortContracts($contracts);
+    }
+
+    /**
+     * The list is not paginated and paid / balance are derived per row, so
+     * the sort is done on the loaded collection. Project-level contracts
+     * (no job site) always come after the lots, whichever the direction.
+     */
+    private function sortContracts($contracts)
+    {
+        if (! in_array($this->sortField, self::SORTABLE, true)) {
+            return $contracts;
+        }
+
+        $descending = $this->sortDirection === 'desc';
+        $paid = fn ($c) => ($c->total_paid_cents ?? 0) / 100;
+        $balance = fn ($c) => round($c->amount + ($c->change_orders_total_cents ?? 0) / 100 - $paid($c), 2);
+
+        return $contracts->sort(function ($a, $b) use ($descending, $paid, $balance) {
+            if ($this->sortField === 'job_site' && ($a->jobSite === null) !== ($b->jobSite === null)) {
+                return $a->jobSite === null ? 1 : -1;
+            }
+
+            $result = match ($this->sortField) {
+                'job_site' => strnatcasecmp($a->jobSite?->job_site_name ?? '', $b->jobSite?->job_site_name ?? ''),
+                'contract' => strnatcasecmp($a->contract_number, $b->contract_number),
+                'amount' => $a->amount <=> $b->amount,
+                'paid' => $paid($a) <=> $paid($b),
+                'balance' => $balance($a) <=> $balance($b),
+            };
+
+            return $descending ? -$result : $result;
+        })->values();
     }
 
     #[Computed]
@@ -257,7 +320,7 @@ class ContractPayments extends Component
         $this->authorizeAbility('payments.view');
 
         $contracts = Contract::committed()
-            ->with(['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'])
+            ->with(['project.client', 'jobSite', 'subcontractor', 'subcontractorEmployee', 'latestPayment', 'changeOrders'])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))

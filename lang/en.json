@@ -3936,5 +3936,6 @@
     "Auto-updated after the contract amount changed": "Auto-updated after the contract amount changed",
     "Auto-updated after a change order": "Auto-updated after a change order",
     "Auto-updated after a change order was deleted": "Auto-updated after a change order was deleted",
-    "Corrected: the status did not match the payments recorded": "Corrected: the status did not match the payments recorded"
+    "Corrected: the status did not match the payments recorded": "Corrected: the status did not match the payments recorded",
+    "Sort by :column": "Sort by :column"
 }

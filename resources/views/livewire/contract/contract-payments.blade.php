@@ -259,24 +259,14 @@
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Project') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Job Site / Lot') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Contract #') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Amount') }}
-                        </th>
+                        @include('livewire.contract.partials.sort-header', ['field' => 'job_site', 'label' => __('Job Site / Lot')])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'contract', 'label' => __('Contract #')])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'amount', 'label' => __('Amount'), 'align' => 'right'])
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Change Orders') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Paid') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Balance') }}
-                        </th>
+                        @include('livewire.contract.partials.sort-header', ['field' => 'paid', 'label' => __('Paid'), 'align' => 'right'])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'balance', 'label' => __('Balance'), 'align' => 'right'])
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Last Payment') }}
                         </th>
@@ -307,6 +297,12 @@
                                      title="{{ $contract->subcontractor?->company_name }}">
                                     {{ Str::limit($contract->subcontractor?->company_name ?? '-', 30) }}
                                 </div>
+                                @if($contract->subcontractorEmployee)
+                                    <div class="text-xs text-slate-500 dark:text-slate-400"
+                                         title="{{ $contract->subcontractorEmployee->name }}@if($contract->subcontractorEmployee->title) ({{ $contract->subcontractorEmployee->title }})@endif">
+                                        {{ Str::limit($contract->subcontractorEmployee->name, 30) }}
+                                    </div>
+                                @endif
                             </td>
                             <!-- Project -->
                             <td class="px-4 py-3 whitespace-nowrap">

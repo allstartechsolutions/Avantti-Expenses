@@ -5399,5 +5399,6 @@
     "Auto-updated after the contract amount changed": "Atualizada automaticamente após a alteração do valor do contrato",
     "Auto-updated after a change order": "Atualizada automaticamente após uma ordem de alteração",
     "Auto-updated after a change order was deleted": "Atualizada automaticamente após a exclusão de uma ordem de alteração",
-    "Corrected: the status did not match the payments recorded": "Corrigida: a situação não correspondia aos pagamentos registrados"
+    "Corrected: the status did not match the payments recorded": "Corrigida: a situação não correspondia aos pagamentos registrados",
+    "Sort by :column": "Ordenar por :column"
 }
