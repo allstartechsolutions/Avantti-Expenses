@@ -57,7 +57,7 @@ class Contract extends Model
         $this->statusHistories()->create([
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
-            'changed_by' => $user->id,
+            'changed_by' => $user?->id,
             'reason' => $reason,
         ]);
     }
@@ -190,6 +190,29 @@ class Contract extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(ContractStatusHistory::class);
+    }
+
+    public function changeHistories(): HasMany
+    {
+        return $this->hasMany(ContractChangeHistory::class)->latest('id');
+    }
+
+    /**
+     * Write one entry to the contract's change history. Nothing is written
+     * when there is nothing to show — an edit that changed no field.
+     */
+    public function recordChange(string $action, array $changes, ?int $changeOrderId = null): void
+    {
+        if ($changes === []) {
+            return;
+        }
+
+        $this->changeHistories()->create([
+            'action' => $action,
+            'changes' => $changes,
+            'contract_change_order_id' => $changeOrderId,
+            'changed_by' => Auth::id(),
+        ]);
     }
 
     public function changeOrders(): HasMany
@@ -597,32 +620,61 @@ class Contract extends Model
             ->values();
     }
 
-    public function updateStatusFromPayments(): void
+    /**
+     * Bring the status back in line with the money: what was paid against
+     * what the contract is now worth (its amount plus change orders). Called
+     * after anything that moves either side — a payment, a change order, or
+     * an edit of the contract amount — so a contract can never keep saying
+     * "Paid" once its price has gone up, nor "Partially Paid" once the last
+     * payment has gone.
+     *
+     * Drafts and cancelled contracts are left alone: they commit no money.
+     * With nothing paid, a contract that was never marked paid keeps the
+     * work status somebody gave it (active / completed); one that was
+     * returns to the work status it had before its payments began.
+     *
+     * Returns the new status when it changed, null otherwise.
+     */
+    public function updateStatusFromPayments(?string $reason = null): ?string
     {
-        if ($this->status === 'cancelled') {
-            return;
+        if (in_array($this->status, self::UNCOMMITTED_STATUSES, true)) {
+            return null;
         }
 
-        $amountPaid = $this->getAmountPaid();
-        $contractAmount = $this->getAdjustedAmount();
+        $newStatus = $this->statusFromMoney();
 
-        if ($amountPaid >= $contractAmount) {
-            $newStatus = 'paid';
-        } elseif ($amountPaid > 0) {
-            $newStatus = 'partially_paid';
-        } else {
-            $newStatus = 'completed';
+        if ($newStatus === $this->status) {
+            return null;
         }
 
-        if ($newStatus !== $this->status) {
-            $oldStatus = $this->status;
-            $this->update(['status' => $newStatus]);
-            $this->recordStatusChange(
-                Auth::user(),
-                $oldStatus,
-                $newStatus,
-                'Auto-updated from payment activity'
-            );
+        $oldStatus = $this->status;
+        $this->update(['status' => $newStatus]);
+        $this->recordStatusChange(
+            Auth::user(),
+            $oldStatus,
+            $newStatus,
+            $reason ?? 'Auto-updated from payment activity'
+        );
+
+        return $newStatus;
+    }
+
+    /** The status the money says this contract should have. */
+    public function statusFromMoney(): string
+    {
+        $paid = $this->getAmountPaid();
+
+        if ($paid > 0.009) {
+            return $paid >= $this->getAdjustedAmount() - 0.009 ? 'paid' : 'partially_paid';
         }
+
+        if (! in_array($this->status, ['paid', 'partially_paid'], true)) {
+            return $this->status;
+        }
+
+        return $this->statusHistories()
+            ->whereIn('new_status', ['active', 'completed'])
+            ->latest('id')
+            ->value('new_status') ?? 'active';
     }
 }

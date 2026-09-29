@@ -138,7 +138,7 @@
                             <input
                                 type="number"
                                 step="0.01"
-                                wire:model="amount"
+                                wire:model.live.debounce.400ms="amount"
                                 placeholder="0.00"
                                 class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                         </div>
@@ -161,6 +161,49 @@
                         @error('retention_percent') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
+
+                @php $impact = $this->amountImpact; @endphp
+                @if($impact['paid'] > 0 || $impact['change_orders'] != 0)
+                    @php $scope = $contract->jobSite ?? $contract->project; @endphp
+                    <div class="mt-6 rounded-lg border {{ $impact['status_changes'] || $impact['balance'] < -0.009 ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40' }} p-4">
+                        <h4 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Effect on payments') }}</h4>
+                        <dl class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <dt class="text-xs text-slate-500 dark:text-slate-400">{{ __('Change Orders') }}</dt>
+                                <dd class="font-semibold text-slate-900 dark:text-white"><x-ui.money :amount="$impact['change_orders']" :scope="$scope" /></dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs text-slate-500 dark:text-slate-400">{{ __('Adjusted Amount') }}</dt>
+                                <dd class="font-semibold text-slate-900 dark:text-white"><x-ui.money :amount="$impact['adjusted']" :scope="$scope" /></dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs text-slate-500 dark:text-slate-400">{{ __('Amount Paid') }}</dt>
+                                <dd class="font-semibold text-green-600 dark:text-green-400"><x-ui.money :amount="$impact['paid']" :scope="$scope" /></dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs text-slate-500 dark:text-slate-400">{{ $impact['balance'] < -0.009 ? __('Overpaid') : __('Balance Due') }}</dt>
+                                <dd class="font-semibold {{ $impact['balance'] < -0.009 ? 'text-red-600 dark:text-red-400' : ($impact['balance'] > 0.009 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">
+                                    <x-ui.money :amount="abs($impact['balance'])" :scope="$scope" />
+                                </dd>
+                            </div>
+                        </dl>
+                        @if($impact['status_changes'])
+                            <p class="mt-3 text-sm text-amber-800 dark:text-amber-300">
+                                {{ __('Saving will change the status from :old to :new. The change is recorded in the contract history.', ['old' => $contract->getStatusLabel(), 'new' => \App\Models\Contract::statusLabel($impact['status'])]) }}
+                            </p>
+                        @endif
+                        @if($impact['balance'] < -0.009)
+                            <p class="mt-2 text-sm text-red-700 dark:text-red-400">
+                                {{ __('The payments already recorded exceed this amount. Check the figure before saving — the difference will show as overpaid on the contract.') }}
+                            </p>
+                        @endif
+                        @if($impact['amount_changed'] && $impact['paid'] > 0)
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                {{ __('This contract already has payments. The old and new amount, and who changed it, are kept in the contract history.') }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 

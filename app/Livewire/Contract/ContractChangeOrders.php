@@ -7,6 +7,7 @@ use App\Livewire\Concerns\ResolvesContractBudget;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -106,23 +107,52 @@ class ContractChangeOrders extends Component
             $data['file_path'] = $this->file->store('contract-change-orders', 'local');
         }
 
-        if ($this->editingId) {
-            $changeOrder = ContractChangeOrder::where('contract_id', $this->contract->id)->findOrFail($this->editingId);
+        DB::transaction(function () use ($data) {
+            if ($this->editingId) {
+                $changeOrder = ContractChangeOrder::with('budgetItem')->where('contract_id', $this->contract->id)->findOrFail($this->editingId);
+                $before = $this->auditValues($changeOrder);
 
-            if ($this->file && $changeOrder->file_path && Storage::exists($changeOrder->file_path)) {
-                Storage::delete($changeOrder->file_path);
+                if ($this->file && $changeOrder->file_path && Storage::exists($changeOrder->file_path)) {
+                    Storage::delete($changeOrder->file_path);
+                }
+
+                $changeOrder->update($data);
+                $after = $this->auditValues($changeOrder->fresh('budgetItem'));
+
+                $changes = [];
+                foreach ($after as $field => $value) {
+                    if ($before[$field] !== $value) {
+                        $changes[$field] = ['old' => $before[$field], 'new' => $value];
+                    }
+                }
+
+                if ($this->file) {
+                    $changes['file'] = ['old' => null, 'new' => $before['has_file'] ? 'replaced' : 'added'];
+                }
+                unset($changes['has_file']);
+
+                if ($changes !== []) {
+                    // Name the change order even when its title did not move.
+                    $changes = ['title' => $changes['title'] ?? $after['title']] + $changes;
+                }
+
+                $action = 'change_order_updated';
+            } else {
+                $changeOrder = ContractChangeOrder::create($data + [
+                    'contract_id' => $this->contract->id,
+                    'created_by' => Auth::id(),
+                ]);
+                $changes = $this->auditValues($changeOrder->load('budgetItem'));
+                unset($changes['has_file']);
+                $action = 'change_order_added';
             }
 
-            $changeOrder->update($data);
-        } else {
-            $data['contract_id'] = $this->contract->id;
-            $data['created_by'] = Auth::id();
-            ContractChangeOrder::create($data);
-        }
+            $this->contract->refresh();
+            $changes += $this->statusChange('Auto-updated after a change order');
+            $this->contract->recordChange($action, $changes, $changeOrder->id);
+        });
 
         $this->closeModal();
-        $this->contract->refresh();
-        $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
         session()->flash('message', __('Change order saved successfully.'));
     }
@@ -133,16 +163,54 @@ class ContractChangeOrders extends Component
 
         $changeOrder = ContractChangeOrder::where('contract_id', $this->contract->id)->findOrFail($id);
 
-        if ($changeOrder->file_path && Storage::exists($changeOrder->file_path)) {
-            Storage::delete($changeOrder->file_path);
+        $filePath = $changeOrder->file_path;
+
+        DB::transaction(function () use ($changeOrder) {
+            $changes = $this->auditValues($changeOrder->load('budgetItem'));
+            unset($changes['has_file']);
+
+            $changeOrder->delete();
+
+            $this->contract->refresh();
+            $changes += $this->statusChange('Auto-updated after a change order was deleted');
+            $this->contract->recordChange('change_order_deleted', $changes, $changeOrder->id);
+        });
+
+        // After the commit: a rolled-back delete must not have lost its file.
+        if ($filePath && Storage::exists($filePath)) {
+            Storage::delete($filePath);
         }
 
-        $changeOrder->delete();
-
-        $this->contract->refresh();
-        $this->contract->updateStatusFromPayments();
         $this->dispatch('change-orders-updated');
         session()->flash('message', __('Change order deleted successfully.'));
+    }
+
+    /** A change order's terms as the contract history records them. */
+    private function auditValues(ContractChangeOrder $changeOrder): array
+    {
+        return [
+            'title' => $changeOrder->title,
+            'date' => $changeOrder->date?->format('Y-m-d'),
+            'amount' => (float) $changeOrder->amount,
+            'cost_code' => $changeOrder->budgetItem
+                ? $changeOrder->budgetItem->code.' - '.$changeOrder->budgetItem->name
+                : null,
+            'description' => $changeOrder->description,
+            'has_file' => $changeOrder->file_path !== null,
+        ];
+    }
+
+    /**
+     * Re-derive the contract status from its money and return the move, if
+     * any, for the history entry — a change order that raises a paid
+     * contract's value leaves a balance to pay.
+     */
+    private function statusChange(string $reason): array
+    {
+        $oldStatus = $this->contract->status;
+        $newStatus = $this->contract->updateStatusFromPayments($reason);
+
+        return $newStatus ? ['status' => ['old' => $oldStatus, 'new' => $newStatus]] : [];
     }
 
     private function resetForm()

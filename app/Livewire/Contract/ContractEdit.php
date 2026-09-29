@@ -142,7 +142,14 @@ class ContractEdit extends Component
             $filePath = null;
         }
 
-        DB::transaction(function () use ($filePath) {
+        $before = $this->auditSnapshot();
+        $fileChange = match (true) {
+            (bool) $this->contract_file => $this->contract->contract_file_path ? 'replaced' : 'added',
+            $this->removeFile && $this->contract->contract_file_path !== null => 'removed',
+            default => null,
+        };
+
+        DB::transaction(function () use ($filePath, $before, $fileChange) {
             $this->contract->update([
                 'subcontractor_id' => $this->subcontractor_id ?: null,
                 'subcontractor_employee_id' => $this->subcontractor_employee_id ?: null,
@@ -156,11 +163,107 @@ class ContractEdit extends Component
             ]);
 
             $this->syncAllocations($this->contract);
+
+            $this->contract->refresh();
+            $changes = $this->auditDiff($before, $this->auditSnapshot());
+
+            if ($fileChange) {
+                $changes['contract_file'] = ['old' => null, 'new' => $fileChange];
+            }
+
+            // The price moved, so what was paid may no longer settle it (or
+            // may now settle it in full). Only a money change re-derives the
+            // status: an edit to the notes must not undo a status somebody
+            // set by hand.
+            if (array_key_exists('amount', $changes)) {
+                $oldStatus = $this->contract->status;
+                $newStatus = $this->contract->updateStatusFromPayments('Auto-updated after the contract amount changed');
+
+                if ($newStatus) {
+                    $changes['status'] = ['old' => $oldStatus, 'new' => $newStatus];
+                }
+            }
+
+            $this->contract->recordChange('edited', $changes);
         });
 
         session()->flash('message', __('Contract updated successfully!'));
 
         return redirect()->route('contracts.show', $this->contract->id);
+    }
+
+    /**
+     * The contract's terms as the change history records them: names rather
+     * than ids, so an entry still reads correctly after a vendor is renamed
+     * or removed.
+     */
+    private function auditSnapshot(): array
+    {
+        $contract = $this->contract->fresh(['subcontractor', 'subcontractorEmployee', 'jobSite', 'allocations.budgetItem']);
+
+        return [
+            'subcontractor' => $contract->subcontractor?->company_name,
+            'subcontractor_employee' => $contract->subcontractorEmployee?->name,
+            'job_site' => $contract->jobSite?->job_site_name,
+            'start_date' => $contract->start_date?->format('Y-m-d'),
+            'end_date' => $contract->end_date?->format('Y-m-d'),
+            'amount' => (float) $contract->amount,
+            'retention_percent' => $contract->retention_percent !== null ? (float) $contract->retention_percent : null,
+            'notes' => $contract->notes,
+            'allocations' => $contract->allocations
+                ->map(fn ($allocation) => [
+                    'code' => $allocation->cost_code_display,
+                    'amount' => (float) $allocation->amount,
+                ])
+                ->sortBy('code')
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /** Only the fields that moved, as ['old' => …, 'new' => …]. */
+    private function auditDiff(array $before, array $after): array
+    {
+        $changes = [];
+
+        foreach ($after as $field => $new) {
+            $old = $before[$field] ?? null;
+
+            if ($old !== $new) {
+                $changes[$field] = ['old' => $old, 'new' => $new];
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
+     * What saving the amount on screen would do to the contract's money:
+     * the figures behind the status, shown beside the field so a price
+     * change on a paid contract is never a surprise.
+     */
+    public function getAmountImpactProperty(): array
+    {
+        $paid = $this->contract->getAmountPaid();
+        $changeOrders = $this->contract->getChangeOrdersTotal();
+        $amount = is_numeric($this->amount) ? round((float) $this->amount, 2) : (float) $this->contract->amount;
+        $adjusted = round($amount + $changeOrders, 2);
+
+        $status = $this->contract->status;
+
+        if (! in_array($status, Contract::UNCOMMITTED_STATUSES, true) && $paid > 0.009) {
+            $status = $paid >= $adjusted - 0.009 ? 'paid' : 'partially_paid';
+        }
+
+        return [
+            'paid' => $paid,
+            'change_orders' => $changeOrders,
+            'adjusted' => $adjusted,
+            'balance' => round($adjusted - $paid, 2),
+            'status' => $status,
+            'status_changes' => $status !== $this->contract->status,
+            'amount_changed' => abs($amount - (float) $this->contract->amount) >= 0.005,
+        ];
     }
 
     public function render()

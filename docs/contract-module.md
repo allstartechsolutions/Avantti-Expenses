@@ -10,6 +10,7 @@ The Contract module provides management of subcontractor contracts within projec
 - Payment tracking with automatic status transitions (see [Contract Payments](./contract-payments.md))
 - Status workflow: `active` → `completed` → `paid` (with partial payment and cancellation paths)
 - Status change tracking with audit trail and optional reasons
+- Change history of the contract's terms — edits, change orders added/updated/deleted, deleted payments — with old and new values, who and when (see [changelog-2026-09-29-contract-change-tracking.md](./changelog-2026-09-29-contract-change-tracking.md))
 - Contract file upload (PDF, JPG, PNG)
 - Works at both project-level and job-site-level
 - Auto-generated sequential contract numbers (CTR-0001, CTR-0002, ...)
@@ -82,6 +83,20 @@ See [Contract Change Orders](#contract-change-orders) section below for full det
 | reason | text | Reason for change (nullable) |
 | timestamps | | created_at, updated_at |
 
+`changed_by` is nullable since 29 Sep 2026: a status corrected by `contracts:reconcile-status` has no person behind it and shows as "System". `reason` is shown through `__()`, so the automatic reasons are translated.
+
+### 5. `contract_change_histories` Table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | bigint | Primary key |
+| contract_id | bigint | Foreign key to contracts (cascadeOnDelete) |
+| contract_change_order_id | bigint | The change order concerned (nullable, **no FK** — the deletion entry outlives it) |
+| action | string | `edited`, `change_order_added`, `change_order_updated`, `change_order_deleted`, `payment_deleted`, `status_reconciled` |
+| changes | json | `field => {old, new}` for an edit; the plain values of a record added or removed. Raw values (Y-m-d, decimals, names not ids), formatted when shown |
+| changed_by | bigint | Foreign key to users (nullable, nullOnDelete) |
+| timestamps | | created_at, updated_at |
+
 ---
 
 ## Models
@@ -117,11 +132,14 @@ See [Contract Change Orders](#contract-change-orders) section below for full det
 **Payment Methods:**
 - `getAmountPaid()` - Returns total paid in dollars
 - `getBalanceDue()` - Returns adjusted amount minus amount paid in dollars
-- `updateStatusFromPayments()` - Auto-transitions status based on payment totals (uses adjusted amount). Works on all non-cancelled statuses including `active`. Called when payments are recorded/deleted and when change orders are created/updated/deleted
+- `updateStatusFromPayments(?reason)` - Re-derives the status from the money (amount paid against the adjusted amount) and returns the new status, or null when it did not move. Paid in full → `paid`; something paid → `partially_paid`; nothing paid → a contract never marked paid keeps its work status (`active` / `completed`), one that was returns to the last work status in its history. Drafts and cancelled contracts are never touched. Called after payments are recorded/deleted, change orders are created/updated/deleted, **and the contract amount is edited**
+- `statusFromMoney()` - The status the money says the contract should have, without saving it
 
 **Other Methods:**
 - `generateContractNumber()` - Static method, returns next sequential CTR-XXXX number
-- `recordStatusChange(User, ?oldStatus, newStatus, ?reason)` - Records status change in history
+- `recordStatusChange(?User, ?oldStatus, newStatus, ?reason)` - Records status change in history
+- `recordChange(action, changes, ?changeOrderId)` - Writes one `contract_change_histories` entry (skipped when `changes` is empty)
+- `changeHistories()` - HasMany ContractChangeHistory, newest first
 
 ### ContractPayment Model
 

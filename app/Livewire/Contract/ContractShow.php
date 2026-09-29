@@ -92,6 +92,7 @@ class ContractShow extends Component
             'subcontractorEmployee',
             'createdBy',
             'statusHistories.changedBy',
+            'changeHistories.changedBy',
             'payments.createdBy',
             'payments.scheduleItem',
             'changeOrders.createdBy',
@@ -867,9 +868,28 @@ class ContractShow extends Component
         $this->authorizeAbility('contracts.unpay', $this->contract);
 
         $payment = ContractPayment::where('contract_id', $this->contract->id)->findOrFail($id);
-        $payment->delete();
 
-        $this->contract->updateStatusFromPayments();
+        DB::transaction(function () use ($payment) {
+            $changes = [
+                'amount' => (float) $payment->amount,
+                'payment_date' => $payment->payment_date?->format('Y-m-d'),
+                'payment_method' => $payment->getPaymentMethodLabel(),
+                'reference' => $payment->reference_number,
+            ];
+
+            $payment->delete();
+
+            $this->contract->refresh();
+            $oldStatus = $this->contract->status;
+            $newStatus = $this->contract->updateStatusFromPayments();
+
+            if ($newStatus) {
+                $changes['status'] = ['old' => $oldStatus, 'new' => $newStatus];
+            }
+
+            $this->contract->recordChange('payment_deleted', array_filter($changes, fn ($value) => $value !== null));
+        });
+
         $this->refreshContract();
         session()->flash('message', __('Payment deleted successfully.'));
         $this->dispatch('payments-updated');
@@ -887,6 +907,7 @@ class ContractShow extends Component
             'subcontractorEmployee',
             'createdBy',
             'statusHistories.changedBy',
+            'changeHistories.changedBy',
             'payments.createdBy',
             'payments.scheduleItem',
             'changeOrders.createdBy',

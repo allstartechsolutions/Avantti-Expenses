@@ -198,9 +198,9 @@
                                 </dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Balance Due') }}</dt>
-                                <dd class="mt-1 text-xl font-semibold {{ $balanceDue > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }}">
-                                    {{ Number::currency($balanceDue, config('app.currency'), config('app.locale')) }}
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ $balanceDue < -0.009 ? __('Overpaid') : __('Balance Due') }}</dt>
+                                <dd class="mt-1 text-xl font-semibold {{ $balanceDue < -0.009 ? 'text-red-600 dark:text-red-400' : ($balanceDue > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">
+                                    {{ Number::currency(abs($balanceDue), config('app.currency'), config('app.locale')) }}
                                 </dd>
                             </div>
                         @endif
@@ -311,6 +311,8 @@
 
             <!-- Change Orders -->
             <livewire:contract.contract-change-orders :contract="$contract" />
+
+            @include('livewire.contract.partials.change-history')
 
             <!-- Notes Card -->
             @if($contract->notes)
@@ -483,7 +485,7 @@
                                                     </div>
                                                     @if($history->reason)
                                                         <div class="mt-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded p-2">
-                                                            {{ $history->reason }}
+                                                            {{ __($history->reason) }}
                                                         </div>
                                                     @endif
                                                 </div>
