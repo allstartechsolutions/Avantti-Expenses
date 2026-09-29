@@ -3997,5 +3997,9 @@
     "Without this, totals, budgets and financial reports are hidden on the company-wide screens. On a project, their membership decides instead.": "Without this, totals, budgets and financial reports are hidden on the company-wide screens. On a job site, their membership decides instead.",
     "You can see the overview, but none of the areas it reports on — expenses, invoices, estimates, projects or purchase orders — are open to you. Ask an administrator to add one.": "You can see the overview, but none of the areas it reports on — expenses, invoices, estimates, job sites or purchase orders — are open to you. Ask an administrator to add one.",
     "of :total in this project": "of :total in this job site",
-    "whole project": "whole job site"
+    "whole project": "whole job site",
+    "See the project list": "See the job site list",
+    "Project Overview": "Job Site Overview",
+    "See who is on this project": "See who is on this job site",
+    "Assign to a project, site or person": "Assign to a job site, lot or person"
 }

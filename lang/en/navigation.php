@@ -41,7 +41,7 @@ return [
 
     'tabs' => [
         'overview' => 'Overview',
-        'jobsites' => 'Job Sites',
+        'jobsites' => 'Lots',
         'budget' => 'Budget',
         'expenses' => 'Expenses',
         'income' => 'Income',

@@ -61,10 +61,10 @@ return [
         'longitude' => 'longitude',
 
         // Projects and sites
-        'project_id' => 'project',
-        'project_name' => 'project name',
-        'job_site_id' => 'job site',
-        'job_site_name' => 'job site name',
+        'project_id' => 'job site',
+        'project_name' => 'job site name',
+        'job_site_id' => 'lot',
+        'job_site_name' => 'lot name',
         'job_amount' => 'job amount',
         'project_manager_id' => 'project manager',
         'supervisor_id' => 'supervisor',
