@@ -394,7 +394,7 @@ class NavigationTest extends TestCase
 
         $english = $names();
         $this->assertSame('Procurement', $english['procurement']);
-        $this->assertSame('Job Sites', $english['jobsites']);
+        $this->assertSame('Lots', $english['jobsites']);
 
         $this->app->setLocale('pt_BR');
 
