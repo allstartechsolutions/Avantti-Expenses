@@ -62,3 +62,17 @@ FKs remapped: `expenses.supplier_id`, `catalog_items.supplier_id`, `purchase_ord
 ## Deployment
 
 Standard `php artisan migrate` + `php artisan view:clear`. The data migration runs inside the deploy migration; on large installs it is a single set-based INSERT/UPDATE pass (no row loops). Verified locally with overlapping ids across the two legacy tables (the collision case) — all FK relationships confirmed intact by name comparison before/after.
+
+## Active / inactive switch (2026-09-30)
+
+A vendor can be switched off without being deleted — a supplier the company stopped buying from, a subcontractor it will not hire again, a duplicate waiting to be merged. Migration `2026_09_30_100000` adds `is_active` (default true, indexed), `deactivated_at` and `deactivated_by` to `vendors`.
+
+**What "inactive" means.** The record is kept, every expense, order, contract, quotation, document and employee that names it is kept, and it still appears on every list and report filter. What changes is that it is **no longer offered when a new record picks a vendor**: the supplier search on expenses (project and company), purchase orders, approvals, equipment and its maintenance; the subcontractor search on contracts; the catalog item supplier list; and the quotation vendor suggestions. A form editing a record that already names an inactive vendor keeps offering that one vendor (`activeOrCurrent()`), so a saved choice never vanishes from its own dropdown. Payment batches, contract payments, reports and the company-expense filter are untouched: they pay and report what already exists.
+
+**Where it lives.** `App\Models\Concerns\HasVendorActiveState` is used by `Vendor`, `Supplier` and `Subcontractor` (each declares the casts itself — Eloquent does not merge a trait's casts): `active()`, `inactive()`, `activeOrCurrent($id)`, `activeState('' | active | inactive)`, `activate()`, `deactivate($userId)`, `getActiveLabel()` / `activeLabel()`, `activeStates()`. New pickers use `active()`; a picker that reads a saved value uses `activeOrCurrent()`.
+
+**The switch and the filter.** `App\Livewire\Concerns\TogglesVendorActive::toggleActive($id)` is the one action, mounted on the Vendors, Suppliers and Subcontractors lists and on both detail pages; it is guarded by `vendors.edit` (switching a vendor off is an edit, not a delete, so no new ability was declared). The Blade side is three components: `x-vendor.active-state` (the `x-ui.toggle` for somebody who may edit, the chip for everybody else — its `wire:key` carries the state so a flip rebuilds the checkbox), `x-vendor.active-badge` (the Active / Inactive chip), and `x-vendor.inactive-notice` (the banner on a detail page, with who switched it off and when). Every list has a `status` filter in the query string, an *Inactive* chip under the company name and a Status column; the Vendors list also counts active and inactive in the filter's options. The detail pages show Status, *Switched off* and *Switched off by* in the information card.
+
+**Merging.** `mergeInto()` leaves the survivor's state alone: merging an inactive duplicate into a live vendor does not switch the live one off.
+
+Tests: `tests/Feature/Permissions/VendorActiveStateTest.php`.

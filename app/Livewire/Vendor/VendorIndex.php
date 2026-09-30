@@ -3,6 +3,7 @@
 namespace App\Livewire\Vendor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\TogglesVendorActive;
 use App\Models\Subcontractor;
 use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 class VendorIndex extends Component
 {
     use AuthorizesAbility;
+    use TogglesVendorActive;
     use WithPagination;
 
     public string $search = '';
@@ -27,12 +29,16 @@ class VendorIndex extends Component
     /** Filter on the documents badge (subcontractors only): expired | expiring_soon | valid | none, or ''. */
     public string $documentHealth = '';
 
+    /** '' | active | inactive — an inactive vendor is kept but not offered to new records. */
+    public string $status = '';
+
     public int $perPage = 15;
 
     protected $queryString = [
         'search' => ['except' => ''],
         'type' => ['except' => ''],
         'documentHealth' => ['except' => '', 'as' => 'documents'],
+        'status' => ['except' => ''],
     ];
 
     public function mount(): void
@@ -42,20 +48,20 @@ class VendorIndex extends Component
 
     public function updating($property): void
     {
-        if (in_array($property, ['search', 'type', 'documentHealth'], true)) {
+        if (in_array($property, ['search', 'type', 'documentHealth', 'status'], true)) {
             $this->resetPage();
         }
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['search', 'type', 'documentHealth']);
+        $this->reset(['search', 'type', 'documentHealth', 'status']);
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return trim($this->search) !== '' || $this->type !== '' || $this->documentHealth !== '';
+        return trim($this->search) !== '' || $this->type !== '' || $this->documentHealth !== '' || $this->status !== '';
     }
 
     /**
@@ -102,6 +108,7 @@ class VendorIndex extends Component
         $vendors = Vendor::query()
             ->withCount(['contracts', 'paymentBatches', 'expenses', 'purchaseOrders', 'catalogItems', 'employees'])
             ->withDocumentHealth()
+            ->activeState($this->status)
             ->when($this->type === 'suppliers', fn (Builder $q) => $q->where('is_supplier', true))
             ->when($this->type === 'subcontractors', fn (Builder $q) => $q->where('is_subcontractor', true))
             ->when($this->type === 'both', fn (Builder $q) => $q->where('is_supplier', true)->where('is_subcontractor', true))
@@ -126,6 +133,8 @@ class VendorIndex extends Component
             'suppliers' => Vendor::where('is_supplier', true)->count(),
             'subcontractors' => Vendor::where('is_subcontractor', true)->count(),
             'both' => Vendor::where('is_supplier', true)->where('is_subcontractor', true)->count(),
+            'active' => Vendor::active()->count(),
+            'inactive' => Vendor::inactive()->count(),
         ];
 
         return view('livewire.vendor.vendor-index', [

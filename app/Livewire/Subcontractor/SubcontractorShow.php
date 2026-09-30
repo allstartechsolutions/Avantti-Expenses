@@ -3,6 +3,7 @@
 namespace App\Livewire\Subcontractor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\TogglesVendorActive;
 use App\Models\DocumentType;
 use App\Models\FileUpload;
 use App\Models\Subcontractor;
@@ -21,6 +22,7 @@ use Livewire\WithFileUploads;
 class SubcontractorShow extends Component
 {
     use AuthorizesAbility;
+    use TogglesVendorActive;
 
     use WithFileUploads;
 
@@ -136,13 +138,18 @@ class SubcontractorShow extends Component
     {
         $this->authorizeAbility('vendors.view');
 
-        $this->subcontractor = $subcontractor->load('createdBy');
+        $this->subcontractor = $subcontractor->load(['createdBy', 'deactivatedBy']);
 
         // `?tab=employees` opens a tab directly — the worker page links here.
         $tab = request()->query('tab');
         if (in_array($tab, ['overview', 'documents', 'employees'], true)) {
             $this->activeTab = $tab;
         }
+    }
+
+    protected function afterVendorToggled(Vendor $vendor): void
+    {
+        $this->subcontractor = $this->subcontractor->fresh(['createdBy', 'deactivatedBy']);
     }
 
     public function setActiveTab(string $tab)

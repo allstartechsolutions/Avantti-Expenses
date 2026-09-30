@@ -115,7 +115,7 @@ class CatalogItemCreate extends Component
             ->orderBy('name')
             ->get();
 
-        $suppliers = Supplier::orderBy('name')->get();
+        $suppliers = Supplier::active()->orderBy('name')->get();
         $taxRates = TaxRate::orderBy('state')->get();
 
         return view('livewire.catalog.catalog-item-create', [

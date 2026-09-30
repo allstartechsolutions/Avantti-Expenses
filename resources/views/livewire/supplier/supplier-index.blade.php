@@ -62,13 +62,27 @@
                     </div>
                 </div>
 
+                <!-- Status filter -->
+                <div class="w-full md:w-auto">
+                    <label for="status" class="sr-only">{{ __('Filter by status') }}</label>
+                    <select
+                        id="status"
+                        wire:model.live="status"
+                        class="block w-full md:w-44 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]">
+                        <option value="">{{ __('Status: all') }}</option>
+                        @foreach(\App\Models\Supplier::activeStates() as $state => $label)
+                            <option value="{{ $state }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Clear Filters -->
-                @if($search)
+                @if($search || $status)
                     <x-ui.button
                         variant="secondary"
-                        wire:click="$set('search', '')"
+                        wire:click="clearFilters"
                         icon="x">
-                        {{ __('Clear Search') }}
+                        {{ __('Clear Filters') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -94,14 +108,18 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Location') }}
                             </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                {{ __('Status') }}
+                            </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @php $canEdit = auth()->user()->can('vendors.edit'); @endphp
                         @foreach($suppliers as $supplier)
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <tr wire:key="supplier-{{ $supplier->id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ $supplier->is_active ? '' : 'bg-slate-50/60 dark:bg-slate-900/30' }}">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
@@ -122,6 +140,9 @@
                                                 @if($supplier->is_subcontractor)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
                                                 @endif
+                                                @unless($supplier->is_active)
+                                                    <x-vendor.active-badge :active="false" />
+                                                @endunless
                                             </div>
                                             @if($supplier->description)
                                                 <div class="text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">
@@ -145,6 +166,9 @@
                                             N/A
                                         @endif
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <x-vendor.active-state :vendor="$supplier" :canEdit="$canEdit" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
@@ -179,20 +203,26 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                    @if($search)
+                    @if($search || $status)
                         {{ __('No suppliers found') }}
                     @else
                         {{ __('No suppliers yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    @if($search)
+                    @if($search && $status)
+                        {{ __('No supplier matches both the search and the status filter.') }}
+                    @elseif($status === 'inactive')
+                        {{ __('No supplier is inactive. Every one of them can be picked for new records.') }}
+                    @elseif($status)
+                        {{ __('No supplier is active. Switch one back on to pick it for new records.') }}
+                    @elseif($search)
                         {{ __('Try adjusting your search terms.') }}
                     @else
                         {{ __('Get started by creating a new supplier.') }}
                     @endif
                 </p>
-                @if(!$search)
+                @if(!$search && !$status)
                     <div class="mt-6">
                         <x-ui.button
                             variant="primary"

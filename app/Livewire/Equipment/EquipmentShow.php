@@ -626,7 +626,11 @@ class EquipmentShow extends Component
 
     public function getSuppliersProperty()
     {
-        return Vendor::where('is_supplier', true)->orderBy('name')->get(['id', 'name']);
+        // Active suppliers, plus the one a maintenance being edited already names.
+        return Vendor::where('is_supplier', true)
+            ->activeOrCurrent($this->c_supplier_id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     /*

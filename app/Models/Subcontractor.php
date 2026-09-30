@@ -15,6 +15,7 @@ class Subcontractor extends Model
     use HasFormattedPhone, HasFactory;
     use \App\Models\Concerns\DeletesVendorDocuments;
     use \App\Models\Concerns\HasDocumentHealth;
+    use \App\Models\Concerns\HasVendorActiveState;
 
     /**
      * Subcontractors live in the unified `vendors` table (shared with
@@ -69,6 +70,8 @@ class Subcontractor extends Model
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'is_active' => 'boolean',
+        'deactivated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -137,7 +137,8 @@ class CatalogItemEdit extends Component
             ->orderBy('name')
             ->get();
 
-        $suppliers = Supplier::orderBy('name')->get();
+        // An inactive supplier is not offered, unless it is the one this item already has.
+        $suppliers = Supplier::activeOrCurrent($this->supplier_id)->orderBy('name')->get();
         $taxRates = TaxRate::orderBy('state')->get();
 
         $priceHistory = $this->item->priceHistory()->with('changedBy')->take(10)->get();

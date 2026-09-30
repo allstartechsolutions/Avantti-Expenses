@@ -2730,7 +2730,8 @@ trait ManagesQuotations
 
         $chosen = collect($this->vendorRows)->pluck('vendor_id')->filter()->all();
 
-        $query = Vendor::where('name', 'like', '%'.trim($this->vendorSearch).'%')
+        $query = Vendor::active()
+            ->where('name', 'like', '%'.trim($this->vendorSearch).'%')
             ->whereNotIn('id', $chosen ?: [0]);
 
         if (! $this->vendorSearchAll) {

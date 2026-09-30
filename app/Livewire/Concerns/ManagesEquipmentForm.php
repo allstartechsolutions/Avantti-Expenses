@@ -192,6 +192,7 @@ trait ManagesEquipmentForm
         }
 
         return Vendor::where('is_supplier', true)
+            ->active()
             ->where('name', 'like', '%'.$this->supplierSearch.'%')
             ->orderBy('name')
             ->take(10)
@@ -206,7 +207,7 @@ trait ManagesEquipmentForm
 
     protected function supplierCount(): int
     {
-        return Vendor::where('is_supplier', true)->count();
+        return Vendor::where('is_supplier', true)->active()->count();
     }
 
     /*

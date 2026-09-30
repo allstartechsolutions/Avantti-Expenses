@@ -755,6 +755,7 @@ class ApprovalForm extends Component
         // linked name still goes through `Vendor` below, so a record that
         // already points at one keeps showing it.
         return Supplier::query()
+            ->active()
             ->where(fn ($q) => $q
                 ->where('name', 'like', '%'.$term.'%')
                 ->orWhere('contact_name', 'like', '%'.$term.'%'))
@@ -866,7 +867,7 @@ class ApprovalForm extends Component
             'budgetLineCount' => $this->projectBudgetItems()->count(),
             'supplierResults' => $this->supplierResults(),
             'supplierLabel' => $this->selectedSupplierLabel(),
-            'supplierCount' => Supplier::count(),
+            'supplierCount' => Supplier::active()->count(),
             'catalogItemResults' => $this->catalogItemResults(),
             'catalogItemLabel' => $this->selectedCatalogItemLabel(),
             'catalogItemCount' => CatalogItem::where('is_active', true)->count(),

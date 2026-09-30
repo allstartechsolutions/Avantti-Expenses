@@ -472,7 +472,7 @@ class PurchaseOrderEdit extends Component
         // Suppliers search
         $suppliers = collect();
         if ($this->supplierSearch && strlen($this->supplierSearch) >= 2 && !$this->po_supplier_id) {
-            $suppliers = Supplier::where('name', 'like', '%' . $this->supplierSearch . '%')
+            $suppliers = Supplier::active()->where('name', 'like', '%' . $this->supplierSearch . '%')
                 ->take(10)
                 ->get();
         }

@@ -624,7 +624,7 @@ trait ManagesExpenseForm
             return collect();
         }
 
-        return Supplier::where('name', 'like', '%'.$this->supplierSearch.'%')->take(10)->get();
+        return Supplier::active()->where('name', 'like', '%'.$this->supplierSearch.'%')->take(10)->get();
     }
 
     protected function budgetItemSearchResults(): Collection

@@ -3,6 +3,7 @@
 namespace App\Livewire\Subcontractor;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\TogglesVendorActive;
 use App\Models\Subcontractor;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -11,6 +12,7 @@ use Livewire\WithPagination;
 class SubcontractorIndex extends Component
 {
     use AuthorizesAbility;
+    use TogglesVendorActive;
 
     use WithPagination;
 
@@ -20,6 +22,9 @@ class SubcontractorIndex extends Component
     /** Filter on the documents badge: expired | expiring_soon | valid | none, or '' for everyone. */
     public $documentHealth = '';
 
+    /** '' | active | inactive */
+    public $status = '';
+
     // Delete modal
     public $showDeleteModal = false;
     public $deletingSubcontractorId = null;
@@ -28,6 +33,7 @@ class SubcontractorIndex extends Component
     protected $queryString = [
         'search' => ['except' => ''],
         'documentHealth' => ['except' => '', 'as' => 'documents'],
+        'status' => ['except' => ''],
     ];
 
     public function updatingSearch()
@@ -40,10 +46,16 @@ class SubcontractorIndex extends Component
         $this->resetPage();
     }
 
+    public function updatingStatus()
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters()
     {
         $this->search = '';
         $this->documentHealth = '';
+        $this->status = '';
         $this->resetPage();
     }
 
@@ -123,6 +135,7 @@ class SubcontractorIndex extends Component
             ->withCount(['contracts', 'paymentBatches'])
             ->withDocumentHealth()
             ->documentHealth($health)
+            ->activeState($this->status)
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')

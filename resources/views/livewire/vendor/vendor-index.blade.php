@@ -3,6 +3,7 @@
     $select = 'block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
     $filtered = $this->hasFilters();
     $canDelete = auth()->user()->can('vendors.delete');
+    $canEdit = auth()->user()->can('vendors.edit');
     $projectsOn = \App\Models\ModuleAccess::isEnabled('projects');
     $catalogOn = \App\Models\ModuleAccess::isEnabled('catalog');
 @endphp
@@ -57,7 +58,7 @@
     <!-- Search and filters -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6 p-6">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-            <div class="md:col-span-6">
+            <div class="md:col-span-5">
                 <label for="search" class="sr-only">{{ __('Search vendors') }}</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -66,13 +67,21 @@
                     <input type="text" id="search" wire:model.live.debounce.300ms="search" class="{{ $select }} pl-10 placeholder-slate-400" placeholder="{{ __('Search by company, contact, email, phone or city...') }}">
                 </div>
             </div>
-            <div class="md:col-span-3">
+            <div class="md:col-span-2">
                 <label for="type" class="sr-only">{{ __('Type') }}</label>
                 <select id="type" wire:model.live="type" class="{{ $select }}">
                     <option value="">{{ __('Type: all') }}</option>
                     <option value="suppliers">{{ __('Suppliers') }}</option>
                     <option value="subcontractors">{{ __('Subcontractors') }}</option>
                     <option value="both">{{ __('Both') }}</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label for="status" class="sr-only">{{ __('Filter by status') }}</label>
+                <select id="status" wire:model.live="status" class="{{ $select }}">
+                    <option value="">{{ __('Status: all') }}</option>
+                    <option value="active">{{ __('Active (:count)', ['count' => $counts['active']]) }}</option>
+                    <option value="inactive">{{ __('Inactive (:count)', ['count' => $counts['inactive']]) }}</option>
                 </select>
             </div>
             <div class="md:col-span-2">
@@ -105,6 +114,7 @@
                             <th class="{{ $th }}">{{ __('Location') }}</th>
                             <th class="{{ $th }}">{{ __('Linked Records') }}</th>
                             <th class="{{ $th }}">{{ __('Documents') }}</th>
+                            <th class="{{ $th }}">{{ __('Status') }}</th>
                             <th class="{{ $th }} text-right">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
@@ -126,7 +136,7 @@
                                     || $vendor->contracts_count || $vendor->payment_batches_count
                                     || $vendor->expenses_count || $vendor->purchase_orders_count || $vendor->catalog_items_count;
                             @endphp
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <tr wire:key="vendor-{{ $vendor->id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ $vendor->is_active ? '' : 'bg-slate-50/60 dark:bg-slate-900/30' }}">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
@@ -143,6 +153,9 @@
                                                 @if($vendor->is_subcontractor)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
                                                 @endif
+                                                @unless($vendor->is_active)
+                                                    <x-vendor.active-badge :active="false" />
+                                                @endunless
                                             </div>
                                             @if($vendor->website)
                                                 <a href="{{ $vendor->website }}" target="_blank" rel="noopener" class="block text-xs text-slate-500 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96] truncate max-w-xs">{{ $vendor->website }}</a>
@@ -183,6 +196,9 @@
                                     @else
                                         <span class="text-sm text-slate-500 dark:text-slate-400">—</span>
                                     @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <x-vendor.active-state :vendor="$vendor" :canEdit="$canEdit" />
                                 </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end space-x-2">

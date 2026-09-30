@@ -3,6 +3,7 @@
 namespace App\Livewire\Supplier;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\TogglesVendorActive;
 use App\Models\Supplier;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,18 +11,35 @@ use Livewire\WithPagination;
 class SupplierIndex extends Component
 {
     use AuthorizesAbility;
+    use TogglesVendorActive;
 
     use WithPagination;
 
     public $search = '';
     public $perPage = 10;
 
+    /** '' | active | inactive */
+    public $status = '';
+
     protected $queryString = [
         'search' => ['except' => ''],
+        'status' => ['except' => ''],
     ];
 
     public function updatingSearch()
     {
+        $this->resetPage();
+    }
+
+    public function updatingStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->status = '';
         $this->resetPage();
     }
 
@@ -64,6 +82,7 @@ class SupplierIndex extends Component
     {
         $suppliers = Supplier::query()
             ->with('createdBy')
+            ->activeState($this->status)
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')

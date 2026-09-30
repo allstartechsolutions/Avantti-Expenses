@@ -6,7 +6,8 @@
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ __('Supplier Details') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('View supplier information') }}</p>
             </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <x-vendor.active-state :vendor="$supplier" :canEdit="auth()->user()->can('vendors.edit')" />
                 <x-ui.button
                     variant="secondary"
                     href="{{ route('suppliers.index') }}"
@@ -22,6 +23,8 @@
             </div>
         </div>
     </div>
+
+    <x-vendor.inactive-notice :vendor="$supplier" />
 
     <!-- Success Message -->
     @if (session()->has('message'))
@@ -206,6 +209,20 @@
                         <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Supplier ID') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ $supplier->id }}</span>
                     </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Status') }}</span>
+                        <x-vendor.active-badge :active="$supplier->is_active" />
+                    </div>
+                    @if(! $supplier->is_active && $supplier->deactivated_at)
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Switched off') }}</span>
+                            <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->deactivated_at->appDateTime() }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Switched off by') }}</span>
+                            <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->deactivatedBy?->name ?? __('Unknown') }}</span>
+                        </div>
+                    @endif
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Added') }}</span>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $supplier->created_at->diffForHumans() }}</span>

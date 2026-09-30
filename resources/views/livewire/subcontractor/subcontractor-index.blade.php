@@ -54,6 +54,20 @@
                     </div>
                 </div>
 
+                <!-- Status filter -->
+                <div class="w-full md:w-auto">
+                    <label for="status" class="sr-only">{{ __('Filter by status') }}</label>
+                    <select
+                        id="status"
+                        wire:model.live="status"
+                        class="block w-full md:w-44 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189]">
+                        <option value="">{{ __('Status: all') }}</option>
+                        @foreach(\App\Models\Subcontractor::activeStates() as $state => $label)
+                            <option value="{{ $state }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Documents filter -->
                 <div class="w-full md:w-auto">
                     <label for="documentHealth" class="sr-only">{{ __('Filter by documents') }}</label>
@@ -69,7 +83,7 @@
                 </div>
 
                 <!-- Clear Filters -->
-                @if($search || $documentHealth)
+                @if($search || $documentHealth || $status)
                     <x-ui.button
                         variant="secondary"
                         wire:click="clearFilters"
@@ -106,14 +120,18 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Documents') }}
                             </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                {{ __('Status') }}
+                            </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Actions') }}
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @php $canEdit = auth()->user()->can('vendors.edit'); @endphp
                         @foreach($subcontractors as $subcontractor)
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <tr wire:key="subcontractor-{{ $subcontractor->id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ $subcontractor->is_active ? '' : 'bg-slate-50/60 dark:bg-slate-900/30' }}">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
@@ -134,6 +152,9 @@
                                                 @if($subcontractor->is_subcontractor)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">{{ __('Subcontractor') }}</span>
                                                 @endif
+                                                @unless($subcontractor->is_active)
+                                                    <x-vendor.active-badge :active="false" />
+                                                @endunless
                                             </div>
                                             @if($subcontractor->website)
                                                 <div class="text-sm text-slate-500 dark:text-slate-400">
@@ -172,6 +193,9 @@
                                         :expired="$subcontractor->expired_documents_count"
                                         :expiring="$subcontractor->expiring_documents_count"
                                         mode="full" />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <x-vendor.active-state :vendor="$subcontractor" :canEdit="$canEdit" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
@@ -221,7 +245,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                    @if($search || $documentHealth)
+                    @if($search || $documentHealth || $status)
                         {{ __('No subcontractors found') }}
                     @else
                         {{ __('No subcontractors yet') }}
@@ -230,6 +254,12 @@
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     @if($search && $documentHealth)
                         {{ __('No subcontractor matches both the search and the documents filter.') }}
+                    @elseif($search && $status)
+                        {{ __('No subcontractor matches both the search and the status filter.') }}
+                    @elseif($status === 'inactive')
+                        {{ __('No subcontractor is inactive. Every one of them can be picked for new contracts.') }}
+                    @elseif($status)
+                        {{ __('No subcontractor is active. Switch one back on to pick it for new contracts.') }}
                     @elseif($documentHealth)
                         {{ __('No subcontractor is in that documents state right now.') }}
                     @elseif($search)
@@ -238,7 +268,7 @@
                         {{ __('Get started by adding a new subcontractor.') }}
                     @endif
                 </p>
-                @if(!$search && !$documentHealth)
+                @if(!$search && !$documentHealth && !$status)
                     <div class="mt-6">
                         <x-ui.button
                             variant="primary"

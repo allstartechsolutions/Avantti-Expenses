@@ -5407,5 +5407,20 @@
     "Batch notes": "Observações do lote",
     "Cost codes": "Códigos de custo",
     "Recorded by :name on :date": "Registrado por :name em :date",
-    "Delete payment": "Excluir pagamento"
+    "Delete payment": "Excluir pagamento",
+    ":name is now inactive. Records that already name it are kept; new expenses, orders, contracts and quotations will not offer it.": ":name agora está inativa. Os registros que já a citam são mantidos; novas despesas, ordens, contratos e cotações não a oferecerão.",
+    ":name is active again and can be picked for new records.": ":name está ativa novamente e pode ser escolhida em novos registros.",
+    "This vendor is inactive.": "Esta empresa está inativa.",
+    "Switched off on :date by :name.": "Desativada em :date por :name.",
+    "Records that already name it are kept. New expenses, orders, contracts and quotations will not offer it until it is switched back on.": "Os registros que já a citam são mantidos. Novas despesas, ordens, contratos e cotações não a oferecerão até que seja reativada.",
+    "Active (:count)": "Ativos (:count)",
+    "Inactive (:count)": "Inativos (:count)",
+    "No subcontractor matches both the search and the status filter.": "Nenhum subempreiteiro corresponde à busca e ao filtro de status ao mesmo tempo.",
+    "No subcontractor is inactive. Every one of them can be picked for new contracts.": "Nenhum subempreiteiro está inativo. Todos podem ser escolhidos em novos contratos.",
+    "No subcontractor is active. Switch one back on to pick it for new contracts.": "Nenhum subempreiteiro está ativo. Reative um para escolhê-lo em novos contratos.",
+    "No supplier matches both the search and the status filter.": "Nenhum fornecedor corresponde à busca e ao filtro de status ao mesmo tempo.",
+    "No supplier is inactive. Every one of them can be picked for new records.": "Nenhum fornecedor está inativo. Todos podem ser escolhidos em novos registros.",
+    "No supplier is active. Switch one back on to pick it for new records.": "Nenhum fornecedor está ativo. Reative um para escolhê-lo em novos registros.",
+    "Switched off": "Desativada em",
+    "Switched off by": "Desativada por"
 }

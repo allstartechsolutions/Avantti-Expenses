@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\DeletesVendorDocuments;
 use App\Models\Concerns\HasDocumentHealth;
+use App\Models\Concerns\HasVendorActiveState;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class Vendor extends Model
 {
     use DeletesVendorDocuments;
     use HasDocumentHealth;
+    use HasVendorActiveState;
 
     /**
      * Every table referencing vendors, by FK column. Any new table with a
@@ -34,6 +36,8 @@ class Vendor extends Model
     protected $casts = [
         'is_supplier' => 'boolean',
         'is_subcontractor' => 'boolean',
+        'is_active' => 'boolean',
+        'deactivated_at' => 'datetime',
     ];
 
     /**

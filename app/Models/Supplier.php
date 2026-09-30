@@ -13,6 +13,7 @@ class Supplier extends Model
 {
     use HasFormattedPhone, HasFactory;
     use \App\Models\Concerns\DeletesVendorDocuments;
+    use \App\Models\Concerns\HasVendorActiveState;
 
     /**
      * Suppliers live in the unified `vendors` table (shared with
@@ -48,6 +49,8 @@ class Supplier extends Model
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
+        'deactivated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

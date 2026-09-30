@@ -158,7 +158,7 @@ class ContractCreate extends Component
     {
         $subcontractors = collect();
         if ($this->subcontractorSearch && strlen($this->subcontractorSearch) >= 2 && !$this->subcontractor_id) {
-            $subcontractors = Subcontractor::where('name', 'like', '%' . $this->subcontractorSearch . '%')
+            $subcontractors = Subcontractor::active()->where('name', 'like', '%' . $this->subcontractorSearch . '%')
                 ->take(10)
                 ->get();
         }
