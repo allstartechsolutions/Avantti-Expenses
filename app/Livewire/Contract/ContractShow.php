@@ -95,6 +95,9 @@ class ContractShow extends Component
             'changeHistories.changedBy',
             'payments.createdBy',
             'payments.scheduleItem',
+            'payments.measurement',
+            'payments.items.budgetItem',
+            'payments.batchItem.batch',
             'changeOrders.createdBy',
         ]);
     }
@@ -910,6 +913,9 @@ class ContractShow extends Component
             'changeHistories.changedBy',
             'payments.createdBy',
             'payments.scheduleItem',
+            'payments.measurement',
+            'payments.items.budgetItem',
+            'payments.batchItem.batch',
             'changeOrders.createdBy',
         ]);
     }

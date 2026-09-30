@@ -4001,5 +4001,12 @@
     "See the project list": "See the job site list",
     "Project Overview": "Job Site Overview",
     "See who is on this project": "See who is on this job site",
-    "Assign to a project, site or person": "Assign to a job site, lot or person"
+    "Assign to a project, site or person": "Assign to a job site, lot or person",
+    "Method not recorded": "Method not recorded",
+    "Measurement #:number": "Measurement #:number",
+    "Payment Batch": "Payment Batch",
+    "Batch notes": "Batch notes",
+    "Cost codes": "Cost codes",
+    "Recorded by :name on :date": "Recorded by :name on :date",
+    "Delete payment": "Delete payment"
 }

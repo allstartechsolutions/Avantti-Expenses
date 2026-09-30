@@ -73,3 +73,22 @@ the actions it records keep their own guards (`contracts.edit`,
 
 ## Tests
 `tests/Feature/Contract/ContractChangeTrackingTest.php`.
+
+---
+
+# Payment notes shown everywhere — 29 Sep 2026
+
+- **Contract page, Payment History**: every payment now shows amount, date,
+  method, reference, **phase**, **notes in full** (line breaks kept), the
+  installment / measurement / retention release it paid, its cost-code split
+  with % complete, the **payment batch** it came from with the **batch's own
+  notes**, and who recorded it and when.
+- **Batch link**: `contract_payments.payment_batch_item_id` (migration
+  `2026_09_29_110000`). Set when a batch line is approved; existing payments are
+  linked where exactly one payment matches the approved line (same contract,
+  amount and batch date) — ambiguous ones are left unlinked, not guessed.
+- **Payment Details report**: reference, phase, notes and batch notes under the
+  item on screen and in the PDF, and four new CSV columns (Reference, Phase,
+  Notes, Batch notes). Expense rows show their own notes too.
+- **Contract Payments PDF**: the phase is printed beside the notes.
+- Tests: `tests/Feature/Contract/ContractPaymentHistoryTest.php`.

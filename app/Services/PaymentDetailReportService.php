@@ -191,6 +191,10 @@ class PaymentDetailReportService
                     'status' => $this->deriveStatus($isPaid, $p->due_date),
                     'paid_by' => $p->paidBy?->name,
                     'amount' => (float) $p->amount,
+                    'reference' => null,
+                    'phase' => null,
+                    'notes' => $p->notes,
+                    'batch_notes' => null,
                 ];
             });
     }
@@ -240,6 +244,10 @@ class PaymentDetailReportService
                     'status' => $this->deriveStatus($isPaid, $due),
                     'paid_by' => $e->paidBy?->name,
                     'amount' => (float) $e->total_amount,
+                    'reference' => null,
+                    'phase' => null,
+                    'notes' => $e->notes,
+                    'batch_notes' => null,
                 ];
             });
     }
@@ -275,6 +283,7 @@ class PaymentDetailReportService
                 'contract.project:id,project_name',
                 'contract.jobSite:id,job_site_name',
                 'createdBy:id,name',
+                'batchItem.batch:id,name,notes',
             ])
             ->get()
             ->map(function (ContractPayment $p) {
@@ -294,6 +303,10 @@ class PaymentDetailReportService
                     'status' => 'paid',
                     'paid_by' => $p->createdBy?->name,
                     'amount' => (float) $p->amount,
+                    'reference' => $p->reference_number,
+                    'phase' => $p->phase,
+                    'notes' => $p->notes,
+                    'batch_notes' => $p->batchItem?->batch?->notes,
                 ];
             });
     }
@@ -344,6 +357,10 @@ class PaymentDetailReportService
                     'status' => $this->deriveStatus(false, $c->end_date),
                     'paid_by' => null,
                     'amount' => $balance,
+                    'reference' => null,
+                    'phase' => null,
+                    'notes' => null,
+                    'batch_notes' => null,
                 ];
             })
             ->filter()

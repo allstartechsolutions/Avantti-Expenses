@@ -13,6 +13,7 @@ class ContractPayment extends Model
         'contract_id',
         'contract_schedule_item_id',
         'contract_measurement_id',
+        'payment_batch_item_id',
         'is_retention_release',
         'amount',
         'payment_date',
@@ -49,6 +50,12 @@ class ContractPayment extends Model
     public function scheduleItem(): BelongsTo
     {
         return $this->belongsTo(ContractScheduleItem::class, 'contract_schedule_item_id');
+    }
+
+    /** The payment batch line this payment was approved from, if any. */
+    public function batchItem(): BelongsTo
+    {
+        return $this->belongsTo(PaymentBatchItem::class, 'payment_batch_item_id');
     }
 
     public function measurement(): BelongsTo

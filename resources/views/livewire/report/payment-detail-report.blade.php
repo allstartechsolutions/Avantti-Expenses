@@ -229,7 +229,21 @@
                                             <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">{{ __('Contract') }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $r['item'] ?? '—' }}</td>
+                                    <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">
+                                        {{ $r['item'] ?? '—' }}
+                                        @if (! empty($r['reference']))
+                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Reference') }}: {{ $r['reference'] }}</span>
+                                        @endif
+                                        @if (! empty($r['phase']))
+                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Phase') }}: {{ $r['phase'] }}</span>
+                                        @endif
+                                        @if (! empty($r['notes']))
+                                            <span class="block text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line break-words max-w-xs">{{ __('Notes') }}: {{ $r['notes'] }}</span>
+                                        @endif
+                                        @if (! empty($r['batch_notes']))
+                                            <span class="block text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line break-words max-w-xs">{{ __('Batch notes') }}: {{ $r['batch_notes'] }}</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $r['project'] ?? '—' }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $r['job_site'] ?? __('Project-level') }}</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-400">{{ $r['installment_label'] ?? '—' }}</td>

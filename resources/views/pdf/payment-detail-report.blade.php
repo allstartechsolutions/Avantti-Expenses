@@ -141,7 +141,21 @@
                     <tr>
                         <td style="{{ $td }}">{{ $r['date']?->appDate() ?? '—' }}</td>
                         <td style="{{ $td }}">{{ $r['vendor'] ?? '—' }}@if($r['type'] === 'contract') ({{ __('Contract') }})@endif</td>
-                        <td style="{{ $td }}">{{ $r['item'] ?? '—' }}</td>
+                        <td style="{{ $td }}">
+                            {{ $r['item'] ?? '—' }}
+                            @if (! empty($r['reference']))
+                                <br><span style="font-size: 7pt; color: #666;">{{ __('Reference') }}: {{ $r['reference'] }}</span>
+                            @endif
+                            @if (! empty($r['phase']))
+                                <br><span style="font-size: 7pt; color: #666;">{{ __('Phase') }}: {{ $r['phase'] }}</span>
+                            @endif
+                            @if (! empty($r['notes']))
+                                <br><span style="font-size: 7pt; color: #333;">{{ __('Notes') }}: {!! nl2br(e($r['notes'])) !!}</span>
+                            @endif
+                            @if (! empty($r['batch_notes']))
+                                <br><span style="font-size: 7pt; color: #333;">{{ __('Batch notes') }}: {!! nl2br(e($r['batch_notes'])) !!}</span>
+                            @endif
+                        </td>
                         <td style="{{ $td }}">{{ $r['project'] ?? '—' }}</td>
                         <td style="{{ $td }}">{{ $r['job_site'] ?? __('Project-level') }}</td>
                         <td style="{{ $td }}">{{ $r['installment_label'] ?? '—' }}</td>

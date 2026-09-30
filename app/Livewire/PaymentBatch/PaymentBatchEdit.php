@@ -563,6 +563,7 @@ class PaymentBatchEdit extends Component
             'contract_id' => $item->contract_id,
             'contract_schedule_item_id' => $item->contract_schedule_item_id,
             'contract_measurement_id' => $item->contract_measurement_id,
+            'payment_batch_item_id' => $item->id,
             'is_retention_release' => $item->is_retention_release,
             'amount' => $item->amount,
             'payment_date' => $this->paymentBatch->payment_date,

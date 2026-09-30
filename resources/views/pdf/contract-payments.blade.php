@@ -204,7 +204,10 @@
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #666; white-space: nowrap;">{{ $payment->payment_date->appDate() }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #333;">{{ $payment->payment_method ? $payment->getPaymentMethodLabel() : '—' }}</td>
                                         <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->reference_number ?? '' }}</td>
-                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">{{ $payment->notes ?? '' }}</td>
+                                        <td style="border: none; padding: 1px 8px 1px 0; font-size: 7pt; color: #888;">
+                                            @if($payment->phase){{ __('Phase') }}: {{ $payment->phase }}@if($payment->notes)<br>@endif @endif
+                                            {!! nl2br(e($payment->notes ?? '')) !!}
+                                        </td>
                                         <td style="border: none; padding: 1px 0; font-size: 7pt; font-weight: bold; text-align: right; color: #27ae60; white-space: nowrap;">
                                             ${{ number_format($payment->amount, 2) }}
                                         </td>

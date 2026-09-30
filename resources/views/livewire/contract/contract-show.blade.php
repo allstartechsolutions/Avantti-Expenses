@@ -509,46 +509,106 @@
                     </div>
                     <div class="divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($contract->payments as $payment)
-                            <div class="p-4">
-                                <div class="flex items-start justify-between">
+                            @php $batch = $payment->batchItem?->batch; @endphp
+                            <div class="p-4" wire:key="contract-payment-{{ $payment->id }}">
+                                <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm font-semibold text-slate-900 dark:text-white">
-                                            {{ Number::currency($payment->amount, config('app.currency'), config('app.locale')) }}
+                                            <x-ui.money :amount="$payment->amount" :scope="$contract->jobSite ?? $contract->project" />
                                         </p>
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                            {{ $payment->payment_date->appDate() }} &middot; {{ $payment->getPaymentMethodLabel() }}
+                                            {{ $payment->payment_date->appDate() }} &middot; {{ $payment->payment_method ? $payment->getPaymentMethodLabel() : __('Method not recorded') }}
                                         </p>
-                                        @if($payment->is_retention_release)
-                                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
-                                                {{ __('Retention Release') }}
-                                            </span>
-                                        @elseif($payment->scheduleItem)
-                                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
-                                                {{ $payment->scheduleItem->description }}
-                                            </span>
-                                        @endif
-                                        @if($payment->reference_number)
-                                            <p class="text-xs text-slate-500 dark:text-slate-400">
-                                                {{ __('Ref:') }} {{ $payment->reference_number }}
-                                            </p>
-                                        @endif
+
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            @if($payment->is_retention_release)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                                    {{ __('Retention Release') }}
+                                                </span>
+                                            @endif
+                                            @if($payment->scheduleItem)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
+                                                    {{ $payment->scheduleItem->description }}
+                                                </span>
+                                            @endif
+                                            @if($payment->measurement)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-400">
+                                                    {{ __('Measurement #:number', ['number' => $payment->measurement->measurement_number]) }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <dl class="mt-2 space-y-1 text-xs">
+                                            @if($payment->reference_number)
+                                                <div class="flex gap-1">
+                                                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Reference') }}:</dt>
+                                                    <dd class="text-slate-700 dark:text-slate-300 break-words min-w-0">{{ $payment->reference_number }}</dd>
+                                                </div>
+                                            @endif
+                                            @if($payment->phase)
+                                                <div class="flex gap-1">
+                                                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Phase') }}:</dt>
+                                                    <dd class="text-slate-700 dark:text-slate-300 break-words min-w-0">{{ $payment->phase }}</dd>
+                                                </div>
+                                            @endif
+                                            @if($batch)
+                                                <div class="flex gap-1">
+                                                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Payment Batch') }}:</dt>
+                                                    <dd class="text-slate-700 dark:text-slate-300 break-words min-w-0">
+                                                        @can('payments.batch')
+                                                            <a href="{{ route('payment-batches.show', $batch) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $batch->name }}</a>
+                                                        @else
+                                                            {{ $batch->name }}
+                                                        @endcan
+                                                    </dd>
+                                                </div>
+                                            @endif
+                                        </dl>
+
                                         @if($payment->notes)
-                                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                                                {{ $payment->notes }}
-                                            </p>
+                                            <div class="mt-2 rounded bg-slate-50 dark:bg-slate-900/50 p-2">
+                                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ __('Notes') }}</p>
+                                                <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line break-words">{{ $payment->notes }}</p>
+                                            </div>
                                         @endif
-                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                                            {{ __('by') }} {{ $payment->createdBy?->name ?? __('Unknown') }}
+                                        @if($batch?->notes)
+                                            <div class="mt-2 rounded bg-slate-50 dark:bg-slate-900/50 p-2">
+                                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ __('Batch notes') }}</p>
+                                                <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line break-words">{{ $batch->notes }}</p>
+                                            </div>
+                                        @endif
+
+                                        @if($payment->items->isNotEmpty())
+                                            <div class="mt-2">
+                                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ __('Cost codes') }}</p>
+                                                <ul class="mt-1 space-y-0.5">
+                                                    @foreach($payment->items as $item)
+                                                        <li class="flex justify-between gap-2 text-xs text-slate-600 dark:text-slate-300" wire:key="contract-payment-{{ $payment->id }}-item-{{ $item->id }}">
+                                                            <span class="min-w-0 break-words">
+                                                                {{ $item->budgetItem ? $item->budgetItem->code.' - '.$item->budgetItem->name : __('Unassigned') }}
+                                                                @if($item->percent_complete !== null)
+                                                                    <span class="text-slate-400">({{ rtrim(rtrim(number_format((float) $item->percent_complete, 2, '.', ''), '0'), '.') }}%)</span>
+                                                                @endif
+                                                            </span>
+                                                            <x-ui.money class="whitespace-nowrap" :amount="$item->amount" :scope="$contract->jobSite ?? $contract->project" />
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+
+                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                                            {{ __('Recorded by :name on :date', ['name' => $payment->createdBy?->name ?? __('Unknown'), 'date' => $payment->created_at->appDateTime()]) }}
                                         </p>
                                     </div>
                                     @can('contracts.unpay', $contract)
-                                        <x-ui.button
+                                        <x-ui.icon-button
                                             variant="danger"
                                             size="sm"
+                                            icon="trash"
                                             wire:click="deletePayment({{ $payment->id }})"
                                             wire:confirm="{{ __('Are you sure you want to delete this payment?') }}"
-                                            icon="trash">
-                                        </x-ui.button>
+                                            title="{{ __('Delete payment') }}" />
                                     @endcan
                                 </div>
                             </div>

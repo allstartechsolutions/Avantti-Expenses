@@ -5400,5 +5400,12 @@
     "Auto-updated after a change order": "Atualizada automaticamente após uma ordem de alteração",
     "Auto-updated after a change order was deleted": "Atualizada automaticamente após a exclusão de uma ordem de alteração",
     "Corrected: the status did not match the payments recorded": "Corrigida: a situação não correspondia aos pagamentos registrados",
-    "Sort by :column": "Ordenar por :column"
+    "Sort by :column": "Ordenar por :column",
+    "Method not recorded": "Forma não registrada",
+    "Measurement #:number": "Medição nº :number",
+    "Payment Batch": "Lote de Pagamento",
+    "Batch notes": "Observações do lote",
+    "Cost codes": "Códigos de custo",
+    "Recorded by :name on :date": "Registrado por :name em :date",
+    "Delete payment": "Excluir pagamento"
 }
