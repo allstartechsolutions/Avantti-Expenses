@@ -5422,5 +5422,7 @@
     "No supplier is inactive. Every one of them can be picked for new records.": "Nenhum fornecedor está inativo. Todos podem ser escolhidos em novos registros.",
     "No supplier is active. Switch one back on to pick it for new records.": "Nenhum fornecedor está ativo. Reative um para escolhê-lo em novos registros.",
     "Switched off": "Desativada em",
-    "Switched off by": "Desativada por"
+    "Switched off by": "Desativada por",
+    ":count active|:count active": ":count ativo|:count ativos",
+    ":count inactive|:count inactive": ":count inativo|:count inativos"
 }

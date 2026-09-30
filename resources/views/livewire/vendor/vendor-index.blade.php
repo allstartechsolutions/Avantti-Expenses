@@ -45,12 +45,16 @@
             'suppliers' => [__('Suppliers'), $counts['suppliers'], __('You buy from them')],
             'subcontractors' => [__('Subcontractors'), $counts['subcontractors'], __('They work on your projects')],
             'both' => [__('Both'), $counts['both'], __('Supply and subcontract')],
-        ] as $key => [$label, $count, $hint])
+        ] as $key => [$label, $card, $hint])
             <button type="button" wire:click="$set('type', '{{ $key }}')"
                 class="text-left bg-white dark:bg-slate-800 rounded-lg shadow-sm border p-5 transition {{ $type === $key ? 'border-[#3F5189] ring-2 ring-[#3F5189]/40' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600' }}">
                 <p class="text-sm text-slate-500 dark:text-slate-400">{{ $label }}</p>
-                <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ $count }}</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ $card['total'] }}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">{{ $hint }}</p>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">{{ trans_choice(':count active|:count active', $card['active'], ['count' => $card['active']]) }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">{{ trans_choice(':count inactive|:count inactive', $card['inactive'], ['count' => $card['inactive']]) }}</span>
+                </div>
             </button>
         @endforeach
     </div>

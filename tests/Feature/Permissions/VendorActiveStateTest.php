@@ -140,6 +140,9 @@ class VendorActiveStateTest extends TestCase
             ->test(VendorIndex::class)
             ->assertSee('Cement Depot')->assertSee('Old Quarry')->assertSee('Steel Erectors')->assertSee('Gone Framing')
             ->assertSee(__('Inactive (:count)', ['count' => 2]))
+            // The type cards split their total into active and inactive.
+            ->assertSee(trans_choice(':count active|:count active', 2, ['count' => 2]))
+            ->assertSee(trans_choice(':count inactive|:count inactive', 2, ['count' => 2]))
             ->set('status', 'inactive')
             ->assertDontSee('Cement Depot')->assertSee('Old Quarry')->assertDontSee('Steel Erectors')->assertSee('Gone Framing')
             ->set('status', 'active')

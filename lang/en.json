@@ -4023,5 +4023,7 @@
     "No supplier is inactive. Every one of them can be picked for new records.": "No supplier is inactive. Every one of them can be picked for new records.",
     "No supplier is active. Switch one back on to pick it for new records.": "No supplier is active. Switch one back on to pick it for new records.",
     "Switched off": "Switched off",
-    "Switched off by": "Switched off by"
+    "Switched off by": "Switched off by",
+    ":count active|:count active": ":count active|:count active",
+    ":count inactive|:count inactive": ":count inactive|:count inactive"
 }

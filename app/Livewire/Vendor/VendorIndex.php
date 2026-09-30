@@ -98,6 +98,50 @@ class VendorIndex extends Component
         session()->flash('message', __('Vendor deleted successfully!'));
     }
 
+    /**
+     * The numbers on the type cards and the status filter, from one grouped
+     * query: each card shows its total and, under it, how many of those are
+     * active and how many switched off.
+     */
+    protected function cardCounts(): array
+    {
+        $counts = [];
+        foreach (['all', 'suppliers', 'subcontractors', 'both'] as $key) {
+            $counts[$key] = ['total' => 0, 'active' => 0, 'inactive' => 0];
+        }
+        $counts['active'] = 0;
+        $counts['inactive'] = 0;
+
+        $rows = Vendor::query()
+            ->selectRaw('is_supplier, is_subcontractor, is_active, count(*) as n')
+            ->groupBy('is_supplier', 'is_subcontractor', 'is_active')
+            ->get();
+
+        foreach ($rows as $row) {
+            $state = $row->is_active ? 'active' : 'inactive';
+            $n = (int) $row->n;
+
+            $keys = ['all'];
+            if ($row->is_supplier) {
+                $keys[] = 'suppliers';
+            }
+            if ($row->is_subcontractor) {
+                $keys[] = 'subcontractors';
+            }
+            if ($row->is_supplier && $row->is_subcontractor) {
+                $keys[] = 'both';
+            }
+
+            foreach ($keys as $key) {
+                $counts[$key]['total'] += $n;
+                $counts[$key][$state] += $n;
+            }
+            $counts[$state] += $n;
+        }
+
+        return $counts;
+    }
+
     public function render()
     {
         $term = trim($this->search);
@@ -128,14 +172,7 @@ class VendorIndex extends Component
             ->orderBy('name')
             ->paginate($this->perPage);
 
-        $counts = [
-            'all' => Vendor::count(),
-            'suppliers' => Vendor::where('is_supplier', true)->count(),
-            'subcontractors' => Vendor::where('is_subcontractor', true)->count(),
-            'both' => Vendor::where('is_supplier', true)->where('is_subcontractor', true)->count(),
-            'active' => Vendor::active()->count(),
-            'inactive' => Vendor::inactive()->count(),
-        ];
+        $counts = $this->cardCounts();
 
         return view('livewire.vendor.vendor-index', [
             'vendors' => $vendors,
