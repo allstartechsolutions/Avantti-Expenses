@@ -256,21 +256,11 @@
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Project') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Job Site / Lot') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Contract #') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Amount') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Paid') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Balance') }}
-                        </th>
+                        @include('livewire.contract.partials.sort-header', ['field' => 'job_site', 'label' => __('Job Site / Lot')])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'contract', 'label' => __('Contract #')])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'amount', 'label' => __('Amount'), 'align' => 'right'])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'paid', 'label' => __('Paid'), 'align' => 'right'])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'balance', 'label' => __('Balance'), 'align' => 'right'])
                         <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {{ __('Batch Amount') }}
                         </th>

@@ -5,8 +5,10 @@ namespace Tests\Feature\Contract;
 use App\Enums\ProjectStatus;
 use App\Livewire\Contract\ContractPayments;
 use App\Livewire\Contract\ContractShow;
+use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\PaymentBatch;
 use App\Models\ContractChangeOrder;
 use App\Models\Project;
 use App\Models\Role;
@@ -183,6 +185,57 @@ class ContractPaymentBalanceTest extends TestCase
 
         $component->call('sort', 'project_id; drop table contracts');
         $this->assertSame('balance', $component->get('sortField'), 'Unknown columns are ignored.');
+    }
+
+    public function test_the_payment_batch_table_sorts_the_same_way_across_pages(): void
+    {
+        $site = fn (string $name) => \App\Models\JobSite::create([
+            'project_id' => $this->project->id,
+            'job_site_name' => $name,
+            'contact_person' => 'C',
+            'email' => str()->random(6).'@example.test',
+            'status' => \App\Enums\JobSiteStatus::CREATED,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $small = $this->makeContract(1000);
+        $small->update(['contract_number' => 'CTR-0010', 'job_site_id' => $site('Lot 2')->id]);
+        $large = $this->makeContract(5000);
+        $large->update(['contract_number' => 'CTR-0009', 'job_site_id' => $site('Lot 10')->id]);
+        $general = $this->makeContract(3000);
+        $general->update(['contract_number' => 'CTR-0011']);
+
+        foreach ([[$small, 900], [$large, 1000]] as [$contract, $amount]) {
+            $contract->payments()->create(['amount' => $amount, 'payment_date' => now()->toDateString(), 'payment_method' => 'cash', 'created_by' => $this->admin->id]);
+        }
+
+        $batch = PaymentBatch::create([
+            'name' => 'Sorted run',
+            'status' => 'draft',
+            'payment_date' => now()->toDateString(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        $component = Livewire::actingAs($this->admin)->test(PaymentBatchEdit::class, ['paymentBatch' => $batch]);
+        $order = fn () => $component->viewData('contracts')->pluck('id')->all();
+
+        $component->call('sort', 'job_site');
+        $this->assertSame([$small->id, $large->id, $general->id], $order(), 'Natural order, project level last.');
+
+        $component->call('sort', 'balance');
+        $this->assertSame([$large->id, $general->id, $small->id], $order(), 'Money starts largest first.');
+        $this->assertSame(3, $component->viewData('contracts')->total());
+
+        // Past the first page the order carries on rather than restarting.
+        $biggest = collect(range(1, 50))->map(fn ($i) => $this->makeContract(10000 + $i))->last();
+        $component->call('sort', 'amount');
+        $this->assertSame($biggest->id, $component->viewData('contracts')->first()->id, 'Largest first.');
+        $component->call('nextPage');
+        $this->assertSame([$large->id, $general->id, $small->id], $order(), 'Page two carries on the order.');
+        $this->assertSame(53, $component->viewData('contracts')->total());
+
+        $component->call('sort', 'project_id; drop table contracts');
+        $this->assertSame('amount', $component->get('sortField'), 'Unknown columns are ignored.');
     }
 
     public function test_the_summary_cards_count_the_adjusted_value_and_balance(): void

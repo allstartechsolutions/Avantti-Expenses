@@ -1,4 +1,4 @@
-{{-- A sortable column header for the contract payments table. --}}
+{{-- A sortable column header for the contract payment tables (/contract-payments and the payment batch screen). --}}
 @php $active = $sortField === $field; @endphp
 <th scope="col"
     class="px-4 py-3 text-{{ $align ?? 'left' }} text-xs font-medium uppercase tracking-wider"

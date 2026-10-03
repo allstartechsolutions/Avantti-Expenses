@@ -3,6 +3,7 @@
 namespace App\Livewire\PaymentBatch;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\SortsContracts;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
@@ -12,6 +13,8 @@ use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -20,6 +23,7 @@ use Livewire\WithPagination;
 class PaymentBatchEdit extends Component
 {
     use AuthorizesAbility;
+    use SortsContracts;
 
     use WithPagination;
 
@@ -107,6 +111,13 @@ class PaymentBatchEdit extends Component
                 $item->contract_measurement_id !== null => 'medicao:'.$item->contract_measurement_id,
                 default => '',
             };
+        }
+    }
+
+    public function sort(string $field): void
+    {
+        if ($this->applySort($field)) {
+            $this->resetPage();
         }
     }
 
@@ -723,15 +734,7 @@ class PaymentBatchEdit extends Component
 
     public function render()
     {
-        $contracts = Contract::committed()
-            ->with([
-            'project.client', 'jobSite', 'subcontractor', 'latestPayment',
-            // payableTargetsFor() runs per row: eager-load what it needs so
-            // 50 contracts don't become hundreds of queries.
-            'changeOrders', 'payments',
-            'scheduleItems.payments', 'scheduleItems.measurements.payments',
-            'measurements.payments',
-        ])
+        $query = Contract::committed()
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
@@ -739,10 +742,20 @@ class PaymentBatchEdit extends Component
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
-            ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
-            ->orderBy('project_id')
-            ->orderBy('job_site_id')
-            ->paginate(50);
+            ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']));
+
+        $relations = [
+            'project.client', 'jobSite', 'subcontractor', 'latestPayment',
+            // payableTargetsFor() runs per row: eager-load what it needs so
+            // 50 contracts don't become hundreds of queries.
+            'changeOrders', 'payments',
+            'scheduleItems.payments', 'scheduleItems.measurements.payments',
+            'measurements.payments',
+        ];
+
+        $contracts = $this->isSorted()
+            ? $this->sortedPage($query, $relations, 50)
+            : $query->with($relations)->orderBy('project_id')->orderBy('job_site_id')->paginate(50);
 
         // Get batch items indexed by contract_id for quick lookup
         $batchItems = $this->paymentBatch->items()
@@ -755,5 +768,29 @@ class PaymentBatchEdit extends Component
             'contracts' => $contracts,
             'batchItems' => $batchItems,
         ])->layout('components.layouts.app');
+    }
+
+    /**
+     * The table is paginated but the sort is the one /contract-payments uses
+     * (natural lot order, derived balance), so the whole filtered list is
+     * sorted on its sums alone and only the page on screen is fully loaded.
+     */
+    protected function sortedPage($query, array $relations, int $perPage): LengthAwarePaginator
+    {
+        $ids = $this->sortContracts((clone $query)->with('jobSite')->get())->pluck('id');
+
+        $page = $this->getPage();
+        $pageIds = $ids->forPage($page, $perPage)->values();
+
+        $rows = $query->with($relations)
+            ->whereIn('contracts.id', $pageIds)
+            ->get()
+            ->sortBy(fn ($contract) => $pageIds->search($contract->id))
+            ->values();
+
+        return new LengthAwarePaginator($rows, $ids->count(), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => 'page',
+        ]);
     }
 }
