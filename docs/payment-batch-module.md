@@ -227,8 +227,10 @@ Simple form to create a batch with name, date, notes, and **contract filters**.
 | `$statusFilter` | string | Contract filter: contract status (loaded from batch) |
 | `$showZeroBalance` | bool | Contract filter: show paid/cancelled (loaded from batch) |
 | `$payAmounts` | array | Keyed by contract ID — inline amount inputs |
-| `$payMethods` | array | Keyed by contract ID — inline payment method selects |
+| `$payMethods` | array | Keyed by contract ID — inline payment method selects. Every listed row is pre-set to `ContractPayment::DEFAULT_METHOD` (Check) in `render()` |
 | `$payNotes` | array | Keyed by contract ID — inline notes inputs |
+
+| `$sortField` / `$sortDirection` | string | Column sort, from `SortsContracts` (`#[Url]` as `sort` / `dir`) |
 
 > **Note:** Filters are NOT `#[Url]`-persisted. They are loaded from the batch on mount and saved back to the batch on "Save Draft".
 
@@ -248,7 +250,8 @@ Simple form to create a batch with name, date, notes, and **contract filters**.
 |--------|-------------|
 | `mount()` | Loads batch fields + saved filters, redirects to Show if not editable |
 | `loadExistingItems()` | Populates `$payAmounts`, `$payMethods`, `$payNotes` from pending batch items |
-| `saveDraft()` | Validates, updates batch (name, date, notes, filters), upserts items via `updateOrCreate`, removes cleared pending items |
+| `sort($field)` | Sorts by job_site, contract, amount, paid or balance; again flips the direction; resets to page 1 |
+| `saveDraft()` | A row is saved when it has an amount, phase, notes or a *Pays* target — a method alone does not count, since every row is pre-set to Check. Validates, updates batch (name, date, notes, filters), upserts items via `updateOrCreate`, removes cleared pending items |
 | `approveItem($id)` | Validates balance, creates `ContractPayment` in transaction, marks item approved, calls `updateStatusFromPayments()` |
 | `approveAll()` | Validates all pending items, processes in single transaction, updates batch status |
 | `rejectItem($id)` | Marks item as rejected (no payment created) |
@@ -266,6 +269,14 @@ Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
     ->orderBy('project_id')->orderBy('job_site_id')
     ->paginate(50)
 ```
+
+When a column sort is chosen, `sortedPage()` sorts the **whole** filtered list on
+its sums (job site + the two `withSum`s, no heavy relations) with the same
+comparator Contract Payments uses, takes the current page's ids, then loads only
+that page with every relation the row needs. The same light list feeds the
+**Total** row (`contractTotals()`), so totals cover every page. A running sum of
+the Batch Amount column, worked out in the browser, sits under that column. See
+`docs/changelog-2026-10-03-contract-payment-tables.md`.
 
 Batch items are loaded separately and keyed by `contract_id` for O(1) lookup in the view.
 

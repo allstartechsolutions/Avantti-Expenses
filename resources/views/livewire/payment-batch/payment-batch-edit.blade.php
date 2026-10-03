@@ -434,7 +434,7 @@
                                         type="text"
                                         wire:model="payPhases.{{ $contract->id }}"
                                         placeholder="{{ __('Phase...') }}"
-                                        class="w-28 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                        class="w-28 lg:w-56 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
                             </td>
                             <!-- Notes -->

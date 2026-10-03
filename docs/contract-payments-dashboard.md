@@ -27,7 +27,8 @@ Full-page Livewire component that powers the entire dashboard.
 | `$showZeroBalance` | `bool` | Toggle to include paid/cancelled contracts in the table. Default: `false` (persisted in URL) |
 | `$paymentDate` | `string` | Single date input shared by all batch payments. Defaults to today |
 | `$payAmounts` | `array` | Keyed by contract ID — inline amount inputs from the table |
-| `$payMethods` | `array` | Keyed by contract ID — inline payment method dropdowns from the table |
+| `$payMethods` | `array` | Keyed by contract ID — inline payment method dropdowns from the table. Every listed row is pre-set to `ContractPayment::DEFAULT_METHOD` (Check) in `render()` |
+| `$sortField` / `$sortDirection` | `string` | Column sort, from the `SortsContracts` concern (`#[Url]` as `sort` / `dir`) |
 | `$payNotes` | `array` | Keyed by contract ID — inline notes text inputs from the table |
 | `$expandedContracts` | `array` | Array of contract IDs whose change order details are expanded in the table |
 
@@ -41,6 +42,7 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 | `projects` | Projects that have contracts, filtered by current client selection. Used for the project dropdown |
 | `subcontractors` | Subcontractors that have at least one contract. Used for the subcontractor dropdown |
 | `contracts` | Main data query — eager loads `project.client`, `jobSite`, `subcontractor`, `latestPayment`, `changeOrders` and uses `withSum('payments as total_paid_cents', 'amount')` + `withSum('changeOrders as change_orders_total_cents', 'amount')` to get totals in single subqueries (avoids N+1). Applies all active filters. Excludes paid/cancelled by default unless `$showZeroBalance` is true. Ordered by `project_id` then `job_site_id` |
+| `totals` | The **Total** row at the foot of the table: contract count, amount, change orders, paid and balance of the listed contracts (`SortsContracts::contractTotals()`) |
 | `summary` | Returns 4 metrics: pending balance, active contracts count, paid this month, total contract value. All respect the currently active filters |
 
 #### Methods
@@ -49,8 +51,9 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 |---|---|
 | `mount()` | Sets `$paymentDate` to today's date |
 | `updatedClientFilter()` | When client changes, resets project filter if the currently selected project doesn't belong to the new client |
+| `sort($field)` | Sorts by job_site, contract, amount, paid or balance; again flips the direction. Logic shared with the batch screen through `SortsContracts` |
 | `toggleChangeOrders($contractId)` | Toggles a contract's change order details expansion in the table. Adds/removes the contract ID from `$expandedContracts` array |
-| `processPayments()` | Validates payment date, collects rows with amount > 0, validates each row (amount doesn't exceed balance), creates `ContractPayment` records in a DB transaction, calls `updateStatusFromPayments()` on each contract, resets inline inputs |
+| `processPayments()` | Validates payment date, collects rows with amount > 0, validates each row (amount doesn't exceed balance), creates `ContractPayment` records in a DB transaction (method falls back to Check), calls `updateStatusFromPayments()` on each contract, resets inline inputs |
 | `exportCsv()` | Exports a CSV file with all currently filtered contracts. Uses `response()->stream()` with `fputcsv()`. Includes a "Type" column (Contract/Change Order) with detail rows for each change order below its contract. Columns: Type, Subcontractor, Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount. Filename: `contract-payments-YYYY-MM-DD.csv` |
 
 #### Query Strategy
