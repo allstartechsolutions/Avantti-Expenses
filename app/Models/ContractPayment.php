@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContractPayment extends Model
 {
+    /** What the contract payment and batch screens pre-select for a new payment. */
+    public const DEFAULT_METHOD = 'check';
+
     protected $fillable = [
         'contract_id',
         'contract_schedule_item_id',

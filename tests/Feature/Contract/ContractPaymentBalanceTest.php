@@ -9,6 +9,7 @@ use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\PaymentBatch;
+use App\Models\PaymentBatchItem;
 use App\Models\ContractChangeOrder;
 use App\Models\Project;
 use App\Models\Role;
@@ -120,6 +121,49 @@ class ContractPaymentBalanceTest extends TestCase
         $component->set('payAmounts.'.$contract->id, '600')->call('processPayments');
         $this->assertEquals(600, $contract->fresh()->getAmountPaid());
         $this->assertSame('paid', $contract->fresh()->status);
+    }
+
+    public function test_the_payment_method_defaults_to_check_on_both_screens(): void
+    {
+        $contract = $this->makeContract(1000);
+        $other = $this->makeContract(2000);
+
+        $component = Livewire::actingAs($this->admin)->test(ContractPayments::class);
+        $this->assertSame('check', $component->get('payMethods.'.$contract->id));
+
+        $component->set('payAmounts.'.$contract->id, '100')->call('processPayments');
+        $this->assertSame('check', $contract->payments()->first()->payment_method);
+        $this->assertSame('check', $component->get('payMethods.'.$contract->id), 'The default comes back after processing.');
+
+        $batch = PaymentBatch::create([
+            'name' => 'Default method',
+            'status' => 'draft',
+            'payment_date' => now()->toDateString(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        $batchScreen = Livewire::actingAs($this->admin)->test(PaymentBatchEdit::class, ['paymentBatch' => $batch]);
+        $this->assertSame('check', $batchScreen->get('payMethods.'.$other->id));
+
+        $batchScreen->set('payAmounts.'.$other->id, '250')->call('saveDraft');
+
+        $this->assertSame(1, $batch->items()->count(), 'A row with only the default method is not an item.');
+        $item = $batch->items()->first();
+        $this->assertSame($other->id, $item->contract_id);
+        $this->assertSame('check', $item->payment_method);
+
+        // An item saved before the default existed is paid as a check too,
+        // which is what the screen showed for it.
+        $legacy = PaymentBatchItem::create([
+            'payment_batch_id' => $batch->id,
+            'contract_id' => $contract->id,
+            'amount' => 50,
+            'status' => 'pending',
+        ]);
+        Livewire::actingAs($this->admin)
+            ->test(PaymentBatchEdit::class, ['paymentBatch' => $batch])
+            ->call('approveItem', $legacy->id);
+        $this->assertSame('check', $contract->payments()->latest('id')->first()->payment_method);
     }
 
     public function test_each_row_names_the_employee_assigned_to_the_contract(): void

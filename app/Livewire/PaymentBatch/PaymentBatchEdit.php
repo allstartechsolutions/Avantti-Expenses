@@ -233,7 +233,9 @@ class PaymentBatchEdit extends Component
             'show_zero_balance' => $this->showZeroBalance,
         ]);
 
-        // Collect all contract IDs that have any data (amount, phase, notes, or method)
+        // Collect all contract IDs that have any data (amount, phase, notes or
+        // target). The method alone does not count: every row is pre-set to
+        // the default, so it says nothing about whether the row is wanted.
         $allContractIds = collect($this->payAmounts)->keys()
             ->merge(collect($this->payPhases)->keys())
             ->merge(collect($this->payNotes)->keys())
@@ -245,15 +247,13 @@ class PaymentBatchEdit extends Component
             $amount = $this->payAmounts[$contractId] ?? null;
             $phase = $this->payPhases[$contractId] ?? null;
             $notes = $this->payNotes[$contractId] ?? null;
-            $method = $this->payMethods[$contractId] ?? null;
 
             $hasAmount = $amount !== null && $amount !== '' && (float) $amount > 0;
             $hasPhase = ! empty($phase);
             $hasNotes = ! empty($notes);
-            $hasMethod = ! empty($method);
             $hasTarget = ! empty($this->payTargets[$contractId] ?? '');
 
-            return $hasAmount || $hasPhase || $hasNotes || $hasMethod || $hasTarget;
+            return $hasAmount || $hasPhase || $hasNotes || $hasTarget;
         });
 
         $rowsToRemove = $allContractIds->diff($rowsToSave);
@@ -287,7 +287,7 @@ class PaymentBatchEdit extends Component
                     ],
                     [
                         'amount' => $hasAmount ? (float) $amount : null,
-                        'payment_method' => ($this->payMethods[$contractId] ?? null) ?: null,
+                        'payment_method' => ($this->payMethods[$contractId] ?? null) ?: ContractPayment::DEFAULT_METHOD,
                         'phase' => ($this->payPhases[$contractId] ?? null) ?: null,
                         'notes' => ($this->payNotes[$contractId] ?? null) ?: null,
                         'contract_schedule_item_id' => $this->targetScheduleItemId($contractId),
@@ -578,7 +578,7 @@ class PaymentBatchEdit extends Component
             'is_retention_release' => $item->is_retention_release,
             'amount' => $item->amount,
             'payment_date' => $this->paymentBatch->payment_date,
-            'payment_method' => $item->payment_method,
+            'payment_method' => $item->payment_method ?: ContractPayment::DEFAULT_METHOD,
             'phase' => $item->phase,
             'notes' => $item->notes,
             'created_by' => Auth::id(),
@@ -763,6 +763,10 @@ class PaymentBatchEdit extends Component
             ->whereIn('contract_id', $contracts->pluck('id'))
             ->get()
             ->keyBy('contract_id');
+
+        foreach ($contracts as $contract) {
+            $this->payMethods[$contract->id] = ($this->payMethods[$contract->id] ?? null) ?: ContractPayment::DEFAULT_METHOD;
+        }
 
         return view('livewire.payment-batch.payment-batch-edit', [
             'contracts' => $contracts,

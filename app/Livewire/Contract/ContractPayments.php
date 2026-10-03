@@ -243,7 +243,7 @@ class ContractPayments extends Component
                     'contract_id' => $contractId,
                     'amount' => (float) $amount,
                     'payment_date' => $this->paymentDate,
-                    'payment_method' => $this->payMethods[$contractId] ?? null,
+                    'payment_method' => ($this->payMethods[$contractId] ?? null) ?: ContractPayment::DEFAULT_METHOD,
                     'notes' => $this->payNotes[$contractId] ?? null,
                     'created_by' => Auth::id(),
                 ]);
@@ -358,6 +358,10 @@ class ContractPayments extends Component
 
     public function render()
     {
+        foreach ($this->contracts as $contract) {
+            $this->payMethods[$contract->id] = ($this->payMethods[$contract->id] ?? null) ?: ContractPayment::DEFAULT_METHOD;
+        }
+
         return view('livewire.contract.contract-payments')
             ->layout('components.layouts.app');
     }

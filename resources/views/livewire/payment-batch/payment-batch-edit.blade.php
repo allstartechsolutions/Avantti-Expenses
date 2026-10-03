@@ -411,7 +411,6 @@
                                     <select
                                         wire:model="payMethods.{{ $contract->id }}"
                                         class="w-32 px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                        <option value="">{{ __('Select...') }}</option>
                                         <option value="cash">{{ __('Cash') }}</option>
                                         <option value="check">{{ __('Check') }}</option>
                                         <option value="credit_card">{{ __('Credit Card') }}</option>
