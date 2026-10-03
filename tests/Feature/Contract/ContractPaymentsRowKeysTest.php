@@ -103,8 +103,8 @@ class ContractPaymentsRowKeysTest extends TestCase
             ->assertSeeHtml('wire:key="contract-'.$second->id.'"')
             ->assertSeeHtml('wire:key="contract-'.$first->id.'-change-orders"')
             ->assertSeeHtml('wire:key="change-order-'.$changeOrder->id.'"')
-            ->assertSeeHtml('wire:model.blur="payAmounts.'.$first->id.'"')
-            ->assertSeeHtml('wire:model.blur="payAmounts.'.$second->id.'"');
+            ->assertSeeHtml('wire:model="payAmounts.'.$first->id.'"')
+            ->assertSeeHtml('wire:model="payAmounts.'.$second->id.'"');
     }
 
     public function test_an_amount_entered_on_one_row_stays_on_that_row(): void

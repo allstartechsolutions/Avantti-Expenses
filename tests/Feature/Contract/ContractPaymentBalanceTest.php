@@ -166,6 +166,40 @@ class ContractPaymentBalanceTest extends TestCase
         $this->assertSame('check', $contract->payments()->latest('id')->first()->payment_method);
     }
 
+    public function test_both_tables_end_with_a_totals_row(): void
+    {
+        $first = $this->makeContract(1000);
+        $this->changeOrder($first, 500);   // adjusted 1500
+        $first->payments()->create(['amount' => 400, 'payment_date' => now()->toDateString(), 'payment_method' => 'cash', 'created_by' => $this->admin->id]);
+        $second = $this->makeContract(2000);
+
+        $expected = ['count' => 2, 'amount' => 3000.0, 'change_orders' => 500.0, 'adjusted' => 3500.0, 'paid' => 400.0, 'balance' => 3100.0];
+
+        $component = Livewire::actingAs($this->admin)->test(ContractPayments::class);
+        $this->assertEquals($expected, $component->instance()->totals());
+        $component->assertSee(__('Total'))
+            ->assertSee(\Illuminate\Support\Number::currency(3100, config('app.currency'), config('app.locale')));
+
+        $batch = PaymentBatch::create([
+            'name' => 'Totals',
+            'status' => 'draft',
+            'payment_date' => now()->toDateString(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        // The batch table is paginated; its totals cover every page.
+        foreach (range(1, 50) as $i) {
+            $this->makeContract(100);
+        }
+
+        $batchScreen = Livewire::actingAs($this->admin)->test(PaymentBatchEdit::class, ['paymentBatch' => $batch]);
+        $this->assertCount(50, $batchScreen->viewData('contracts'));
+        $this->assertEquals(
+            ['count' => 52, 'amount' => 8000.0, 'change_orders' => 500.0, 'adjusted' => 8500.0, 'paid' => 400.0, 'balance' => 8100.0],
+            $batchScreen->viewData('totals'),
+        );
+    }
+
     public function test_each_row_names_the_employee_assigned_to_the_contract(): void
     {
         $contract = $this->makeContract(1000);

@@ -5424,5 +5424,6 @@
     "Switched off": "Desativada em",
     "Switched off by": "Desativada por",
     ":count active|:count active": ":count ativo|:count ativos",
-    ":count inactive|:count inactive": ":count inativo|:count inativos"
+    ":count inactive|:count inactive": ":count inativo|:count inativos",
+    ":count payment entered|:count payments entered": ":count pagamento lançado|:count pagamentos lançados"
 }

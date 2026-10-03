@@ -394,7 +394,7 @@
                                         step="0.01"
                                         min="0"
                                         max="{{ $balance }}"
-                                        wire:model.blur="payAmounts.{{ $contract->id }}"
+                                        wire:model="payAmounts.{{ $contract->id }}"
                                         placeholder="0.00"
                                         class="w-28 px-2 py-1.5 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 @endif
@@ -474,6 +474,34 @@
                         </tr>
                     @endforelse
                 </tbody>
+                @if($this->contracts->isNotEmpty())
+                    @php $totals = $this->totals; @endphp
+                    <tfoot class="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-600">
+                        <tr>
+                            <td colspan="4" class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count contract|:count contracts', $totals['count'], ['count' => $totals['count']]) }}</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                {{ Number::currency($totals['amount'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold {{ $totals['change_orders'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                {{ $totals['change_orders'] > 0 ? '+' : '' }}{{ Number::currency($totals['change_orders'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                                {{ Number::currency($totals['paid'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold {{ $totals['balance'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ Number::currency($totals['balance'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td></td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @include('livewire.contract.partials.pay-total')
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
     </div>

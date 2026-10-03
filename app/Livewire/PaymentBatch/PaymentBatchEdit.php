@@ -753,8 +753,12 @@ class PaymentBatchEdit extends Component
             'measurements.payments',
         ];
 
+        // Every filtered contract, light: the totals row covers the whole
+        // list rather than the page, and a sort has to see all of it.
+        $listed = (clone $query)->with('jobSite')->get();
+
         $contracts = $this->isSorted()
-            ? $this->sortedPage($query, $relations, 50)
+            ? $this->sortedPage($listed, $query, $relations, 50)
             : $query->with($relations)->orderBy('project_id')->orderBy('job_site_id')->paginate(50);
 
         // Get batch items indexed by contract_id for quick lookup
@@ -771,6 +775,7 @@ class PaymentBatchEdit extends Component
         return view('livewire.payment-batch.payment-batch-edit', [
             'contracts' => $contracts,
             'batchItems' => $batchItems,
+            'totals' => $this->contractTotals($listed),
         ])->layout('components.layouts.app');
     }
 
@@ -779,9 +784,9 @@ class PaymentBatchEdit extends Component
      * (natural lot order, derived balance), so the whole filtered list is
      * sorted on its sums alone and only the page on screen is fully loaded.
      */
-    protected function sortedPage($query, array $relations, int $perPage): LengthAwarePaginator
+    protected function sortedPage($listed, $query, array $relations, int $perPage): LengthAwarePaginator
     {
-        $ids = $this->sortContracts((clone $query)->with('jobSite')->get())->pluck('id');
+        $ids = $this->sortContracts($listed)->pluck('id');
 
         $page = $this->getPage();
         $pageIds = $ids->forPage($page, $perPage)->values();

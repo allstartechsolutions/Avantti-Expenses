@@ -4025,5 +4025,6 @@
     "Switched off": "Switched off",
     "Switched off by": "Switched off by",
     ":count active|:count active": ":count active|:count active",
-    ":count inactive|:count inactive": ":count inactive|:count inactive"
+    ":count inactive|:count inactive": ":count inactive|:count inactive",
+    ":count payment entered|:count payments entered": ":count payment entered|:count payments entered"
 }

@@ -6,9 +6,10 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 
 /**
- * Column sorting for the contract payment tables (/contract-payments and the
- * payment batch screen). Paid and balance are derived per row and lots sort
- * in natural order, so the sort runs on a loaded collection rather than in SQL.
+ * Column sorting and the totals row for the contract payment tables
+ * (/contract-payments and the payment batch screen). Paid and balance are
+ * derived per row and lots sort in natural order, so both work on a loaded
+ * collection rather than in SQL.
  */
 trait SortsContracts
 {
@@ -45,6 +46,26 @@ trait SortsContracts
     protected function isSorted(): bool
     {
         return in_array($this->sortField, self::SORTABLE, true);
+    }
+
+    /**
+     * The totals row: what the listed contracts add up to, column by column.
+     * Expects total_paid_cents / change_orders_total_cents summed.
+     */
+    protected function contractTotals(Collection $contracts): array
+    {
+        $amount = round($contracts->sum(fn ($c) => (float) $c->amount), 2);
+        $changeOrders = round($contracts->sum(fn ($c) => ($c->change_orders_total_cents ?? 0) / 100), 2);
+        $paid = round($contracts->sum(fn ($c) => ($c->total_paid_cents ?? 0) / 100), 2);
+
+        return [
+            'count' => $contracts->count(),
+            'amount' => $amount,
+            'change_orders' => $changeOrders,
+            'adjusted' => round($amount + $changeOrders, 2),
+            'paid' => $paid,
+            'balance' => round($amount + $changeOrders - $paid, 2),
+        ];
     }
 
     /**

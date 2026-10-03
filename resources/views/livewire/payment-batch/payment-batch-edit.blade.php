@@ -517,6 +517,29 @@
                         </tr>
                     @endforelse
                 </tbody>
+                @if($contracts->isNotEmpty())
+                    <tfoot class="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-600">
+                        <tr>
+                            <td colspan="4" class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count contract|:count contracts', $totals['count'], ['count' => $totals['count']]) }}</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                {{ Number::currency($totals['adjusted'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                                {{ Number::currency($totals['paid'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold {{ $totals['balance'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ Number::currency($totals['balance'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @include('livewire.contract.partials.pay-total')
+                            </td>
+                            <td colspan="6"></td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
 

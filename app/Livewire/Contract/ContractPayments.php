@@ -133,6 +133,12 @@ class ContractPayments extends Component
     }
 
     #[Computed]
+    public function totals(): array
+    {
+        return $this->contractTotals($this->contracts);
+    }
+
+    #[Computed]
     public function summary(): array
     {
         $baseQuery = Contract::query()
