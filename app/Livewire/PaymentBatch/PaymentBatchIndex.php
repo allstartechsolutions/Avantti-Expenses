@@ -52,7 +52,7 @@ class PaymentBatchIndex extends Component
     public function render()
     {
         $query = PaymentBatch::query()
-            ->with(['createdBy', 'client', 'project', 'subcontractor', 'projectManager'])
+            ->with(['createdBy', 'client', 'project', 'subcontractor', 'projectManager', 'supervisor'])
             ->withCount('items')
             ->withSum('items', 'amount')
             ->when($this->search, function ($query) {

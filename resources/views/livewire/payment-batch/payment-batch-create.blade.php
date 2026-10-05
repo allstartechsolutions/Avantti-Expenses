@@ -112,6 +112,18 @@
                     </select>
                 </div>
 
+                <!-- Supervisor -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Supervisor') }}</label>
+                    <select wire:model="supervisor_id"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <option value="">{{ __('All Supervisors') }}</option>
+                        @foreach($this->supervisors as $supervisor)
+                            <option value="{{ $supervisor->id }}">{{ $supervisor->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Contract Status -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Contract Status') }}</label>

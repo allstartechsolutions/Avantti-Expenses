@@ -17,6 +17,7 @@ class PaymentBatch extends Model
         'project_id',
         'subcontractor_id',
         'project_manager_id',
+        'supervisor_id',
         'contract_status_filter',
         'show_zero_balance',
         'created_by',
@@ -63,6 +64,11 @@ class PaymentBatch extends Model
     public function projectManager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'project_manager_id');
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     public function isDraft(): bool

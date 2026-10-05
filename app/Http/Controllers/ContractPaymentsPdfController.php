@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Concerns\SortsContracts;
 use App\Models\Company;
 use App\Models\Contract;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -9,6 +10,9 @@ use Illuminate\Http\Request;
 
 class ContractPaymentsPdfController extends Controller
 {
+    // The PDF follows the column sort chosen on screen.
+    use SortsContracts;
+
     public function download(Request $request)
     {
         $data = $this->buildPdfData($request);
@@ -35,7 +39,11 @@ class ContractPaymentsPdfController extends Controller
     private function buildPdfData(Request $request): array
     {
         $includePayments = $request->boolean('include_payments');
-        $contracts = $this->getFilteredContracts($request, $includePayments);
+
+        $this->sortField = (string) $request->query('sort', '');
+        $this->sortDirection = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+
+        $contracts = $this->sortContracts($this->getFilteredContracts($request, $includePayments));
 
         return [
             'contracts' => $contracts,
@@ -53,6 +61,7 @@ class ContractPaymentsPdfController extends Controller
         $projectFilter = $request->query('project');
         $subcontractorFilter = $request->query('subcontractor');
         $projectManagerFilter = $request->query('project_manager');
+        $supervisorFilter = $request->query('supervisor');
         $statusFilter = $request->query('status');
         $showZeroBalance = $request->boolean('show_zero_balance');
 
@@ -69,6 +78,7 @@ class ContractPaymentsPdfController extends Controller
             ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter))
             ->when($subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $subcontractorFilter))
             ->when($projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $projectManagerFilter)))
+            ->when($supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $supervisorFilter)))
             ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
             ->unless($showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
             ->orderBy('project_id')
@@ -123,8 +133,35 @@ class ContractPaymentsPdfController extends Controller
                 $filters[] = __('Subcontractor') . ': ' . $sub->company_name;
             }
         }
+        if ($request->query('project_manager')) {
+            $manager = \App\Models\User::find($request->query('project_manager'));
+            if ($manager) {
+                $filters[] = __('Project Manager') . ': ' . $manager->name;
+            }
+        }
+        if ($request->query('supervisor')) {
+            $supervisor = \App\Models\User::find($request->query('supervisor'));
+            if ($supervisor) {
+                $filters[] = __('Supervisor') . ': ' . $supervisor->name;
+            }
+        }
         if ($request->query('status')) {
-            $filters[] = __('Status') . ': ' . ucfirst(str_replace('_', ' ', $request->query('status')));
+            $filters[] = __('Status') . ': ' . Contract::statusLabel($request->query('status'));
+        }
+        if ($request->boolean('show_zero_balance')) {
+            $filters[] = __('Including Paid/Cancelled');
+        }
+        if ($this->isSorted()) {
+            $filters[] = __('Sorted by :column, :direction', [
+                'column' => match ($this->sortField) {
+                    'job_site' => __('Job Site'),
+                    'contract' => __('Contract #'),
+                    'amount' => __('Amount'),
+                    'paid' => __('Paid'),
+                    'balance' => __('Balance'),
+                },
+                'direction' => $this->sortDirection === 'desc' ? __('descending') : __('ascending'),
+            ]);
         }
 
         return $filters;

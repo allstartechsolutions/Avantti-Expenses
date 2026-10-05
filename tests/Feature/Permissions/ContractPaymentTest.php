@@ -434,6 +434,71 @@ class ContractPaymentTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_contract_payments_and_batches_filter_by_the_job_site_supervisor(): void
+    {
+        $supervisor = $this->user('employee', ['name' => 'Sam Supervisor']);
+        $this->site->update(['supervisor_id' => $supervisor->id]);
+
+        $theirs = $this->makeContract(['job_site_id' => $this->site->id]);
+        $otherSite = $this->makeContract(['job_site_id' => $this->makeSite($this->project, 'Site B')->id]);
+        $projectGeneral = $this->makeContract();
+
+        $listed = Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Contract\ContractPayments::class)
+            ->assertSee('Sam Supervisor')
+            ->set('supervisorFilter', (string) $supervisor->id)
+            ->instance()->contracts->pluck('id');
+
+        // A contract with no job site has no supervisor, so it drops out.
+        $this->assertEquals([$theirs->id], $listed->all());
+        $this->assertNotContains($otherSite->id, $listed);
+        $this->assertNotContains($projectGeneral->id, $listed);
+
+        // The PDF follows the screen — filters, toggle and sort — and says so.
+        $pdfData = null;
+        \Illuminate\Support\Facades\View::composer('pdf.contract-payments', function ($view) use (&$pdfData) {
+            $pdfData = $view->getData();
+        });
+
+        $this->actingAs($this->admin)
+            ->get(route('contract-payments.pdf.view', [
+                'supervisor' => $supervisor->id,
+                'project_manager' => $supervisor->id,
+                'status' => 'partially_paid',
+                'show_zero_balance' => 1,
+                'sort' => 'balance',
+                'dir' => 'desc',
+            ]))
+            ->assertOk();
+
+        $this->assertEquals([
+            __('Project Manager').': Sam Supervisor',
+            __('Supervisor').': Sam Supervisor',
+            __('Status').': '.__('Partially Paid'),
+            __('Including Paid/Cancelled'),
+            __('Sorted by :column, :direction', ['column' => __('Balance'), 'direction' => __('descending')]),
+        ], $pdfData['filters']);
+
+        // A batch saves the supervisor with its other filters and reloads it.
+        $batch = PaymentBatch::create([
+            'name' => 'Sam week',
+            'status' => 'draft',
+            'payment_date' => now()->toDateString(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\PaymentBatch\PaymentBatchEdit::class, ['paymentBatch' => $batch])
+            ->set('supervisorFilter', (string) $supervisor->id)
+            ->call('saveDraft');
+
+        $this->assertSame($supervisor->id, $batch->fresh()->supervisor_id);
+
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\PaymentBatch\PaymentBatchEdit::class, ['paymentBatch' => $batch->fresh()])
+            ->assertSet('supervisorFilter', (string) $supervisor->id);
+    }
+
     public function test_the_payments_menu_entries_follow_the_grants(): void
     {
         $reader = $this->roleWith(['projects.view', 'project.view', 'payments.view']);

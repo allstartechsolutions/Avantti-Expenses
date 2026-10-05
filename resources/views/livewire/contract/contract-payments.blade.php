@@ -103,7 +103,7 @@
 
     <!-- Filters Section -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center gap-4">
+        <div class="flex flex-col md:flex-row md:flex-wrap md:items-center gap-4">
             <!-- Client Filter -->
             <div class="w-full md:w-48">
                 <select
@@ -148,6 +148,18 @@
                     <option value="">{{ __('All Project Managers') }}</option>
                     @foreach($this->projectManagers as $pm)
                         <option value="{{ $pm->id }}">{{ $pm->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Supervisor Filter -->
+            <div class="w-full md:w-48">
+                <select
+                    wire:model.live="supervisorFilter"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    <option value="">{{ __('All Supervisors') }}</option>
+                    @foreach($this->supervisors as $supervisor)
+                        <option value="{{ $supervisor->id }}">{{ $supervisor->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -206,8 +218,11 @@
                                 'project' => $projectFilter ?: null,
                                 'subcontractor' => $subcontractorFilter ?: null,
                                 'project_manager' => $projectManagerFilter ?: null,
+                                'supervisor' => $supervisorFilter ?: null,
                                 'status' => $statusFilter ?: null,
                                 'show_zero_balance' => $showZeroBalance ? 1 : null,
+                                'sort' => $sortField ?: null,
+                                'dir' => $sortField ? $sortDirection : null,
                             ]) }}"
                             target="_blank"
                             @click="open = false"
@@ -222,8 +237,11 @@
                                 'project' => $projectFilter ?: null,
                                 'subcontractor' => $subcontractorFilter ?: null,
                                 'project_manager' => $projectManagerFilter ?: null,
+                                'supervisor' => $supervisorFilter ?: null,
                                 'status' => $statusFilter ?: null,
                                 'show_zero_balance' => $showZeroBalance ? 1 : null,
+                                'sort' => $sortField ?: null,
+                                'dir' => $sortField ? $sortDirection : null,
                                 'include_payments' => 1,
                             ]) }}"
                             target="_blank"

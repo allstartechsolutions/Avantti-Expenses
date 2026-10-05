@@ -238,6 +238,11 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'project_manager_id');
     }
 
+    public function supervisedJobSites(): HasMany
+    {
+        return $this->hasMany(JobSite::class, 'supervisor_id');
+    }
+
     /**
      * Has this person switched off one of the task e-mails?
      *

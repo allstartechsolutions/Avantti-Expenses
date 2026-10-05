@@ -25,7 +25,7 @@ class PaymentBatchPdfController extends Controller
 
     private function pdf(PaymentBatch $paymentBatch)
     {
-        $paymentBatch->load(['client', 'project', 'subcontractor', 'projectManager', 'createdBy', 'approvedBy']);
+        $paymentBatch->load(['client', 'project', 'subcontractor', 'projectManager', 'supervisor', 'createdBy', 'approvedBy']);
 
         $items = $paymentBatch->items()
             ->with(['contract.project.client', 'contract.jobSite', 'contract.subcontractor', 'scheduleItem', 'measurement'])

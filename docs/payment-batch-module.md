@@ -376,6 +376,19 @@ Contract filters are persisted on the `payment_batches` table so they reload aut
 - **Displayed on the Show page** as pill badges
 - **Displayed on the Index page** as small badges under the batch name
 
+The filters are Client, Project, Subcontractor, Project Manager, **Supervisor** (added 5 Oct 2026,
+`payment_batches.supervisor_id`) and Contract Status. Supervisor means the job site's
+`supervisor_id`, so a contract on *Project General* (no job site) is left out whenever a supervisor
+is chosen. The filters combine, so Project Manager + Supervisor narrows to that PM's projects *and*
+that supervisor's job sites. The same Supervisor filter is on `/contract-payments` (screen, CSV and
+both PDFs, `?supervisor=` on the PDF routes).
+
+The Contract Payments PDF states everything that shaped it in its header "Filters" line: client,
+project, subcontractor, project manager, supervisor, status (translated), *Including
+Paid/Cancelled* when that toggle is on, and the column sort, which the PDF also applies
+(`?sort=&dir=`, through the same `SortsContracts` trait as the screen). The CSVs deliberately carry
+only the rows: they are for manipulating the data, so nothing sits above the header row.
+
 ---
 
 ## How It Works — User Workflow

@@ -24,6 +24,7 @@ class PaymentBatchCreate extends Component
     public string $project_id = '';
     public string $subcontractor_id = '';
     public string $project_manager_id = '';
+    public string $supervisor_id = '';
     public string $contract_status_filter = '';
     public bool $show_zero_balance = false;
 
@@ -69,6 +70,15 @@ class PaymentBatchCreate extends Component
             ->get(['id', 'name']);
     }
 
+    /** Supervisors of a job site that has contracts. */
+    #[Computed]
+    public function supervisors()
+    {
+        return User::whereHas('supervisedJobSites.contracts')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
     #[Computed]
     public function subcontractors()
     {
@@ -95,6 +105,7 @@ class PaymentBatchCreate extends Component
             'project_id' => $this->project_id ?: null,
             'subcontractor_id' => $this->subcontractor_id ?: null,
             'project_manager_id' => $this->project_manager_id ?: null,
+            'supervisor_id' => $this->supervisor_id ?: null,
             'contract_status_filter' => $this->contract_status_filter ?: null,
             'show_zero_balance' => $this->show_zero_balance,
             'status' => 'draft',

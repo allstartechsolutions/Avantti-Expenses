@@ -43,6 +43,8 @@ class PaymentBatchEdit extends Component
 
     public string $projectManagerFilter = '';
 
+    public string $supervisorFilter = '';
+
     public string $statusFilter = '';
 
     public bool $showZeroBalance = false;
@@ -83,6 +85,7 @@ class PaymentBatchEdit extends Component
         $this->projectFilter = (string) ($this->paymentBatch->project_id ?? '');
         $this->subcontractorFilter = (string) ($this->paymentBatch->subcontractor_id ?? '');
         $this->projectManagerFilter = (string) ($this->paymentBatch->project_manager_id ?? '');
+        $this->supervisorFilter = (string) ($this->paymentBatch->supervisor_id ?? '');
         $this->statusFilter = $this->paymentBatch->contract_status_filter ?? '';
         $this->showZeroBalance = $this->paymentBatch->show_zero_balance ?? false;
 
@@ -147,6 +150,11 @@ class PaymentBatchEdit extends Component
         $this->resetPage();
     }
 
+    public function updatedSupervisorFilter(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedStatusFilter(): void
     {
         $this->resetPage();
@@ -178,6 +186,15 @@ class PaymentBatchEdit extends Component
     public function projectManagers()
     {
         return User::whereHas('managedProjects.contracts')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    /** Supervisors of a job site that has contracts. */
+    #[Computed]
+    public function supervisors()
+    {
+        return User::whereHas('supervisedJobSites.contracts')
             ->orderBy('name')
             ->get(['id', 'name']);
     }
@@ -229,6 +246,7 @@ class PaymentBatchEdit extends Component
             'project_id' => $this->projectFilter ?: null,
             'subcontractor_id' => $this->subcontractorFilter ?: null,
             'project_manager_id' => $this->projectManagerFilter ?: null,
+            'supervisor_id' => $this->supervisorFilter ?: null,
             'contract_status_filter' => $this->statusFilter ?: null,
             'show_zero_balance' => $this->showZeroBalance,
         ]);
@@ -741,6 +759,7 @@ class PaymentBatchEdit extends Component
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']));
 

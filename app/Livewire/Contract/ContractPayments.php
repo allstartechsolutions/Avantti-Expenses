@@ -35,6 +35,9 @@ class ContractPayments extends Component
     public string $projectManagerFilter = '';
 
     #[Url(except: '')]
+    public string $supervisorFilter = '';
+
+    #[Url(except: '')]
     public string $statusFilter = '';
 
     #[Url(except: false)]
@@ -104,6 +107,15 @@ class ContractPayments extends Component
             ->get(['id', 'name']);
     }
 
+    /** Supervisors of a job site that has contracts. */
+    #[Computed]
+    public function supervisors()
+    {
+        return User::whereHas('supervisedJobSites.contracts')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
     #[Computed]
     public function subcontractors()
     {
@@ -123,6 +135,7 @@ class ContractPayments extends Component
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
             ->orderBy('project_id')
@@ -146,7 +159,8 @@ class ContractPayments extends Component
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
-            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)));
 
         // Total contract value (all non-cancelled) — the adjusted value, which
         // is what the table's "Adjusted Amount" column and every balance use:
@@ -179,7 +193,8 @@ class ContractPayments extends Component
                 $q->when($this->clientFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
                     ->when($this->projectFilter, fn ($q2) => $q2->where('project_id', $this->projectFilter))
                     ->when($this->subcontractorFilter, fn ($q2) => $q2->where('subcontractor_id', $this->subcontractorFilter))
-                    ->when($this->projectManagerFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
+                    ->when($this->projectManagerFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+                    ->when($this->supervisorFilter, fn ($q2) => $q2->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)));
             })
             ->sum('amount');
 
@@ -281,6 +296,7 @@ class ContractPayments extends Component
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
             ->orderBy('project_id')

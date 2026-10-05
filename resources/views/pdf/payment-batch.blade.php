@@ -22,6 +22,7 @@
         $batch->project ? __('Project') . ': ' . $batch->project->project_name : null,
         $batch->subcontractor ? __('Subcontractor') . ': ' . $batch->subcontractor->company_name : null,
         $batch->projectManager ? __('Project Manager') . ': ' . $batch->projectManager->name : null,
+        $batch->supervisor ? __('Supervisor') . ': ' . $batch->supervisor->name : null,
         $batch->contract_status_filter ? __('Status') . ': ' . __(ucwords(str_replace('_', ' ', $batch->contract_status_filter))) : null,
         $batch->show_zero_balance ? __('Including Paid/Cancelled') : null,
     ]);

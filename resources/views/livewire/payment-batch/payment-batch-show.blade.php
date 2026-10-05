@@ -74,7 +74,7 @@
             @endif
         </div>
 
-        @if($paymentBatch->client_id || $paymentBatch->project_id || $paymentBatch->subcontractor_id || $paymentBatch->project_manager_id || $paymentBatch->contract_status_filter)
+        @if($paymentBatch->client_id || $paymentBatch->project_id || $paymentBatch->subcontractor_id || $paymentBatch->project_manager_id || $paymentBatch->supervisor_id || $paymentBatch->contract_status_filter)
             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                 <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{ __('Contract Filters') }}</h4>
                 <div class="flex flex-wrap gap-2">
@@ -96,6 +96,11 @@
                     @if($paymentBatch->projectManager)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                             PM: {{ $paymentBatch->projectManager->name }}
+                        </span>
+                    @endif
+                    @if($paymentBatch->supervisor)
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                            {{ __('Supervisor') }}: {{ $paymentBatch->supervisor->name }}
                         </span>
                     @endif
                     @if($paymentBatch->contract_status_filter)

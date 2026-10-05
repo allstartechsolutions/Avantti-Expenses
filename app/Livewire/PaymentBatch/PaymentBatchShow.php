@@ -107,7 +107,7 @@ class PaymentBatchShow extends Component
 
     public function render()
     {
-        $this->paymentBatch->load(['client', 'project', 'subcontractor', 'projectManager', 'createdBy', 'approvedBy']);
+        $this->paymentBatch->load(['client', 'project', 'subcontractor', 'projectManager', 'supervisor', 'createdBy', 'approvedBy']);
 
         return view('livewire.payment-batch.payment-batch-show', [
             'items' => $this->items(),

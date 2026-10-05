@@ -131,7 +131,7 @@
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
                                         {{ $batch->name }}
                                     </div>
-                                    @if($batch->client || $batch->project || $batch->subcontractor || $batch->projectManager || $batch->contract_status_filter)
+                                    @if($batch->client || $batch->project || $batch->subcontractor || $batch->projectManager || $batch->supervisor || $batch->contract_status_filter)
                                         <div class="flex flex-wrap gap-1 mt-1">
                                             @if($batch->client)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
@@ -151,6 +151,11 @@
                                             @if($batch->projectManager)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
                                                     PM: {{ $batch->projectManager->name }}
+                                                </span>
+                                            @endif
+                                            @if($batch->supervisor)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400">
+                                                    {{ __('Supervisor') }}: {{ $batch->supervisor->name }}
                                                 </span>
                                             @endif
                                             @if($batch->contract_status_filter)

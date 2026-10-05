@@ -5426,5 +5426,9 @@
     ":count active|:count active": ":count ativo|:count ativos",
     ":count inactive|:count inactive": ":count inativo|:count inativos",
     ":count payment entered|:count payments entered": ":count pagamento lançado|:count pagamentos lançados",
-    "PAYMENT BATCH": "LOTE DE PAGAMENTO"
+    "PAYMENT BATCH": "LOTE DE PAGAMENTO",
+    "All Supervisors": "Todos os Supervisores",
+    "Sorted by :column, :direction": "Ordenado por :column, :direction",
+    "ascending": "crescente",
+    "descending": "decrescente"
 }
