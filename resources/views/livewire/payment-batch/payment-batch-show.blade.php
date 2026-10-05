@@ -19,9 +19,18 @@
             </div>
             <p class="text-slate-500 dark:text-slate-400 mt-1">{{ __('Payment batch details') }}</p>
         </div>
-        <div class="flex items-center gap-3 mt-4 md:mt-0">
+        <div class="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
             <x-ui.button variant="secondary" href="{{ route('payment-batches.index') }}" icon="arrow-left">
                 {{ __('Back') }}
+            </x-ui.button>
+            <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
+                {{ __('Export CSV') }}
+            </x-ui.button>
+            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.view', $paymentBatch->id) }}" target="_blank" icon="eye">
+                {{ __('View PDF') }}
+            </x-ui.button>
+            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.download', $paymentBatch->id) }}" icon="arrow-down-tray">
+                {{ __('Download PDF') }}
             </x-ui.button>
             @if($paymentBatch->canBeEdited())
                 <x-ui.button variant="primary" href="{{ route('payment-batches.edit', $paymentBatch->id) }}" icon="edit">

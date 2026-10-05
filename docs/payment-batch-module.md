@@ -307,10 +307,23 @@ Read-only view of a batch with details, summary, and items table.
 | `summary` | Total, approved, pending, rejected amounts |
 
 #### View Sections (top to bottom)
-1. **Header** — Batch name + status badge + Back/Edit buttons
+1. **Header** — Batch name + status badge + Back / Export CSV / View PDF / Download PDF / Edit buttons
 2. **Batch Details Card** — Payment date, created by/at, approved by/at, notes, saved filter badges
 3. **Summary Cards (4)** — Total Amount (blue), Approved (green), Pending (amber), Rejected (red)
 4. **Items Table** — Subcontractor, Project, Job Site, Contract #, Amount, Method, Notes, Status badge
+
+#### Exports (5 Oct 2026)
+
+Both carry every line of the batch plus the approved / pending / rejected / total figures, and
+both need `payments.batch`, the same grant as the screen.
+
+| Export | Where | Notes |
+|---|---|---|
+| CSV | `PaymentBatchShow::exportCsv()` | UTF-8 with BOM so Excel opens it cleanly. Batch header rows, then one row per item (subcontractor, client, project, job site, contract #, what it pays, method, phase, notes, status, amount), then the totals. Amounts are plain `1234.50` so a spreadsheet can sum them. |
+| PDF | `PaymentBatchPdfController` → `pdf/payment-batch.blade.php` | Letter landscape. Routes `payment-batches.pdf.view` (opens in a tab) and `payment-batches.pdf.download`, both behind `ability:payments.batch`. Money through `Number::currency`, so it follows the install's currency. |
+
+"Pays" comes from `PaymentBatchItem::getPaysLabel()`: the installment description, the
+measurement number, or *Retention Release*.
 
 #### Items Table Styling
 - Approved items: green background tint

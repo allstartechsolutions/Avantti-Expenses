@@ -21,6 +21,7 @@ use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\JobSiteFinancialReportPdfController;
 use App\Http\Controllers\MeetingMinutePdfController;
+use App\Http\Controllers\PaymentBatchPdfController;
 use App\Http\Controllers\PaymentDetailReportPdfController;
 use App\Http\Controllers\PaymentScheduleReportPdfController;
 use App\Http\Controllers\ProjectFinancialReportPdfController;
@@ -408,6 +409,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:payments.batch')->name('payment-batches.show');
     Route::get('payment-batches/{paymentBatch}/edit', PaymentBatchEdit::class)
         ->middleware('ability:payments.batch')->name('payment-batches.edit');
+    Route::get('payment-batches/{paymentBatch}/pdf', [PaymentBatchPdfController::class, 'download'])
+        ->middleware('ability:payments.batch')->name('payment-batches.pdf.download');
+    Route::get('payment-batches/{paymentBatch}/pdf/view', [PaymentBatchPdfController::class, 'stream'])
+        ->middleware('ability:payments.batch')->name('payment-batches.pdf.view');
 
     // Estimate routes
     // The index screens have no mount() to guard, so the grant is asked on the

@@ -7,11 +7,13 @@ use App\Enums\JobSiteStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\ProjectStatus;
 use App\Livewire\Contract\ContractShow;
+use App\Livewire\PaymentBatch\PaymentBatchShow;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
 use App\Models\JobSite;
 use App\Models\Membership;
+use App\Models\PaymentBatch;
 use App\Models\PermissionTemplate;
 use App\Models\Project;
 use App\Models\Role;
@@ -392,6 +394,44 @@ class ContractPaymentTest extends TestCase
         $blind = $this->roleWith(['projects.view', 'project.view']);
 
         $this->actingAs($blind)->get(route('contract-payments.pdf.view'))->assertForbidden();
+    }
+
+    public function test_a_batch_exports_to_pdf_and_csv_on_the_batch_grant(): void
+    {
+        $contract = $this->makeContract(['job_site_id' => $this->site->id]);
+        $batch = PaymentBatch::create([
+            'name' => 'Week 40',
+            'status' => 'draft',
+            'payment_date' => '2026-10-02',
+            'created_by' => $this->admin->id,
+        ]);
+        $batch->items()->create([
+            'contract_id' => $contract->id,
+            'amount' => 1250.50,
+            'payment_method' => 'pix',
+            'status' => 'pending',
+        ]);
+
+        $batcher = $this->roleWith(['projects.view', 'project.view', 'payments.batch']);
+        $reader = $this->roleWith(['projects.view', 'project.view', 'payments.view']);
+
+        $this->actingAs($batcher)->get(route('payment-batches.pdf.view', $batch))
+            ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->actingAs($batcher)->get(route('payment-batches.pdf.download', $batch))->assertOk();
+
+        Livewire::actingAs($batcher)
+            ->test(PaymentBatchShow::class, ['paymentBatch' => $batch])
+            ->call('exportCsv')
+            ->assertFileDownloaded('payment-batch-'.$batch->id.'-2026-10-02.csv');
+
+        // Seeing the payments is not the batch grant, on paper or in a file.
+        $this->actingAs($reader)->get(route('payment-batches.pdf.view', $batch))->assertForbidden();
+        $this->actingAs($reader)->get(route('payment-batches.pdf.download', $batch))->assertForbidden();
+
+        Livewire::actingAs($reader)
+            ->test(PaymentBatchShow::class, ['paymentBatch' => $batch])
+            ->call('exportCsv')
+            ->assertForbidden();
     }
 
     public function test_the_payments_menu_entries_follow_the_grants(): void

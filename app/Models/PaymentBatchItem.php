@@ -69,6 +69,24 @@ class PaymentBatchItem extends Model
         };
     }
 
+    /**
+     * What this line pays — the installment, the measurement or the retention
+     * release. Translated; read by the exports. Load scheduleItem and
+     * measurement first.
+     */
+    public function getPaysLabel(): string
+    {
+        if ($this->scheduleItem) {
+            return $this->scheduleItem->description;
+        }
+
+        if ($this->measurement) {
+            return __('Measurement #:number', ['number' => $this->measurement->measurement_number]);
+        }
+
+        return $this->is_retention_release ? __('Retention Release') : '—';
+    }
+
     public function getStatusLabel(): string
     {
         return match ($this->status) {
