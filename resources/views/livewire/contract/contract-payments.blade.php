@@ -265,6 +265,8 @@
         </div>
     </div>
 
+    <x-vendor.document-health-notice class="mb-6" :subcontractors="$this->payees" />
+
     <!-- Contracts Table -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="overflow-x-auto">
@@ -315,6 +317,12 @@
                                      title="{{ $contract->subcontractor?->company_name }}">
                                     {{ Str::limit($contract->subcontractor?->company_name ?? '-', 30) }}
                                 </div>
+                                @if($contract->subcontractor)
+                                    <x-vendor.document-health class="mt-0.5"
+                                        :state="$contract->subcontractor->document_health"
+                                        :expired="$contract->subcontractor->expired_documents_count"
+                                        :expiring="$contract->subcontractor->expiring_documents_count" />
+                                @endif
                                 @if($contract->subcontractorEmployee)
                                     <div class="text-xs text-slate-500 dark:text-slate-400"
                                          title="{{ $contract->subcontractorEmployee->name }}@if($contract->subcontractorEmployee->title) ({{ $contract->subcontractorEmployee->title }})@endif">

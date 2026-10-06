@@ -189,6 +189,13 @@
         </div>
     </div>
 
+    @if($paymentBatch->status !== 'cancelled')
+        {{-- Only lines still to be paid: an approved line is a payment already
+             made, and a rejected one will never be. --}}
+        <x-vendor.document-health-notice class="mb-6"
+            :subcontractors="$items->where('status', 'pending')->pluck('contract.subcontractor')" />
+    @endif
+
     <!-- Items Table -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -246,6 +253,12 @@
                                     <div class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
                                         {{ $item->contract->subcontractor?->company_name ?? '-' }}
                                     </div>
+                                    @if($item->contract->subcontractor && $item->status === 'pending')
+                                        <x-vendor.document-health class="mt-0.5"
+                                            :state="$item->contract->subcontractor->document_health"
+                                            :expired="$item->contract->subcontractor->expired_documents_count"
+                                            :expiring="$item->contract->subcontractor->expiring_documents_count" />
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <div class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">

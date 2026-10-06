@@ -764,7 +764,8 @@ class PaymentBatchEdit extends Component
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']));
 
         $relations = [
-            'project.client', 'jobSite', 'subcontractor', 'latestPayment',
+            'project.client', 'jobSite', 'latestPayment',
+            'subcontractor' => fn ($q) => $q->withDocumentHealth(),
             // payableTargetsFor() runs per row: eager-load what it needs so
             // 50 contracts don't become hundreds of queries.
             'changeOrders', 'payments',
@@ -774,7 +775,11 @@ class PaymentBatchEdit extends Component
 
         // Every filtered contract, light: the totals row covers the whole
         // list rather than the page, and a sort has to see all of it.
-        $listed = (clone $query)->with('jobSite')->get();
+        $listed = (clone $query)->with([
+            'jobSite',
+            // The document notice covers every payee on the list, not the page.
+            'subcontractor' => fn ($q) => $q->withDocumentHealth(),
+        ])->get();
 
         $contracts = $this->isSorted()
             ? $this->sortedPage($listed, $query, $relations, 50)
@@ -795,6 +800,15 @@ class PaymentBatchEdit extends Component
             'contracts' => $contracts,
             'batchItems' => $batchItems,
             'totals' => $this->contractTotals($listed),
+            // Approve All pays every pending item, filtered out or not, so
+            // their payees are judged alongside the ones on the list.
+            'payees' => $listed->pluck('subcontractor')->merge(
+                Subcontractor::withDocumentHealth()
+                    ->whereIn('id', Contract::whereIn('id', $this->paymentBatch->items()
+                        ->where('status', 'pending')
+                        ->select('contract_id'))->select('subcontractor_id'))
+                    ->get()
+            ),
         ])->layout('components.layouts.app');
     }
 

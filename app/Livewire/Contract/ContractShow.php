@@ -969,6 +969,9 @@ class ContractShow extends Component
     {
         return view('livewire.contract.contract-show', [
             'costCodeSchedule' => $this->hasCostCoding() ? $this->contract->costCodeSchedule() : null,
+            // Expired or soon-due compliance documents on the payee; the page
+            // and the payment modal both warn from this one read.
+            'subcontractorDocuments' => $this->contract->subcontractor?->documentsNeedingAttention() ?? collect(),
         ])->layout('components.layouts.app');
     }
 }

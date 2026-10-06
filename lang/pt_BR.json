@@ -5430,5 +5430,19 @@
     "All Supervisors": "Todos os Supervisores",
     "Sorted by :column, :direction": "Ordenado por :column, :direction",
     "ascending": "crescente",
-    "descending": "decrescente"
+    "descending": "decrescente",
+    ":name has :expired and :expiring.": ":name tem :expired e :expiring.",
+    ":count expired document|:count expired documents": ":count documento vencido|:count documentos vencidos",
+    ":count document expiring soon|:count documents expiring soon": ":count documento vencendo em breve|:count documentos vencendo em breve",
+    ":name has :count expired document.|:name has :count expired documents.": ":name tem :count documento vencido.|:name tem :count documentos vencidos.",
+    ":name has :count document expiring soon.|:name has :count documents expiring soon.": ":name tem :count documento vencendo em breve.|:name tem :count documentos vencendo em breve.",
+    "Check the compliance documents before releasing a payment.": "Confira os documentos de conformidade antes de liberar um pagamento.",
+    "Expired :date (:count day ago)|Expired :date (:count days ago)": "Venceu em :date (há :count dia)|Venceu em :date (há :count dias)",
+    "Expires :date (in :count day)|Expires :date (in :count days)": "Vence em :date (em :count dia)|Vence em :date (em :count dias)",
+    "Review the documents": "Revisar os documentos",
+    "Subcontractors to check: :expired, :expiring.": "Subempreiteiros a conferir: :expired, :expiring.",
+    ":count with expired documents|:count with expired documents": ":count com documentos vencidos|:count com documentos vencidos",
+    ":count with documents expiring soon|:count with documents expiring soon": ":count com documentos vencendo em breve|:count com documentos vencendo em breve",
+    ":count subcontractor to be paid has expired documents.|:count subcontractors to be paid have expired documents.": ":count subempreiteiro a pagar tem documentos vencidos.|:count subempreiteiros a pagar têm documentos vencidos.",
+    ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.": ":count subempreiteiro a pagar tem documentos vencendo em breve.|:count subempreiteiros a pagar têm documentos vencendo em breve."
 }

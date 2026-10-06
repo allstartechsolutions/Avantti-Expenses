@@ -89,6 +89,8 @@
         </div>
     @endif
 
+    <x-vendor.document-alert class="mb-6" :subcontractor="$contract->subcontractor" :documents="$subcontractorDocuments" />
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
@@ -106,6 +108,12 @@
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Subcontractor') }}</dt>
                             <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $contract->subcontractor?->company_name ?? __('Not specified') }}</dd>
+                            @if($subcontractorDocuments->isNotEmpty())
+                                <dd class="mt-1">
+                                    <x-vendor.document-health
+                                        :state="$subcontractorDocuments->contains(fn ($d) => $d->days_until_expiry < 0) ? 'expired' : 'expiring_soon'" />
+                                </dd>
+                            @endif
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Contact') }}</dt>
@@ -783,6 +791,8 @@
                             && $this->payableMeasurements->count() === 0
                             && $unscheduledRemaining <= 0;
                     @endphp
+
+                    <x-vendor.document-alert class="mb-4" compact :subcontractor="$contract->subcontractor" :documents="$subcontractorDocuments" />
 
                     <div class="space-y-4">
                         @if(!$scheduleBlocked && $this->payableMeasurements->count() > 0)

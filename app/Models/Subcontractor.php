@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasFormattedPhone;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Subcontractor extends Model
 {
@@ -98,6 +100,22 @@ class Subcontractor extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(SubcontractorDocument::class);
+    }
+
+    /**
+     * Active, watched documents that have expired or fall due within the
+     * warning window, soonest first — what a payment screen warns about.
+     * Judged by the same scopes as the badge, so the two never disagree.
+     */
+    public function documentsNeedingAttention(): Collection
+    {
+        return $this->documents()
+            ->active()
+            ->requiringExpiry()
+            ->where('expiration_date', '<', Carbon::today()->addDays(SubcontractorDocument::EXPIRING_SOON_DAYS + 1)->toDateString())
+            ->with('documentType')
+            ->orderBy('expiration_date')
+            ->get();
     }
 
     /**

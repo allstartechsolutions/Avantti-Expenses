@@ -10,6 +10,7 @@ use App\Models\ContractPayment;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
@@ -128,7 +129,12 @@ class ContractPayments extends Component
     public function contracts()
     {
         $contracts = Contract::committed()
-            ->with(['project.client', 'jobSite', 'subcontractor', 'subcontractorEmployee', 'latestPayment', 'changeOrders'])
+            ->with([
+                'project.client', 'jobSite', 'subcontractorEmployee', 'latestPayment', 'changeOrders',
+                // Document health on the payee, counted in one query: the
+                // row chip and the notice above the table read it.
+                'subcontractor' => fn ($q) => $q->withDocumentHealth(),
+            ])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
@@ -143,6 +149,28 @@ class ContractPayments extends Component
             ->get();
 
         return $this->sortContracts($contracts);
+    }
+
+    /**
+     * Whose documents the notice judges: every payee on the list, plus any
+     * contract with an amount entered that a filter has since hidden —
+     * processPayments() pays those too, so they must not go unwarned.
+     */
+    #[Computed]
+    public function payees(): Collection
+    {
+        $hidden = collect($this->payAmounts)
+            ->filter(fn ($amount) => $amount !== null && $amount !== '' && (float) $amount > 0)
+            ->keys()
+            ->diff($this->contracts->pluck('id'));
+
+        $offList = $hidden->isEmpty()
+            ? collect()
+            : Subcontractor::withDocumentHealth()
+                ->whereIn('id', Contract::whereIn('id', $hidden)->select('subcontractor_id'))
+                ->get();
+
+        return $this->contracts->pluck('subcontractor')->merge($offList);
     }
 
     #[Computed]

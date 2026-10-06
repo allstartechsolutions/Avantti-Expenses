@@ -100,7 +100,10 @@ class PaymentBatchShow extends Component
     protected function items()
     {
         return $this->paymentBatch->items()
-            ->with(['contract.project.client', 'contract.jobSite', 'contract.subcontractor', 'scheduleItem', 'measurement'])
+            ->with([
+                'contract.project.client', 'contract.jobSite', 'scheduleItem', 'measurement',
+                'contract.subcontractor' => fn ($q) => $q->withDocumentHealth(),
+            ])
             ->orderBy('status')
             ->get();
     }
