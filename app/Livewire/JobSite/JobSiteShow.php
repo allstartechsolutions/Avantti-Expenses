@@ -600,7 +600,11 @@ class JobSiteShow extends Component
     public function closeExpenseModal()
     {
         $this->showExpenseModal = false;
+        // The mode goes back with the record: a closed modal left in 'view'
+        // renders the detail block on the next request with no expense behind
+        // it, and the history partial crashed on exactly that.
         $this->reset([
+            'expenseModalMode',
             'catalogItemSearch', 'selectedCatalogItem', 'isCustomItem',
             'expense_item_name', 'expense_item_type', 'expense_purchase_unit', 'expense_usage_unit',
             'expense_unit_type_used', 'expense_quantity', 'expense_unit_price', 'expense_total_amount',

@@ -431,6 +431,7 @@ Document deletion uses `wire:confirm`:
 ### Index Page
 - Paginated list (10 items per page)
 - Search by company name, contact name, email, or phone
+- Status filter (all / active / inactive) and a Status column with the on/off switch for anyone holding `vendors.edit`; an inactive subcontractor keeps its records but is not offered to new contracts (see `docs/changelog-2026-09-30-vendor-active-toggle.md`)
 - Displays: Company (with initials avatar), Contact, Email, Phone, Location
 - View and Edit action buttons
 - Empty state with "Add Subcontractor" button
@@ -531,4 +532,4 @@ To add email notifications for expiring documents:
 February 6, 2026
 
 ## Last Updated
-February 6, 2026 - Added Documents feature with expiration tracking
+September 30, 2026 - Active / inactive switch and status filter (`vendors.is_active`); the table is the unified `vendors` table since August 2026, see `docs/vendor-unification.md`

@@ -967,7 +967,11 @@ class ProjectShow extends Component
     public function closeExpenseModal()
     {
         $this->showExpenseModal = false;
+        // The mode goes back with the record: a closed modal left in 'view'
+        // renders the detail block on the next request with no expense behind
+        // it, and the history partial crashed on exactly that.
         $this->reset([
+            'expenseModalMode',
             'expense_job_site_id', 'expense_supplier_id', 'supplierSearch',
             'expense_notes', 'expense_date', 'expense_receipt', 'existingReceiptPath', 'editingExpense',
             'expense_equipment_id', 'expense_equipment_maintenance_id',

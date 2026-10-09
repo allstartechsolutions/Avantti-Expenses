@@ -1884,3 +1884,26 @@ and has a regression test unless noted.
 Not done, by the owner's instruction: no `pt_BR.json` entries for the new strings — the
 Brazilian build lives in its own repository now.
 
+
+## Vendor active / inactive switch (2026-09-30) — VA1–VA3
+
+Built in one pass on 30 Sep 2026; see `docs/changelog-2026-09-30-vendor-active-toggle.md`.
+
+### VA1 — browser walk-through still owed
+
+The three lists and the two detail pages were verified through Livewire tests only. Walk
+them in both themes and on a phone with at least one inactive vendor: the Status column
+must not push the tables into a horizontal scroll on a laptop, and the card chips must wrap
+cleanly on a two-column phone grid.
+
+### VA2 — the edit forms carry no switch *(decision)*
+
+The switch lives on the lists and the detail pages, not on the supplier / subcontractor edit
+forms. An edit form is for the record's own fields; the state is a one-click action beside
+the form's *Edit* button. Revisit only if users look for it there.
+
+### VA3 — payment batches and reports still offer inactive vendors *(decision)*
+
+Deliberate: a batch pays contracts that already exist and a report looks backwards. If the
+owner later wants inactive subcontractors hidden from the batch form once their contracts
+are fully paid, that is a `whereHas('contracts', open)` change, not a status one.
