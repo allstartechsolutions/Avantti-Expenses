@@ -77,7 +77,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" id="search" wire:model.live.debounce.300ms="search" class="{{ $select }} pl-10 placeholder-slate-400" placeholder="{{ __('Search by name, tag, plate, serial, make or model…') }}">
+                    <input type="text" id="search" wire:model.live.debounce.300ms="search" class="{{ $select }} pl-10 placeholder-slate-400" placeholder="{{ __('Search by name, tag, plate, serial, VIN, make or model…') }}">
                 </div>
             </div>
             <div class="md:col-span-2">
@@ -141,6 +141,9 @@
                                     <a href="{{ route('equipment.show', $item) }}" class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $item->name }}</a>
                                     @if($item->make || $item->model || $item->year)
                                         <div class="text-xs text-slate-500 dark:text-slate-400">{{ trim($item->make.' '.$item->model.' '.$item->year) }}</div>
+                                    @endif
+                                    @if($item->vin)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 break-all">{{ __('VIN') }}: <span class="font-mono text-slate-700 dark:text-slate-300">{{ $item->vin }}</span></div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{{ $item->getTypeLabel() }}</td>

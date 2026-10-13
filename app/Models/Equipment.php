@@ -429,6 +429,7 @@ class Equipment extends Model
                 ->orWhere('asset_tag', 'like', $like)
                 ->orWhere('plate', 'like', $like)
                 ->orWhere('serial_number', 'like', $like)
+                ->orWhere('vin', 'like', $like)
                 ->orWhere('make', 'like', $like)
                 ->orWhere('model', 'like', $like);
         });
