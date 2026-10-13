@@ -91,24 +91,12 @@ class ReceiptFieldTest extends TestCase
     }
 
     /**
-     * The two expense modals carry the same zone as the two full screens.
-     *
-     * The job-site one had a hand-rolled drop zone of its own and the project
-     * one had none at all; both are the shared component now, so this renders
-     * each with a file chosen to prove the markup and the clear action.
+     * The project's expense modal carries the same zone as the full screens.
+     * (The job site screen had one too; it now files on the full screen.)
      */
-    public function test_both_expense_modals_show_and_clear_the_chosen_receipt(): void
+    public function test_the_project_expense_modal_shows_and_clears_the_chosen_receipt(): void
     {
         Storage::fake('local');
-
-        Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\JobSite\JobSiteShow::class, ['jobSite' => $this->site])
-            ->call('openExpenseCreateModal')
-            ->set('expense_receipt', UploadedFile::fake()->create('recibo.pdf', 10, 'application/pdf'))
-            ->assertSee('recibo.pdf')
-            ->call('clearExpenseReceipt')
-            ->assertSet('expense_receipt', null)
-            ->assertDontSee('recibo.pdf');
 
         Livewire::actingAs($this->admin)
             ->test(\App\Livewire\Project\ProjectShow::class, ['project' => $this->project])

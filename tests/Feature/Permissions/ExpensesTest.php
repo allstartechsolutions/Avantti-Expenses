@@ -266,18 +266,19 @@ class ExpensesTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_the_job_site_modal_refuses_to_open_or_save_without_create(): void
+    /**
+     * The job site screen files expenses on the shared create screen; its own
+     * single-item modal is gone. That screen refuses a site member without
+     * `expenses.create` exactly as the modal did.
+     */
+    public function test_the_job_site_create_screen_refuses_without_create(): void
     {
         $reader = $this->memberOf($this->site, ['expenses.view']);
 
-        Livewire::actingAs($reader)
-            ->test(JobSiteShow::class, ['jobSite' => $this->site])
-            ->call('openExpenseCreateModal')
-            ->assertForbidden();
+        $this->actingAs($reader)->get(route('expenses.jobsite.create', $this->site))->assertForbidden();
 
         Livewire::actingAs($reader)
-            ->test(JobSiteShow::class, ['jobSite' => $this->site])
-            ->call('saveExpense')
+            ->test(ExpenseCreate::class, ['jobSite' => $this->site])
             ->assertForbidden();
     }
 

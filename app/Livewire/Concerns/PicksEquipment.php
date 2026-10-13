@@ -10,8 +10,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * The optional equipment tag on an expense form — which machine the money
- * was for, and which of its maintenances, if any. Shared by the three
- * expense forms (the shared create/edit form and the two legacy modals) and
+ * was for, and which of its maintenances, if any. Shared by the two
+ * expense forms (the shared create/edit form and the project legacy modal) and
  * one partial, so the tag reads the same everywhere. docs/equipment-module.md
  */
 trait PicksEquipment

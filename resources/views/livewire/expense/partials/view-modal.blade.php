@@ -1,10 +1,13 @@
 {{--
-    The expense view modal, shared by the project expenses screen and the
-    company expenses screen. Expects the properties of
+    The expense view modal, shared by the project expenses, job site and
+    company expenses screens. Expects the properties of
     App\Livewire\Concerns\HandlesExpensePaymentActions on the component.
     A project row shows its location and cost codes; a company row shows its
     category instead. Every guard asks the row which area it answers to.
+    `$viewingExpense` is the trait's computed lookup: null when the modal is
+    closed or the record was deleted under it.
 --}}
+@php $viewingExpense = $this->viewingExpense; @endphp
     <x-ui.modal name="expense-view-modal" maxWidth="4xl">
         <div class="p-6">
             <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">{{ __('Expense Details') }}</h2>

@@ -5,7 +5,10 @@ namespace App\Livewire\Concerns;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 
 /**
  * The view modal and the payment actions an expense list offers: open the
@@ -22,7 +25,15 @@ trait HandlesExpensePaymentActions
 {
     // View modal
     public $showExpenseModal = false;
-    public $viewingExpense = null;
+
+    /**
+     * The id, not the model: Livewire re-fetches a model property with
+     * firstOrFail() on every request, so an expense deleted under an open
+     * modal threw before any of this code ran. `viewingExpense()` resolves it.
+     * Locked: only `openExpenseViewModal()`, which asks for `view`, may set it.
+     */
+    #[Locked]
+    public ?int $viewingExpenseId = null;
 
     // View modal data
     public $expense_date = '';
@@ -52,6 +63,31 @@ trait HandlesExpensePaymentActions
     public $editDueDateId = null;
     public $editDueDate = '';
 
+    /**
+     * The expense open in the view modal, or null once it is closed, gone, or
+     * no longer viewable by this person — the modal body renders on every
+     * request, so the lookup carries the same guard as opening it.
+     */
+    #[Computed]
+    public function viewingExpense(): ?Expense
+    {
+        if (! $this->viewingExpenseId) {
+            return null;
+        }
+
+        try {
+            $expense = $this->expenseInScope($this->viewingExpenseId);
+        } catch (ModelNotFoundException) {
+            return null;
+        }
+
+        if (! auth()->user()?->can($expense->ability('view'), $expense)) {
+            return null;
+        }
+
+        return $expense->load(['payments.paidBy', 'paidBy', 'createdBy', 'jobSite', 'category']);
+    }
+
     /** The expense with this id, only if it belongs on this screen. */
     abstract protected function expenseInScope(int $expenseId): Expense;
 
@@ -65,7 +101,19 @@ trait HandlesExpensePaymentActions
 
         $this->authorizeAbility($expense->ability('view'), $expense);
 
-        $this->viewingExpense = $expense;
+        $this->fillViewModal($expense);
+
+        $this->showExpenseModal = true;
+        $this->dispatch('open-modal', 'expense-view-modal');
+    }
+
+    /** Copy an expense into the view modal's fields; open and refresh share it. */
+    protected function fillViewModal(Expense $expense): void
+    {
+        $expense->loadMissing(['items.budgetItem', 'supplier']);
+
+        $this->viewingExpenseId = $expense->id;
+        unset($this->viewingExpense);
         $this->expense_job_site_id = $expense->job_site_id;
         $this->expense_supplier_id = $expense->supplier_id;
         $this->supplierSearch = $expense->supplier?->name ?? '';
@@ -91,6 +139,24 @@ trait HandlesExpensePaymentActions
             ];
         }
 
+        // Expenses filed before line items existed keep their one item on the
+        // header; show it as a line so the detail view is never empty of them.
+        if ($this->expenseItems === [] && $expense->item_name) {
+            $this->expenseItems[] = [
+                'id' => 'header-'.$expense->id,
+                'budget_item_id' => null,
+                'cost_code' => null,
+                'catalog_item_id' => $expense->catalog_item_id,
+                'item_name' => $expense->item_name,
+                'item_type' => $expense->item_type,
+                'description' => '',
+                'quantity' => $expense->quantity,
+                'unit' => $expense->usage_unit ?: ($expense->purchase_unit ?? ''),
+                'unit_price' => $expense->unit_price,
+                'total_amount' => $expense->total_amount,
+            ];
+        }
+
         $this->expense_status = $expense->status;
         $this->expense_payment_method = $expense->payment_method;
         $this->expense_is_auto_payment = $expense->is_auto_payment;
@@ -111,15 +177,13 @@ trait HandlesExpensePaymentActions
                 'changes' => $h->changes,
             ])
             ->toArray();
-
-        $this->showExpenseModal = true;
-        $this->dispatch('open-modal', 'expense-view-modal');
     }
 
     public function closeExpenseModal(): void
     {
         $this->showExpenseModal = false;
-        $this->viewingExpense = null;
+        $this->viewingExpenseId = null;
+        unset($this->viewingExpense);
         $this->expenseHistory = [];
         $this->cancelMarkPaid();
         $this->cancelEditDueDate();
@@ -204,6 +268,7 @@ trait HandlesExpensePaymentActions
         $expense->unmarkAsPaid();
 
         session()->flash('message', __('Expense payment reverted to unpaid.'));
+        $this->refreshViewingExpense();
     }
 
     public function unmarkPaymentPaid(int $paymentId): void
@@ -226,6 +291,7 @@ trait HandlesExpensePaymentActions
 
         $payment->markAsOverdue();
 
+        session()->flash('message', __('Payment marked as overdue.'));
         $this->refreshViewingExpense();
     }
 
@@ -245,11 +311,20 @@ trait HandlesExpensePaymentActions
         session()->flash('message', __('Expense deleted successfully.'));
     }
 
+    /**
+     * Reload the open modal after a payment action, so the status, the
+     * schedule and the history all show what was just recorded.
+     */
     protected function refreshViewingExpense(): void
     {
-        if ($this->viewingExpense) {
-            $this->viewingExpense->refresh();
-            $this->viewingExpense->load('payments.paidBy');
+        unset($this->viewingExpense);
+
+        if (! $this->showExpenseModal || ! $this->viewingExpenseId) {
+            return;
         }
+
+        $expense = $this->viewingExpense;
+
+        $expense ? $this->fillViewModal($expense) : $this->closeExpenseModal();
     }
 }
