@@ -28,6 +28,9 @@ class ProjectJobSites extends Component
     // Search
     public $jobSiteSearch = '';
 
+    // Status filter: a JobSiteStatus value, or '' for every status
+    public string $statusFilter = '';
+
     // Delete Job Site modal
     public $showDeleteJobSiteModal = false;
 
@@ -108,6 +111,11 @@ class ProjectJobSites extends Component
     public function mount(Project $project): void
     {
         $this->project = $project;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['jobSiteSearch', 'statusFilter']);
     }
 
     public function openJobSiteForm(): void
@@ -355,6 +363,13 @@ class ProjectJobSites extends Component
     {
         $jobSitesQuery = $this->project->jobSites()->with(['createdBy', 'supervisor']);
 
+        // An unknown value from the browser filters nothing rather than everything.
+        $statusFilter = JobSiteStatus::tryFrom($this->statusFilter);
+
+        if ($statusFilter) {
+            $jobSitesQuery->where('status', $statusFilter->value);
+        }
+
         if ($this->jobSiteSearch) {
             $jobSitesQuery->where(function ($query) {
                 $query->where('job_site_name', 'like', '%'.$this->jobSiteSearch.'%')
@@ -365,6 +380,13 @@ class ProjectJobSites extends Component
         }
 
         $jobSites = $jobSitesQuery->orderBy('created_at', 'desc')->get();
+
+        // How many of the project's job sites are in each status, for the filter chips.
+        $statusCounts = $this->project->jobSites()
+            ->toBase()
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
         $statuses = JobSiteStatus::cases();
         $users = User::where('status', UserStatus::ACTIVE)
             ->orderBy('name')
@@ -373,6 +395,9 @@ class ProjectJobSites extends Component
         return view('livewire.project.project-job-sites', [
             'jobSites' => $jobSites,
             'statuses' => $statuses,
+            'statusCounts' => $statusCounts,
+            'totalJobSites' => (int) $statusCounts->sum(),
+            'activeStatusFilter' => $statusFilter,
             'users' => $users,
         ])->layout('components.layouts.app');
     }

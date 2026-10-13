@@ -315,6 +315,7 @@ The subcontractor show page has three tabs:
 - Link opens a full-page dialog with suggestions, a search over other companies' employees, and a reason
 - Adding, editing and deleting need `vendors.edit`; linking and unlinking need `workers.link`
 - `?tab=employees` opens the tab directly
+- **Active / Inactive** (13 Oct 2026): a Status column with the switch (`toggleEmployeeActive`, `vendors.edit`; a chip for everybody else), *Since … by …* under an inactive one, and *All / Active / Inactive* chips with counts. Independent of the employment period — the *Former* badge still reads the end date. An inactive employee is not offered, and is refused server-side, as the contact of a new contract; a contract that already names one keeps them, and its edit form keeps offering them marked *(Inactive)*. Columns `is_active`, `deactivated_at`, `deactivated_by` on `subcontractor_employees`; scopes `active()` / `activeOrCurrent($id)`. See [changelog](./changelog-2026-10-13-payments-and-employee-status.md)
 
 ---
 

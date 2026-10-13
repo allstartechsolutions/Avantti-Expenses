@@ -4051,5 +4051,16 @@
     ":count with expired documents|:count with expired documents": ":count with expired documents|:count with expired documents",
     ":count with documents expiring soon|:count with documents expiring soon": ":count with documents expiring soon|:count with documents expiring soon",
     ":count subcontractor to be paid has expired documents.|:count subcontractors to be paid have expired documents.": ":count subcontractor to be paid has expired documents.|:count subcontractors to be paid have expired documents.",
-    ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.": ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon."
+    ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.": ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.",
+    ":shown of :total": ":shown of :total",
+    "Filter by status": "Filter by status",
+    "No job sites match your filters.": "No lots match your filters.",
+    "This project has :count job site, but none matches the status or search you picked.|This project has :count job sites, but none matches the status or search you picked.": "This job site has :count lot, but none matches the status or search you picked.|This job site has :count lots, but none matches the status or search you picked.",
+    ":name is now inactive. Contracts that already name them are kept; new contracts will not offer them as the contact.": ":name is now inactive. Contracts that already name them are kept; new contracts will not offer them as the contact.",
+    ":name is active again and can be picked as a contract contact.": ":name is active again and can be picked as a contract contact.",
+    "Since :date by :name": "Since :date by :name",
+    "Since :date": "Since :date",
+    "No inactive employees": "No inactive employees",
+    "No active employees": "No active employees",
+    "Switch the filter to All to see everyone on file.": "Switch the filter to All to see everyone on file."
 }

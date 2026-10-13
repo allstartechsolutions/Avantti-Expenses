@@ -80,7 +80,7 @@
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 <option value="">{{ __('No specific contact') }}</option>
                                 @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->name }}@if($employee->title) — {{ $employee->title }}@endif</option>
+                                    <option value="{{ $employee->id }}">{{ $employee->name }}@if($employee->title) — {{ $employee->title }}@endif @if(! $employee->is_active)({{ __('Inactive') }})@endif</option>
                                 @endforeach
                             </select>
                             @error('subcontractor_employee_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

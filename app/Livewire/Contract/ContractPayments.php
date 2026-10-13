@@ -120,7 +120,9 @@ class ContractPayments extends Component
     #[Computed]
     public function subcontractors()
     {
+        // Active subcontractors only; one already picked stays offered.
         return Subcontractor::whereHas('contracts')
+            ->activeOrCurrent($this->subcontractorFilter)
             ->orderBy('name')
             ->get(['id', 'name']);
     }

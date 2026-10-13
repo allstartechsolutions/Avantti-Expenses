@@ -4,7 +4,14 @@
         @if(!$showJobSiteForm)
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ __('Job Sites') }} ({{ $jobSites->count() }})</h3>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                        {{ __('Job Sites') }}
+                        @if($activeStatusFilter || $jobSiteSearch)
+                            <span class="text-sm font-normal text-slate-500 dark:text-slate-400">{{ __(':shown of :total', ['shown' => $jobSites->count(), 'total' => $totalJobSites]) }}</span>
+                        @else
+                            ({{ $totalJobSites }})
+                        @endif
+                    </h3>
                     <!-- Search Bar -->
                     <div class="relative max-w-md">
                         <input
@@ -27,6 +34,38 @@
                     </x-ui.button>
                 @endcan
             </div>
+
+            <!-- Status Filter -->
+            @if($totalJobSites > 0)
+                @php
+                    $chipDots = [
+                        'created' => 'bg-blue-500',
+                        'in_progress' => 'bg-orange-500',
+                        'completed' => 'bg-green-500',
+                        'on_hold' => 'bg-gray-400',
+                    ];
+                    $chip = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors';
+                    $chipOn = 'bg-[#3F5189] border-[#3F5189] text-white';
+                    $chipOff = 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700';
+                @endphp
+                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="{{ __('Filter by status') }}">
+                    <button type="button" wire:click="$set('statusFilter', '')" class="{{ $chip }} {{ $activeStatusFilter ? $chipOff : $chipOn }}" aria-pressed="{{ $activeStatusFilter ? 'false' : 'true' }}">
+                        {{ __('All') }}
+                        <span class="text-xs {{ $activeStatusFilter ? 'text-slate-500 dark:text-slate-400' : 'text-white/80' }}">{{ $totalJobSites }}</span>
+                    </button>
+                    @foreach($statuses as $statusOption)
+                        @php
+                            $isOn = $activeStatusFilter === $statusOption;
+                            $count = (int) ($statusCounts[$statusOption->value] ?? 0);
+                        @endphp
+                        <button type="button" wire:key="status-chip-{{ $statusOption->value }}" wire:click="$set('statusFilter', '{{ $statusOption->value }}')" class="{{ $chip }} {{ $isOn ? $chipOn : $chipOff }}" aria-pressed="{{ $isOn ? 'true' : 'false' }}">
+                            <span class="w-2 h-2 rounded-full {{ $isOn ? 'bg-white' : $chipDots[$statusOption->value] }}"></span>
+                            {{ $statusOption->label() }}
+                            <span class="text-xs {{ $isOn ? 'text-white/80' : 'text-slate-500 dark:text-slate-400' }}">{{ $count }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
         @endif
 
         <!-- Job Site Form -->
@@ -439,18 +478,26 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
-                        @can('project.edit', $project)
+                        @if($totalJobSites > 0)
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No job sites match your filters.') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ trans_choice('This project has :count job site, but none matches the status or search you picked.|This project has :count job sites, but none matches the status or search you picked.', $totalJobSites, ['count' => $totalJobSites]) }}</p>
                             <div class="mt-6">
-                                <x-ui.button
-                                    variant="primary"
-                                    wire:click="openJobSiteForm"
-                                    icon="plus">
-                                    {{ __('Add Job Site') }}
-                                </x-ui.button>
+                                <x-ui.button variant="secondary" wire:click="clearFilters" icon="x">{{ __('Clear Filters') }}</x-ui.button>
                             </div>
-                        @endcan
+                        @else
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">{{ __('No Job Sites') }}</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Get started by creating a job site for this project.') }}</p>
+                            @can('project.edit', $project)
+                                <div class="mt-6">
+                                    <x-ui.button
+                                        variant="primary"
+                                        wire:click="openJobSiteForm"
+                                        icon="plus">
+                                        {{ __('Add Job Site') }}
+                                    </x-ui.button>
+                                </div>
+                            @endcan
+                        @endif
                     </div>
                 </div>
             @endif

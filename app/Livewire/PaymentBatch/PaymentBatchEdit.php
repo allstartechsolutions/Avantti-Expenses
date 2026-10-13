@@ -66,6 +66,9 @@ class PaymentBatchEdit extends Component
      */
     public array $payTargets = [];
 
+    /** Contracts whose change orders (back charges included) are shown in a sub-row. */
+    public array $expandedContracts = [];
+
     public function mount(): void
     {
         $this->authorizeAbility('payments.batch');
@@ -121,6 +124,15 @@ class PaymentBatchEdit extends Component
     {
         if ($this->applySort($field)) {
             $this->resetPage();
+        }
+    }
+
+    public function toggleChangeOrders(int $contractId): void
+    {
+        if (in_array($contractId, $this->expandedContracts)) {
+            $this->expandedContracts = array_values(array_diff($this->expandedContracts, [$contractId]));
+        } else {
+            $this->expandedContracts[] = $contractId;
         }
     }
 
@@ -202,7 +214,10 @@ class PaymentBatchEdit extends Component
     #[Computed]
     public function subcontractors()
     {
+        // Active subcontractors only; the one the filter (or the batch) is
+        // already set to stays offered after it is switched off.
         return Subcontractor::whereHas('contracts')
+            ->activeOrCurrent($this->subcontractorFilter)
             ->orderBy('name')
             ->get(['id', 'name']);
     }
@@ -764,7 +779,7 @@ class PaymentBatchEdit extends Component
             ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']));
 
         $relations = [
-            'project.client', 'jobSite', 'latestPayment',
+            'project.client', 'jobSite', 'latestPayment', 'subcontractorEmployee',
             'subcontractor' => fn ($q) => $q->withDocumentHealth(),
             // payableTargetsFor() runs per row: eager-load what it needs so
             // 50 contracts don't become hundreds of queries.

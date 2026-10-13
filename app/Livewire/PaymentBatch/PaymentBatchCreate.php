@@ -83,6 +83,7 @@ class PaymentBatchCreate extends Component
     public function subcontractors()
     {
         return Subcontractor::whereHas('contracts')
+            ->active()
             ->orderBy('name')
             ->get(['id', 'name']);
     }

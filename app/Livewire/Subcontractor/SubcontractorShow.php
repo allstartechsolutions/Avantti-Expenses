@@ -65,6 +65,9 @@ class SubcontractorShow extends Component
     public $employee_notes = '';
     public bool $showEmployeeForm = false;
 
+    /** Employees tab filter: '' (everyone), 'active' or 'inactive'. */
+    public string $employeeStatusFilter = '';
+
     /**
      * A row at another company the form has been told is the same worker.
      * Chosen from the lookalikes the form shows as the details are typed;
@@ -646,6 +649,22 @@ class SubcontractorShow extends Component
         session()->flash('message', __('Employee deleted successfully!'));
     }
 
+    /** Switch an employee off or back on. Contracts that already name them are untouched. */
+    public function toggleEmployeeActive(int $employeeId)
+    {
+        $this->authorizeAbility('vendors.edit');
+
+        $employee = $this->ownEmployee($employeeId);
+
+        if ($employee->is_active) {
+            $employee->deactivate(auth()->id());
+            session()->flash('message', __(':name is now inactive. Contracts that already name them are kept; new contracts will not offer them as the contact.', ['name' => $employee->name]));
+        } else {
+            $employee->activate();
+            session()->flash('message', __(':name is active again and can be picked as a contract contact.', ['name' => $employee->name]));
+        }
+    }
+
     /*
     |---------------------------------------------------------------------------
     | Linking an employee to the same worker at another company
@@ -951,13 +970,25 @@ class SubcontractorShow extends Component
             default => 'none',
         };
 
-        $employees = $this->subcontractor->employees()
-            ->with(['worker.employees.subcontractor', 'linkedBy'])
+        $allEmployees = $this->subcontractor->employees()
+            ->with(['worker.employees.subcontractor', 'linkedBy', 'deactivatedBy'])
             ->withCount('contracts')
             ->orderBy('name')
             ->get();
 
-        $linkedEmployees = $employees->filter->isLinked()->count();
+        $linkedEmployees = $allEmployees->filter->isLinked()->count();
+
+        $employeeCounts = [
+            'all' => $allEmployees->count(),
+            'active' => $allEmployees->where('is_active', true)->count(),
+            'inactive' => $allEmployees->where('is_active', false)->count(),
+        ];
+
+        $employees = match ($this->employeeStatusFilter) {
+            'active' => $allEmployees->where('is_active', true)->values(),
+            'inactive' => $allEmployees->where('is_active', false)->values(),
+            default => $allEmployees,
+        };
 
         $linkedContracts = $this->subcontractor->contracts()->count();
         $linkedPaymentBatches = $this->subcontractor->paymentBatches()->count();
@@ -979,6 +1010,7 @@ class SubcontractorShow extends Component
             'documentCounts' => $documentCounts,
             'documentHealth' => $documentHealth,
             'employees' => $employees,
+            'employeeCounts' => $employeeCounts,
             'linkedEmployees' => $linkedEmployees,
             'linkedContracts' => $linkedContracts,
             'linkedPaymentBatches' => $linkedPaymentBatches,

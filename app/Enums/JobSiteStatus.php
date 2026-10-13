@@ -12,10 +12,10 @@ enum JobSiteStatus: string
     public function label(): string
     {
         return match($this) {
-            self::CREATED => 'Created',
-            self::IN_PROGRESS => 'In Progress',
-            self::COMPLETED => 'Completed',
-            self::ON_HOLD => 'On Hold',
+            self::CREATED => __('Created'),
+            self::IN_PROGRESS => __('In Progress'),
+            self::COMPLETED => __('Completed'),
+            self::ON_HOLD => __('On Hold'),
         };
     }
 

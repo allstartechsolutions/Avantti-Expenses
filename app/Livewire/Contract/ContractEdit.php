@@ -110,7 +110,10 @@ class ContractEdit extends Component
 
         $this->validate([
             'subcontractor_id' => 'nullable|exists:vendors,id,is_subcontractor,1',
-            'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', $this->subcontractor_id)],
+            // Active employees, or the one this contract was saved with.
+            'subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')
+                ->where('subcontractor_id', $this->subcontractor_id)
+                ->where(fn ($q) => $q->where('is_active', true)->orWhere('id', (int) $this->contract->subcontractor_employee_id))],
             'job_site_id' => 'nullable|exists:job_sites,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -278,7 +281,10 @@ class ContractEdit extends Component
         $jobSites = $this->contract->project->jobSites()->orderBy('job_site_name')->get();
 
         $employees = $this->subcontractor_id
-            ? SubcontractorEmployee::where('subcontractor_id', $this->subcontractor_id)->orderBy('name')->get()
+            ? SubcontractorEmployee::where('subcontractor_id', $this->subcontractor_id)
+                ->activeOrCurrent($this->contract->subcontractor_employee_id)
+                ->orderBy('name')
+                ->get()
             : collect();
 
         $allocationBudget = $this->allocationBudget();

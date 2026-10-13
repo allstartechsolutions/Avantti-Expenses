@@ -1,7 +1,8 @@
 {{--
     Employees tab of the subcontractor page.
     Expects: $employees (with worker.employees.subcontractor, linkedBy, contracts_count),
-             $linkedEmployees, and the component's employee form state.
+             $employeeCounts (all / active / inactive), $linkedEmployees,
+             and the component's employee form state.
 --}}
 @php
     $field = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white';
@@ -19,7 +20,11 @@
             <div>
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Employees') }}</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
-                    {{ trans_choice(':count employee|:count employees', $employees->count(), ['count' => $employees->count()]) }}
+                    {{ trans_choice(':count employee|:count employees', $employeeCounts['all'], ['count' => $employeeCounts['all']]) }}
+                    @if($employeeCounts['inactive'] > 0)
+                        · {{ trans_choice(':count active|:count active', $employeeCounts['active'], ['count' => $employeeCounts['active']]) }}
+                        · {{ trans_choice(':count inactive|:count inactive', $employeeCounts['inactive'], ['count' => $employeeCounts['inactive']]) }}
+                    @endif
                     @if($linkedEmployees > 0)
                         · {{ trans_choice(':count also known at another company|:count also known at other companies', $linkedEmployees, ['count' => $linkedEmployees]) }}
                     @endif
@@ -179,12 +184,30 @@
 
         <!-- Employees List -->
         <div class="p-6">
+            @if($employeeCounts['all'] > 0)
+                @php
+                    $chip = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors';
+                    $chipOn = 'bg-[#3F5189] border-[#3F5189] text-white';
+                    $chipOff = 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700';
+                    $chips = ['' => [__('All'), $employeeCounts['all']], 'active' => [__('Active'), $employeeCounts['active']], 'inactive' => [__('Inactive'), $employeeCounts['inactive']]];
+                @endphp
+                <div class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="{{ __('Filter by status') }}">
+                    @foreach($chips as $value => [$chipLabel, $chipCount])
+                        @php $isOn = $employeeStatusFilter === $value; @endphp
+                        <button type="button" wire:key="employee-status-chip-{{ $value ?: 'all' }}" wire:click="$set('employeeStatusFilter', '{{ $value }}')" class="{{ $chip }} {{ $isOn ? $chipOn : $chipOff }}" aria-pressed="{{ $isOn ? 'true' : 'false' }}">
+                            {{ $chipLabel }}
+                            <span class="text-xs {{ $isOn ? 'text-white/80' : 'text-slate-500 dark:text-slate-400' }}">{{ $chipCount }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
             @if($employees->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
                             <tr>
                                 <th class="{{ $th }}">{{ __('Name') }}</th>
+                                <th class="{{ $th }}">{{ __('Status') }}</th>
                                 <th class="{{ $th }}">{{ __('Title') }}</th>
                                 <th class="{{ $th }}">{{ __('Phone') }}</th>
                                 <th class="{{ $th }}">{{ __('Email') }}</th>
@@ -198,11 +221,31 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @foreach($employees as $employee)
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <tr wire:key="employee-{{ $employee->id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ $employee->is_active ? '' : 'opacity-60' }}">
                                     <td class="px-4 py-4">
                                         <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $employee->name }}</span>
                                         @if(! $employee->isCurrent())
                                             <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">{{ __('Former') }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        @if($canEdit)
+                                            <div wire:key="employee-active-{{ $employee->id }}-{{ $employee->is_active ? 'on' : 'off' }}">
+                                                <x-ui.toggle
+                                                    wire:click="toggleEmployeeActive({{ $employee->id }})"
+                                                    :checked="$employee->is_active"
+                                                    :onLabel="__('Active')"
+                                                    :offLabel="__('Inactive')" />
+                                            </div>
+                                        @else
+                                            <x-vendor.active-badge :active="$employee->is_active" />
+                                        @endif
+                                        @if(! $employee->is_active && $employee->deactivated_at)
+                                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                {{ $employee->deactivatedBy
+                                                    ? __('Since :date by :name', ['date' => $employee->deactivated_at->appDate(), 'name' => $employee->deactivatedBy->name])
+                                                    : __('Since :date', ['date' => $employee->deactivated_at->appDate()]) }}
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="px-4 py-4"><span class="text-sm text-slate-900 dark:text-white">{{ $employee->title ?? '—' }}</span></td>
@@ -267,6 +310,12 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            @elseif($employeeCounts['all'] > 0)
+                <div class="text-center py-10">
+                    <h3 class="text-sm font-medium text-slate-900 dark:text-white">{{ $employeeStatusFilter === 'inactive' ? __('No inactive employees') : __('No active employees') }}</h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Switch the filter to All to see everyone on file.') }}</p>
+                    <div class="mt-4"><x-ui.button variant="secondary" size="sm" wire:click="$set('employeeStatusFilter', '')" icon="x">{{ __('Clear Filters') }}</x-ui.button></div>
                 </div>
             @else
                 <!-- Empty State -->

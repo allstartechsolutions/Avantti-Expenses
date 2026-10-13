@@ -121,9 +121,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                     {{ __('Employees') }}
-                    @if($employees->count() > 0)
+                    @if($employeeCounts['all'] > 0)
                         <span class="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                            {{ $employees->count() }}
+                            {{ $employeeCounts['all'] }}
                         </span>
                     @endif
                 </button>
@@ -367,7 +367,7 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-slate-500 dark:text-slate-400">{{ __('Employees') }}</span>
-                                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $employees->count() }}</span>
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $employeeCounts['all'] }}@if($employeeCounts['inactive'] > 0) <span class="text-xs font-normal text-slate-500 dark:text-slate-400">({{ trans_choice(':count inactive|:count inactive', $employeeCounts['inactive'], ['count' => $employeeCounts['inactive']]) }})</span>@endif</span>
                             </div>
                             @if($linkedEmployees > 0)
                                 <div class="flex items-center justify-between">
@@ -700,15 +700,15 @@
                     @endif
                 </p>
 
-                @if(!$subcontractor->is_supplier && ($documents->count() > 0 || $employees->count() > 0))
+                @if(!$subcontractor->is_supplier && ($documents->count() > 0 || $employeeCounts['all'] > 0))
                     <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                         <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">{{ __('The following data will be permanently deleted:') }}</p>
                         <ul class="text-sm text-red-700 dark:text-red-400 space-y-1">
                             @if($documents->count() > 0)
                                 <li>{{ $documents->count() }} document(s)</li>
                             @endif
-                            @if($employees->count() > 0)
-                                <li>{{ $employees->count() }} employee(s)</li>
+                            @if($employeeCounts['all'] > 0)
+                                <li>{{ trans_choice(':count employee|:count employees', $employeeCounts['all'], ['count' => $employeeCounts['all']]) }}</li>
                             @endif
                         </ul>
                     </div>

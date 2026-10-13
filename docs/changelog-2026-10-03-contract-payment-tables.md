@@ -40,7 +40,7 @@ sum of each money column.
 | Screen | Columns totalled |
 |---|---|
 | Contract Payments | Amount, Change Orders, Paid, Balance |
-| Payment batch | Amount (adjusted), Paid, Balance |
+| Payment batch | Amount, Change Orders, Paid, Balance (Change Orders column added 13 Oct 2026 — before that, Amount was the adjusted figure) |
 
 - Worked out on the server by `SortsContracts::contractTotals()`, from the same
   sums the rows use; balance = amount ± change orders − paid.

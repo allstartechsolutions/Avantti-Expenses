@@ -5450,5 +5450,15 @@
     ":count with expired documents|:count with expired documents": ":count com documentos vencidos|:count com documentos vencidos",
     ":count with documents expiring soon|:count with documents expiring soon": ":count com documentos vencendo em breve|:count com documentos vencendo em breve",
     ":count subcontractor to be paid has expired documents.|:count subcontractors to be paid have expired documents.": ":count subempreiteiro a pagar tem documentos vencidos.|:count subempreiteiros a pagar têm documentos vencidos.",
-    ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.": ":count subempreiteiro a pagar tem documentos vencendo em breve.|:count subempreiteiros a pagar têm documentos vencendo em breve."
+    ":count subcontractor to be paid has documents expiring soon.|:count subcontractors to be paid have documents expiring soon.": ":count subempreiteiro a pagar tem documentos vencendo em breve.|:count subempreiteiros a pagar têm documentos vencendo em breve.",
+    ":shown of :total": ":shown de :total",
+    "No job sites match your filters.": "Nenhum local corresponde aos filtros.",
+    "This project has :count job site, but none matches the status or search you picked.|This project has :count job sites, but none matches the status or search you picked.": "Este projeto tem :count local, mas nenhum corresponde ao status ou à busca escolhidos.|Este projeto tem :count locais, mas nenhum corresponde ao status ou à busca escolhidos.",
+    ":name is now inactive. Contracts that already name them are kept; new contracts will not offer them as the contact.": ":name agora está inativo. Os contratos que já o indicam são mantidos; novos contratos não o oferecerão como contato.",
+    ":name is active again and can be picked as a contract contact.": ":name está ativo novamente e pode ser escolhido como contato de contrato.",
+    "Since :date by :name": "Desde :date por :name",
+    "Since :date": "Desde :date",
+    "No inactive employees": "Nenhum funcionário inativo",
+    "No active employees": "Nenhum funcionário ativo",
+    "Switch the filter to All to see everyone on file.": "Mude o filtro para Todos para ver todos os cadastrados."
 }

@@ -31,10 +31,17 @@ class SubcontractorEmployee extends Model
         'link_reason',
     ];
 
+    /** A new employee is active, before the row is read back as well as after. */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected $casts = [
         'started_at' => 'date',
         'ended_at' => 'date',
         'linked_at' => 'datetime',
+        'is_active' => 'boolean',
+        'deactivated_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -84,6 +91,62 @@ class SubcontractorEmployee extends Model
     public function linkedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'linked_by');
+    }
+
+    public function deactivatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deactivated_by');
+    }
+
+    /*
+    |---------------------------------------------------------------------------
+    | Active / inactive
+    |---------------------------------------------------------------------------
+    |
+    | An inactive employee is kept, listed and still named on every contract
+    | that points at them, but is not offered as the contact of a new one.
+    | Separate from the employment period: `isCurrent()` reads the dates.
+    */
+
+    /** Employees that may be picked as a contract's contact. */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('subcontractor_employees.is_active', true);
+    }
+
+    /**
+     * Active employees plus the one a record already names — an edit form
+     * keeps offering the contact it was saved with after they are switched off.
+     */
+    public function scopeActiveOrCurrent(Builder $query, int|string|null $currentId): Builder
+    {
+        $currentId = (int) $currentId;
+
+        return $query->where(function (Builder $q) use ($currentId) {
+            $q->where('subcontractor_employees.is_active', true);
+
+            if ($currentId > 0) {
+                $q->orWhere('subcontractor_employees.id', $currentId);
+            }
+        });
+    }
+
+    public function activate(): void
+    {
+        $this->forceFill([
+            'is_active' => true,
+            'deactivated_at' => null,
+            'deactivated_by' => null,
+        ])->save();
+    }
+
+    public function deactivate(?int $userId = null): void
+    {
+        $this->forceFill([
+            'is_active' => false,
+            'deactivated_at' => now(),
+            'deactivated_by' => $userId ?? auth()->id(),
+        ])->save();
     }
 
     /** Known at another company too — the worker has more than this one row. */
