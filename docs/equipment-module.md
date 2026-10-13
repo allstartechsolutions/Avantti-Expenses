@@ -10,7 +10,7 @@ the plan that began with [company expenses](./company-expenses.md).
 
 | Screen | Route | What it shows |
 |---|---|---|
-| **Equipment** (Company group) | `/equipment` | The register: cards (in service, active, in maintenance, overdue, due in 30 days), filters (type, status, where, search), a row per piece with its next maintenance |
+| **Equipment** (Company group) | `/equipment` | The register: cards (in service, active, in maintenance, overdue, due in 30 days), filters (type, status, where, search), a row per piece with its next maintenance. Each row shows make / model / year and, when recorded, the VIN beneath the name; search matches name, asset tag, plate, serial, **VIN** (partial — the last few characters are enough), make and model |
 | **Add / Edit** | `/equipment/create`, `/equipment/{id}/edit` | Identity, ownership and purchase, meter, status, photo, notes |
 | **Equipment page** | `/equipment/{id}` | Tabs: Overview, Maintenance, Readings, Findings, Assignments, Costs, Attachments |
 | **Maintenance** (Company group) | `/equipment/maintenance` | Every open service across the fleet grouped by month; overdue / due soon / scheduled / in progress / completed / cancelled |
