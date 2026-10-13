@@ -186,6 +186,27 @@ class VendorDocumentRemindersTest extends TestCase
         $this->assertNotNull($document->fresh()->notified_7_at);
     }
 
+    public function test_a_shorter_warning_window_skips_the_wider_stages_without_stamping_them(): void
+    {
+        $this->insurance->update(['expiry_warning_days' => 7]);
+        $sub = $this->makeSubcontractor();
+        $document = $this->document($sub, 20);
+
+        $this->assertSame(0, $this->remind()['sent'], 'A 7-day type is not expiring at 20 days.');
+
+        $this->travel(13)->days();
+        $this->assertSame(1, $this->remind()['sent']);
+        Mail::assertSent(VendorDocumentExpiryMail::class, fn ($mail) => $mail->expiring->first()['stage'] === 7);
+
+        $document->refresh();
+        $this->assertNotNull($document->notified_7_at);
+        $this->assertNull($document->notified_30_at, 'A stage that never went out is never recorded as sent.');
+        $this->assertNull($document->notified_15_at);
+        $this->assertSame([7], $document->reminded_stages);
+
+        $this->assertSame(0, $this->remind()['sent'], 'The skipped stages do not fire later either.');
+    }
+
     public function test_a_missed_morning_is_caught_the_next_one(): void
     {
         $sub = $this->makeSubcontractor();

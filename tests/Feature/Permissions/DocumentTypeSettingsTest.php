@@ -137,6 +137,34 @@ class DocumentTypeSettingsTest extends TestCase
         $this->assertTrue($type->fresh()->is_active);
     }
 
+    public function test_the_warning_window_is_chosen_per_type_from_the_offered_options(): void
+    {
+        $editor = $this->roleWith(['settings.view', 'settings.edit']);
+
+        $component = Livewire::actingAs($editor)->test(DocumentTypeSettings::class)
+            ->call('create')
+            ->assertSet('expiry_warning_days', 30)
+            ->set('name', 'Certidão Municipal')
+            ->set('expiry_warning_days', 15)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $type = DocumentType::where('name', 'Certidão Municipal')->sole();
+        $this->assertSame(15, $type->expiry_warning_days);
+
+        $component->call('edit', $type->id)
+            ->assertSet('expiry_warning_days', 15)
+            ->set('expiry_warning_days', 45)
+            ->call('save')
+            ->assertHasErrors(['expiry_warning_days']);
+        $this->assertSame(15, $type->fresh()->expiry_warning_days, 'Only 7, 15 or 30 is accepted.');
+
+        $component->set('expiry_warning_days', 7)->call('save')->assertHasNoErrors();
+        $this->assertSame(7, $type->fresh()->expiry_warning_days);
+
+        $component->assertSee('Warns 7 days before');
+    }
+
     public function test_a_type_with_documents_can_be_retired_but_never_deleted(): void
     {
         $editor = $this->roleWith(['settings.view', 'settings.edit']);

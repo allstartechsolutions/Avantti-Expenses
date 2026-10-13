@@ -2,13 +2,15 @@
 
 Built 2 Sep 2026 on branch `vendor-document-expiry`. Plan and phase log:
 [vendor-document-expiry-plan.md](./vendor-document-expiry-plan.md). Changelog:
-[changelog-2026-09-02-vendor-documents.md](./changelog-2026-09-02-vendor-documents.md).
+[changelog-2026-09-02-vendor-documents.md](./changelog-2026-09-02-vendor-documents.md);
+per-type warning window: [changelog-2026-10-13-document-type-expiry-warning.md](./changelog-2026-10-13-document-type-expiry-warning.md).
 
 A subcontractor's compliance documents — insurance certificates, licences, certidões —
 are filed on the vendor page with the date they stop being good. This module is what
 happens around that date: the document can be **renewed** without losing the one it
 replaces, the vendor list and the vendor page carry a **badge**, and the right people get
-an **e-mail** at 30, 15 and 7 days before the date and the day after.
+an **e-mail** at 30, 15 and 7 days before the date and the day after. How early a document
+counts as *expiring soon* — 7, 15 or 30 days, default 30 — is set per document type.
 
 ---
 
@@ -19,7 +21,7 @@ an **e-mail** at 30, 15 and 7 days before the date and the day after.
 | Fact | Column / accessor | Values |
 |---|---|---|
 | **Lifecycle** | `status` | `active` · `superseded` (a renewal replaced it; `superseded_by_id` points at the new row) · `archived` (no longer required; `archived_at`, `archived_by`, `archive_reason`) |
-| **Expiry** (derived) | `expiry_status` | `valid` · `expiring_soon` (within `EXPIRING_SOON_DAYS` = 30) · `expired` · `undated` (a live dated type, no date — never passed off as current) — always `valid` for a row that is not active or whose type does not require a date or has been retired |
+| **Expiry** (derived) | `expiry_status` | `valid` · `expiring_soon` (within its type's `expiry_warning_days` — 7, 15 or 30, default 30; `expiry_warning_days` on the document reads it) · `expired` · `undated` (a live dated type, no date — never passed off as current) — always `valid` for a row that is not active or whose type does not require a date or has been retired |
 
 Only **active** documents under an **active type that requires an expiration date**,
 owned by a vendor **still flagged as a subcontractor**, are *watched*: they alone drive the
@@ -30,7 +32,10 @@ but is nobody's compliance problem. **Deleting a renewal gives the document it r
 place back** (model `deleting` hook), so a wrong file cannot strand the previous certificate.
 
 Scopes on `SubcontractorDocument`: `active()`, `requiringExpiry()`, `expired()`,
-`expiringWithin($days = 30)` — plain comparisons on the DATE column, never `whereDate()`,
+`expiringWithin(?int $days = null)` — by default each document is judged by its own type's
+window through `dueWithinWarning()`, one bound per offered window
+(`DocumentType::EXPIRY_WARNING_OPTIONS`), so the badge, the filter, the counts and
+`Subcontractor::documentsNeedingAttention()` agree with `expiry_status`. Plain comparisons on the DATE column, never `whereDate()`,
 so the `(status, expiration_date)` index is used; the upper bound is "before the day after"
 because sqlite keeps the date cast with a time suffix. `worstExpiry()` ranks a set of
 states in one place; `reminded_stages` lists which reminders a row has had (shown on the
@@ -95,8 +100,10 @@ reason.
 
 **Subcontractor header.** The same chip beside the company name, clickable to the tab.
 
-**System Settings › Document Types.** Name, description, requires-expiration, sort order,
-active flag, and the count of documents under each. Retire / Reactivate on every row;
+**System Settings › Document Types.** Name, description, requires-expiration, *Consider
+expiring soon* (7 / 15 / 30 days before the date, default 30, shown only for a dated type and
+listed under *Required* on each row), sort order, active flag, and the count of documents
+under each. Retire / Reactivate on every row;
 Delete only when nothing was ever filed under it.
 
 **System Settings › Notifications › Vendor E-mails.** One switch for the sequence, and the
@@ -114,6 +121,9 @@ runs `App\Services\VendorDocumentNotifier::sendExpiryReminders()`:
   `notified_expired_at`. Each is written once. The date test is "on or before", so a
   morning the scheduler missed is caught the next one. A document inside several windows at
   once is listed once, under the tightest stage, and every stage it passed is stamped.
+- **The type's warning window caps the stages.** A 15-day type starts at the 15-day stage, a
+  7-day type at the 7-day one. The wider stages are skipped, **not stamped** — the page's
+  *Reminders sent* line never claims one that did not go out.
 - **One e-mail per recipient per morning** (`VendorDocumentExpiryMail`), grouped by vendor
   with a link to each vendor page and to the index pre-filtered. The `notification_log`
   window `digest:<date>` refuses a second copy the same day, so a double run is safe.
@@ -158,14 +168,16 @@ a seeded row lacks a lang entry.
 
 | File | Covers |
 |---|---|
-| `tests/Feature/Permissions/VendorDocumentsTest.php` | abilities, the grant migration, upload/renew/archive/delete guards, cross-vendor ids, the file guard, the 30-day line, the tab in every state, the header badge, the index column + filter with no query per row |
-| `tests/Feature/Permissions/VendorDocumentRemindersTest.php` | the four stages, a double run, a missed morning, stop-on-renew/archive, recipients and fallback, opt-outs, the command, the settings screen |
-| `tests/Feature/Permissions/DocumentTypeSettingsTest.php` | the screen's grants, create/edit/retire/reactivate, retire-not-delete, the add-only country-aware seeder, lang coverage |
+| `tests/Feature/Permissions/VendorDocumentsTest.php` | abilities, the grant migration, upload/renew/archive/delete guards, cross-vendor ids, the file guard, the 30-day line, the per-type window (7 / 15, badge, counts, payment-screen notice), the tab in every state, the header badge, the index column + filter with no query per row |
+| `tests/Feature/Permissions/VendorDocumentRemindersTest.php` | the four stages, a shorter window skipping the wider stages, a double run, a missed morning, stop-on-renew/archive, recipients and fallback, opt-outs, the command, the settings screen |
+| `tests/Feature/Permissions/DocumentTypeSettingsTest.php` | the screen's grants, create/edit/retire/reactivate, the warning window (default 30, only 7/15/30 accepted), retire-not-delete, the add-only country-aware seeder, lang coverage |
 
 ## 7. Decisions
 
 - **No blocking** of purchase orders or contracts on an expired document. Flag only.
-- **Fixed stages** (30/15/7/+1), not editable on screen.
+- **Fixed stages** (30/15/7/+1); what is editable is where each type's sequence starts
+  (`expiry_warning_days`, 13 Oct 2026). The options match the stages on purpose: a 60-day
+  window would need a 60-day stage, and none exists.
 - **Renewal chain, not versioning**: one pointer, one history list.
 - **Types are never deleted while in use**; retire instead.
 - **Supplier screens are untouched**: documents are a subcontractor feature.

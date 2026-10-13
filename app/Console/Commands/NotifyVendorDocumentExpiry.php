@@ -7,7 +7,8 @@ use Illuminate\Console\Command;
 
 /**
  * Warns the chosen people about vendor documents reaching a reminder stage:
- * 30, 15 and 7 days before the expiration date, and the day after it.
+ * 30, 15 and 7 days before the expiration date (from the document type's
+ * warning window down), and the day after it.
  *
  * Once per stage per document, stamped on the document itself; one e-mail
  * per person per morning. Scheduled daily in routes/console.php.

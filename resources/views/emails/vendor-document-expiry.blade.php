@@ -59,6 +59,6 @@
     </p>
 
     <p style="margin: 18px 0 0; font-size: 12px; color: #999; line-height: 1.5;">
-        {{ __('You receive this because you were chosen for vendor document reminders in System Settings, or because you may upload and renew vendor documents. Each document is mentioned once per stage: 30, 15 and 7 days before its date, and the day after.') }}
+        {{ __('You receive this because you were chosen for vendor document reminders in System Settings, or because you may upload and renew vendor documents. Each document is mentioned once per stage: 30, 15 and 7 days before its date, starting at the warning set on its document type, and the day after.') }}
     </p>
 </x-email-shell>

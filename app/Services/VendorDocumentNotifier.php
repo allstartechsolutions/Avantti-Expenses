@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Mail;
  *
  * Four fixed stages — 30, 15 and 7 days before the expiration date, and the
  * day after it passes — each stamped on the document once it has gone out,
- * so a stage can never repeat. Only **active** documents whose type requires
+ * so a stage can never repeat. A type that warns at 15 or 7 days
+ * (`document_types.expiry_warning_days`) starts its sequence there. Only **active** documents whose type requires
  * a date take part: renewing or archiving a document ends its sequence,
  * because the row that carried the stamps is no longer active.
  *
@@ -107,8 +108,13 @@ class VendorDocumentNotifier
 
             // Every stage whose threshold this document is already inside of
             // and that has not gone out yet; the tightest one names the row.
+            // Stages wider than the type's warning window are skipped, not
+            // stamped: a 7-day type is not "expiring" at 30 days, and its
+            // history must not claim a reminder that never went out.
             $due = collect(self::STAGES)
-                ->filter(fn (string $column, int $threshold) => $days <= $threshold && $document->{$column} === null);
+                ->filter(fn (string $column, int $threshold) => $threshold <= $document->expiry_warning_days
+                    && $days <= $threshold
+                    && $document->{$column} === null);
 
             if ($due->isEmpty()) {
                 continue;

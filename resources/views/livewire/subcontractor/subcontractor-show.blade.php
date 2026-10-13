@@ -573,7 +573,7 @@
                                                                     @if($document->expiration_date)
                                                                         <div class="text-sm text-slate-900 dark:text-white">{{ $document->expiration_date->appDate() }}</div>
                                                                         @php $days = $document->days_until_expiry; @endphp
-                                                                        <div class="text-xs {{ $days < 0 ? 'text-red-600 dark:text-red-400' : ($days <= \App\Models\SubcontractorDocument::EXPIRING_SOON_DAYS ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400') }}">
+                                                                        <div class="text-xs {{ $days < 0 ? 'text-red-600 dark:text-red-400' : ($days <= $document->expiry_warning_days ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400') }}">
                                                                             @if($days === 0)
                                                                                 {{ __('Expires today') }}
                                                                             @elseif($days > 0)

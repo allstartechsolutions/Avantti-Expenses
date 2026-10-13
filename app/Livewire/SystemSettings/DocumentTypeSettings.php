@@ -24,6 +24,7 @@ class DocumentTypeSettings extends Component
     public string $name = '';
     public string $description = '';
     public bool $requires_expiration = true;
+    public int $expiry_warning_days = DocumentType::DEFAULT_EXPIRY_WARNING_DAYS;
     public int $sort_order = 0;
     public bool $is_active = true;
 
@@ -41,6 +42,7 @@ class DocumentTypeSettings extends Component
             'name' => ['required', 'string', 'max:100', Rule::unique('document_types', 'name')->ignore($this->editingId)],
             'description' => ['nullable', 'string', 'max:255'],
             'requires_expiration' => ['boolean'],
+            'expiry_warning_days' => ['required', 'integer', Rule::in(DocumentType::EXPIRY_WARNING_OPTIONS)],
             'sort_order' => ['required', 'integer', 'min:0', 'max:999'],
             'is_active' => ['boolean'],
         ];
@@ -51,6 +53,7 @@ class DocumentTypeSettings extends Component
         return [
             'sort_order' => __('sort order'),
             'requires_expiration' => __('requires expiration'),
+            'expiry_warning_days' => __('expiry warning'),
         ];
     }
 
@@ -74,6 +77,7 @@ class DocumentTypeSettings extends Component
         $this->name = $type->name;
         $this->description = (string) $type->description;
         $this->requires_expiration = $type->requires_expiration;
+        $this->expiry_warning_days = $type->expiry_warning_days;
         $this->sort_order = $type->sort_order;
         $this->is_active = $type->is_active;
         $this->showFormModal = true;
@@ -93,6 +97,7 @@ class DocumentTypeSettings extends Component
             'name' => trim($this->name),
             'description' => trim($this->description) ?: null,
             'requires_expiration' => $this->requires_expiration,
+            'expiry_warning_days' => $this->expiry_warning_days,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
         ];
@@ -151,6 +156,7 @@ class DocumentTypeSettings extends Component
         $this->name = '';
         $this->description = '';
         $this->requires_expiration = true;
+        $this->expiry_warning_days = DocumentType::DEFAULT_EXPIRY_WARNING_DAYS;
         $this->sort_order = 0;
         $this->is_active = true;
         $this->resetValidation();

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasFormattedPhone;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -112,7 +111,7 @@ class Subcontractor extends Model
         return $this->documents()
             ->active()
             ->requiringExpiry()
-            ->where('expiration_date', '<', Carbon::today()->addDays(SubcontractorDocument::EXPIRING_SOON_DAYS + 1)->toDateString())
+            ->dueWithinWarning()
             ->with('documentType')
             ->orderBy('expiration_date')
             ->get();

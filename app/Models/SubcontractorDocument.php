@@ -21,13 +21,11 @@ use Illuminate\Support\Facades\Storage;
  *   `archived` because it is no longer required. Only active documents count
  *   for anything — the badge, the reminders, the "what is missing" list.
  * - **Expiry** (`expiry_status`, derived): valid, expiring soon, expired —
- *   computed from the date, and only meaningful on an active document.
+ *   computed from the date against the type's warning window (7, 15 or
+ *   30 days), and only meaningful on an active document.
  */
 class SubcontractorDocument extends Model
 {
-    /** Days before the expiration date at which a document is flagged as expiring soon. */
-    public const EXPIRING_SOON_DAYS = 30;
-
     public const STATUS_ACTIVE = 'active';
     public const STATUS_SUPERSEDED = 'superseded';
     public const STATUS_ARCHIVED = 'archived';
@@ -171,16 +169,40 @@ class SubcontractorDocument extends Model
     }
 
     /**
-     * Active, watched documents due within the next N days (today included,
-     * the past excluded). The upper bound is "before the day after", not
-     * "on or before the day": sqlite keeps the date cast with a time suffix,
-     * and a same-day string bound would exclude it there.
+     * Active, watched documents due within their type's warning window
+     * (today included, the past excluded), or within N days when N is given.
      */
-    public function scopeExpiringWithin(Builder $query, int $days = self::EXPIRING_SOON_DAYS): Builder
+    public function scopeExpiringWithin(Builder $query, ?int $days = null): Builder
     {
         return $query->active()->requiringExpiry()
             ->where('expiration_date', '>=', Carbon::today()->toDateString())
-            ->where('expiration_date', '<', Carbon::today()->addDays($days + 1)->toDateString());
+            ->dueWithinWarning($days);
+    }
+
+    /**
+     * Dated no later than the warning window of the document's own type —
+     * the past included. One bound per window the types can choose, so it
+     * stays a plain comparison on the DATE column. The bound is "before the
+     * day after", not "on or before the day": sqlite keeps the date cast with
+     * a time suffix, and a same-day string bound would exclude it there.
+     */
+    public function scopeDueWithinWarning(Builder $query, ?int $days = null): Builder
+    {
+        $before = fn (int $window) => Carbon::today()->addDays($window + 1)->toDateString();
+
+        if ($days !== null) {
+            return $query->where('expiration_date', '<', $before($days));
+        }
+
+        return $query->where(function (Builder $q) use ($before) {
+            foreach (DocumentType::EXPIRY_WARNING_OPTIONS as $window) {
+                $q->orWhere(fn (Builder $w) => $w
+                    ->where('expiration_date', '<', $before($window))
+                    ->whereIn('document_type_id', DocumentType::query()
+                        ->select('id')
+                        ->where('expiry_warning_days', $window)));
+            }
+        });
     }
 
     /*
@@ -283,11 +305,17 @@ class SubcontractorDocument extends Model
             return self::EXPIRY_EXPIRED;
         }
 
-        if ($expiration->lte(Carbon::today()->addDays(self::EXPIRING_SOON_DAYS))) {
+        if ($expiration->lte(Carbon::today()->addDays($this->expiry_warning_days))) {
             return self::EXPIRY_EXPIRING_SOON;
         }
 
         return self::EXPIRY_VALID;
+    }
+
+    /** Days before the date at which this document counts as expiring soon — its type's setting. */
+    public function getExpiryWarningDaysAttribute(): int
+    {
+        return $this->documentType?->expiry_warning_days ?? DocumentType::DEFAULT_EXPIRY_WARNING_DAYS;
     }
 
     /** Whole days until the date; negative once it has passed, null when there is no date. */

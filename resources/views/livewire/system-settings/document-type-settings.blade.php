@@ -68,6 +68,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($type->requires_expiration)
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{{ __('Required') }}</span>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ trans_choice('Warns :count day before|Warns :count days before', $type->expiry_warning_days, ['count' => $type->expiry_warning_days]) }}</div>
                                     @else
                                         <span class="text-sm text-slate-400 dark:text-slate-500">{{ __('No expiration') }}</span>
                                     @endif
@@ -129,6 +130,17 @@
                         <label for="dt-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Description') }}</label>
                         <input id="dt-description" type="text" wire:model="description" maxlength="255" class="{{ $field }}" placeholder="{{ __('Shown under the name so people file the right thing') }}">
                         @error('description') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div x-data="{ dated: $wire.entangle('requires_expiration') }" x-show="dated" x-cloak>
+                        <label for="dt-warning" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Consider expiring soon') }}</label>
+                        <select id="dt-warning" wire:model="expiry_warning_days" class="{{ $field }}">
+                            @foreach(\App\Models\DocumentType::EXPIRY_WARNING_OPTIONS as $option)
+                                <option value="{{ $option }}">{{ trans_choice(':count day before the expiration date|:count days before the expiration date', $option, ['count' => $option]) }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('From this point the document shows as expiring soon on the badges and filters, and the reminder e-mails start: 30, 15 and 7 days before, within this window.') }}</p>
+                        @error('expiry_warning_days') <span class="text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

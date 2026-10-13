@@ -437,6 +437,30 @@ class VendorDocumentsTest extends TestCase
         $this->assertSame(1, SubcontractorDocument::expired()->count());
     }
 
+    public function test_the_expiring_line_follows_the_types_warning_window(): void
+    {
+        $sub = $this->makeSubcontractor();
+        $this->insurance->update(['expiry_warning_days' => 7]);
+        $licence = DocumentType::create(['name' => 'Contractor License', 'requires_expiration' => true, 'expiry_warning_days' => 15, 'sort_order' => 2]);
+
+        $at = fn (int $days, ?DocumentType $type = null) => $this->makeDocument($sub, [
+            'document_type_id' => ($type ?? $this->insurance)->id,
+            'expiration_date' => now()->addDays($days)->toDateString(),
+            'file_path' => "subcontractor-documents/{$sub->id}/".str()->random(6).'.pdf',
+        ]);
+
+        $this->assertSame('expiring_soon', $at(7)->expiry_status);
+        $this->assertSame('valid', $at(8)->expiry_status, 'A 7-day type is not expiring at 8 days.');
+        $this->assertSame('expiring_soon', $at(15, $licence)->expiry_status);
+        $this->assertSame('valid', $at(16, $licence)->expiry_status);
+
+        $this->assertSame(2, SubcontractorDocument::expiringWithin()->count(), 'The scope judges each document by its own type, as the badge does.');
+        $this->assertSame(SubcontractorDocument::EXPIRY_EXPIRING_SOON, Vendor::query()->withDocumentHealth()->findOrFail($sub->id)->document_health);
+        $this->assertCount(2, $sub->documentsNeedingAttention());
+
+        $this->assertSame(30, DocumentType::create(['name' => 'Bond', 'requires_expiration' => true, 'sort_order' => 3])->fresh()->expiry_warning_days, 'A new type warns at 30 days unless told otherwise.');
+    }
+
     /*
     |---------------------------------------------------------------------------
     | The tab itself
