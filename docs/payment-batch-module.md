@@ -229,10 +229,20 @@ Simple form to create a batch with name, date, notes, and **contract filters**.
 | `$payAmounts` | array | Keyed by contract ID — inline amount inputs |
 | `$payMethods` | array | Keyed by contract ID — inline payment method selects. Every listed row is pre-set to `ContractPayment::DEFAULT_METHOD` (Check) in `render()` |
 | `$payNotes` | array | Keyed by contract ID — inline notes inputs |
+| `$sortField` / `$sortDirection` | string | Column sort, from `SortsContracts` (`#[Url]` as `sort` / `dir`). Sortable: Subcontractor, Project, Job Site / Lot, Contract #, Amount, Paid, Balance |
+| `$groupBy` | string | `client` / `project` / `job_site` / `subcontractor`, or empty (`#[Url]` as `group`). Status is not offered: a listed contract may have no batch line |
 
-| `$sortField` / `$sortDirection` | string | Column sort, from `SortsContracts` (`#[Url]` as `sort` / `dir`) |
+> **Note:** Filters are NOT `#[Url]`-persisted. Sort and grouping are — they are a way of reading the list, not part of the batch, and are not saved on it.
 
-> **Note:** Filters are NOT `#[Url]`-persisted. They are loaded from the batch on mount and saved back to the batch on "Save Draft".
+**Grouping on a paginated table (15 Oct 2026).** When a sort or a grouping is on, the whole
+filtered list is loaded light (`project.client`, `jobSite`, `subcontractor`), ordered and grouped
+in PHP (`SortsContracts::groupContracts()`), and only the page's ids are loaded in full
+(`sortedPage()`). Each group's heading row (`livewire/contract/partials/group-header.blade.php`)
+sits above its first row **on this page** and carries the **whole group's** Amount / Change Orders
+/ Paid / Balance (`SortsContracts::groupHeaders()`); a group that began on an earlier page says
+*continued from the previous page*. With neither on, the table is the plain SQL-paginated query
+it always was.
+ They are loaded from the batch on mount and saved back to the batch on "Save Draft".
 
 #### Computed Properties
 
@@ -298,29 +308,67 @@ Batch items are loaded separately and keyed by `contract_id` for O(1) lookup in 
 
 ### 4. PaymentBatchShow (`app/Livewire/PaymentBatch/PaymentBatchShow.php`)
 
-Read-only view of a batch with details, summary, and items table.
+Read-only view of a batch with details, summary, and items table — grouped and sorted as the
+reader chooses, and printed and exported in that same order.
+
+#### Public Properties
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `$groupBy` | string | `client` / `project` / `job_site` / `subcontractor` / `status`, or empty (`#[Url]` as `group`) |
+| `$sortField` / `$sortDirection` | string | `subcontractor` / `project` / `job_site` / `contract` / `amount` / `method` / `status` (`#[Url]` as `sort` / `dir`). Amount starts descending, text ascending; clicking again flips it |
 
 #### Computed Properties
 
 | Property | Description |
 |----------|-------------|
-| `summary` | Total, approved, pending, rejected amounts |
+| `summary` | Count, total, approved, pending, rejected amounts (`PaymentBatchLayout::lineTotals()`) |
+| `groups` | The lines in their groups, each with its own totals (`PaymentBatchLayout::lines()`). Ungrouped, one group with no label |
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `sort($field)` | Sorts by a column; an unknown column is ignored |
+| `resetLayout()` | Back to no grouping and the default order |
+| `layoutQuery()` | `group` / `sort` / `dir` for the PDF links, so paper comes out as the screen shows |
+| `exportCsv()` | See Exports |
+
+#### Layout rules (`app/Services/PaymentBatchLayout.php`)
+
+One class decides the order for the screen, the PDF and the CSV, so they cannot drift apart.
+
+- **Groups** are in reading order; blanks go last (*No client*, *No subcontractor*, *Project
+  General* after the lots). A **lot is grouped within its project** — lot names repeat between
+  projects — and its heading shows the project beside it. Status groups run approved, pending,
+  rejected.
+- **Inside a group** the rows keep the chosen column sort. Text sorts naturally and
+  case-blind (Lot 2 before Lot 10), blanks last in either direction.
+- **No column chosen:** status (approved, pending, rejected — the order the batch always had),
+  then project, lot, contract number, id. Deterministic, so two prints of the same batch match.
+- **From the browser:** `cleanGroup()`, `cleanLineSort()` and `cleanDirection()` drop anything
+  not on offer (an array included) back to the default.
 
 #### View Sections (top to bottom)
 1. **Header** — Batch name + status badge + Back / Export CSV / View PDF / Download PDF / Edit buttons
 2. **Batch Details Card** — Payment date, created by/at, approved by/at, notes, saved filter badges
 3. **Summary Cards (4)** — Total Amount (blue), Approved (green), Pending (amber), Rejected (red)
-4. **Items Table** — Subcontractor, Project, Job Site, Contract #, Amount, Method, Notes, Status badge
+4. **Items Table** — *Group by* select and *Reset order* in its header bar. Columns: Subcontractor
+   (with the contract's **employee** underneath, and the document-health chip on pending lines),
+   Project (client underneath), Job Site, Contract #, Amount, Pays, Method, Phase, Notes, Status.
+   A heading row per group (name, line count, subtotal, approved / pending / rejected split) and a
+   **Total** footer row. An empty batch shows its empty state instead.
 
 #### Exports (5 Oct 2026)
 
 Both carry every line of the batch plus the approved / pending / rejected / total figures, and
-both need `payments.batch`, the same grant as the screen.
+both need `payments.batch`, the same grant as the screen. **Since 15 Oct 2026 both follow the
+screen's grouping and sort** and both name the contract's employee.
 
 | Export | Where | Notes |
 |---|---|---|
-| CSV | `PaymentBatchShow::exportCsv()` | UTF-8 with BOM so Excel opens it cleanly. Batch header rows, then one row per item (subcontractor, client, project, job site, contract #, what it pays, method, phase, notes, status, amount), then the totals. Amounts are plain `1234.50` so a spreadsheet can sum them. |
-| PDF | `PaymentBatchPdfController` → `pdf/payment-batch.blade.php` | Letter landscape. Routes `payment-batches.pdf.view` (opens in a tab) and `payment-batches.pdf.download`, both behind `ability:payments.batch`. Money through `Number::currency`, so it follows the install's currency. |
+| CSV | `PaymentBatchShow::exportCsv()` | UTF-8 with BOM so Excel opens it cleanly. Batch header rows (with *Grouped by* when grouped), then one row per item (subcontractor, **contact (employee)**, client, project, job site, contract #, what it pays, method, phase, notes, status, amount), then the totals. Grouped, each group opens with a heading row (name, line count) and closes with a *Subtotal* row. Amounts are plain `1234.50` so a spreadsheet can sum them. |
+| PDF | `PaymentBatchPdfController` → `pdf/payment-batch.blade.php` | Letter landscape. Routes `payment-batches.pdf.view` (opens in a tab) and `payment-batches.pdf.download`, both behind `ability:payments.batch`. Reads `?group=&sort=&dir=` (the screen's links carry them). Group heading rows with count, approved / pending / rejected and subtotal; *Grouped by* in the header; the employee (and title) under the subcontractor. Money through `Number::currency`, so it follows the install's currency. |
 
 "Pays" comes from `PaymentBatchItem::getPaysLabel()`: the installment description, the
 measurement number, or *Retention Release*.
@@ -351,18 +399,24 @@ measurement number, or *Retention Release*.
 
 | # | Column | Notes |
 |---|--------|-------|
-| 1 | Subcontractor | Company name |
-| 2 | Project | Project name + client name subtitle |
-| 3 | Job Site / Lot | Job site name or "Project General" |
-| 4 | Contract # | Clickable link to contract show page |
-| 5 | Amount | Adjusted amount (original + change orders) |
-| 6 | Paid | Total paid (green) |
-| 7 | Balance | Remaining balance (amber if > 0, green if 0) |
-| 8 | Batch Amount | Inline input (pending), read-only display (approved/rejected) |
-| 9 | Method | Inline select (pending), read-only label (approved/rejected) |
-| 10 | Notes | Inline input (pending), read-only (approved/rejected) |
-| 11 | Item Status | Badge: Pending (amber), Approved (green), Rejected (red) |
-| 12 | Actions | Approve/Reject buttons (pending only) |
+| 1 | Subcontractor | Company name, document-health chip, the contract's employee underneath. Sortable |
+| 2 | Project | Project name + client name subtitle. Sortable |
+| 3 | Job Site / Lot | Job site name or "Project General". Sortable |
+| 4 | Contract # | Clickable link to contract show page. Sortable |
+| 5 | Amount | Original amount. Sortable |
+| 6 | Change Orders | Net (+ green / − red) with a toggle for the sub-row listing each one |
+| 7 | Paid | Total paid (green). Sortable |
+| 8 | Balance | Amount ± change orders − paid (amber if > 0, green if 0). Sortable |
+| 9 | Batch Amount | Inline input (pending), read-only display (approved/rejected) |
+| 10 | Pays | Installment / measurement select for contracts on a schedule |
+| 11 | Method | Inline select (pending), read-only label (approved/rejected) |
+| 12 | Phase | Inline input (pending), read-only (approved/rejected) |
+| 13 | Notes | Inline input (pending), read-only (approved/rejected) |
+| 14 | Item Status | Badge: Pending (amber), Approved (green), Rejected (red) |
+| 15 | Actions | Approve/Reject buttons (pending only) |
+
+Grouped, a heading row opens each group: name (+ project for a lot, client for a project), count,
+and the whole group's Amount / Change Orders / Paid / Balance.
 
 ---
 
@@ -459,6 +513,10 @@ Both use the same `ContractPayment` model and `Contract::updateStatusFromPayment
 | `resources/views/livewire/payment-batch/payment-batch-create.blade.php` | Create view |
 | `resources/views/livewire/payment-batch/payment-batch-edit.blade.php` | Edit view |
 | `resources/views/livewire/payment-batch/payment-batch-show.blade.php` | Show view |
+| `app/Http/Controllers/PaymentBatchPdfController.php` + `resources/views/pdf/payment-batch.blade.php` | Batch PDF (5 Oct 2026) |
+| `app/Services/PaymentBatchLayout.php` | Grouping and line order for the show screen, PDF and CSV; grouping for the contract tables (15 Oct 2026) |
+| `resources/views/livewire/contract/partials/group-header.blade.php` | Group heading row shared with `/contract-payments` (15 Oct 2026) |
+| `tests/Feature/Contract/PaymentBatchGroupingTest.php` | Grouping, sort, employee, PDF/CSV order — batch and Contract Payments |
 
 ### Modified
 

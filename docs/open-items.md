@@ -4,7 +4,14 @@ Rewritten **2026-08-21**, after the permissions module was completed and deploye
 eighteen module passes and the three closing phases. Read this first; every finished piece of
 work has its own file (index at the bottom).
 
-Last touched **2026-09-02**: company branding — a customer's own display name, app icon,
+Last touched **2026-10-15**: payment batch and Contract Payments grouping — group by client /
+project / job site / subcontractor (status too on a batch), sortable Subcontractor and Project,
+PDF and CSV in screen order, the contract's employee under the subcontractor on paper. Built and
+tested (11 new tests in `PaymentBatchGroupingTest`); **committed in `fd6aab4`; deployment not confirmed**. See
+`docs/changelog-2026-10-15-payment-batch-grouping.md`. Also open from that session: the catalog
+"cents shown as 1" report, which could not be reproduced (§7).
+
+Before that, **2026-09-02**: company branding — a customer's own display name, app icon,
 dark-mode icon and favicon, with the product's mark as the fallback. Built, tested (12 new
 tests; full suite green apart from three failures that pre-date it) and documented;
 **the working tree is not committed and nothing is deployed**. See
@@ -619,6 +626,28 @@ findings) — those are the ones phase 7 of that module has to work, grouped by 
 ---
 
 ## 7. Engineering items still open
+
+- **Catalog: a cost under 1 reported as showing "1" (BR install, 2026-10-15) — NOT REPRODUCED.**
+  The owner saw a catalog item with Cost 0,39 show *1* on the catalog list, on the Brazilian install
+  only (the matching expense report turned out to be a typing mistake). Checked locally with
+  pt_BR / BRL / country BR through the real components: create, list, edit, re-save and price
+  history all keep 39 cents as 39 (list shows *R$ 0,39* and *R$ 0,39/Unidade*); the formatter
+  gives *R$ 0,39*; no rounding step exists on the path. So the cause is in that install's data or
+  deployed version. **Next step:** a screenshot of the row and the item's Cost / Purchase Unit /
+  Usage Unit / Quantity Per Purchase from that install, and the commit it is running. Worth ruling
+  out first: the *Units* column's second line (`1 Unidade`) is Quantity Per Purchase, not a price.
+- **Catalog list rounds Quantity Per Purchase to a whole number** —
+  `catalog-item-index.blade.php` prints `number_format($item->units_per_purchase, 0)`, so 0,5 shows
+  as *1* and 0,39 as *0* (stored value is right). Found during the item above; not yet fixed.
+- **Item pickers label the purchase-unit price as a per-usage-unit price** — the catalog search
+  results in the expense item modal, purchase order create/edit, estimate create/edit and invoice
+  create/edit show `current_cost / usage_unit` (a R$ 39,00 box of 100 reads *R$ 39,00 / Unidade*),
+  while selecting fills `unit_cost` (R$ 0,39) correctly. Label only; not yet fixed.
+- **Four permission tests fail on a clean tree (seen 2026-10-15)** — `ConfinementTest` (*the same
+  person is admitted to their own project*), `LegacyBehaviourTest` (*every screen answers exactly as
+  it did before the engine*), `TaskMeetingTest` (*the task screens answer as they did for every
+  role*), `VendorDocumentRemindersTest` (*a person can opt out on their own profile*). They fail
+  identically with the grouping work stashed, so they pre-date it; not investigated.
 
 - **Scheduler timezone.** `config/app.php` sets `'timezone' => 'EST'` — fixed UTC−5, no
   daylight saving — and Laravel evaluates every scheduled time in it. Overdue task mail fires

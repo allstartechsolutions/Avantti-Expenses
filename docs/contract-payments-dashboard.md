@@ -29,6 +29,7 @@ Full-page Livewire component that powers the entire dashboard.
 | `$payAmounts` | `array` | Keyed by contract ID — inline amount inputs from the table |
 | `$payMethods` | `array` | Keyed by contract ID — inline payment method dropdowns from the table. Every listed row is pre-set to `ContractPayment::DEFAULT_METHOD` (Check) in `render()` |
 | `$sortField` / `$sortDirection` | `string` | Column sort, from the `SortsContracts` concern (`#[Url]` as `sort` / `dir`) |
+| `$groupBy` | `string` | `client` / `project` / `job_site` / `subcontractor`, or empty (`#[Url]` as `group`). Cleaned by `PaymentBatchLayout::cleanGroup()` in `updatedGroupBy()` |
 | `$payNotes` | `array` | Keyed by contract ID — inline notes text inputs from the table |
 | `$expandedContracts` | `array` | Array of contract IDs whose change order details are expanded in the table |
 
@@ -41,7 +42,9 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 | `clients` | Clients that have projects with at least one contract. Used for the client dropdown |
 | `projects` | Projects that have contracts, filtered by current client selection. Used for the project dropdown |
 | `subcontractors` | Subcontractors that have at least one contract. Used for the subcontractor dropdown |
-| `contracts` | Main data query — eager loads `project.client`, `jobSite`, `subcontractor`, `latestPayment`, `changeOrders` and uses `withSum('payments as total_paid_cents', 'amount')` + `withSum('changeOrders as change_orders_total_cents', 'amount')` to get totals in single subqueries (avoids N+1). Applies all active filters. Excludes paid/cancelled by default unless `$showZeroBalance` is true. Ordered by `project_id` then `job_site_id` |
+| `contractGroups` | Main data query — eager loads `project.client`, `jobSite`, `subcontractor`, `subcontractorEmployee`, `latestPayment`, `changeOrders` and uses `withSum('payments as total_paid_cents', 'amount')` + `withSum('changeOrders as change_orders_total_cents', 'amount')` to get totals in single subqueries (avoids N+1). Applies all active filters. Excludes paid/cancelled by default unless `$showZeroBalance` is true. Ordered by `project_id` then `job_site_id`, then by the column sort, then into groups (`SortsContracts::groupContracts()`); ungrouped it is one unlabelled group |
+| `contracts` | `contractGroups` flattened — the rows in screen order. Read by the table, the totals, the payees notice and the CSV |
+| `groupHeaderRows` | Heading row data keyed by each group's first contract: label, sub-label, and the group's count / amount / change orders / paid / balance (`SortsContracts::groupHeaders()`) |
 | `totals` | The **Total** row at the foot of the table: contract count, amount, change orders, paid and balance of the listed contracts (`SortsContracts::contractTotals()`) |
 | `summary` | Returns 4 metrics: pending balance, active contracts count, paid this month, total contract value. All respect the currently active filters |
 
@@ -51,10 +54,11 @@ All filter properties use the `#[Url]` attribute so filter state is preserved in
 |---|---|
 | `mount()` | Sets `$paymentDate` to today's date |
 | `updatedClientFilter()` | When client changes, resets project filter if the currently selected project doesn't belong to the new client |
-| `sort($field)` | Sorts by job_site, contract, amount, paid or balance; again flips the direction. Logic shared with the batch screen through `SortsContracts` |
+| `sort($field)` | Sorts by subcontractor, project, job_site, contract, amount, paid or balance; again flips the direction. Logic shared with the batch screen and the PDF through `SortsContracts` |
+| `updatedGroupBy()` | Drops a grouping that is not on offer back to none |
 | `toggleChangeOrders($contractId)` | Toggles a contract's change order details expansion in the table. Adds/removes the contract ID from `$expandedContracts` array |
 | `processPayments()` | Validates payment date, collects rows with amount > 0, validates each row (amount doesn't exceed balance), creates `ContractPayment` records in a DB transaction (method falls back to Check), calls `updateStatusFromPayments()` on each contract, resets inline inputs |
-| `exportCsv()` | Exports a CSV file with all currently filtered contracts. Uses `response()->stream()` with `fputcsv()`. Includes a "Type" column (Contract/Change Order) with detail rows for each change order below its contract. Columns: Type, Subcontractor, Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount. Filename: `contract-payments-YYYY-MM-DD.csv` |
+| `exportCsv()` | Exports the currently filtered contracts **in screen order** (grouping and sort). See *CSV Export Format*. Filename: `contract-payments-YYYY-MM-DD.csv` |
 
 #### Query Strategy
 
@@ -119,6 +123,7 @@ White card with a flex row containing:
 - **Project dropdown** (`wire:model.live`) — only shows projects belonging to selected client
 - **Subcontractor dropdown** (`wire:model.live`)
 - **Status dropdown** (`wire:model.live`) — active, completed, partially_paid, paid, cancelled
+- **Group by dropdown** (`wire:model.live`) — No grouping / Client / Project / Job Site / Subcontractor
 - **"Show Paid/Cancelled" toggle** (`wire:model.live`) — Tailwind CSS toggle switch
 
 #### Payment Date Bar
@@ -133,18 +138,27 @@ White card with a flex row containing:
 
 | # | Column | Source | Notes |
 |---|---|---|---|
-| 1 | Subcontractor | `contract.subcontractor.company_name` | Shows "-" if null |
-| 2 | Project | `contract.project.project_name` | Clickable link to `projects.overview`. Client name shown as subtitle |
-| 3 | Job Site / Lot | `contract.jobSite.job_site_name` | Clickable link to `jobsites.overview`. Shows plain text "Project General" if null |
-| 4 | Contract # | `contract.contract_number` | Clickable link to `contracts.show` |
-| 5 | Amount | `contract.amount` | Right-aligned, currency formatted |
+| 1 | Subcontractor | `contract.subcontractor.company_name` | Shows "-" if null. The contract's employee underneath. **Sortable** |
+| 2 | Project | `contract.project.project_name` | Clickable link to `projects.overview`. Client name shown as subtitle. **Sortable** |
+| 3 | Job Site / Lot | `contract.jobSite.job_site_name` | Clickable link to `jobsites.overview`. Shows plain text "Project General" if null. **Sortable** |
+| 4 | Contract # | `contract.contract_number` | Clickable link to `contracts.show`. **Sortable** |
+| 5 | Amount | `contract.amount` | Right-aligned, currency formatted. **Sortable** |
 | 6 | Change Orders | `change_orders_total_cents` | Green if >= 0, red if negative. Shows `+` prefix for positive values. Expand button (chevron) toggles detail sub-row. Shows "—" if no change orders |
-| 7 | Paid | Computed from `total_paid_cents` | Right-aligned, green text |
-| 8 | Balance | Amount + CO - Paid | Amber if > 0, green if 0. Now includes change orders |
+| 7 | Paid | Computed from `total_paid_cents` | Right-aligned, green text. **Sortable** |
+| 8 | Balance | Amount + CO - Paid | Amber if > 0, green if 0. Now includes change orders. **Sortable** |
 | 9 | Last Payment | `contract.latestPayment` | Date on first line, amount on second line |
 | 10 | Pay Today | Inline `<input type="number">` | `wire:model.blur`, only shown for rows with balance > 0 |
 | 11 | Method | Inline `<select>` | `wire:model`, optional, only shown for rows with balance > 0 |
 | 12 | Notes | Inline `<input type="text">` | `wire:model.blur`, only shown for rows with balance > 0 |
+
+Sorting puts blanks last in either direction (*Project General* after the lots, no subcontractor
+after the named ones) and orders text naturally (Lot 2 before Lot 10).
+
+**Grouped**, a heading row (`livewire/contract/partials/group-header.blade.php`, shared with the
+batch edit screen) opens each group: its name — a lot carries its project, a project its client —
+the contract count, and the group's Amount / Change Orders / Paid / Balance. Groups come in reading
+order with blanks last; the column sort applies inside each group. The **Total** footer is
+unchanged.
 
 #### Row Keys
 
@@ -298,8 +312,12 @@ Generates a landscape-oriented PDF report using `barryvdh/laravel-dompdf`. Accep
 - `GET /contract-payments/pdf/view` → `contract-payments.pdf.view` (displays in browser)
 
 **Query Parameters:**
-- `client`, `project`, `subcontractor`, `project_manager`, `status`, `show_zero_balance` — same filters as the dashboard
+- `client`, `project`, `subcontractor`, `project_manager`, `supervisor`, `status`, `show_zero_balance` — same filters as the dashboard
+- `sort`, `dir` — the screen's column sort (a non-string value is ignored)
+- `group` — the screen's grouping (`PaymentBatchLayout::cleanGroup()`; anything else means none)
 - `include_payments` — when `1`, includes full payment history per contract (detailed version)
+
+Both *Export PDF* links on the dashboard carry the current filters, sort and grouping.
 
 **Methods:**
 | Method | Description |
@@ -309,15 +327,15 @@ Generates a landscape-oriented PDF report using `barryvdh/laravel-dompdf`. Accep
 | `buildPdfData(Request)` | Shared data builder for both methods |
 | `getFilteredContracts(Request, bool)` | Queries contracts with filters, conditionally eager loads `payments` |
 | `getSummary($contracts)` | Computes totals: count, original value, change orders, paid, balance |
-| `getActiveFilters(Request)` | Resolves filter IDs to human-readable names for display |
+| `getActiveFilters(Request)` | Resolves filter IDs to human-readable names for display, plus *Grouped by* and *Sorted by* lines |
 
 ### View: `resources/views/pdf/contract-payments.blade.php`
 
 Landscape letter-size PDF with the following sections:
 
-1. **Header** — Company logo (base64), company name/address, "CONTRACT PAYMENTS" title, generated date, active filters
+1. **Header** — Company logo (base64), company name/address, "CONTRACT PAYMENTS" title, generated date, active filters (with *Grouped by* / *Sorted by*)
 2. **Summary Bar** — 5 boxes: Contracts count, Original Value, Change Orders (+/-), Total Paid, Balance Due (color-coded)
-3. **Contracts Table** — 11 columns: Subcontractor, Project, Job Site, Contract #, Amount, CO (+/-), Adjusted, Paid, Balance, Status, Last Payment
+3. **Contracts Table** — 11 columns: Subcontractor (the contract's employee and title underneath), Project, Job Site, Contract #, Amount, CO (+/-), Adjusted, Paid, Balance, Status, Last Payment. Grouped, a heading row per group with its count and Amount / CO / Adjusted / Paid / Balance
 4. **Change Order Details** — Nested under each contract with COs: date, title, description (truncated), amount (green/red)
 5. **Payment History** (detailed version only) — Nested under each contract: date, method, reference, notes, amount (green)
 6. **Footer** — Company name, report title, date
@@ -332,16 +350,24 @@ Landscape letter-size PDF with the following sections:
 
 ## CSV Export Format
 
-The CSV export includes a **Type** column to distinguish contract rows from change order detail rows:
+The CSV comes out **in the order the screen shows** — grouping and column sort — as UTF-8 with a
+BOM so Excel reads accents. A **Type** column tells the row kinds apart:
 
 | Type | Purpose | Filled Columns |
 |---|---|---|
+| Group | Opens each group (only when grouped) | Type, group name (+ project / client) in *Subcontractor*, the contract count in *Contact (Employee)*, and the group's Original Amount / Change Orders / Adjusted / Paid / Balance |
 | Contract | Main contract data row | All contract columns (Subcontractor through Last Payment Amount) |
 | Change Order | Detail row for each CO | Type, Contract #, CO Date, CO Title, CO Description, CO Amount |
 
-**Columns (18 total):** Type, Subcontractor, Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount
+**Columns (19 total):** Type, Subcontractor, Contact (Employee), Project, Client, Job Site, Contract #, Original Amount, Change Orders (+/-), Adjusted Amount, Paid, Balance, Status, Last Payment Date, Last Payment Amount, CO Date, CO Title, CO Description, CO Amount
 
-This format allows users to filter by "Type" column in Excel to see just contracts or just change orders.
+*Status* is the translated label (`Contract::getStatusLabel()`). Filter the *Type* column in Excel
+to see just contracts, just change orders or just the group totals.
+
+> **Changed 15 Oct 2026** for anyone with a spreadsheet built on the old file: *Contact (Employee)*
+> was inserted after *Subcontractor* (every later column moved one to the right), *Status* became
+> the translated label instead of the raw value, the BOM was added, and the rows now follow the
+> screen's sort and grouping instead of always project / job site.
 
 ---
 
@@ -350,6 +376,12 @@ This format allows users to filter by "Type" column in Excel to see just contrac
 ### Created
 - `app/Http/Controllers/ContractPaymentsPdfController.php` — PDF export controller
 - `resources/views/pdf/contract-payments.blade.php` — PDF template (landscape)
+
+### Grouping and sort (15 Oct 2026)
+See `changelog-2026-10-15-payment-batch-grouping.md`. `app/Livewire/Concerns/SortsContracts.php`
+(subcontractor / project sorts, `groupContracts()`, `groupHeaders()`), `app/Services/PaymentBatchLayout.php`,
+`resources/views/livewire/contract/partials/group-header.blade.php`, the component, its view, the
+PDF controller and template.
 
 ### Modified
 - `app/Livewire/Contract/ContractPayments.php` — Added `$expandedContracts`, `toggleChangeOrders()`, change orders eager loading/withSum, updated balance calc, enhanced CSV export
