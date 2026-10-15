@@ -26,10 +26,10 @@
             <x-ui.button variant="outline" wire:click="exportCsv" icon="download">
                 {{ __('Export CSV') }}
             </x-ui.button>
-            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.view', $paymentBatch->id) }}" target="_blank" icon="eye">
+            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.view', ['paymentBatch' => $paymentBatch->id, ...$this->layoutQuery()]) }}" target="_blank" icon="eye">
                 {{ __('View PDF') }}
             </x-ui.button>
-            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.download', $paymentBatch->id) }}" icon="arrow-down-tray">
+            <x-ui.button variant="outline" href="{{ route('payment-batches.pdf.download', ['paymentBatch' => $paymentBatch->id, ...$this->layoutQuery()]) }}" icon="arrow-down-tray">
                 {{ __('Download PDF') }}
             </x-ui.button>
             @if($paymentBatch->canBeEdited())
@@ -198,115 +198,182 @@
 
     <!-- Items Table -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Batch Items') }} ({{ $items->count() }})</h3>
+            @if($items->isNotEmpty())
+                <div class="flex flex-wrap items-center gap-3">
+                    <label for="batch-group-by" class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ __('Group by') }}</label>
+                    <select id="batch-group-by" wire:model.live="groupBy"
+                        class="w-full sm:w-48 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                        <option value="">{{ __('No grouping') }}</option>
+                        @foreach(\App\Services\PaymentBatchLayout::groupOptions() as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @if($groupBy !== '' || $sortField !== '')
+                        <x-ui.button variant="ghost" size="sm" icon="x" wire:click="resetLayout">
+                            {{ __('Reset order') }}
+                        </x-ui.button>
+                    @endif
+                </div>
+            @endif
         </div>
 
-        @if($items->count() > 0)
+        @if($items->isNotEmpty())
+            <p class="px-6 pt-3 text-xs text-slate-500 dark:text-slate-400">
+                {{ __('The PDF and the CSV come out grouped and sorted as shown here.') }}
+            </p>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-900">
                         <tr>
+                            @include('livewire.contract.partials.sort-header', ['field' => 'subcontractor', 'label' => __('Subcontractor')])
+                            @include('livewire.contract.partials.sort-header', ['field' => 'project', 'label' => __('Project')])
+                            @include('livewire.contract.partials.sort-header', ['field' => 'job_site', 'label' => __('Job Site')])
+                            @include('livewire.contract.partials.sort-header', ['field' => 'contract', 'label' => __('Contract #')])
+                            @include('livewire.contract.partials.sort-header', ['field' => 'amount', 'label' => __('Amount'), 'align' => 'right'])
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Subcontractor') }}
+                                {{ __('Pays') }}
                             </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Project') }}
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Job Site') }}
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Contract #') }}
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Amount') }}
-                            </th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Method') }}
-                            </th>
+                            @include('livewire.contract.partials.sort-header', ['field' => 'method', 'label' => __('Method')])
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Phase') }}
                             </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Notes') }}
                             </th>
-                            <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {{ __('Status') }}
-                            </th>
+                            @include('livewire.contract.partials.sort-header', ['field' => 'status', 'label' => __('Status'), 'align' => 'center'])
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                        @foreach($items as $item)
-                            @php
-                                $isRejected = $item->status === 'rejected';
-                                $isApproved = $item->status === 'approved';
-                                $itemColor = match($item->getStatusColor()) {
-                                    'amber' => 'bg-amber-100 text-amber-800 dark:bg-amber-700 dark:text-amber-300',
-                                    'green' => 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-300',
-                                    'red' => 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-300',
-                                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                };
-                            @endphp
-                            <tr class="{{ $isRejected ? 'bg-red-50/50 dark:bg-red-900/10' : ($isApproved ? 'bg-green-50/50 dark:bg-green-900/10' : '') }} hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->contract->subcontractor?->company_name ?? '-' }}
-                                    </div>
-                                    @if($item->contract->subcontractor && $item->status === 'pending')
-                                        <x-vendor.document-health class="mt-0.5"
-                                            :state="$item->contract->subcontractor->document_health"
-                                            :expired="$item->contract->subcontractor->expired_documents_count"
-                                            :expiring="$item->contract->subcontractor->expiring_documents_count" />
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->contract->project->project_name }}
-                                    </div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400">
-                                        {{ $item->contract->project->client?->company_name }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->contract->jobSite?->job_site_name ?? __('Project General') }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <a href="{{ route('contracts.show', $item->contract_id) }}"
-                                       class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">
-                                        {{ $item->contract->contract_number }}
-                                    </a>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-right">
-                                    <span class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ Number::currency($item->amount, config('app.currency'), config('app.locale')) }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ __($item->getPaymentMethodLabel()) }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
-                                        {{ $item->phase ?? '—' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }} max-w-xs truncate block" title="{{ $item->notes }}">
-                                        {{ $item->notes ?? '—' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-center">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $itemColor }}">
-                                        {{ __($item->getStatusLabel()) }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    @foreach($groups as $group)
+                        <tbody wire:key="batch-group-{{ $group['key'] }}" class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                            @if($group['label'] !== null)
+                                @php $groupTotals = $group['totals']; @endphp
+                                <tr class="bg-slate-100 dark:bg-slate-900/60">
+                                    <td colspan="4" class="px-4 py-2.5">
+                                        <div class="text-sm font-semibold text-slate-900 dark:text-white">
+                                            {{ $group['label'] }}
+                                            @if($group['sub'])
+                                                <span class="font-normal text-slate-500 dark:text-slate-400">· {{ $group['sub'] }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ trans_choice(':count item|:count items', $groupTotals['count'], ['count' => $groupTotals['count']]) }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                        {{ Number::currency($groupTotals['total_amount'], config('app.currency'), config('app.locale')) }}
+                                    </td>
+                                    <td colspan="5" class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1">
+                                            @if($groupTotals['approved_amount'] != 0)
+                                                <span class="text-green-600 dark:text-green-400">{{ __('Approved') }}: {{ Number::currency($groupTotals['approved_amount'], config('app.currency'), config('app.locale')) }}</span>
+                                            @endif
+                                            @if($groupTotals['pending_amount'] != 0)
+                                                <span class="text-amber-600 dark:text-amber-400">{{ __('Pending') }}: {{ Number::currency($groupTotals['pending_amount'], config('app.currency'), config('app.locale')) }}</span>
+                                            @endif
+                                            @if($groupTotals['rejected_amount'] != 0)
+                                                <span class="text-red-600 dark:text-red-400">{{ __('Rejected') }}: {{ Number::currency($groupTotals['rejected_amount'], config('app.currency'), config('app.locale')) }}</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
+                            @foreach($group['rows'] as $item)
+                                @php
+                                    $isRejected = $item->status === 'rejected';
+                                    $isApproved = $item->status === 'approved';
+                                    $employee = $item->contract->subcontractorEmployee;
+                                    $itemColor = match($item->getStatusColor()) {
+                                        'amber' => 'bg-amber-100 text-amber-800 dark:bg-amber-700 dark:text-amber-300',
+                                        'green' => 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-300',
+                                        'red' => 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-300',
+                                        default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                                    };
+                                @endphp
+                                <tr wire:key="batch-item-{{ $item->id }}" class="{{ $isRejected ? 'bg-red-50/50 dark:bg-red-900/10' : ($isApproved ? 'bg-green-50/50 dark:bg-green-900/10' : '') }} hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ $item->contract->subcontractor?->company_name ?? '-' }}
+                                        </div>
+                                        @if($employee)
+                                            <div class="text-xs text-slate-500 dark:text-slate-400"
+                                                 title="{{ $employee->name }}@if($employee->title) ({{ $employee->title }})@endif">
+                                                {{ Str::limit($employee->name, 30) }}
+                                            </div>
+                                        @endif
+                                        @if($item->contract->subcontractor && $item->status === 'pending')
+                                            <x-vendor.document-health class="mt-0.5"
+                                                :state="$item->contract->subcontractor->document_health"
+                                                :expired="$item->contract->subcontractor->expired_documents_count"
+                                                :expiring="$item->contract->subcontractor->expiring_documents_count" />
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ $item->contract->project->project_name }}
+                                        </div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ $item->contract->project->client?->company_name }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="text-sm text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ $item->contract->jobSite?->job_site_name ?? __('Project General') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <a href="{{ route('contracts.show', $item->contract_id) }}"
+                                           class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">
+                                            {{ $item->contract->contract_number }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                                        <span class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ Number::currency($item->amount, config('app.currency'), config('app.locale')) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ $item->getPaysLabel() }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ __($item->getPaymentMethodLabel()) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
+                                            {{ $item->phase ?? '—' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }} max-w-xs truncate block" title="{{ $item->notes }}">
+                                            {{ $item->notes ?? '—' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $itemColor }}">
+                                            {{ __($item->getStatusLabel()) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    @endforeach
+                    <tfoot class="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-600">
+                        <tr>
+                            <td colspan="4" class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ trans_choice(':count item|:count items', $this->summary['count'], ['count' => $this->summary['count']]) }}</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                {{ Number::currency($this->summary['total_amount'], config('app.currency'), config('app.locale')) }}
+                            </td>
+                            <td colspan="5"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         @else

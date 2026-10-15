@@ -89,11 +89,17 @@ class PaymentBatchItem extends Model
 
     public function getStatusLabel(): string
     {
-        return match ($this->status) {
+        return self::statusLabel($this->status);
+    }
+
+    /** The English label of a line status; callers wrap it in __(). */
+    public static function statusLabel(?string $status): string
+    {
+        return match ($status) {
             'pending' => 'Pending',
             'approved' => 'Approved',
             'rejected' => 'Rejected',
-            default => ucfirst($this->status),
+            default => ucfirst((string) $status),
         };
     }
 

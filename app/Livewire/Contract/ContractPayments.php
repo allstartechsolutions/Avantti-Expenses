@@ -10,6 +10,7 @@ use App\Models\ContractPayment;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
+use App\Services\PaymentBatchLayout;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,10 @@ class ContractPayments extends Component
     #[Url(except: false)]
     public bool $showZeroBalance = false;
 
+    /** Client, project, job site or subcontractor; empty lists the contracts ungrouped. */
+    #[Url(as: 'group', except: '')]
+    public string $groupBy = '';
+
     public string $paymentDate = '';
     public array $payAmounts = [];
     public array $payMethods = [];
@@ -60,8 +65,14 @@ class ContractPayments extends Component
     public function sort(string $field): void
     {
         if ($this->applySort($field)) {
-            unset($this->contracts);
+            unset($this->contractGroups, $this->contracts);
         }
+    }
+
+    public function updatedGroupBy(): void
+    {
+        $this->groupBy = PaymentBatchLayout::cleanGroup($this->groupBy, withStatus: false);
+        unset($this->contractGroups, $this->contracts);
     }
 
     public function toggleChangeOrders(int $contractId): void
@@ -127,8 +138,12 @@ class ContractPayments extends Component
             ->get(['id', 'name']);
     }
 
+    /**
+     * The filtered contracts, sorted, in their groups (one unlabelled group
+     * when ungrouped). The screen, the CSV and the PDF links all follow it.
+     */
     #[Computed]
-    public function contracts()
+    public function contractGroups(): Collection
     {
         $contracts = Contract::committed()
             ->with([
@@ -150,7 +165,21 @@ class ContractPayments extends Component
             ->orderBy('job_site_id')
             ->get();
 
-        return $this->sortContracts($contracts);
+        return $this->groupContracts($contracts, PaymentBatchLayout::cleanGroup($this->groupBy, withStatus: false));
+    }
+
+    /** The same contracts in screen order, without the groups. */
+    #[Computed]
+    public function contracts(): Collection
+    {
+        return $this->contractGroups->flatMap(fn ($group) => $group['rows'])->values();
+    }
+
+    /** Group heading rows, keyed by the first contract of each group. */
+    #[Computed]
+    public function groupHeaderRows(): array
+    {
+        return $this->groupHeaders($this->contractGroups, $this->contracts->pluck('id'));
     }
 
     /**
@@ -314,38 +343,33 @@ class ContractPayments extends Component
         $this->payNotes = [];
     }
 
+    /**
+     * The list as CSV, grouped and sorted as on screen: a Group row opens
+     * each group with its totals, a Change Order row follows its contract.
+     */
     public function exportCsv()
     {
         $this->authorizeAbility('payments.view');
 
-        $contracts = Contract::committed()
-            ->with(['project.client', 'jobSite', 'subcontractor', 'subcontractorEmployee', 'latestPayment', 'changeOrders'])
-            ->withSum('payments as total_paid_cents', 'amount')
-            ->withSum('changeOrders as change_orders_total_cents', 'amount')
-            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
-            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
-            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
-            ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']))
-            ->orderBy('project_id')
-            ->orderBy('job_site_id')
-            ->get();
+        $groups = $this->contractGroups;
+        $money = fn ($value) => number_format((float) $value, 2, '.', '');
 
         $filename = 'contract-payments-' . now()->format('Y-m-d') . '.csv';
 
         $headers = [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function () use ($contracts) {
+        $callback = function () use ($groups, $money) {
             $file = fopen('php://output', 'w');
+            // BOM so Excel reads UTF-8 correctly.
+            fwrite($file, "\xEF\xBB\xBF");
 
             fputcsv($file, [
                 __('Type'),
                 __('Subcontractor'),
+                __('Contact (Employee)'),
                 __('Project'),
                 __('Client'),
                 __('Job Site'),
@@ -364,41 +388,61 @@ class ContractPayments extends Component
                 __('CO Amount'),
             ]);
 
-            foreach ($contracts as $contract) {
-                $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
-                $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
-                $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
-                $adjustedAmount = round($contract->amount + $changeOrdersTotal, 2);
+            foreach ($groups as $group) {
+                if ($group['label'] !== null) {
+                    $totals = $this->contractTotals($group['rows']);
 
-                fputcsv($file, [
-                    __('Contract'),
-                    $contract->subcontractor?->company_name ?? '',
-                    $contract->project->project_name,
-                    $contract->project->client?->company_name ?? '',
-                    $contract->jobSite?->job_site_name ?? __('Project General'),
-                    $contract->contract_number,
-                    number_format($contract->amount, 2, '.', ''),
-                    number_format($changeOrdersTotal, 2, '.', ''),
-                    number_format($adjustedAmount, 2, '.', ''),
-                    number_format($totalPaidDollars, 2, '.', ''),
-                    number_format($balance, 2, '.', ''),
-                    ucfirst(str_replace('_', ' ', $contract->status)),
-                    $contract->latestPayment?->payment_date->format('Y-m-d') ?? '',
-                    $contract->latestPayment ? number_format($contract->latestPayment->amount, 2, '.', '') : '',
-                    '', '', '', '',
-                ]);
-
-                foreach ($contract->changeOrders as $co) {
                     fputcsv($file, [
-                        __('Change Order'),
+                        __('Group'),
+                        $group['sub'] ? $group['label'] . ' — ' . $group['sub'] : $group['label'],
+                        trans_choice(':count contract|:count contracts', $totals['count'], ['count' => $totals['count']]),
                         '', '', '', '',
-                        $contract->contract_number,
-                        '', '', '', '', '', '', '', '',
-                        $co->date->format('Y-m-d'),
-                        $co->title,
-                        $co->description ?? '',
-                        number_format($co->amount, 2, '.', ''),
+                        $money($totals['amount']),
+                        $money($totals['change_orders']),
+                        $money($totals['adjusted']),
+                        $money($totals['paid']),
+                        $money($totals['balance']),
+                        '', '', '', '', '', '', '',
                     ]);
+                }
+
+                foreach ($group['rows'] as $contract) {
+                    $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
+                    $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
+                    $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
+                    $adjustedAmount = round($contract->amount + $changeOrdersTotal, 2);
+
+                    fputcsv($file, [
+                        __('Contract'),
+                        $contract->subcontractor?->company_name ?? '',
+                        $contract->subcontractorEmployee?->name ?? '',
+                        $contract->project->project_name,
+                        $contract->project->client?->company_name ?? '',
+                        $contract->jobSite?->job_site_name ?? __('Project General'),
+                        $contract->contract_number,
+                        $money($contract->amount),
+                        $money($changeOrdersTotal),
+                        $money($adjustedAmount),
+                        $money($totalPaidDollars),
+                        $money($balance),
+                        $contract->getStatusLabel(),
+                        $contract->latestPayment?->payment_date->format('Y-m-d') ?? '',
+                        $contract->latestPayment ? $money($contract->latestPayment->amount) : '',
+                        '', '', '', '',
+                    ]);
+
+                    foreach ($contract->changeOrders as $co) {
+                        fputcsv($file, [
+                            __('Change Order'),
+                            '', '', '', '', '',
+                            $contract->contract_number,
+                            '', '', '', '', '', '', '', '',
+                            $co->date->format('Y-m-d'),
+                            $co->title,
+                            $co->description ?? '',
+                            $money($co->amount),
+                        ]);
+                    }
                 }
             }
 

@@ -213,6 +213,17 @@
                 </select>
             </div>
 
+            <!-- Group By -->
+            <div class="w-full md:w-48">
+                <select wire:model.live="groupBy" aria-label="{{ __('Group by') }}"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    <option value="">{{ __('No grouping') }}</option>
+                    @foreach(\App\Services\PaymentBatchLayout::groupOptions(withStatus: false) as $value => $label)
+                        <option value="{{ $value }}">{{ __('Group by :field', ['field' => $label]) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="flex-1"></div>
 
             <!-- Show Paid/Cancelled Toggle -->
@@ -263,12 +274,8 @@
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-900">
                     <tr>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Subcontractor') }}
-                        </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            {{ __('Project') }}
-                        </th>
+                        @include('livewire.contract.partials.sort-header', ['field' => 'subcontractor', 'label' => __('Subcontractor')])
+                        @include('livewire.contract.partials.sort-header', ['field' => 'project', 'label' => __('Project')])
                         @include('livewire.contract.partials.sort-header', ['field' => 'job_site', 'label' => __('Job Site / Lot')])
                         @include('livewire.contract.partials.sort-header', ['field' => 'contract', 'label' => __('Contract #')])
                         @include('livewire.contract.partials.sort-header', ['field' => 'amount', 'label' => __('Amount'), 'align' => 'right'])
@@ -313,6 +320,9 @@
                             $isPending = $batchItem && $batchItem->status === 'pending';
                             $isExpanded = in_array($contract->id, $expandedContracts);
                         @endphp
+                        @if($header = $groupHeaders[$contract->id] ?? null)
+                            @include('livewire.contract.partials.group-header', ['header' => $header, 'trailing' => 7])
+                        @endif
                         <tr wire:key="contract-row-{{ $contract->id }}" class="{{ $isPaidOrCancelled ? 'opacity-50 bg-slate-50 dark:bg-slate-900/30' : ($isApproved ? 'bg-green-50/50 dark:bg-green-900/10' : ($isRejected ? 'bg-red-50/50 dark:bg-red-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')) }}">
                             <!-- Subcontractor -->
                             <td class="px-4 py-3 whitespace-nowrap">

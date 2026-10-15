@@ -74,6 +74,9 @@
                     <span style="color: {{ $statusColors[$batch->status] ?? '#95a5a6' }}; font-weight: bold;">{{ __($batch->getStatusLabel()) }}</span>
                 </div>
                 <div style="font-size: 7pt; color: #888; margin-top: 2px;">{{ __('Generated') }}: {{ $generatedAt->appDateTime() }}</div>
+                @if($groupLabel)
+                    <div style="font-size: 7pt; color: #888;">{{ __('Grouped by') }}: {{ $groupLabel }}</div>
+                @endif
             </td>
         </tr>
     </table>
@@ -166,28 +169,51 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($items as $index => $item)
-                    @php
-                        $rejected = $item->status === 'rejected';
-                        $muted = $rejected ? 'color: #999; text-decoration: line-through;' : '';
-                    @endphp
-                    <tr style="background-color: {{ $index % 2 === 0 ? '#ffffff' : '#f9fafb' }};">
-                        <td style="{{ $td }} {{ $muted }}">{{ $item->contract->subcontractor?->company_name ?? '—' }}</td>
-                        <td style="{{ $td }} {{ $muted }}">
-                            {{ $item->contract->project->project_name }}
-                            @if($item->contract->project->client)
-                                <br><span style="font-size: 6pt; color: #888;">{{ $item->contract->project->client->company_name }}</span>
-                            @endif
-                        </td>
-                        <td style="{{ $td }} {{ $muted }}">{{ $item->contract->jobSite?->job_site_name ?? __('Project General') }}</td>
-                        <td style="{{ $td }} {{ $muted }} font-weight: bold;">{{ $item->contract->contract_number }}</td>
-                        <td style="{{ $td }} {{ $muted }}">{{ $item->getPaysLabel() }}</td>
-                        <td style="{{ $td }} {{ $muted }}">{{ __($item->getPaymentMethodLabel()) }}</td>
-                        <td style="{{ $td }} {{ $muted }}">{{ $item->phase ?? '—' }}</td>
-                        <td style="{{ $td }} {{ $muted }}">{{ $item->notes ?? '—' }}</td>
-                        <td style="{{ $td }} text-align: center; font-weight: bold; color: {{ $statusColors[$item->status] ?? '#95a5a6' }};">{{ __($item->getStatusLabel()) }}</td>
-                        <td style="{{ $td }} {{ $muted }} text-align: right; font-weight: bold;">{{ $money($item->amount) }}</td>
-                    </tr>
+                @foreach($groups as $group)
+                    @if($group['label'] !== null)
+                        @php $groupTotals = $group['totals']; @endphp
+                        <tr style="background-color: #e5e9f4;">
+                            <td colspan="9" style="{{ $td }} font-weight: bold; font-size: 8pt; color: #3F5189;">
+                                {{ $group['label'] }}@if($group['sub'])<span style="font-weight: normal; color: #666;"> · {{ $group['sub'] }}</span>@endif
+                                <span style="font-weight: normal; color: #666; font-size: 7pt;">
+                                    — {{ trans_choice(':count item|:count items', $groupTotals['count'], ['count' => $groupTotals['count']]) }}
+                                    @if($groupTotals['approved_amount'] != 0) | {{ __('Approved') }}: {{ $money($groupTotals['approved_amount']) }}@endif
+                                    @if($groupTotals['pending_amount'] != 0) | {{ __('Pending') }}: {{ $money($groupTotals['pending_amount']) }}@endif
+                                    @if($groupTotals['rejected_amount'] != 0) | {{ __('Rejected') }}: {{ $money($groupTotals['rejected_amount']) }}@endif
+                                </span>
+                            </td>
+                            <td style="{{ $td }} text-align: right; font-weight: bold; font-size: 8pt; color: #3F5189;">{{ $money($groupTotals['total_amount']) }}</td>
+                        </tr>
+                    @endif
+                    @foreach($group['rows'] as $index => $item)
+                        @php
+                            $rejected = $item->status === 'rejected';
+                            $muted = $rejected ? 'color: #999; text-decoration: line-through;' : '';
+                            $employee = $item->contract->subcontractorEmployee;
+                        @endphp
+                        <tr style="background-color: {{ $index % 2 === 0 ? '#ffffff' : '#f9fafb' }};">
+                            <td style="{{ $td }} {{ $muted }}">
+                                {{ $item->contract->subcontractor?->company_name ?? '—' }}
+                                @if($employee)
+                                    <br><span style="font-size: 6pt; color: #888;">{{ $employee->name }}@if($employee->title) ({{ $employee->title }})@endif</span>
+                                @endif
+                            </td>
+                            <td style="{{ $td }} {{ $muted }}">
+                                {{ $item->contract->project->project_name }}
+                                @if($item->contract->project->client)
+                                    <br><span style="font-size: 6pt; color: #888;">{{ $item->contract->project->client->company_name }}</span>
+                                @endif
+                            </td>
+                            <td style="{{ $td }} {{ $muted }}">{{ $item->contract->jobSite?->job_site_name ?? __('Project General') }}</td>
+                            <td style="{{ $td }} {{ $muted }} font-weight: bold;">{{ $item->contract->contract_number }}</td>
+                            <td style="{{ $td }} {{ $muted }}">{{ $item->getPaysLabel() }}</td>
+                            <td style="{{ $td }} {{ $muted }}">{{ __($item->getPaymentMethodLabel()) }}</td>
+                            <td style="{{ $td }} {{ $muted }}">{{ $item->phase ?? '—' }}</td>
+                            <td style="{{ $td }} {{ $muted }}">{{ $item->notes ?? '—' }}</td>
+                            <td style="{{ $td }} text-align: center; font-weight: bold; color: {{ $statusColors[$item->status] ?? '#95a5a6' }};">{{ __($item->getStatusLabel()) }}</td>
+                            <td style="{{ $td }} {{ $muted }} text-align: right; font-weight: bold;">{{ $money($item->amount) }}</td>
+                        </tr>
+                    @endforeach
                 @endforeach
             </tbody>
             <tfoot>

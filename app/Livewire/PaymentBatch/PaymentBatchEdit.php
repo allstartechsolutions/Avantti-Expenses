@@ -12,11 +12,13 @@ use App\Models\PaymentBatchItem;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
+use App\Services\PaymentBatchLayout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -65,6 +67,10 @@ class PaymentBatchEdit extends Component
      * the parcela payable a second time.
      */
     public array $payTargets = [];
+
+    /** Client, project, job site or subcontractor; empty lists the contracts ungrouped. */
+    #[Url(as: 'group', except: '')]
+    public string $groupBy = '';
 
     /** Contracts whose change orders (back charges included) are shown in a sub-row. */
     public array $expandedContracts = [];
@@ -125,6 +131,12 @@ class PaymentBatchEdit extends Component
         if ($this->applySort($field)) {
             $this->resetPage();
         }
+    }
+
+    public function updatedGroupBy(): void
+    {
+        $this->groupBy = PaymentBatchLayout::cleanGroup($this->groupBy, withStatus: false);
+        $this->resetPage();
     }
 
     public function toggleChangeOrders(int $contractId): void
@@ -789,15 +801,18 @@ class PaymentBatchEdit extends Component
         ];
 
         // Every filtered contract, light: the totals row covers the whole
-        // list rather than the page, and a sort has to see all of it.
+        // list rather than the page, and a sort or a grouping has to see all of it.
         $listed = (clone $query)->with([
-            'jobSite',
+            'project.client', 'jobSite',
             // The document notice covers every payee on the list, not the page.
             'subcontractor' => fn ($q) => $q->withDocumentHealth(),
-        ])->get();
+        ])->orderBy('project_id')->orderBy('job_site_id')->orderBy('id')->get();
 
-        $contracts = $this->isSorted()
-            ? $this->sortedPage($listed, $query, $relations, 50)
+        $groupBy = PaymentBatchLayout::cleanGroup($this->groupBy, withStatus: false);
+        $groups = $this->groupContracts($listed, $groupBy);
+
+        $contracts = $this->isSorted() || $groupBy
+            ? $this->sortedPage($groups->flatMap(fn ($group) => $group['rows']->pluck('id'))->values(), $query, $relations, 50)
             : $query->with($relations)->orderBy('project_id')->orderBy('job_site_id')->paginate(50);
 
         // Get batch items indexed by contract_id for quick lookup
@@ -815,6 +830,7 @@ class PaymentBatchEdit extends Component
             'contracts' => $contracts,
             'batchItems' => $batchItems,
             'totals' => $this->contractTotals($listed),
+            'groupHeaders' => $groupBy ? $this->groupHeaders($groups, $contracts->pluck('id')) : [],
             // Approve All pays every pending item, filtered out or not, so
             // their payees are judged alongside the ones on the list.
             'payees' => $listed->pluck('subcontractor')->merge(
@@ -829,13 +845,12 @@ class PaymentBatchEdit extends Component
 
     /**
      * The table is paginated but the sort is the one /contract-payments uses
-     * (natural lot order, derived balance), so the whole filtered list is
-     * sorted on its sums alone and only the page on screen is fully loaded.
+     * (natural lot order, derived balance) and the groups span the whole
+     * list, so the filtered contracts are ordered on their sums alone and
+     * only the page on screen is fully loaded.
      */
-    protected function sortedPage($listed, $query, array $relations, int $perPage): LengthAwarePaginator
+    protected function sortedPage($ids, $query, array $relations, int $perPage): LengthAwarePaginator
     {
-        $ids = $this->sortContracts($listed)->pluck('id');
-
         $page = $this->getPage();
         $pageIds = $ids->forPage($page, $perPage)->values();
 

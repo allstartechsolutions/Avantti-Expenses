@@ -4062,5 +4062,14 @@
     "Since :date": "Since :date",
     "No inactive employees": "No inactive employees",
     "No active employees": "No active employees",
-    "Switch the filter to All to see everyone on file.": "Switch the filter to All to see everyone on file."
+    "Switch the filter to All to see everyone on file.": "Switch the filter to All to see everyone on file.",
+    "Group by": "Group by",
+    "Group by :field": "Group by :field",
+    "No grouping": "No grouping",
+    "No client": "No client",
+    "Grouped by": "Grouped by",
+    "Reset order": "Reset order",
+    "The PDF and the CSV come out grouped and sorted as shown here.": "The PDF and the CSV come out grouped and sorted as shown here.",
+    "continued from the previous page": "continued from the previous page",
+    "Group": "Group"
 }

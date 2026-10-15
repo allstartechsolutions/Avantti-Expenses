@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Livewire\Concerns\SortsContracts;
 use App\Models\Company;
 use App\Models\Contract;
+use App\Services\PaymentBatchLayout;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ContractPaymentsPdfController extends Controller
 {
-    // The PDF follows the column sort chosen on screen.
+    // The PDF follows the column sort and the grouping chosen on screen.
     use SortsContracts;
 
     public function download(Request $request)
@@ -40,13 +41,16 @@ class ContractPaymentsPdfController extends Controller
     {
         $includePayments = $request->boolean('include_payments');
 
-        $this->sortField = (string) $request->query('sort', '');
+        $this->sortField = is_string($request->query('sort')) ? $request->query('sort') : '';
         $this->sortDirection = $request->query('dir') === 'desc' ? 'desc' : 'asc';
 
-        $contracts = $this->sortContracts($this->getFilteredContracts($request, $includePayments));
+        $groupBy = PaymentBatchLayout::cleanGroup($request->query('group'), withStatus: false);
+        $groups = $this->groupContracts($this->getFilteredContracts($request, $includePayments), $groupBy);
+        $contracts = $groups->flatMap(fn ($group) => $group['rows'])->values();
 
         return [
             'contracts' => $contracts,
+            'groupHeaders' => $this->groupHeaders($groups, $contracts->pluck('id')),
             'company' => Company::first(),
             'summary' => $this->getSummary($contracts),
             'filters' => $this->getActiveFilters($request),
@@ -65,7 +69,7 @@ class ContractPaymentsPdfController extends Controller
         $statusFilter = $request->query('status');
         $showZeroBalance = $request->boolean('show_zero_balance');
 
-        $eagerLoad = ['project.client', 'jobSite', 'subcontractor', 'latestPayment', 'changeOrders'];
+        $eagerLoad = ['project.client', 'jobSite', 'subcontractor', 'subcontractorEmployee', 'latestPayment', 'changeOrders'];
         if ($includePayments) {
             $eagerLoad[] = 'payments';
         }
@@ -151,9 +155,14 @@ class ContractPaymentsPdfController extends Controller
         if ($request->boolean('show_zero_balance')) {
             $filters[] = __('Including Paid/Cancelled');
         }
+        if ($groupBy = PaymentBatchLayout::cleanGroup($request->query('group'), withStatus: false)) {
+            $filters[] = __('Grouped by') . ': ' . PaymentBatchLayout::groupOptions(withStatus: false)[$groupBy];
+        }
         if ($this->isSorted()) {
             $filters[] = __('Sorted by :column, :direction', [
                 'column' => match ($this->sortField) {
+                    'subcontractor' => __('Subcontractor'),
+                    'project' => __('Project'),
                     'job_site' => __('Job Site'),
                     'contract' => __('Contract #'),
                     'amount' => __('Amount'),

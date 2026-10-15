@@ -5460,5 +5460,14 @@
     "Since :date": "Desde :date",
     "No inactive employees": "Nenhum funcionário inativo",
     "No active employees": "Nenhum funcionário ativo",
-    "Switch the filter to All to see everyone on file.": "Mude o filtro para Todos para ver todos os cadastrados."
+    "Switch the filter to All to see everyone on file.": "Mude o filtro para Todos para ver todos os cadastrados.",
+    "Group by": "Agrupar por",
+    "Group by :field": "Agrupar por :field",
+    "No grouping": "Sem agrupamento",
+    "No client": "Sem cliente",
+    "Grouped by": "Agrupado por",
+    "Reset order": "Restaurar ordem",
+    "The PDF and the CSV come out grouped and sorted as shown here.": "O PDF e o CSV saem agrupados e ordenados como mostrado aqui.",
+    "continued from the previous page": "continuação da página anterior",
+    "Group": "Grupo"
 }

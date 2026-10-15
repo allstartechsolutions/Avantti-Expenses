@@ -2,14 +2,15 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Services\PaymentBatchLayout;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 
 /**
- * Column sorting and the totals row for the contract payment tables
- * (/contract-payments and the payment batch screen). Paid and balance are
- * derived per row and lots sort in natural order, so both work on a loaded
- * collection rather than in SQL.
+ * Column sorting, grouping and the totals rows for the contract payment
+ * tables (/contract-payments, its PDF and the payment batch screen). Paid
+ * and balance are derived per row and lots sort in natural order, so all of
+ * it works on a loaded collection rather than in SQL.
  */
 trait SortsContracts
 {
@@ -20,7 +21,7 @@ trait SortsContracts
     #[Url(as: 'dir', except: 'asc')]
     public string $sortDirection = 'asc';
 
-    public const SORTABLE = ['job_site', 'contract', 'amount', 'paid', 'balance'];
+    public const SORTABLE = ['subcontractor', 'project', 'job_site', 'contract', 'amount', 'paid', 'balance'];
 
     /**
      * Sort by a column; clicking it again flips the direction. Money columns
@@ -69,9 +70,10 @@ trait SortsContracts
     }
 
     /**
-     * Expects jobSite loaded and total_paid_cents / change_orders_total_cents
-     * summed. Project-level contracts (no job site) always come after the
-     * lots, whichever the direction.
+     * Expects project, jobSite and subcontractor loaded and total_paid_cents /
+     * change_orders_total_cents summed. Project-level contracts (no job site)
+     * always come after the lots, and contracts with no subcontractor after
+     * the rest, whichever the direction.
      */
     protected function sortContracts(Collection $contracts): Collection
     {
@@ -88,7 +90,13 @@ trait SortsContracts
                 return $a->jobSite === null ? 1 : -1;
             }
 
+            if ($this->sortField === 'subcontractor' && ($a->subcontractor === null) !== ($b->subcontractor === null)) {
+                return $a->subcontractor === null ? 1 : -1;
+            }
+
             $result = match ($this->sortField) {
+                'subcontractor' => strnatcasecmp($a->subcontractor?->company_name ?? '', $b->subcontractor?->company_name ?? ''),
+                'project' => strnatcasecmp($a->project?->project_name ?? '', $b->project?->project_name ?? ''),
                 'job_site' => strnatcasecmp($a->jobSite?->job_site_name ?? '', $b->jobSite?->job_site_name ?? ''),
                 'contract' => strnatcasecmp($a->contract_number, $b->contract_number),
                 'amount' => $a->amount <=> $b->amount,
@@ -98,5 +106,42 @@ trait SortsContracts
 
             return $descending ? -$result : $result;
         })->values();
+    }
+
+    /**
+     * Sorted contracts in their groups (client, project, job site,
+     * subcontractor), the groups in reading order. Expects what
+     * sortContracts() expects, plus project.client.
+     */
+    protected function groupContracts(Collection $contracts, string $groupBy): Collection
+    {
+        return PaymentBatchLayout::arrange($this->sortContracts($contracts), $groupBy, fn ($contract) => $contract);
+    }
+
+    /**
+     * A heading for each group with a row among $shownIds, keyed by its first
+     * row there. The figures are the whole group's, and a group that began
+     * on an earlier page says so.
+     */
+    protected function groupHeaders(Collection $groups, Collection $shownIds): array
+    {
+        $headers = [];
+
+        foreach ($groups as $group) {
+            $ids = $group['rows']->pluck('id');
+            $first = $ids->first(fn ($id) => $shownIds->contains($id));
+
+            if ($first !== null && $group['label'] !== null) {
+                $headers[$first] = [
+                    'key' => $group['key'],
+                    'label' => $group['label'],
+                    'sub' => $group['sub'],
+                    'continued' => $ids->first() !== $first,
+                    'totals' => $this->contractTotals($group['rows']),
+                ];
+            }
+        }
+
+        return $headers;
     }
 }

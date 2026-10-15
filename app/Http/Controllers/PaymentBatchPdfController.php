@@ -4,46 +4,48 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\PaymentBatch;
+use App\Services\PaymentBatchLayout;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 
 /**
  * One payment batch on paper — the header, every line with what it pays,
- * and the approved / pending / rejected totals. Guarded on the route with
- * the same grant as the batch screen.
+ * and the approved / pending / rejected totals. Grouped and sorted as the
+ * batch screen was when the link was clicked (?group=&sort=&dir=). Guarded
+ * on the route with the same grant as the batch screen.
  */
 class PaymentBatchPdfController extends Controller
 {
-    public function download(PaymentBatch $paymentBatch)
+    public function download(Request $request, PaymentBatch $paymentBatch)
     {
-        return $this->pdf($paymentBatch)->download($this->filename($paymentBatch));
+        return $this->pdf($request, $paymentBatch)->download($this->filename($paymentBatch));
     }
 
-    public function stream(PaymentBatch $paymentBatch)
+    public function stream(Request $request, PaymentBatch $paymentBatch)
     {
-        return $this->pdf($paymentBatch)->stream($this->filename($paymentBatch));
+        return $this->pdf($request, $paymentBatch)->stream($this->filename($paymentBatch));
     }
 
-    private function pdf(PaymentBatch $paymentBatch)
+    private function pdf(Request $request, PaymentBatch $paymentBatch)
     {
         $paymentBatch->load(['client', 'project', 'subcontractor', 'projectManager', 'supervisor', 'createdBy', 'approvedBy']);
 
-        $items = $paymentBatch->items()
-            ->with(['contract.project.client', 'contract.jobSite', 'contract.subcontractor', 'scheduleItem', 'measurement'])
-            ->orderBy('status')
-            ->get();
+        $groupBy = PaymentBatchLayout::cleanGroup($request->query('group'));
 
-        $cents = fn (?string $status = null) => ($status ? $items->where('status', $status) : $items)
-            ->sum(fn ($item) => $item->getRawOriginal('amount')) / 100;
+        $groups = PaymentBatchLayout::lines(
+            $paymentBatch,
+            $groupBy,
+            PaymentBatchLayout::cleanLineSort($request->query('sort')),
+            PaymentBatchLayout::cleanDirection($request->query('dir')),
+        );
+        $items = $groups->flatMap(fn ($group) => $group['rows']);
 
         $pdf = Pdf::loadView('pdf.payment-batch', [
             'batch' => $paymentBatch,
             'items' => $items,
-            'summary' => [
-                'total_amount' => $cents(),
-                'approved_amount' => $cents('approved'),
-                'pending_amount' => $cents('pending'),
-                'rejected_amount' => $cents('rejected'),
-            ],
+            'groups' => $groups,
+            'groupLabel' => $groupBy ? PaymentBatchLayout::groupOptions()[$groupBy] : null,
+            'summary' => PaymentBatchLayout::lineTotals($items),
             'company' => Company::first(),
             'generatedAt' => now(),
         ]);

@@ -4,6 +4,8 @@ From the client's change list (`docs/Alteracoes Expenses Avantti.docx`), items 4
 Items 3 and 6 (*"seleção por subcontractor e jobsite"* on the batch and Contract Payments
 screens) are on hold until the client says what they mean: both screens already filter by
 job site and by subcontractor.
+*Update 15 Oct 2026:* they meant grouping — done for the batch screens, see
+`changelog-2026-10-15-payment-batch-grouping.md`.
 
 ## 4. The batch screen shows change orders (back charges) like Contract Payments
 

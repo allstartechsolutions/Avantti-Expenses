@@ -105,9 +105,27 @@
                     $bgColor = $index % 2 === 0 ? '#ffffff' : '#f9fafb';
                     $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
                 @endphp
+                @if($header = $groupHeaders[$contract->id] ?? null)
+                    @php $groupTotals = $header['totals']; @endphp
+                    <tr style="background-color: #e5e9f4;">
+                        <td colspan="4" style="border: 1px solid #ddd; padding: 4px; font-size: 8pt; font-weight: bold; color: #3F5189;">
+                            {{ $header['label'] }}@if($header['sub'])<span style="font-weight: normal; color: #666;"> · {{ $header['sub'] }}</span>@endif
+                            <span style="font-weight: normal; color: #666; font-size: 7pt;">— {{ trans_choice(':count contract|:count contracts', $groupTotals['count'], ['count' => $groupTotals['count']]) }}</span>
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold;">${{ number_format($groupTotals['amount'], 2) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold; color: {{ $groupTotals['change_orders'] >= 0 ? '#27ae60' : '#e74c3c' }};">{{ $groupTotals['change_orders'] > 0 ? '+' : '' }}${{ number_format($groupTotals['change_orders'], 2) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold;">${{ number_format($groupTotals['adjusted'], 2) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold; color: #27ae60;">${{ number_format($groupTotals['paid'], 2) }}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold; color: {{ $groupTotals['balance'] > 0 ? '#e67e22' : '#27ae60' }};">${{ number_format($groupTotals['balance'], 2) }}</td>
+                        <td colspan="2" style="border: 1px solid #ddd; padding: 4px;"></td>
+                    </tr>
+                @endif
                 <tr style="background-color: {{ $bgColor }};">
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; {{ $isPaidOrCancelled ? 'color: #999;' : '' }}">
                         {{ $contract->subcontractor?->company_name ?? '—' }}
+                        @if($employee = $contract->subcontractorEmployee)
+                            <br><span style="font-size: 6pt; color: #888;">{{ $employee->name }}@if($employee->title) ({{ $employee->title }})@endif</span>
+                        @endif
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; {{ $isPaidOrCancelled ? 'color: #999;' : '' }}">
                         {{ $contract->project->project_name }}
