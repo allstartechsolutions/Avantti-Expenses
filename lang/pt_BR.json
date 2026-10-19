@@ -1518,6 +1518,7 @@
     "Contract File": "Arquivo do Contrato",
     "Contract created successfully!": "Contrato criado com sucesso!",
     "Contract deleted successfully.": "Contrato excluído com sucesso.",
+    "This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.": "Este contrato está em um lote de pagamento e não pode ser excluído. Remova-o do lote primeiro ou cancele o contrato.",
     "Contract status updated successfully.": "Status do contrato atualizado com sucesso.",
     "Contract updated successfully!": "Contrato atualizado com sucesso!",
     "Contract value": "Valor do contrato",

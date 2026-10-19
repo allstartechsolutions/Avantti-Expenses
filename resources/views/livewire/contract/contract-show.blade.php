@@ -415,14 +415,20 @@
                     @endcan
 
                     @can('contracts.delete', $contract)
-                        <x-ui.button
-                            variant="danger"
-                            class="w-full justify-center"
-                            wire:click="delete"
-                            wire:confirm="{{ __('Are you sure you want to delete this contract? This action cannot be undone.') }}"
-                            icon="trash">
-                            {{ __('Delete Contract') }}
-                        </x-ui.button>
+                        @if($contract->deleteBlockers() !== [])
+                            <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                                {{ __('This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.') }}
+                            </p>
+                        @else
+                            <x-ui.button
+                                variant="danger"
+                                class="w-full justify-center"
+                                wire:click="delete"
+                                wire:confirm="{{ __('Are you sure you want to delete this contract? This action cannot be undone.') }}"
+                                icon="trash">
+                                {{ __('Delete Contract') }}
+                            </x-ui.button>
+                        @endif
                     @endcan
                 </div>
             </div>

@@ -230,6 +230,23 @@ class Contract extends Model
         return $this->hasMany(ContractBudgetAllocation::class);
     }
 
+    public function paymentBatchItems(): HasMany
+    {
+        return $this->hasMany(PaymentBatchItem::class);
+    }
+
+    /**
+     * What stops this contract being deleted. A payment batch row is a
+     * financial record that does not cascade (Sentry AVANTTI-CONSTRUCTION-7:
+     * the foreign key refused the delete and the page crashed).
+     */
+    public function deleteBlockers(): array
+    {
+        $batchItems = $this->paymentBatchItems()->count();
+
+        return $batchItems > 0 ? ['payment_batch_items' => $batchItems] : [];
+    }
+
     public function scheduleItems(): HasMany
     {
         return $this->hasMany(ContractScheduleItem::class)->orderBy('sort_order');

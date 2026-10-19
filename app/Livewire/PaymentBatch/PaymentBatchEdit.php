@@ -658,11 +658,17 @@ class PaymentBatchEdit extends Component
             return;
         }
 
+        // One query for every contract in the batch, not one per row
+        // (Sentry AVANTTI-CONSTRUCTION-8).
+        $contracts = Contract::withSum('payments as total_paid_cents', 'amount')
+            ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->whereIn('id', $approvableItems->pluck('contract_id')->unique())
+            ->get()
+            ->keyBy('id');
+
         $errors = [];
         foreach ($approvableItems as $item) {
-            $contract = Contract::withSum('payments as total_paid_cents', 'amount')
-                ->withSum('changeOrders as change_orders_total_cents', 'amount')
-                ->find($item->contract_id);
+            $contract = $contracts->get($item->contract_id);
 
             if (! $contract || $contract->isDraft()) {
                 $errors[] = __(':number is still a draft and cannot be paid.', [

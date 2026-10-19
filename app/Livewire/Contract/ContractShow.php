@@ -924,6 +924,13 @@ class ContractShow extends Component
     {
         $this->authorizeAbility('contracts.delete', $this->contract);
 
+        // Checked before any file is removed, so a refused delete loses nothing.
+        if ($this->contract->deleteBlockers() !== []) {
+            session()->flash('error', __('This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.'));
+
+            return null;
+        }
+
         // Clean up contract file before deleting
         if ($this->contract->contract_file_path && Storage::exists($this->contract->contract_file_path)) {
             Storage::delete($this->contract->contract_file_path);
