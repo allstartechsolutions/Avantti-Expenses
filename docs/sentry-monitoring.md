@@ -30,6 +30,11 @@ then `/mcp` to authenticate in the browser. Grant read-only unless you want issu
 and commented on from here too. **MCP servers load when a session starts**, so a server added
 mid-session only appears after `claude --continue`.
 
+The **claude.ai Sentry connector** works as well (Settings → Connectors on claude.ai): it reaches
+the same organisation, `lawn-pro-manager`, where this app is the **`avantti-construction`**
+project — the other three projects in it belong to other products and are not ours to touch.
+The same rule applies: a connector added mid-session needs a restart before its tools appear.
+
 Putting `Fixes <ISSUE-ID>` in a commit message closes that issue automatically on deploy —
 better than resolving it by hand, because the issue then points at the commit that fixed it.
 
@@ -202,7 +207,10 @@ echo "SENTRY_RELEASE=$(git rev-parse --short HEAD)" >> .env
 ```
 
 Without it, everything simply appears under no release — Sentry works, it just cannot
-group by deploy.
+group by deploy. It also cannot hold an issue as *resolved in next release*: asked for that,
+it marks the issue plainly resolved, and an event from the old code still running before the
+deploy reopens it as a regression (seen with AVANTTI-CONSTRUCTION-7 on 19 Oct 2026). Until
+releases are set, resolve an issue after its fix is deployed, not when it is committed.
 
 ---
 

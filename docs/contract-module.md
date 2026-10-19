@@ -212,7 +212,7 @@ See [Contract Change Orders](#contract-change-orders) section below for full det
 - Status change via modal with dropdown and optional reason
 - Payment recording via modal with amount, method, date, reference, notes
 - Computed `availableStatuses` property controls allowed transitions per current status
-- Delete with `wire:confirm` — cleans up contract file and change order files from storage before deleting
+- Delete with `wire:confirm` — cleans up contract file and change order files from storage before deleting. Refused while the contract is in a payment batch (`Contract::deleteBlockers()`, checked before any file is removed); the page shows the reason in place of the button. See `docs/delete-functionality.md`, *Contract Delete*
 - Back navigation returns to correct context (project or job site contracts index)
 - View/Download links for attached contract file
 - Listens for `change-orders-updated` event to refresh financial data when change orders are added/edited/deleted

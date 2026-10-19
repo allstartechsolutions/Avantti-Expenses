@@ -113,6 +113,7 @@
 
 ### Quality
 
+- **[Changelog 2026-10-19 — contract delete in a batch, batch rows that could not be found](./changelog-2026-10-19-contract-delete-and-batch-pending.md)** - Sentry AVANTTI-CONSTRUCTION-7 (a contract in a payment batch crashed its delete) and -8 (*Approve All* looked contracts up one by one); pending batch rows hidden by the filters while *Approve All* still paid them
 - **[Changelog 2026-10-15 — payment batch and Contract Payments grouping](./changelog-2026-10-15-payment-batch-grouping.md)** - Group by client / project / job site / subcontractor (and status on a batch), sortable Subcontractor and Project, PDF and CSV in screen order, the employee under the subcontractor on paper; the Contract Payments CSV column change
 - **[Changelog 2026-09-16 — equipment](./changelog-2026-09-16-equipment.md)** - The asset register, maintenance by date and meter, findings, assignments, reminders, and the equipment tag on expenses; Company Expenses moved to the Company group
 - **[Changelog 2026-09-16 — company (general) expenses](./changelog-2026-09-16-company-expenses.md)** - Expenses with no project, the category list with account codes, the `company-expenses` area, and the "Company (general)" bucket on every money report

@@ -1907,3 +1907,17 @@ the form's *Edit* button. Revisit only if users look for it there.
 Deliberate: a batch pays contracts that already exist and a report looks backwards. If the
 owner later wants inactive subcontractors hidden from the batch form once their contracts
 are fully paid, that is a `whereHas('contracts', open)` change, not a status one.
+
+## Contract delete (2026-10-19) — CD1
+
+Found while fixing Sentry AVANTTI-CONSTRUCTION-7; see
+`docs/changelog-2026-10-19-contract-delete-and-batch-pending.md`.
+
+### CD1 — a contract's payments are deleted with it *(decision, owner)*
+
+`contract_payments.contract_id` is `cascadeOnDelete()`, so deleting a contract that has been
+paid takes its payment records with it. `CLAUDE.md` says money blocks a delete and never
+cascades. Since 19 Oct a contract in a payment batch is refused; one paid directly from the
+contract page or `/contract-payments` still deletes, payments and all. Closing this means adding
+`payments` to `Contract::deleteBlockers()` — which narrows who can delete what, so it waits for
+the owner's yes.

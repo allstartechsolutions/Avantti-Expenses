@@ -263,7 +263,7 @@ it always was.
 | `sort($field)` | Sorts by job_site, contract, amount, paid or balance; again flips the direction; resets to page 1 |
 | `saveDraft()` | A row is saved when it has an amount, phase, notes or a *Pays* target — a method alone does not count, since every row is pre-set to Check. Validates, updates batch (name, date, notes, filters), upserts items via `updateOrCreate`, removes cleared pending items |
 | `approveItem($id)` | Validates balance, creates `ContractPayment` in transaction, marks item approved, calls `updateStatusFromPayments()` |
-| `approveAll()` | Validates all pending items, processes in single transaction, updates batch status |
+| `approveAll()` | Loads every contract in the batch in one query, validates all pending items against it, processes them in a single transaction, updates batch status |
 | `rejectItem($id)` | Marks item as rejected (no payment created) |
 | `cancelBatch()` | Sets batch to cancelled (only if no approved items), redirects to index |
 | `updateBatchStatus()` | Auto-transitions batch: all done → approved, mixed → partially_approved |
@@ -274,11 +274,20 @@ it always was.
 Contract::with(['project.client', 'jobSite', 'subcontractor', 'latestPayment'])
     ->withSum('payments as total_paid_cents', 'amount')
     ->withSum('changeOrders as change_orders_total_cents', 'amount')
-    // filters applied via ->when()
-    ->unless($showZeroBalance, exclude paid/cancelled)
+    ->where(fn ($listed) => $listed
+        ->where(fn ($q) => $q->committed()
+            // filters applied via ->when()
+            ->unless($showZeroBalance, exclude paid/cancelled))
+        ->orWhereIn('contracts.id', /* contracts pending in this batch */))
     ->orderBy('project_id')->orderBy('job_site_id')
     ->paginate(50)
 ```
+
+**A contract already pending in this batch is always listed**, whatever the filters say —
+paid, cancelled and draft ones included. The *Pending* card and *Approve All Pending* count
+and pay every pending item, so the table must show every one of them, with its *Reject*
+button (19 Oct 2026, `docs/changelog-2026-10-19-contract-delete-and-batch-pending.md`). The
+filters only decide which *other* contracts are offered.
 
 When a column sort is chosen, `sortedPage()` sorts the **whole** filtered list on
 its sums (job site + the two `withSum`s, no heavy relations) with the same
@@ -449,7 +458,7 @@ only the rows: they are for manipulating the data, so nothing sits above the hea
 
 1. Navigate to **Projects > Payment Batches** in the sidebar
 2. Click **"New Batch"** — enter name, date, and optionally set contract filters
-3. Redirected to the **Edit page** — contracts table shows filtered contracts
+3. Redirected to the **Edit page** — contracts table shows filtered contracts, plus every contract already pending in the batch whatever the filters
 4. Enter **planned payment amounts**, methods, and notes for each contract
 5. Click **"Save Draft"** — items are saved as `pending` batch items, filters are saved
 6. Review the batch — adjust amounts as needed, save again
@@ -530,5 +539,5 @@ Both use the same `ContractPayment` model and `Contract::updateStatusFromPayment
 ## Cascade Deletes
 
 - Deleting a **PaymentBatch** cascades to all its **PaymentBatchItem** records (database-level via `cascadeOnDelete`)
-- Deleting a **Contract** does NOT cascade to batch items (constrained, not cascade) — items would need manual cleanup if a contract is deleted while a batch references it
+- Deleting a **Contract** does NOT cascade to batch items (constrained, not cascade). Since 19 Oct 2026 the contract page refuses the delete while any batch row references the contract (`Contract::deleteBlockers()`), instead of crashing on the foreign key — see `docs/delete-functionality.md`, *Contract Delete*
 - No file cleanup needed — neither model has file columns

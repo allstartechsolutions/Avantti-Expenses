@@ -306,6 +306,23 @@ same `equipment.delete` guard and re-checks the counts server-side; anything wit
 sent to its page. This is the rule for every module from now on — see *Every Record Ships
 With a Delete* in `CLAUDE.md`.
 
+## Contract Delete
+
+`ContractShow::delete()`, behind `contracts.delete`, from the contract page's action card
+with `wire:confirm`.
+
+- **Refused while the contract is in a payment batch.** `payment_batch_items.contract_id`
+  does not cascade — a batch row is a financial record — so `Contract::deleteBlockers()`
+  returns the count and the delete stops with a message. The page shows that message in place
+  of the button. The check runs **before** the contract file and change-order files are
+  removed, so a refused delete loses nothing (Sentry AVANTTI-CONSTRUCTION-7, 19 Oct 2026).
+- Otherwise the contract file and change-order files are deleted from storage, then the
+  contract; its status and change histories, allocations, schedule, measurements, change
+  orders **and payments** go with it by foreign-key cascade. The payments cascading is an open
+  decision — see CD1 in `docs/review-and-improvements.md`.
+
+---
+
 ## Client Delete
 
 ### Behavior
