@@ -785,16 +785,25 @@ class PaymentBatchEdit extends Component
 
     public function render()
     {
-        $query = Contract::committed()
+        // A contract already pending in this batch is always listed, whatever
+        // the filters say: the Pending card counts it and Approve All pays it,
+        // so hiding it left people hunting for rows they could not see — and
+        // unable to reject them. Paid, cancelled and draft ones included.
+        $pendingContractIds = $this->paymentBatch->items()->where('status', 'pending')->select('contract_id');
+
+        $query = Contract::query()
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
-            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
-            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
-            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
-            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
-            ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled']));
+            ->where(fn ($listed) => $listed
+                ->where(fn ($q) => $q->committed()
+                    ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+                    ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+                    ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+                    ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+                    ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
+                    ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+                    ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled'])))
+                ->orWhereIn('contracts.id', $pendingContractIds));
 
         $relations = [
             'project.client', 'jobSite', 'latestPayment', 'subcontractorEmployee',

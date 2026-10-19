@@ -142,4 +142,24 @@ class ContractDeleteBlockedByBatchTest extends TestCase
         $this->assertSame(3, ContractPayment::count());
         $this->assertSame(0, $this->batch->items()->where('status', 'pending')->count());
     }
+
+    public function test_every_pending_item_is_listed_even_when_the_filters_would_hide_it(): void
+    {
+        $paid = $this->contract('CTR-0020');
+        $paid->update(['status' => 'paid']);
+        $this->addToBatch($paid, 100);
+
+        $draft = $this->contract('CTR-0021');
+        $draft->update(['status' => 'draft']);
+        $this->addToBatch($draft, 100);
+
+        $this->addToBatch($this->contract('CTR-0022'), 100);
+        $this->contract('CTR-0023');
+
+        Livewire::actingAs($this->admin)
+            ->test(PaymentBatchEdit::class, ['paymentBatch' => $this->batch])
+            ->set('subcontractorFilter', '999999')
+            ->assertSee(['CTR-0020', 'CTR-0021', 'CTR-0022'])
+            ->assertDontSee('CTR-0023');
+    }
 }
