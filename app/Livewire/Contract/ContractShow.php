@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Number;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ContractShow extends Component
@@ -453,7 +454,7 @@ class ContractShow extends Component
         $this->autoFilledItemIndex = null;
     }
 
-    #[\Livewire\Attributes\On('pay-measurement')]
+    #[On('pay-measurement')]
     public function openPaymentModalForMeasurement($measurementId)
     {
         $this->authorizeAbility('contracts.pay', $this->contract);
@@ -898,9 +899,9 @@ class ContractShow extends Component
         $this->dispatch('payments-updated');
     }
 
-    #[\Livewire\Attributes\On('change-orders-updated')]
-    #[\Livewire\Attributes\On('schedule-updated')]
-    #[\Livewire\Attributes\On('measurements-updated')]
+    #[On('change-orders-updated')]
+    #[On('schedule-updated')]
+    #[On('measurements-updated')]
     public function refreshContract()
     {
         $this->contract = $this->contract->fresh([
@@ -924,29 +925,33 @@ class ContractShow extends Component
     {
         $this->authorizeAbility('contracts.delete', $this->contract);
 
-        // Checked before any file is removed, so a refused delete loses nothing.
-        if ($this->contract->deleteBlockers() !== []) {
-            session()->flash('error', __('This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.'));
+        if ($blocker = $this->contract->deleteBlockerMessage()) {
+            session()->flash('error', $blocker);
 
             return null;
         }
 
-        // Clean up contract file before deleting
-        if ($this->contract->contract_file_path && Storage::exists($this->contract->contract_file_path)) {
-            Storage::delete($this->contract->contract_file_path);
-        }
-
-        // Clean up change order files (cascade delete won't trigger Eloquent events)
-        foreach ($this->contract->changeOrders as $changeOrder) {
-            if ($changeOrder->file_path && Storage::exists($changeOrder->file_path)) {
-                Storage::delete($changeOrder->file_path);
-            }
-        }
+        // Collected now, removed only once the rows are gone: the cascade
+        // won't trigger Eloquent events, and a delete refused at the last
+        // moment must lose nothing.
+        $files = $this->contract->changeOrders->pluck('file_path')
+            ->push($this->contract->contract_file_path)
+            ->filter();
 
         $jobSiteId = $this->contract->job_site_id;
         $projectId = $this->contract->project_id;
 
-        $this->contract->delete();
+        if (! $this->contract->deleteWithBatchItems()) {
+            session()->flash('error', $this->contract->deleteBlockerMessage());
+
+            return null;
+        }
+
+        foreach ($files as $path) {
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+            }
+        }
 
         session()->flash('message', __('Contract deleted successfully.'));
 

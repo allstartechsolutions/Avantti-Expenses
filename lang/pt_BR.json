@@ -1518,7 +1518,7 @@
     "Contract File": "Arquivo do Contrato",
     "Contract created successfully!": "Contrato criado com sucesso!",
     "Contract deleted successfully.": "Contrato excluído com sucesso.",
-    "This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.": "Este contrato está em um lote de pagamento e não pode ser excluído. Remova-o do lote primeiro ou cancele o contrato.",
+    "This contract has :count payment recorded and cannot be deleted. Delete the payment first, or cancel the contract instead.|This contract has :count payments recorded and cannot be deleted. Delete the payments first, or cancel the contract instead.": "Este contrato tem :count pagamento registrado e não pode ser excluído. Exclua o pagamento primeiro ou cancele o contrato.|Este contrato tem :count pagamentos registrados e não pode ser excluído. Exclua os pagamentos primeiro ou cancele o contrato.",
     "Contract status updated successfully.": "Status do contrato atualizado com sucesso.",
     "Contract updated successfully!": "Contrato atualizado com sucesso!",
     "Contract value": "Valor do contrato",

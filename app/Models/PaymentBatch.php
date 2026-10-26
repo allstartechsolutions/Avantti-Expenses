@@ -76,6 +76,50 @@ class PaymentBatch extends Model
         return $this->status === 'draft';
     }
 
+    /**
+     * Derive the status from the lines still in the batch — after one is
+     * approved or rejected, or taken out with its contract. An empty or
+     * cancelled batch keeps the status it had.
+     *
+     * $approverId is the person approving lines right now. A batch completed
+     * because its last pending line left with a deleted contract was approved
+     * by nobody in that act: it records no approver, and the time of its last
+     * approved line.
+     */
+    public function refreshStatusFromItems(?int $approverId = null): void
+    {
+        $items = $this->items()->get(['status', 'approved_at']);
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $pendingCount = $items->where('status', 'pending')->count();
+        $approvedCount = $items->where('status', 'approved')->count();
+
+        if ($pendingCount === 0 && $approvedCount > 0) {
+            // Only the step that completes the batch approves it; a batch
+            // already approved keeps who approved it and when.
+            if ($this->status !== 'approved') {
+                $this->update([
+                    'status' => 'approved',
+                    'approved_by' => $approverId,
+                    'approved_at' => $approverId ? now() : $items->max('approved_at'),
+                ]);
+            }
+        } elseif ($approvedCount > 0) {
+            $this->update(['status' => 'partially_approved']);
+        } elseif (in_array($this->status, ['partially_approved', 'approved'], true)) {
+            // Its approved lines left with their contracts: nothing in it is
+            // approved any more.
+            $this->update([
+                'status' => 'draft',
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+        }
+    }
+
     public function canBeEdited(): bool
     {
         return in_array($this->status, ['draft', 'partially_approved']);

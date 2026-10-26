@@ -1077,7 +1077,7 @@
     "Contract File": "Contract File",
     "Contract created successfully!": "Contract created successfully!",
     "Contract deleted successfully.": "Contract deleted successfully.",
-    "This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.": "This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.",
+    "This contract has :count payment recorded and cannot be deleted. Delete the payment first, or cancel the contract instead.|This contract has :count payments recorded and cannot be deleted. Delete the payments first, or cancel the contract instead.": "This contract has :count payment recorded and cannot be deleted. Delete the payment first, or cancel the contract instead.|This contract has :count payments recorded and cannot be deleted. Delete the payments first, or cancel the contract instead.",
     "Contract status updated successfully.": "Contract status updated successfully.",
     "Contract updated successfully!": "Contract updated successfully!",
     "Contract value": "Contract value",

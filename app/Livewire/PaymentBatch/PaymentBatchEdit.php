@@ -13,9 +13,9 @@ use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
 use App\Services\PaymentBatchLayout;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -26,7 +26,6 @@ class PaymentBatchEdit extends Component
 {
     use AuthorizesAbility;
     use SortsContracts;
-
     use WithPagination;
 
     public PaymentBatch $paymentBatch;
@@ -302,6 +301,10 @@ class PaymentBatchEdit extends Component
         });
 
         $rowsToRemove = $allContractIds->diff($rowsToSave);
+
+        // A contract deleted while this screen was open took its batch line
+        // with it; its row is dropped rather than written back.
+        $rowsToSave = $rowsToSave->intersect(Contract::whereIn('id', $rowsToSave)->pluck('id'))->values();
 
         // The screen lists committed contracts only, but these ids come back
         // from the browser: a draft must not be written into the batch, or it
@@ -760,26 +763,7 @@ class PaymentBatchEdit extends Component
 
     protected function updateBatchStatus(): void
     {
-        $this->paymentBatch->refresh();
-        $items = $this->paymentBatch->items;
-
-        if ($items->isEmpty()) {
-            return;
-        }
-
-        $pendingCount = $items->where('status', 'pending')->count();
-        $approvedCount = $items->where('status', 'approved')->count();
-
-        if ($pendingCount === 0 && $approvedCount > 0) {
-            $this->paymentBatch->update([
-                'status' => 'approved',
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-            ]);
-        } elseif ($approvedCount > 0) {
-            $this->paymentBatch->update(['status' => 'partially_approved']);
-        }
-
+        $this->paymentBatch->refreshStatusFromItems(Auth::id());
         $this->paymentBatch->refresh();
     }
 

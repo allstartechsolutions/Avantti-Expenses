@@ -311,15 +311,31 @@ With a Delete* in `CLAUDE.md`.
 `ContractShow::delete()`, behind `contracts.delete`, from the contract page's action card
 with `wire:confirm`.
 
-- **Refused while the contract is in a payment batch.** `payment_batch_items.contract_id`
-  does not cascade — a batch row is a financial record — so `Contract::deleteBlockers()`
-  returns the count and the delete stops with a message. The page shows that message in place
-  of the button. The check runs **before** the contract file and change-order files are
-  removed, so a refused delete loses nothing (Sentry AVANTTI-CONSTRUCTION-7, 19 Oct 2026).
+- **Refused while any payment is recorded** (26 Oct 2026, closing CD1). Money blocks the
+  delete, it never cascades: `Contract::deleteBlockers()` counts the payments and
+  `deleteBlockerMessage()` says how many and to delete them first (or cancel the contract).
+  The page shows that message in place of the button, and `delete()` re-checks it
+  server-side **before** the contract file and change-order files are removed, so a refused
+  delete loses nothing. Each payment comes out through `deletePayment()`, behind
+  `contracts.unpay`, with its own change-history entry.
+- **Status plays no part.** A contract left *paid* or *partially paid* with no payments
+  behind it deletes like any other.
+- **Payment batch rows go with it.** `payment_batch_items.contract_id` does not cascade
+  (Sentry AVANTTI-CONSTRUCTION-7, 19 Oct 2026). A batch row with no payment behind it records
+  nothing paid, so `Contract::deleteWithBatchItems()` deletes those rows and the contract in
+  one transaction; the batch itself stays. While the row's payment exists, the payment blocks.
+  Each batch it leaves re-derives its status through `PaymentBatch::refreshStatusFromItems()`,
+  the same rule the batch screen uses: the last pending line leaving completes the batch (with
+  **no approver** recorded — the deleter approved no payment — and the time of its last approved
+  line); the last approved line leaving returns it to *draft*; an already approved batch keeps
+  its approver and time. A batch editor left open saves without the deleted contract's row.
+- **The check is repeated under a row lock** inside `deleteWithBatchItems()`. A payment insert
+  takes a shared lock on its contract through the foreign key, so a payment recorded at the
+  same moment either commits first and blocks the delete, or fails once the contract is gone —
+  it never cascades away unseen. Files are removed only after the rows are gone.
 - Otherwise the contract file and change-order files are deleted from storage, then the
-  contract; its status and change histories, allocations, schedule, measurements, change
-  orders **and payments** go with it by foreign-key cascade. The payments cascading is an open
-  decision — see CD1 in `docs/review-and-improvements.md`.
+  contract; its status and change histories, allocations, schedule, measurements and change
+  orders go with it by foreign-key cascade.
 
 ---
 

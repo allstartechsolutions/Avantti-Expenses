@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Contract extends Model
 {
@@ -236,15 +239,65 @@ class Contract extends Model
     }
 
     /**
-     * What stops this contract being deleted. A payment batch row is a
-     * financial record that does not cascade (Sentry AVANTTI-CONSTRUCTION-7:
-     * the foreign key refused the delete and the page crashed).
+     * What stops this contract being deleted: a recorded payment. Money
+     * blocks the delete, it never cascades — the payments are deleted first,
+     * each through its own guard and change history. A payment batch row is
+     * not counted: it does not cascade either (Sentry AVANTTI-CONSTRUCTION-7),
+     * but once its payment is gone it records nothing paid, and it goes with
+     * the contract (deleteWithBatchItems()). Status plays no part: a contract
+     * left paid or partially paid with no payments still deletes.
      */
     public function deleteBlockers(): array
     {
-        $batchItems = $this->paymentBatchItems()->count();
+        $payments = $this->payments()->count();
 
-        return $batchItems > 0 ? ['payment_batch_items' => $batchItems] : [];
+        return $payments > 0 ? ['payments' => $payments] : [];
+    }
+
+    /** Why this contract cannot be deleted, or null when it can. */
+    public function deleteBlockerMessage(): ?string
+    {
+        $payments = $this->deleteBlockers()['payments'] ?? 0;
+
+        if ($payments === 0) {
+            return null;
+        }
+
+        return trans_choice(
+            'This contract has :count payment recorded and cannot be deleted. Delete the payment first, or cancel the contract instead.|This contract has :count payments recorded and cannot be deleted. Delete the payments first, or cancel the contract instead.',
+            $payments,
+            ['count' => $payments]
+        );
+    }
+
+    /**
+     * Delete the contract and the batch rows that no longer stand for a
+     * payment, then let each batch it leaves re-derive its status. Returns
+     * false, deleting nothing, when deleteBlockers() refuses.
+     *
+     * The check is repeated under a lock on the contract row: inserting a
+     * payment takes a shared lock on it through the foreign key, so a payment
+     * being recorded at the same moment either commits first and blocks this,
+     * or fails once the contract is gone — never cascades away unseen.
+     */
+    public function deleteWithBatchItems(): bool
+    {
+        return DB::transaction(function () {
+            static::whereKey($this->id)->lockForUpdate()->first();
+
+            if ($this->deleteBlockers() !== []) {
+                return false;
+            }
+
+            $batchIds = $this->paymentBatchItems()->pluck('payment_batch_id');
+
+            $this->paymentBatchItems()->delete();
+            $this->delete();
+
+            PaymentBatch::whereKey($batchIds)->get()->each->refreshStatusFromItems();
+
+            return true;
+        });
     }
 
     public function scheduleItems(): HasMany
@@ -459,7 +512,7 @@ class Contract extends Model
      * parcela, or a cronograma scheduling more than the contract) — so
      * the reports can neither over-state nor lose payables.
      *
-     * @return array<int, array{date: ?\Carbon\CarbonInterface, amount: float, label: string, scheduled: bool}>
+     * @return array<int, array{date: ?CarbonInterface, amount: float, label: string, scheduled: bool}>
      */
     public function openPayableItems(): array
     {
@@ -548,7 +601,7 @@ class Contract extends Model
      * $paidFrom / $paidTo optionally restrict which payments count toward
      * paid / % (for date-windowed reports); scheduled is never windowed.
      */
-    public function costCodeSchedule(?\Carbon\CarbonInterface $paidFrom = null, ?\Carbon\CarbonInterface $paidTo = null): \Illuminate\Support\Collection
+    public function costCodeSchedule(?CarbonInterface $paidFrom = null, ?CarbonInterface $paidTo = null): Collection
     {
         $this->loadMissing([
             'allocations.budgetItem',

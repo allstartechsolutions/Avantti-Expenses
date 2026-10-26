@@ -1921,3 +1921,8 @@ cascades. Since 19 Oct a contract in a payment batch is refused; one paid direct
 contract page or `/contract-payments` still deletes, payments and all. Closing this means adding
 `payments` to `Contract::deleteBlockers()` — which narrows who can delete what, so it waits for
 the owner's yes.
+
+**Closed 26 Oct 2026 — owner's yes.** A recorded payment now blocks the delete; the payments are
+deleted first. In the same change a contract whose batch payments were all deleted is no longer
+held by its leftover batch rows — they are deleted with it — and status plays no part. See
+*Contract Delete* in `docs/delete-functionality.md`.

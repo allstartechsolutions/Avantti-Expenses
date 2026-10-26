@@ -415,9 +415,9 @@
                     @endcan
 
                     @can('contracts.delete', $contract)
-                        @if($contract->deleteBlockers() !== [])
+                        @if($deleteBlocker = $contract->deleteBlockerMessage())
                             <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-                                {{ __('This contract is in a payment batch and cannot be deleted. Remove it from the batch first, or cancel the contract instead.') }}
+                                {{ $deleteBlocker }}
                             </p>
                         @else
                             <x-ui.button
