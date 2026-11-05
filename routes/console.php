@@ -18,6 +18,9 @@ Artisan::command('inspire', function () {
 Schedule::command('documents:prune-uploads')->hourly()->withoutOverlapping()->sentryMonitor();
 Schedule::command('documents:purge-deleted')->dailyAt('03:15')->withoutOverlapping()->sentryMonitor();
 
+// Login activity is kept 90 days (docs/login-activity.md).
+Schedule::command('auth:prune-login-events')->dailyAt('03:30')->withoutOverlapping()->sentryMonitor();
+
 // Task e-mails (docs/meetings-module-plan.md §8). Both are idempotent: the
 // notification log stops anybody being mailed twice, so a double run is safe.
 Schedule::command('tasks:notify-overdue')->dailyAt('07:00')->withoutOverlapping()->sentryMonitor();

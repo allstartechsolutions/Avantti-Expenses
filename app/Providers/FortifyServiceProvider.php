@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -66,7 +68,13 @@ class FortifyServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            // A blocked attempt is a lockout: say so, so login activity records
+            // it (docs/login-activity.md). The response stays the framework's own 429.
+            return Limit::perMinute(5)->by($throttleKey)->response(function (Request $request, array $headers) {
+                event(new Lockout($request));
+
+                throw new ThrottleRequestsException('Too Many Attempts.', null, $headers);
+            });
         });
     }
 }

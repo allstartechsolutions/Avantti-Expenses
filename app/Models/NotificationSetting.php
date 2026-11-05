@@ -79,6 +79,15 @@ class NotificationSetting extends Model
     public const EQUIPMENT_KEYS = [self::EQUIPMENT_MAINTENANCE_DUE];
 
     /**
+     * Suspicious sign-ins (docs/login-activity.md): a lockout, one address
+     * trying many accounts, a sign-in from a new device. Sent to whoever may
+     * read the login log.
+     */
+    public const SECURITY_ALERT = 'security_alert';
+
+    public const SECURITY_KEYS = [self::SECURITY_ALERT];
+
+    /**
      * How long a submitted requisition may wait before its approver is chased.
      *
      * Shorter than the quoting stall on purpose: approving is a minute's work
@@ -235,6 +244,7 @@ class NotificationSetting extends Model
             self::QUOTATION_OVERDUE => __('Quotation responses are past due'),
             self::QUOTATION_CANCELLED => __('A quotation round you were working on was cancelled'),
             self::VENDOR_DOCUMENT_EXPIRY => __('A vendor document is expiring or has expired'),
+            self::SECURITY_ALERT => __('Suspicious sign-in activity'),
             self::EQUIPMENT_MAINTENANCE_DUE => __('Equipment maintenance is coming due, due, or overdue'),
             default => $key,
         };
@@ -258,6 +268,7 @@ class NotificationSetting extends Model
             self::QUOTATION_OVERDUE => __('Goes to the owner and collaborators once the response date has passed and the round is still open.'),
             self::QUOTATION_CANCELLED => __('Goes to the owner and collaborators when a round is cancelled, so nobody keeps chasing vendors for it.'),
             self::VENDOR_DOCUMENT_EXPIRY => __('One e-mail per morning listing every subcontractor document that reached a stage: 30, 15 and 7 days before its date, and the day after. Renewing or archiving a document stops its reminders.'),
+            self::SECURITY_ALERT => __('An account locked out after too many wrong passwords, one address trying many accounts, or somebody signing in from a device or network not seen before. Sent to whoever may see Login Activity, at most once an hour per account or address.'),
             self::EQUIPMENT_MAINTENANCE_DUE => __('One e-mail per morning listing every maintenance that reached a stage: 30 and 7 days before its date, the day it is due by date or by meter, and the day after. Completing or cancelling the maintenance stops its reminders.'),
             default => '',
         };

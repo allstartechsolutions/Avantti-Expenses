@@ -42,7 +42,8 @@ class NavigationTest extends TestCase
             // Roles & Access joined the Company group in E4. Company Expenses
             // (managers and admins), Equipment and Maintenance (every role)
             // joined it on 2026-09-16: overhead and assets are the company's.
-            'Company: Company Info, Users, Roles & Access, Company Expenses, Equipment, Maintenance',
+            // Login Activity joined on 2026-11-05, admin-only by seed.
+            'Company: Company Info, Users, Roles & Access, Login Activity, Company Expenses, Equipment, Maintenance',
             // My Quotations joined at phase 6 of the procurement assignment
             // module: the buying queue, gated on `quotations.view`.
             'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',

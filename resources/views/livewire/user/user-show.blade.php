@@ -166,6 +166,26 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Their last sign-ins (docs/login-activity.md), for whoever may read the login log. --}}
+            @if($recentLogins !== null)
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Recent sign-ins') }}</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">
+                                @if($user->last_login_at)
+                                    {{ __('Last sign-in :when from :ip', ['when' => $user->last_login_at->appDateTime(), 'ip' => $user->last_login_ip ?? '—']) }}
+                                @else
+                                    {{ __('Has not signed in since login activity was switched on.') }}
+                                @endif
+                            </p>
+                        </div>
+                        <a href="{{ route('login-activity.index', ['user' => $user->id, 'fromDate' => now()->subDays(\App\Models\LoginEvent::RETENTION_DAYS)->toDateString()]) }}" wire:navigate class="shrink-0 text-sm font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ __('All activity') }}</a>
+                    </div>
+                    @include('livewire.partials.login-events-list', ['events' => $recentLogins])
+                </div>
+            @endif
         </div>
 
         <!-- Sidebar Actions -->

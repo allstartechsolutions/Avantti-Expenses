@@ -72,7 +72,7 @@ return [
         'company' => [
             'name' => 'Company',
             'order' => 20,
-            'active' => ['company.*', 'users.*', 'access.*', 'company-expenses.*', 'equipment.*'],
+            'active' => ['company.*', 'users.*', 'access.*', 'login-activity.*', 'company-expenses.*', 'equipment.*'],
             'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
         ],
         'projects' => [
@@ -170,6 +170,17 @@ return [
             'ability' => 'access.view',
             'active' => ['access.*'],
             'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
+        ],
+
+        [
+            'key' => 'login-activity',
+            'name' => 'Login Activity',
+            'group' => 'company',
+            'order' => 35,
+            'route' => 'login-activity.index',
+            'ability' => 'login-activity.view',
+            'active' => ['login-activity.*'],
+            'icon' => 'M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1',
         ],
 
         [
@@ -784,6 +795,19 @@ return [
             'actions' => [
                 'view' => ['name' => 'See who has access'],
                 'manage' => ['name' => 'Grant and revoke access', 'sensitive' => true],
+            ],
+        ],
+
+        // Who signed in, from where, and who tried and failed (docs/login-activity.md).
+        // A company record: one log for the whole install, never per project.
+        'login-activity' => [
+            'name' => 'Login Activity',
+            'module' => 'company',
+            'levels' => ['global'],
+            'swept' => true,
+            'actions' => [
+                'view' => ['name' => 'See who signed in, from where', 'sensitive' => true],
+                'end_sessions' => ['name' => 'Sign somebody out', 'sensitive' => true],
             ],
         ],
 

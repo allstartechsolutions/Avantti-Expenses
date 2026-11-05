@@ -234,6 +234,29 @@
             </p>
         </div>
     </div>
+    {{-- Security — suspicious sign-ins (docs/login-activity.md). Goes to whoever may see Login Activity. --}}
+    <div class="{{ $card }} mt-6">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Security E-mails') }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Sent to everybody who may see Login Activity — administrators, unless the permission is given to others.') }}</p>
+        </div>
+        <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            @foreach(\App\Models\NotificationSetting::SECURITY_KEYS as $key)
+                @php $setting = $this->settings[$key] ?? null; @endphp
+                <div class="flex items-start justify-between gap-6 px-6 py-4" wire:key="setting-{{ $key }}-{{ ($setting?->is_enabled ?? true) ? 'on' : 'off' }}">
+                    <div class="min-w-0">
+                        <p class="font-medium text-slate-900 dark:text-white">{{ \App\Models\NotificationSetting::label($key) }}</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ \App\Models\NotificationSetting::description($key) }}</p>
+                    </div>
+                    <div class="shrink-0 pt-1">
+                        <x-ui.toggle wire:click="toggle('{{ $key }}')" :checked="(bool) ($setting?->is_enabled ?? true)"
+                                     :label="($setting?->is_enabled ?? true) ? __('On') : __('Off')" />
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     {{-- Equipment — maintenance coming due. Same shape as the vendor card:
          one switch, who receives it, and a fallback. --}}
     <div class="{{ $card }} mt-6">

@@ -64,7 +64,11 @@ class UserShow extends Component
 
     public function render()
     {
-        return view('livewire.user.user-show')
-            ->layout('components.layouts.app');
+        return view('livewire.user.user-show', [
+            // Their last sign-ins, for whoever may read the login log (docs/login-activity.md).
+            'recentLogins' => auth()->user()->can('login-activity.view')
+                ? $this->user->loginEvents()->limit(10)->get()
+                : null,
+        ])->layout('components.layouts.app');
     }
 }

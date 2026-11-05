@@ -109,6 +109,11 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                             {{ __('Status') }}
                         </th>
+                        @can('login-activity.view')
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                                {{ __('Last login') }}
+                            </th>
+                        @endcan
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                             {{ __('Joined') }}
                         </th>
@@ -166,6 +171,19 @@
                                 </span>
                             </td>
 
+                            {{-- When they last signed in, and from where (docs/login-activity.md). --}}
+                            @can('login-activity.view')
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @if($user->last_login_at)
+                                        <a href="{{ route('login-activity.index', ['user' => $user->id, 'fromDate' => now()->subDays(\App\Models\LoginEvent::RETENTION_DAYS)->toDateString()]) }}" wire:navigate class="text-slate-700 dark:text-slate-300 hover:underline" title="{{ $user->last_login_at->appDateTime() }}">
+                                            {{ $user->last_login_at->diffForHumans() }}
+                                        </a>
+                                        <div class="text-xs font-mono text-slate-400 dark:text-slate-500">{{ $user->last_login_ip }}</div>
+                                    @else
+                                        <span class="text-slate-400 dark:text-slate-500">{{ __('Never') }}</span>
+                                    @endif
+                                </td>
+                            @endcan
                             <!-- Joined -->
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                 {{ $user->created_at->appDate() }}

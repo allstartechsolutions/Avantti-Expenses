@@ -95,6 +95,7 @@ class SecurityStateTest extends TestCase
     {
         foreach ([
             route('users.index'),
+            route('login-activity.index'),
             route('cost-codes.templates.index'),
             route('reports.sales-tax'),
             route('system-settings.index'),
@@ -152,7 +153,7 @@ class SecurityStateTest extends TestCase
                 'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company', 'company-expenses',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'equipment', 'estimates', 'expenses', 'income', 'invoices',
-                'meetings', 'payments', 'project',
+                'login-activity', 'meetings', 'payments', 'project',
                 'project-report', 'projects', 'purchase-orders', 'quotations', 'reports',
                 'requisitions', 'rfis', 'settings', 'tasks', 'team', 'users', 'vendors', 'workers',
             ],

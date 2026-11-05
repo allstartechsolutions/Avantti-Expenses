@@ -94,6 +94,7 @@ use App\Livewire\JobSite\JobSiteRfis;
 use App\Livewire\JobSite\JobSiteShow;
 use App\Livewire\JobSite\JobSiteTasks;
 use App\Livewire\JobSite\JobSiteTeam;
+use App\Livewire\LoginActivity\LoginActivityIndex;
 use App\Livewire\Meeting\MeetingAgenda;
 use App\Livewire\Meeting\MeetingForm;
 use App\Livewire\Meeting\MeetingIndex;
@@ -225,6 +226,8 @@ Route::middleware(['auth'])->group(function () {
     // config/permissions.php (M1) — an administrator still holds all of them,
     // and nobody else does until somebody grants them.
     Route::get('users', UserIndex::class)->middleware('ability:users.view')->name('users.index');
+    // Login activity (docs/login-activity.md): admins only by seed.
+    Route::get('login-activity', LoginActivityIndex::class)->middleware('ability:login-activity.view')->name('login-activity.index');
     Route::get('users/create', UserCreate::class)->middleware('ability:users.create')->name('users.create');
     Route::get('users/{user}', UserShow::class)->middleware('ability:users.view')->name('users.show');
     Route::get('users/{user}/edit', UserEdit::class)->middleware('ability:users.edit')->name('users.edit');
@@ -665,6 +668,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
     Volt::route('settings/notifications', 'settings.notifications')->name('notifications.edit');
     Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
+    // Everybody's own sign-ins (docs/login-activity.md); no grant needed to see your own.
+    Volt::route('settings/sign-ins', 'settings.sign-ins')->name('sign-ins.edit');
 
     Volt::route('settings/two-factor', 'settings.two-factor')
         ->middleware(

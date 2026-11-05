@@ -126,6 +126,13 @@ class PermissionSeeder extends Seeder
         'reports.expenses', 'reports.payment_schedule', 'reports.payment_details',
         'settings.view', 'settings.edit', 'settings.manage_modules',
 
+        // --- Login activity (Nov 2026): every person's sign-ins, addresses and
+        //     devices, and the emails strangers tried. A security log, so an
+        //     administrator's alone unless the owner hands it out.
+        'login-activity.view',
+        // Ending somebody else's session throws them out mid-work; an administrator's call.
+        'login-activity.end_sessions',
+
         // --- Collaboration (RFIs and approvals), new in this module ---------
         // Nothing is being reproduced here: neither area existed before, so no
         // grant is being widened or narrowed. These three follow the rules the

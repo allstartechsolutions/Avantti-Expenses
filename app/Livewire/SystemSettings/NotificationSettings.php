@@ -156,7 +156,15 @@ class NotificationSettings extends Component
     {
         $this->authorizeAbility('settings.edit');
 
-        $setting = NotificationSetting::firstOrCreate(['key' => $key]);
+        // Only a switch this screen offers; any other string would create a row.
+        abort_unless(in_array($key, array_merge(
+            NotificationSetting::KEYS, NotificationSetting::PROCUREMENT_KEYS, NotificationSetting::VENDOR_KEYS,
+            NotificationSetting::EQUIPMENT_KEYS, NotificationSetting::SECURITY_KEYS,
+        ), true), 404);
+
+        // A key with no row yet is on (NotificationSetting::enabled()); create it
+        // on, so this first click turns it off instead of doing nothing.
+        $setting = NotificationSetting::firstOrCreate(['key' => $key], ['is_enabled' => true]);
 
         $setting->update([
             'is_enabled' => ! $setting->is_enabled,

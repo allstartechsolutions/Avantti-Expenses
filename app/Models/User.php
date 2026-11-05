@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\HasFormattedPhone;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\AccessScope;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use App\Models\Concerns\HasFormattedPhone;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,10 +19,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    use HasFormattedPhone;
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    use HasFormattedPhone;
 
     /**
      * The attributes that are mass assignable.
@@ -61,11 +62,18 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    /** Sign-ins, failed attempts and the rest (docs/login-activity.md), newest first. */
+    public function loginEvents(): HasMany
+    {
+        return $this->hasMany(LoginEvent::class)->latest('created_at')->latest('id');
+    }
+
     protected function casts(): array
     {
         return [
             'notification_preferences' => 'array',
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
             'access_scope' => AccessScope::class,
