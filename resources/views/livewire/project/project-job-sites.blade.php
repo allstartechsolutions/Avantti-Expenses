@@ -116,6 +116,25 @@
                                 </div>
                                 @error('job_amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
+                            <div>
+                                <label for="estimated_cost" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {{ __('Estimated cost') }}
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-500 dark:text-slate-400">$</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        id="estimated_cost"
+                                        wire:model="estimated_cost"
+                                        class="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        placeholder="0.00"
+                                    >
+                                </div>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('What the subcontractor is expected to cost, before there is a contract. Information only — it is not counted in the profit.') }}</p>
+                                @error('estimated_cost') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
                         </div>
 
                         <!-- Contact Person, Phone, Email -->

@@ -12,6 +12,7 @@ use App\Models\SubcontractorDocument;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Services\AbilityCatalog;
+use App\Services\FileUploadService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -705,7 +706,10 @@ class VendorDocumentsTest extends TestCase
         $document = $this->makeDocument($sub, ['expiration_date' => now()->subDays(2)->toDateString()]);
         $this->assertSame(1, SubcontractorDocument::expired()->count());
 
-        Vendor::whereKey($sub->id)->update(['is_subcontractor' => false, 'is_supplier' => true]);
+        // Neither a subcontractor nor a supplier any more. (Since Nov 2026 a
+        // supplier's documents are watched too — request 27 — so a vendor that
+        // became a supplier stays a compliance concern.)
+        Vendor::whereKey($sub->id)->update(['is_subcontractor' => false, 'is_supplier' => false]);
 
         $this->assertSame(0, SubcontractorDocument::expired()->count());
         $this->assertNotNull($document->fresh()->vendor, 'The unscoped relation still finds the owner.');
@@ -927,7 +931,7 @@ class VendorDocumentsTest extends TestCase
         $filed->attachable()->associate($document)->save();
         $filed->forceFill(['created_at' => now()->subDays(2)])->save();
 
-        $result = app(\App\Services\FileUploadService::class)->pruneStaleUploads();
+        $result = app(FileUploadService::class)->pruneStaleUploads();
 
         $this->assertSame(1, $result['files']);
         $this->assertNull(FileUpload::withTrashed()->find($abandoned->id));

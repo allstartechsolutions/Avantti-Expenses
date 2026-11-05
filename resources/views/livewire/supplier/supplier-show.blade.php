@@ -243,4 +243,17 @@
             </div>
         </div>
     </div>
+
+    {{-- Compliance documents — W-9, COI, insurance (client request 27, Nov 2026). --}}
+    <div class="mt-6">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Documents') }}</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('W-9, certificate of insurance and the other documents kept on file for this supplier.') }}</p>
+            </div>
+        </div>
+        @include('livewire.vendor.partials.documents-tab', ['documentVendorId' => $supplier->id, 'documentVendorName' => $supplier->name])
+    </div>
+
+    @include('livewire.vendor.partials.document-modals', ['documentVendorId' => $supplier->id, 'documentVendorName' => $supplier->name])
 </div>

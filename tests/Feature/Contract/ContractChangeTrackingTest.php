@@ -8,6 +8,7 @@ use App\Livewire\Contract\ContractEdit;
 use App\Livewire\Contract\ContractShow;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\ContractChangeHistory;
 use App\Models\ContractChangeOrder;
 use App\Models\Project;
 use App\Models\Role;
@@ -262,6 +263,7 @@ class ContractChangeTrackingTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ContractShow::class, ['contract' => $contract])
+            ->set('deletePaymentReason', 'Entered twice')
             ->call('deletePayment', $payment->id);
 
         $contract->refresh();
@@ -271,6 +273,34 @@ class ContractChangeTrackingTest extends TestCase
         $this->assertSame('payment_deleted', $entry->action);
         $this->assertEquals(400, $entry->changes['amount']);
         $this->assertSame(['old' => 'partially_paid', 'new' => 'completed'], $entry->changes['status']);
+    }
+
+    /** Client request 12 (Nov 2026): a deleted payment says why. */
+    public function test_deleting_a_payment_needs_a_reason_and_the_history_keeps_it(): void
+    {
+        $contract = $this->makeContract(1000);
+        $this->pay($contract, 400);
+        $payment = $contract->payments()->first();
+
+        $page = Livewire::actingAs($this->admin)
+            ->test(ContractShow::class, ['contract' => $contract])
+            ->call('startDeletePayment', $payment->id)
+            ->assertSet('deletingPaymentId', $payment->id)
+            ->assertSee(__('Say why — the reason is kept in the contract history.'), false)
+            ->call('deletePayment', $payment->id)
+            ->assertHasErrors(['deletePaymentReason' => 'required']);
+
+        $this->assertSame(1, $contract->payments()->count());
+
+        $page->set('deletePaymentReason', '  Check 29903 was voided  ')
+            ->call('deletePayment', $payment->id)
+            ->assertHasNoErrors()
+            ->assertSet('deletingPaymentId', null)
+            ->assertSee('Check 29903 was voided');
+
+        $this->assertSame(0, $contract->payments()->count());
+        $this->assertSame('Check 29903 was voided', $contract->changeHistories()->first()->changes['reason']);
+        $this->assertSame(__('Reason'), ContractChangeHistory::fieldLabel('reason'));
     }
 
     public function test_the_contract_page_shows_the_change_history(): void

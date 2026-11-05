@@ -47,6 +47,28 @@ class PaymentBatchShow extends Component
     }
 
     /** Back to the order the batch has always printed in. */
+    /** Contracts whose change orders are open under their line. */
+    public array $expandedContracts = [];
+
+    public function toggleChangeOrders(int $contractId): void
+    {
+        abort_unless($this->paymentBatch->items()->where('contract_id', $contractId)->exists(), 404);
+
+        $this->expandedContracts = in_array($contractId, $this->expandedContracts, true)
+            ? array_values(array_diff($this->expandedContracts, [$contractId]))
+            : [...$this->expandedContracts, $contractId];
+    }
+
+    /** Open every line's change orders, or close them all. */
+    public function toggleAllChangeOrders(): void
+    {
+        $withChangeOrders = $this->groups()->flatMap(fn ($group) => $group['rows'])
+            ->filter(fn ($item) => $item->contract->changeOrders->isNotEmpty())
+            ->pluck('contract_id')->unique()->values()->all();
+
+        $this->expandedContracts = count($this->expandedContracts) >= count($withChangeOrders) ? [] : $withChangeOrders;
+    }
+
     public function resetLayout(): void
     {
         $this->groupBy = '';
@@ -101,7 +123,7 @@ class PaymentBatchShow extends Component
         $groupBy = PaymentBatchLayout::cleanGroup($this->groupBy);
         $money = fn ($value) => number_format((float) $value, 2, '.', '');
 
-        $filename = 'payment-batch-' . $batch->id . '-' . $batch->payment_date->format('Y-m-d') . '.csv';
+        $filename = 'payment-batch-'.$batch->id.'-'.$batch->payment_date->format('Y-m-d').'.csv';
 
         return new StreamedResponse(function () use ($batch, $groups, $summary, $groupBy, $money) {
             $out = fopen('php://output', 'w');
@@ -127,12 +149,13 @@ class PaymentBatchShow extends Component
             fputcsv($out, [
                 __('Subcontractor'), __('Contact (Employee)'), __('Client'), __('Project'), __('Job Site'), __('Contract #'),
                 __('Pays'), __('Method'), __('Phase'), __('Notes'), __('Status'), __('Amount'),
+                __('Change Orders'), __('Change order details'),
             ]);
 
             foreach ($groups as $group) {
                 if ($group['label'] !== null) {
                     fputcsv($out, [
-                        $group['sub'] ? $group['label'] . ' — ' . $group['sub'] : $group['label'],
+                        $group['sub'] ? $group['label'].' — '.$group['sub'] : $group['label'],
                         trans_choice(':count item|:count items', $group['totals']['count'], ['count' => $group['totals']['count']]),
                     ]);
                 }
@@ -151,6 +174,10 @@ class PaymentBatchShow extends Component
                         $item->notes ?? '',
                         __($item->getStatusLabel()),
                         $money($item->amount),
+                        $item->contract->changeOrders->isEmpty() ? '' : $money($item->contract->getChangeOrdersTotal()),
+                        $item->contract->changeOrders
+                            ->map(fn ($co) => $co->date->format('Y-m-d').' '.$co->title.': '.$money($co->amount))
+                            ->implode('; '),
                     ]);
                 }
 
@@ -171,7 +198,7 @@ class PaymentBatchShow extends Component
             fclose($out);
         }, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 

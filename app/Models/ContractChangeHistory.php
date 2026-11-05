@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * One change to a contract's terms: an edit, a change order added, altered
@@ -93,6 +94,7 @@ class ContractChangeHistory extends Model
             'payment_date' => __('Payment Date'),
             'reference' => __('Reference'),
             'payment_method' => __('Payment Method'),
+            'reason' => __('Reason'),
             default => ucfirst(str_replace('_', ' ', $field)),
         };
     }
@@ -113,7 +115,7 @@ class ContractChangeHistory extends Model
         }
 
         if (in_array($field, self::DATE_FIELDS, true)) {
-            return \Illuminate\Support\Carbon::parse($value)->appDate();
+            return Carbon::parse($value)->appDate();
         }
 
         return match ($field) {

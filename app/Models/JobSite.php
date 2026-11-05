@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Contracts\PermissionScope;
-use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\JobSiteStatus;
+use App\Models\Concerns\HasFormattedPhone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class JobSite extends Model implements PermissionScope
 {
-    use HasFormattedPhone, HasFactory;
+    use HasFactory, HasFormattedPhone;
 
     protected $fillable = [
         'project_id',
@@ -34,6 +34,7 @@ class JobSite extends Model implements PermissionScope
         'phone',
         'email',
         'job_amount',
+        'estimated_cost',
         'status',
         'created_by',
         'supervisor_id',
@@ -41,6 +42,7 @@ class JobSite extends Model implements PermissionScope
 
     protected $casts = [
         'status' => JobSiteStatus::class,
+        'estimated_cost' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

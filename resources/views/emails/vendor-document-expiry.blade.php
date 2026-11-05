@@ -17,7 +17,7 @@
                     <tr>
                         <td style="padding: 12px 16px; font-size: 14px;">
                             @if($group['vendor'])
-                                <a href="{{ route('subcontractors.show', $group['vendor']->id) }}" style="color: #3F5189; font-weight: 600; text-decoration: none;">{{ $group['vendor']->name }}</a>
+                                <a href="{{ $group['vendor']->is_subcontractor ? route('subcontractors.show', $group['vendor']->id) : route('suppliers.show', $group['vendor']->id) }}" style="color: #3F5189; font-weight: 600; text-decoration: none;">{{ $group['vendor']->name }}</a>
                             @else
                                 <span style="color: #555; font-weight: 600;">{{ __('Unknown vendor') }}</span>
                             @endif

@@ -251,7 +251,7 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Method') }}</label>
                         <select
-                            @disabled($amountsLocked) wire:model="expense_payment_method"
+                            @disabled($amountsLocked) wire:model.live="expense_payment_method"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                             <option value="">{{ __('Select method') }}</option>
                             <option value="cash">{{ __('Cash') }}</option>
@@ -264,6 +264,19 @@
                             @endif
                             <option value="other">{{ __('Other') }}</option>
                         </select>
+
+                        {{-- A company expense paid by check records which check. It stays
+                             editable after payment: the number is often known only then. --}}
+                        @if($this->isCompanyExpense() && $expense_payment_method === 'check')
+                            <div class="mt-4">
+                                <label for="expense_check_number" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Check number') }}</label>
+                                <input
+                                    id="expense_check_number" type="text" maxlength="255" wire:model="expense_check_number"
+                                    placeholder="{{ __('e.g. 29852, or a note about the check') }}"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
+                                @error('expense_check_number') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
                     </div>
                     <div class="flex items-center">
                         <label class="flex items-center cursor-pointer">

@@ -20,7 +20,9 @@ class ProjectExpenses extends Component
 
     // Filters
     public $expenseSearch = '';
+
     public $expenseLocationFilter = 'all';
+
     public $expenseStatusFilter = 'all';
 
     /** Narrow the list to one cost code, matched by code across the project's budgets. */
@@ -58,7 +60,8 @@ class ProjectExpenses extends Component
 
         // Expenses query with filters
         $expensesQuery = $this->project->expenses()
-            ->with(['jobSite', 'supplier', 'createdBy', 'payments', 'items.budgetItem']);
+            ->with(['jobSite', 'supplier', 'createdBy', 'payments', 'items.budgetItem'])
+            ->withCount('attachments');
 
         // Apply location filter
         if ($this->expenseLocationFilter === 'project') {
@@ -82,12 +85,12 @@ class ProjectExpenses extends Component
         // Apply search filter
         if ($this->expenseSearch) {
             $expensesQuery->where(function ($query) {
-                $query->where('notes', 'like', '%' . $this->expenseSearch . '%')
+                $query->where('notes', 'like', '%'.$this->expenseSearch.'%')
                     ->orWhereHas('items', function ($itemQuery) {
-                        $itemQuery->where('item_name', 'like', '%' . $this->expenseSearch . '%');
+                        $itemQuery->where('item_name', 'like', '%'.$this->expenseSearch.'%');
                     })
                     ->orWhereHas('supplier', function ($supplierQuery) {
-                        $supplierQuery->where('name', 'like', '%' . $this->expenseSearch . '%');
+                        $supplierQuery->where('name', 'like', '%'.$this->expenseSearch.'%');
                     });
             });
         }

@@ -163,6 +163,14 @@ class Equipment extends Model
         return static::typeLabel($this->equipment_type);
     }
 
+    /** The name a person picks it by: "Bobcat S650 (EQ-0042)" — the asset tag, else the plate. */
+    public function displayName(): string
+    {
+        $tag = $this->asset_tag ?: $this->plate;
+
+        return $tag ? "{$this->name} ({$tag})" : $this->name;
+    }
+
     public static function statusLabel(?string $status): string
     {
         return match ($status) {

@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\DocumentStorageService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Services\DocumentStorageService;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -27,12 +27,17 @@ use Illuminate\Support\Facades\Storage;
 class SubcontractorDocument extends Model
 {
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_SUPERSEDED = 'superseded';
+
     public const STATUS_ARCHIVED = 'archived';
 
     public const EXPIRY_VALID = 'valid';
+
     public const EXPIRY_EXPIRING_SOON = 'expiring_soon';
+
     public const EXPIRY_EXPIRED = 'expired';
+
     /** The type asks for a date and this document carries none — it cannot be watched. */
     public const EXPIRY_UNDATED = 'undated';
 
@@ -156,9 +161,12 @@ class SubcontractorDocument extends Model
                 ->select('id')
                 ->where('requires_expiration', true)
                 ->where('is_active', true))
+            // A vendor still in use as a subcontractor or a supplier (suppliers
+            // keep documents too since Nov 2026); one classified as neither is
+            // not watched.
             ->whereIn('subcontractor_id', Vendor::query()
                 ->select('id')
-                ->where('is_subcontractor', true));
+                ->where(fn (Builder $v) => $v->where('is_subcontractor', true)->orWhere('is_supplier', true)));
     }
 
     /** Active, watched documents already past their date. */

@@ -204,6 +204,7 @@
                                                 </svg>
                                             </a>
                                             @endcan
+                                            @include('livewire.expense.partials.files-button')
                                             <button
                                                 wire:click="openExpenseViewModal({{ $expense->id }})"
                                                 class="text-slate-600 dark:text-slate-400 hover:text-[#3F5189] dark:hover:text-[#4A5A96]"

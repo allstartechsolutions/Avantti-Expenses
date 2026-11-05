@@ -6,11 +6,11 @@
 @if($equipmentOptions->isNotEmpty() || $expense_equipment_id)
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-            <label for="expense-equipment" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Equipment') }}</label>
+            <label for="expense-equipment" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Machine') }}</label>
             <select id="expense-equipment" wire:model.live="expense_equipment_id" class="{{ $eqField }}">
                 <option value="">{{ __('Not for a piece of equipment') }}</option>
                 @foreach($equipmentOptions as $eq)
-                    <option value="{{ $eq->id }}">{{ $eq->name }}@if($eq->asset_tag || $eq->plate) ({{ $eq->asset_tag ?? $eq->plate }})@endif</option>
+                    <option value="{{ $eq->id }}">{{ $eq->displayName() }}</option>
                 @endforeach
             </select>
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Fuel, parts, a repair: tag the machine and it shows on its cost history.') }}</p>

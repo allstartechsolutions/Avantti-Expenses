@@ -107,7 +107,10 @@
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Address Information') }}</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Supplier location details') }}</p>
             </div>
-            <div class="p-6 space-y-6">
+            {{-- Start typing and pick the address: street, city, state and ZIP fill in (client request 23, Nov 2026). --}}
+            <div class="p-6 space-y-6"
+                x-data="placesAddress({ country: '{{ config('app.country') }}', fields: { street: 'street', city: 'city', state: 'state', postal_code: 'postal_code', neighborhood: 'neighborhood' } })">
+                <x-address-autocomplete-script />
                 <!-- Street Address -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="md:col-span-2">
@@ -117,15 +120,17 @@
                         <input
                             type="text"
                             id="street"
+                            x-ref="streetInput"
+                            autocomplete="off"
                             wire:model.live="street"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            placeholder="{{ config('app.country') === 'BR' ? 'Rua Example, 123' : '123 Main Street' }}"
+                            placeholder="{{ __('Start typing an address...') }}"
                         >
                         @error('street') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label for="address_2" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            {{ config('app.country') === 'BR' ? 'Complement' : 'Address Line 2' }}
+                            {{ config('app.country') === 'BR' ? __('Complement') : __('Address Line 2') }}
                         </label>
                         <input
                             type="text"

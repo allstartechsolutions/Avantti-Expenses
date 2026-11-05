@@ -72,6 +72,7 @@
                             <th scope="col" class="{{ $th }}">{{ __('Maintenance') }}</th>
                             <th scope="col" class="{{ $th }}">{{ __('Status') }}</th>
                             <th scope="col" class="{{ $th }} text-right">{{ __('Amount') }}</th>
+                            <th scope="col" class="{{ $th }} text-right">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -92,6 +93,15 @@
                                 <td class="px-6 py-3 text-sm text-slate-700 dark:text-slate-300">{{ $e->equipmentMaintenance?->title ?? '—' }}</td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{{ $e->getStatusLabel() }}</td>
                                 <td class="px-6 py-3 whitespace-nowrap text-right"><x-ui.money class="text-sm font-medium text-slate-900 dark:text-white" :amount="$e->total_amount" /></td>
+                                {{-- Opens the expense with its items, payments, history and files. --}}
+                                <td class="px-6 py-3 whitespace-nowrap text-right">
+                                    <div class="inline-flex items-center gap-3">
+                                        @include('livewire.expense.partials.files-button', ['expense' => $e])
+                                        <x-ui.view-edit-buttons
+                                            :viewAction="'openExpenseViewModal('.$e->id.')'"
+                                            :editRoute="auth()->user()->can($e->ability('edit'), $e) ? route('expenses.edit', $e->id) : null" />
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

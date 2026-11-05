@@ -228,6 +228,29 @@ class CompanyExpenseReportsTest extends TestCase
         $this->assertEquals(0, $without->instance()->summary['pending']);
     }
 
+    /** Client request 17 (Nov 2026): Cash to Pay by project manager, plus the grand total. */
+    public function test_cash_to_pay_splits_by_project_manager(): void
+    {
+        $pm = User::factory()->create(['name' => 'Alexandre']);
+        $this->project->update(['project_manager_id' => $pm->id]);
+
+        $page = Livewire::actingAs($this->roleWith(['dashboard.view', 'dashboard.overview', 'projects.view', 'project.view', 'expenses.view', 'company-expenses.view']))
+            ->test(DashboardIndex::class);
+
+        $kpis = $page->instance()->kpis;
+        $this->assertSame([
+            ['label' => 'Alexandre', 'amount' => 100.0],
+            ['label' => __('Company (general)'), 'amount' => 1200.0],
+        ], array_map(fn ($r) => ['label' => $r['label'], 'amount' => $r['amount']], $kpis['cash_to_pay_by_pm']));
+        $this->assertEquals(1300, $kpis['cash_to_pay']);
+        $page->assertSee(__('By project manager'))->assertSee(__('Grand total'));
+
+        $this->project->update(['project_manager_id' => null]);
+        $labels = array_column(Livewire::actingAs($this->roleWith(['dashboard.view', 'dashboard.overview', 'projects.view', 'project.view', 'expenses.view']))
+            ->test(DashboardIndex::class)->instance()->kpis['cash_to_pay_by_pm'], 'label');
+        $this->assertSame([__('No project manager')], $labels);
+    }
+
     public function test_the_dashboard_counts_the_companys_cash_only_for_a_reader_with_the_grant(): void
     {
         $base = ['dashboard.view', 'dashboard.overview', 'projects.view', 'project.view', 'expenses.view'];

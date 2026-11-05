@@ -134,6 +134,46 @@
             <div class="{{ $row }}"><span class="{{ $k }}">{{ __('Open findings') }}</span><span class="{{ $v }} {{ $openFindings > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : '' }}">{{ $openFindings }}</span></div>
         </div>
 
+        {{-- Costs at a glance; the Costs tab has every expense and the breakdowns. --}}
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <div class="flex items-center justify-between gap-4 mb-4">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Costs') }}</h3>
+                <button type="button" wire:click="setActiveTab('costs')" class="text-sm font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ __('See all costs') }}</button>
+            </div>
+            <div class="rounded-lg bg-gradient-to-r from-[#3F5189] to-[#4A5A96] p-4 text-white mb-4">
+                <p class="text-sm text-white/80">{{ __('Total cost of ownership') }}</p>
+                <x-ui.money class="block text-2xl font-bold mt-1" :amount="$overviewCosts['tco']" rollup />
+                <p class="mt-1 text-xs text-white/80">{{ __('Purchase plus every tagged expense you may see') }}</p>
+            </div>
+            <div class="{{ $row }}"><span class="{{ $k }}">{{ __('Purchase cost') }}</span><span class="{{ $v }}">@if($overviewCosts['purchase'] === null)—@else<x-ui.money :amount="$overviewCosts['purchase']" rollup />@endif</span></div>
+            <div class="{{ $row }}"><span class="{{ $k }}">{{ __('Tagged expenses') }} <span class="text-xs">({{ $overviewCosts['count'] }})</span></span><span class="{{ $v }} font-semibold"><x-ui.money :amount="$overviewCosts['total']" rollup /></span></div>
+            <div class="{{ $row }}"><span class="{{ $k }} pl-3">{{ __('Maintenance') }}</span><span class="{{ $v }}"><x-ui.money :amount="$overviewCosts['maintenance']" rollup /></span></div>
+            <div class="{{ $row }}"><span class="{{ $k }} pl-3">{{ __('Not tied to a maintenance') }}</span><span class="{{ $v }}"><x-ui.money :amount="$overviewCosts['other']" rollup /></span></div>
+            <div class="{{ $row }}"><span class="{{ $k }}">{{ __('This year') }}</span><span class="{{ $v }}"><x-ui.money :amount="$overviewCosts['thisYear']" rollup /></span></div>
+            <div class="{{ $row }}"><span class="{{ $k }}">{{ __('Not paid yet') }}</span><span class="{{ $v }} {{ $overviewCosts['unpaid'] > 0 ? 'text-amber-600 dark:text-amber-400' : '' }}"><x-ui.money :amount="$overviewCosts['unpaid']" rollup /></span></div>
+
+            <h4 class="mt-5 mb-2 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Latest expenses') }}</h4>
+            @forelse($overviewCosts['latest'] as $e)
+                <div wire:key="overview-cost-{{ $e->id }}" class="flex items-start justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700/60 last:border-0">
+                    <button type="button" wire:click="openExpenseViewModal({{ $e->id }})" class="min-w-0 text-left group">
+                        <span class="block truncate text-sm text-slate-900 dark:text-white group-hover:text-[#3F5189] dark:group-hover:text-[#8B9BD0] group-hover:underline">{{ $e->supplier?->name ?? ($e->items->first()?->item_name ?? $e->item_name ?? __('No Supplier')) }}</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $e->expense_date->appDate() }} · {{ $e->getStatusLabel() }}</span>
+                    </button>
+                    <div class="flex shrink-0 items-center gap-2">
+                        @include('livewire.expense.partials.files-button', ['expense' => $e])
+                        <x-ui.money class="text-sm font-medium text-slate-900 dark:text-white" :amount="$e->total_amount" />
+                    </div>
+                </div>
+            @empty
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No expense tagged to this equipment yet') }}</p>
+                @can('company-expenses.create')
+                    @unless($equipment->isRetired())
+                        <a href="{{ route('company-expenses.create', ['equipment' => $equipment->id]) }}" class="mt-2 inline-block text-sm font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ __('Add a company expense for this equipment') }}</a>
+                    @endunless
+                @endcan
+            @endforelse
+        </div>
+
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">{{ __('Record') }}</h3>
             <div class="{{ $row }}"><span class="{{ $k }}">{{ __('Created by') }}</span><span class="{{ $v }}">{{ $equipment->createdBy?->name ?? '—' }}</span></div>

@@ -196,6 +196,27 @@ class ChangeOrderContractValueTest extends TestCase
         );
     }
 
+    /** Client request 21 (Nov 2026): the lot goes straight to its contracts, like it does to expenses. */
+    public function test_the_job_site_overview_links_to_its_contracts_for_whoever_may_see_them(): void
+    {
+        $link = route('jobsites.contracts', $this->site);
+
+        Livewire::actingAs($this->admin)
+            ->test(JobSiteOverview::class, ['jobSite' => $this->site])
+            ->assertSee(__('View Contracts'))
+            ->assertSee($link, false)
+            ->assertSee(__('No contract on this location yet.'));
+
+        $role = Role::create(['name' => 'no-contracts']);
+        $role->syncAbilities(['projects.view', 'project.view']);
+        $reader = User::factory()->create(['role_id' => $role->id]);
+
+        Livewire::actingAs($reader)
+            ->test(JobSiteOverview::class, ['jobSite' => $this->site])
+            ->assertDontSee(__('View Contracts'))
+            ->assertDontSee($link, false);
+    }
+
     public function test_the_job_site_overview_separates_approved_from_awaiting(): void
     {
         $this->changeOrder(ChangeOrder::STATUS_APPROVED, 10000, $this->site);

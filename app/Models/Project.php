@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Contracts\PermissionScope;
-use App\Models\Concerns\HasFormattedPhone;
 use App\Enums\ProjectAmountSource;
 use App\Enums\ProjectStatus;
+use App\Models\Concerns\HasFormattedPhone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Project extends Model implements PermissionScope
 {
-    use HasFormattedPhone, HasFactory;
+    use HasFactory, HasFormattedPhone;
 
     protected $fillable = [
         'client_id',
@@ -68,7 +68,12 @@ class Project extends Model implements PermissionScope
     public function getContractValue(): float
     {
         if ($this->amount_source === ProjectAmountSource::FROM_JOBSITES) {
-            return round($this->jobSites()->sum('job_amount') / 100, 2);
+            // Loaded lots are summed in PHP, so a list of projects is not a query per row.
+            $cents = $this->relationLoaded('jobSites')
+                ? $this->jobSites->sum(fn (JobSite $site) => (int) $site->getRawOriginal('job_amount'))
+                : $this->jobSites()->sum('job_amount');
+
+            return round($cents / 100, 2);
         }
 
         return (float) $this->initial_amount;

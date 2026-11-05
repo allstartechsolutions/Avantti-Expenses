@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Company;
+use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
+use App\Models\SubcontractorEmployee;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\PaymentDetailReportService;
@@ -23,7 +25,7 @@ class PaymentDetailReportPdfController extends Controller
         $pdf = Pdf::loadView('pdf.payment-detail-report', $data);
         $pdf->setPaper('letter', $data['view'] === 'detail' ? 'landscape' : 'portrait');
 
-        $filename = 'payment-details-' . $data['view'] . '-' . $data['fromDate'] . '-to-' . $data['toDate'] . '.pdf';
+        $filename = 'payment-details-'.$data['view'].'-'.$data['fromDate'].'-to-'.$data['toDate'].'.pdf';
 
         return $pdf->download($filename);
     }
@@ -47,6 +49,7 @@ class PaymentDetailReportPdfController extends Controller
         $jobSiteFilter = $request->query('jobSiteFilter') ?: '';
         $vendorFilter = $request->query('vendorFilter') ?: '';
         $subcontractorFilter = $request->query('subcontractorFilter') ?: '';
+        $employeeFilter = $request->query('employeeFilter') ?: '';
         // Multi-select: array from the report page (statusFilter[0]=paid...),
         // but old single-string links still work; invalid values drop out.
         $statusFilter = array_values(array_intersect(
@@ -72,6 +75,7 @@ class PaymentDetailReportPdfController extends Controller
             $statusFilter,
             $typeFilter,
             $projectManagerFilter,
+            $employeeFilter,
         )->includeCompany(app(PermissionResolver::class)->allows($request->user(), 'company-expenses.view'));
 
         return [
@@ -84,7 +88,7 @@ class PaymentDetailReportPdfController extends Controller
             'toDate' => $toDate,
             'statusFilter' => $statusFilter === []
                 ? __('All')
-                : implode(', ', array_map('ucfirst', $statusFilter)),
+                : implode(', ', array_map(fn (string $status) => ExpensePayment::statusLabel($status), $statusFilter)),
             'typeFilter' => $typeFilter,
             'client' => $clientFilter ? Client::find($clientFilter) : null,
             'projectManager' => $projectManagerFilter ? User::find($projectManagerFilter) : null,
@@ -92,6 +96,7 @@ class PaymentDetailReportPdfController extends Controller
             'jobSite' => $jobSiteFilter ? JobSite::find($jobSiteFilter) : null,
             'vendor' => $vendorFilter ? Supplier::find($vendorFilter) : null,
             'subcontractor' => $subcontractorFilter ? Subcontractor::find($subcontractorFilter) : null,
+            'employee' => $employeeFilter ? SubcontractorEmployee::find($employeeFilter) : null,
             'company' => Company::first(),
             'generatedAt' => now(),
         ];

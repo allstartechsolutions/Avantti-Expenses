@@ -13,6 +13,7 @@ use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
+use App\Services\ProjectFinancials;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -209,6 +210,7 @@ class ProjectIndex extends Component
 
         return view('livewire.project.project-index', [
             'projects' => $projects,
+            'financials' => ProjectFinancials::forProjects($projects->getCollection()),
             'clients' => $clients,
             'statuses' => $statuses,
         ])->layout('components.layouts.app');

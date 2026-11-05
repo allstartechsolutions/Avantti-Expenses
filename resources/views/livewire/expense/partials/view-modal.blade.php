@@ -54,6 +54,45 @@
                         </div>
                     </div>
 
+                    {{-- The machine this expense was for, and the maintenance it paid. --}}
+                    @if($viewingExpense->equipment)
+                        @php
+                            $eq = $viewingExpense->equipment;
+                            $eqTag = $eq->asset_tag ?: $eq->plate;
+                            $eqSpec = collect([$eq->make, $eq->model, $eq->year])->filter()->implode(' ');
+                            $eqMaint = $viewingExpense->equipmentMaintenance;
+                        @endphp
+                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="min-w-0">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Machine') }}</label>
+                                <p class="text-slate-900 dark:text-white break-words">
+                                    @can('equipment.view')
+                                        <a href="{{ route('equipment.show', $eq) }}" wire:navigate class="font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ $eq->name }}</a>
+                                    @else
+                                        <span class="font-medium">{{ $eq->name }}</span>
+                                    @endcan
+                                    @if($eqTag)
+                                        <span class="font-mono text-xs text-slate-500 dark:text-slate-400">({{ $eqTag }})</span>
+                                    @endif
+                                </p>
+                                <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $eq->getTypeLabel() }}@if($eqSpec) · {{ $eqSpec }}@endif
+                                </p>
+                            </div>
+                            <div class="min-w-0">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('For which maintenance') }}</label>
+                                @if($eqMaint)
+                                    <p class="text-slate-900 dark:text-white break-words">{{ $eqMaint->title }}</p>
+                                    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                                        {{ \App\Models\EquipmentMaintenance::statusLabel($eqMaint->status) }}@if($eqMaint->completed_date) · {{ $eqMaint->completed_date->appDate() }}@elseif($eqMaint->scheduled_date) · {{ $eqMaint->scheduled_date->appDate() }}@endif
+                                    </p>
+                                @else
+                                    <p class="text-slate-400 dark:text-slate-500">{{ __('None in particular') }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Items Table -->
                     @if(count($expenseItems) > 0)
                         <div>
@@ -138,6 +177,9 @@
                                         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">{{ __('Auto') }}</span>
                                     @endif
                                 </p>
+                                @if($expense_check_number)
+                                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ __('Check number') }}: <span class="font-medium text-slate-900 dark:text-white">{{ $expense_check_number }}</span></p>
+                                @endif
                             </div>
                         </div>
 
@@ -284,7 +326,9 @@
                         </div>
                     </div>
 
-                    <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4 scroll-mt-4"
+                         x-data
+                         x-on:expense-show-files.window="setTimeout(() => $el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200)">
                         <livewire:shared.attachments
                             model-type="expense"
                             :model-id="$viewingExpense->id"

@@ -178,6 +178,17 @@
                 </select>
             </div>
 
+            <!-- Employee Filter (narrows to the subcontractor's people when one is chosen) -->
+            <div class="w-full md:w-48">
+                <select wire:model.live="employeeFilter" aria-label="{{ __('Employee') }}"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    <option value="">{{ __('All employees') }}</option>
+                    @foreach($this->employees as $emp)
+                        <option value="{{ $emp->id }}">{{ $subcontractorFilter === '' && $emp->subcontractor ? __(':employee — :subcontractor', ['employee' => $emp->name, 'subcontractor' => $emp->subcontractor->company_name]) : $emp->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Project Manager Filter -->
             <div class="w-full md:w-48">
                 <select wire:model.live="projectManagerFilter"
@@ -250,6 +261,11 @@
                             icon="check">
                             {{ __('Approve All Pending') }} ({{ $this->batchSummary['pending_count'] }})
                         </x-ui.button>
+                        <x-ui.button variant="outline" wire:click="rejectAllPending"
+                            wire:confirm="{{ __('Reject all :count pending items? They stay in the batch as rejected and are not paid.', ['count' => $this->batchSummary['pending_count']]) }}"
+                            icon="x">
+                            {{ __('Reject All Pending') }} ({{ $this->batchSummary['pending_count'] }})
+                        </x-ui.button>
                     @endif
                 </div>
 
@@ -262,6 +278,34 @@
                         {{ __('Cancel Batch') }}
                     </x-ui.button>
                 @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- What the filters select among the pending lines, and actions on just those (client request 2, Nov 2026). --}}
+    @if($paymentBatch->canBeEdited() && $this->selectionSummary['partial'])
+        <div class="mb-6 rounded-xl border border-[#3F5189]/30 bg-[#3F5189]/5 dark:border-[#4A5A96]/40 dark:bg-[#4A5A96]/10 p-4">
+            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('This selection') }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300">
+                        {{ trans_choice(':count pending item matches the filters above|:count pending items match the filters above', $this->selectionSummary['count'], ['count' => $this->selectionSummary['count']]) }}
+                        — <span class="font-bold text-slate-900 dark:text-white">{{ Number::currency($this->selectionSummary['amount'], config('app.currency'), config('app.locale')) }}</span>
+                        <span class="text-slate-500 dark:text-slate-400">{{ __('of :amount pending in the batch', ['amount' => Number::currency($this->batchSummary['pending_amount'], config('app.currency'), config('app.locale'))]) }}</span>
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-ui.button variant="success" wire:click="approveSelection"
+                        wire:confirm="{{ __('Approve the :count pending items in this selection and process their payments? This cannot be undone.', ['count' => $this->selectionSummary['count']]) }}"
+                        icon="check">
+                        {{ __('Approve this selection') }} ({{ $this->selectionSummary['count'] }})
+                    </x-ui.button>
+                    <x-ui.button variant="outline" wire:click="rejectSelection"
+                        wire:confirm="{{ __('Reject the :count pending items in this selection?', ['count' => $this->selectionSummary['count']]) }}"
+                        icon="x">
+                        {{ __('Reject this selection') }}
+                    </x-ui.button>
+                </div>
             </div>
         </div>
     @endif

@@ -37,30 +37,51 @@ trait HandlesExpensePaymentActions
 
     // View modal data
     public $expense_date = '';
+
     public $expense_job_site_id = null;
+
     public $expense_supplier_id = null;
+
     public $supplierSearch = '';
+
     public $expense_notes = '';
+
     public $expense_total_amount = 0;
+
     public $expense_status = '';
+
     public $expense_payment_method = null;
+
     public $expense_is_auto_payment = false;
+
+    public $expense_check_number = null;
+
     public $expense_has_installments = false;
+
     public $expense_total_installments = 0;
+
     public $expense_payment_frequency = '';
+
     public $expense_payment_due_date = '';
+
     public $expense_paid_date = '';
+
     public $existingReceiptPath = null;
+
     public $expenseItems = [];
+
     public $expenseHistory = [];
 
     // Mark-as-paid confirmation state (inline date picker)
     public $markPaidType = null; // 'expense' or 'payment'
+
     public $markPaidId = null;
+
     public $markPaidDate = '';
 
     // Installment due-date editing state
     public $editDueDateId = null;
+
     public $editDueDate = '';
 
     /**
@@ -85,7 +106,7 @@ trait HandlesExpensePaymentActions
             return null;
         }
 
-        return $expense->load(['payments.paidBy', 'paidBy', 'createdBy', 'jobSite', 'category']);
+        return $expense->load(['payments.paidBy', 'paidBy', 'createdBy', 'jobSite', 'category', 'equipment', 'equipmentMaintenance']);
     }
 
     /** The expense with this id, only if it belongs on this screen. */
@@ -105,6 +126,16 @@ trait HandlesExpensePaymentActions
 
         $this->showExpenseModal = true;
         $this->dispatch('open-modal', 'expense-view-modal');
+    }
+
+    /**
+     * Open the expense straight at its files — the receipt and attachments that
+     * say what the expense was for (client request 14, Nov 2026).
+     */
+    public function openExpenseFiles(int $expenseId): void
+    {
+        $this->openExpenseViewModal($expenseId);
+        $this->dispatch('expense-show-files');
     }
 
     /** Copy an expense into the view modal's fields; open and refresh share it. */
@@ -160,6 +191,7 @@ trait HandlesExpensePaymentActions
         $this->expense_status = $expense->status;
         $this->expense_payment_method = $expense->payment_method;
         $this->expense_is_auto_payment = $expense->is_auto_payment;
+        $this->expense_check_number = $expense->check_number;
         $this->expense_has_installments = $expense->isInstallment();
         $this->expense_total_installments = $expense->total_installments;
         $this->expense_payment_frequency = $expense->payment_frequency;

@@ -79,12 +79,32 @@
                     </div>
                 </div>
 
-                @if($search)
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:w-auto">
+                    <div>
+                        <label for="pmFilter" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Project Manager') }}</label>
+                        <select id="pmFilter" wire:model.live="pmFilter" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                            <option value="">{{ __('All project managers') }}</option>
+                            @foreach($projectManagers as $pm)
+                                <option value="{{ $pm->id }}">{{ $pm->name }}</option>
+                            @endforeach
+                            <option value="none">{{ __('No project manager') }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Payment date from') }}</label>
+                        <x-ui.date-input wire:model.live="fromDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('Payment date to') }}</label>
+                        <x-ui.date-input wire:model.live="toDate" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]" />
+                    </div>
+                </div>
+                @if($this->hasFilters())
                     <x-ui.button
                         variant="secondary"
-                        wire:click="$set('search', '')"
+                        wire:click="clearFilters"
                         icon="x">
-                        {{ __('Clear Search') }}
+                        {{ __('Clear Filters') }}
                     </x-ui.button>
                 @endif
             </div>
@@ -150,7 +170,7 @@
                                             @endif
                                             @if($batch->projectManager)
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                                                    PM: {{ $batch->projectManager->name }}
+                                                    {{ __('PM') }}: {{ $batch->projectManager->name }}
                                                 </span>
                                             @endif
                                             @if($batch->supervisor)
@@ -238,20 +258,20 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                    @if($search || $statusFilter)
+                    @if($this->hasFilters() || $statusFilter)
                         {{ __('No payment batches found') }}
                     @else
                         {{ __('No payment batches yet') }}
                     @endif
                 </h3>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    @if($search || $statusFilter)
+                    @if($this->hasFilters() || $statusFilter)
                         {{ __('Try adjusting your search or filter.') }}
                     @else
                         {{ __('Get started by creating a new payment batch.') }}
                     @endif
                 </p>
-                @if(!$search && !$statusFilter)
+                @if(! $this->hasFilters() && ! $statusFilter)
                     <div class="mt-6">
                         <x-ui.button
                             variant="primary"
@@ -264,4 +284,67 @@
             </div>
         @endif
     </div>
+    {{-- Totals for every batch the filters keep (client requests 1 and 9, Nov 2026). --}}
+    @if($totals['count'] > 0)
+        <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Totals') }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ trans_choice('Every batch the filters keep (:count batch), not only this page.|Every batch the filters keep (:count batches), not only this page.', $totals['count'], ['count' => $totals['count']]) }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Grand total') }}</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white"><x-ui.money :amount="$totals['total']" rollup /></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-2">{{ __('By project manager and payment date') }}</h4>
+                    <div class="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-700">
+                        <table class="min-w-full text-sm">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                                @foreach($totals['byPm'] as $pm)
+                                    <tr wire:key="pm-total-{{ $loop->index }}" class="bg-slate-50 dark:bg-slate-900/40">
+                                        <td class="px-4 py-2 font-semibold text-slate-900 dark:text-white">{{ $pm['name'] ?? __('No project manager') }}</td>
+                                        <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ trans_choice(':count batch|:count batches', $pm['count'], ['count' => $pm['count']]) }}</td>
+                                        <td class="px-4 py-2 text-right font-semibold text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$pm['total']" rollup /></td>
+                                    </tr>
+                                    @foreach($pm['dates'] as $d)
+                                        <tr wire:key="pm-total-{{ $loop->parent->index }}-{{ $loop->index }}">
+                                            <td class="pl-8 pr-4 py-1.5 text-slate-600 dark:text-slate-300">{{ $d['date']->appDate() }}</td>
+                                            <td class="px-4 py-1.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ trans_choice(':count batch|:count batches', $d['count'], ['count' => $d['count']]) }}</td>
+                                            <td class="px-4 py-1.5 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap"><x-ui.money :amount="$d['total']" rollup /></td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-2">{{ __('By payment date') }}</h4>
+                    <div class="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-700">
+                        <table class="min-w-full text-sm">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                                @foreach($totals['byDate'] as $d)
+                                    <tr wire:key="date-total-{{ $loop->index }}">
+                                        <td class="px-4 py-2 text-slate-700 dark:text-slate-300">{{ $d['date']->appDate() }}</td>
+                                        <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ trans_choice(':count batch|:count batches', $d['count'], ['count' => $d['count']]) }}</td>
+                                        <td class="px-4 py-2 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$d['total']" rollup /></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="border-t-2 border-slate-200 dark:border-slate-600">
+                                <tr>
+                                    <td class="px-4 py-2 font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</td>
+                                    <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ trans_choice(':count batch|:count batches', $totals['count'], ['count' => $totals['count']]) }}</td>
+                                    <td class="px-4 py-2 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$totals['total']" rollup /></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

@@ -38,7 +38,7 @@
     // drawing for somebody whose access hides totals.
     $showsChart = $blocks['money'] && ($blocks['expenses'] || $blocks['invoices']);
 
-    $showsAnyCard = $blocks['expenses'] || $blocks['invoices'] || $blocks['estimates']
+    $showsAnyCard = $blocks['expenses'] || $blocks['invoices'] || $blocks['receivables'] || $blocks['estimates']
         || $blocks['projects'] || $blocks['over_budget'] || $blocks['purchase_orders'];
 
     $showsAnyPanel = $blocks['expenses'] || $blocks['invoices'] || $blocks['over_budget'] || $showsApprovals || $blocks['equipment'];
@@ -87,26 +87,48 @@
                             </svg>
                         </div>
                     </div>
+                    @if ($kpis['cash_to_pay_by_pm'] !== [])
+                        {{-- By project manager, then the grand total (client request 17, Nov 2026). --}}
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+                            <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">{{ __('By project manager') }}</p>
+                            <div class="max-h-40 overflow-y-auto pr-1">
+                                @foreach ($kpis['cash_to_pay_by_pm'] as $row)
+                                    <div wire:key="ctp-pm-{{ $loop->index }}" class="flex items-center justify-between gap-3 py-0.5 text-sm">
+                                        <span class="min-w-0 truncate text-slate-600 dark:text-slate-300" title="{{ $row['label'] }}">{{ $row['label'] }}</span>
+                                        <x-ui.money class="shrink-0 font-medium text-slate-900 dark:text-white" :amount="$row['amount']" :visible="$blocks['money']" rollup />
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="mt-1 pt-1 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700 text-sm">
+                                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ __('Grand total') }}</span>
+                                <x-ui.money class="font-bold text-slate-900 dark:text-white" :amount="$kpis['cash_to_pay']" :visible="$blocks['money']" rollup />
+                            </div>
+                        </div>
+                    @endif
                 </div>
             @endif
 
-            @if ($blocks['invoices'])
-                {{-- Receivables --}}
+            @if ($blocks['invoices'] || $blocks['receivables'])
+                {{-- Receivables (client request 16, Nov 2026): lots with an open contract, their value less
+                     their contracts; then what those contracts have paid and still owe; then invoices due. --}}
+                @php $open = $kpis['open_lots']; @endphp
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5">
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Receivables') }}</p>
-                            <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
-                                <x-ui.money :amount="$kpis['receivables']" :visible="$blocks['money']" rollup />
-                            </p>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                <span>{{ __('Due this month') }}</span>
-                                @if ($kpis['past_due_invoices'] > 0)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                                        {{ $kpis['past_due_invoices'] }} {{ __('past due') }}
-                                    </span>
-                                @endif
-                            </p>
+                            @if ($open !== null)
+                                <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                                    <x-ui.money :amount="$open['receivable']" :visible="$blocks['money']" rollup />
+                                </p>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ trans_choice('Lots with an open contract (:count lot) — value less contracts|Lots with an open contract (:count lots) — value less contracts', $open['lots'], ['count' => $open['lots']]) }}
+                                </p>
+                            @else
+                                <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                                    <x-ui.money :amount="$kpis['receivables']" :visible="$blocks['money']" rollup />
+                                </p>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Invoiced, due this month') }}</p>
+                            @endif
                         </div>
                         <div class="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
                             <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,6 +136,41 @@
                             </svg>
                         </div>
                     </div>
+
+                    @if ($open !== null && $open['lots'] > 0)
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-0.5 text-sm">
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-slate-600 dark:text-slate-300">{{ __('Lots\' value') }}</span>
+                                <x-ui.money class="font-medium text-slate-900 dark:text-white" :amount="$open['value']" :visible="$blocks['money']" rollup />
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-slate-600 dark:text-slate-300">{{ __('Contracts') }}</span>
+                                <x-ui.money class="font-medium text-slate-900 dark:text-white" :amount="$open['contracts']" :visible="$blocks['money']" rollup />
+                            </div>
+                            <div class="flex items-center justify-between gap-3 pl-3">
+                                <span class="text-slate-500 dark:text-slate-400">{{ __('Already paid') }}</span>
+                                <x-ui.money class="text-green-600 dark:text-green-400" :amount="$open['paid']" :visible="$blocks['money']" rollup />
+                            </div>
+                            <div class="flex items-center justify-between gap-3 pl-3">
+                                <span class="text-slate-500 dark:text-slate-400">{{ __('Still to pay') }}</span>
+                                <x-ui.money class="text-amber-600 dark:text-amber-400" :amount="$open['to_pay']" :visible="$blocks['money']" rollup />
+                            </div>
+                        </div>
+                    @elseif ($open !== null)
+                        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">{{ __('No lot has an open contract right now.') }}</p>
+                    @endif
+
+                    @if ($open !== null && $blocks['invoices'])
+                        <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3 text-sm">
+                            <span class="text-slate-600 dark:text-slate-300">{{ __('Invoiced, due this month') }}</span>
+                            <x-ui.money class="font-medium text-slate-900 dark:text-white" :amount="$kpis['receivables']" :visible="$blocks['money']" rollup />
+                        </div>
+                    @endif
+                    @if ($blocks['invoices'] && $kpis['past_due_invoices'] > 0)
+                        <span class="mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                            {{ trans_choice(':count invoice past due|:count invoices past due', $kpis['past_due_invoices'], ['count' => $kpis['past_due_invoices']]) }}
+                        </span>
+                    @endif
                 </div>
             @elseif ($blocks['over_budget'])
                 {{-- Projects Over Budget (takes the Receivables slot when there are no invoices) --}}

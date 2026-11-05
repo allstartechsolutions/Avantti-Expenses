@@ -129,6 +129,7 @@ class ContractDeleteBlockedByBatchTest extends TestCase
 
         $component = Livewire::actingAs($this->admin)
             ->test(ContractShow::class, ['contract' => $contract->fresh()])
+            ->set('deletePaymentReason', 'Entered twice')
             ->call('deletePayment', $contract->payments()->value('id'));
 
         $component
@@ -184,7 +185,8 @@ class ContractDeleteBlockedByBatchTest extends TestCase
         $this->assertSame(2, ContractPayment::where('contract_id', $contract->id)->count());
 
         foreach ($contract->payments()->pluck('id') as $paymentId) {
-            $component->call('deletePayment', $paymentId);
+            $component->set('deletePaymentReason', 'Entered twice')
+                ->call('deletePayment', $paymentId);
         }
 
         $component
@@ -276,6 +278,7 @@ class ContractDeleteBlockedByBatchTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ContractShow::class, ['contract' => $contract->fresh()])
+            ->set('deletePaymentReason', 'Entered twice')
             ->call('deletePayment', $contract->payments()->value('id'))
             ->call('delete')
             ->assertRedirect(route('projects.contracts', $this->project->id));

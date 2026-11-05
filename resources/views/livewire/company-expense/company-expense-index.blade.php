@@ -18,6 +18,9 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('What the company pays that belongs to no project — rent, utilities, insurance, fuel, office — filed by category with its account code.') }}</p>
             </div>
             <div class="flex items-center space-x-3">
+                @can('reports.export')
+                    <x-ui.button variant="secondary" wire:click="exportCsv" icon="arrow-down-tray">{{ __('Export CSV') }}</x-ui.button>
+                @endcan
                 @can('company-expenses.create')
                     <x-ui.button variant="primary" href="{{ route('company-expenses.create') }}" icon="plus">{{ __('Add Company Expense') }}</x-ui.button>
                 @endcan
@@ -65,7 +68,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" id="search" wire:model.live.debounce.300ms="search" class="{{ $select }} pl-10 placeholder-slate-400" placeholder="{{ __('Search by item, vendor, category, code or notes…') }}">
+                    <input type="text" id="search" wire:model.live.debounce.300ms="search" class="{{ $select }} pl-10 placeholder-slate-400" placeholder="{{ __('Search by item, vendor, category, code, notes, check or machine…') }}">
                 </div>
             </div>
             <div class="md:col-span-2">
@@ -95,11 +98,22 @@
                     @endforeach
                 </select>
             </div>
-            <div class="md:col-span-1">
+            <div class="md:col-span-2">
+                <label for="methodFilter" class="sr-only">{{ __('Payment Method') }}</label>
+                <select id="methodFilter" wire:model.live="methodFilter" class="{{ $select }}">
+                    <option value="">{{ __('Payment method: all') }}</option>
+                    @foreach(\App\Livewire\CompanyExpense\CompanyExpenseIndex::METHODS as $method)
+                        <option value="{{ $method }}">{{ \App\Livewire\CompanyExpense\CompanyExpenseIndex::methodLabel($method) }}</option>
+                    @endforeach
+                    <option value="autopay">{{ __('Autopay') }}</option>
+                    <option value="none">{{ __('No method') }}</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
                 <label for="fromDate" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('From') }}</label>
                 <x-ui.date-input id="fromDate" wire:model.live="fromDate" class="{{ $select }}" />
             </div>
-            <div class="md:col-span-1">
+            <div class="md:col-span-2">
                 <label for="toDate" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{{ __('To') }}</label>
                 <x-ui.date-input id="toDate" wire:model.live="toDate" class="{{ $select }}" />
             </div>
@@ -112,6 +126,53 @@
         @endif
     </div>
 
+    {{-- How the filtered expenses were paid (client request 25, Nov 2026). A row filters the list to it. --}}
+    @if($methodSummary !== [])
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('By payment method') }}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('For the dates and filters above. Click a method to list only its expenses.') }}</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-900/50">
+                        <tr>
+                            <th scope="col" class="{{ $th }}">{{ __('Payment Method') }}</th>
+                            <th scope="col" class="{{ $th }} text-right">{{ __('Expenses') }}</th>
+                            <th scope="col" class="{{ $th }} text-right">{{ __('Total') }}</th>
+                            <th scope="col" class="{{ $th }} text-right">{{ __('Paid') }}</th>
+                            <th scope="col" class="{{ $th }} text-right">{{ __('Pending') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        @foreach($methodSummary as $row)
+                            <tr wire:key="method-{{ $row['key'] }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 {{ $methodFilter === $row['key'] ? 'bg-[#3F5189]/5 dark:bg-[#4A5A96]/10' : '' }}">
+                                <td class="px-6 py-2.5">
+                                    <button type="button" wire:click="$set('methodFilter', '{{ $methodFilter === $row['key'] ? '' : $row['key'] }}')" class="font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ $row['label'] }}</button>
+                                </td>
+                                <td class="px-6 py-2.5 text-right text-slate-700 dark:text-slate-300">{{ $row['count'] }}</td>
+                                <td class="px-6 py-2.5 text-right"><x-ui.money class="font-medium text-slate-900 dark:text-white" :amount="$row['total']" rollup /></td>
+                                <td class="px-6 py-2.5 text-right"><x-ui.money class="text-green-600 dark:text-green-400" :amount="$row['paid']" rollup /></td>
+                                <td class="px-6 py-2.5 text-right"><x-ui.money class="text-amber-600 dark:text-amber-400" :amount="$row['pending']" rollup /></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-200 dark:border-slate-600">
+                        <tr>
+                            <td class="px-6 py-2.5 font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</td>
+                            <td class="px-6 py-2.5 text-right font-semibold text-slate-900 dark:text-white">{{ collect($methodSummary)->sum('count') }}</td>
+                            <td class="px-6 py-2.5 text-right"><x-ui.money class="font-bold text-slate-900 dark:text-white" :amount="collect($methodSummary)->sum('total')" rollup /></td>
+                            <td class="px-6 py-2.5 text-right"><x-ui.money class="font-semibold text-green-600 dark:text-green-400" :amount="collect($methodSummary)->sum('paid')" rollup /></td>
+                            <td class="px-6 py-2.5 text-right"><x-ui.money class="font-semibold text-amber-600 dark:text-amber-400" :amount="collect($methodSummary)->sum('pending')" rollup /></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <!-- Expenses List -->
     @if($expenses->count() > 0)
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -122,6 +183,7 @@
                             <th scope="col" class="{{ $th }}">{{ __('Date') }}</th>
                             <th scope="col" class="{{ $th }}">{{ __('Category') }}</th>
                             <th scope="col" class="{{ $th }}">{{ __('Vendor / Items') }}</th>
+                            <th scope="col" class="{{ $th }}">{{ __('Notes') }}</th>
                             <th scope="col" class="{{ $th }} text-right">{{ __('Total') }}</th>
                             <th scope="col" class="{{ $th }}">{{ __('Payments') }}</th>
                             <th scope="col" class="{{ $th }}">{{ __('Status') }}</th>
@@ -151,8 +213,21 @@
                                                 <span class="text-slate-400">{{ trans_choice('+:count more item|+:count more items', $expense->items->count() - 1, ['count' => $expense->items->count() - 1]) }}</span>
                                             @endif
                                         </div>
-                                    @elseif($expense->notes)
-                                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ \Illuminate\Support\Str::limit($expense->notes, 40) }}</div>
+                                    @endif
+                                    @if($expense->equipment)
+                                        <div class="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-300" title="{{ __('Machine') }}">
+                                            <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <span class="truncate">{{ $expense->equipment->displayName() }}</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                {{-- Who or what the expense is for, without opening it. Two lines,
+                                     the whole note on hover. --}}
+                                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 min-w-[12rem] max-w-xs">
+                                    @if(filled($expense->notes))
+                                        <div class="line-clamp-2 whitespace-pre-line break-words" title="{{ $expense->notes }}">{{ $expense->notes }}</div>
+                                    @else
+                                        <span class="text-slate-400 dark:text-slate-500">—</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -160,6 +235,9 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                                     {{ $expense->getPaymentLabel() }}
+                                    @if($expense->check_number)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[12rem]" title="{{ $expense->check_number }}">{{ __('Check no. :number', ['number' => $expense->check_number]) }}</div>
+                                    @endif
                                     @if($expense->isInstallment())
                                         <div class="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
                                             <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ $expense->getPaymentProgress() }}%"></div>
@@ -177,6 +255,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
+                                        @include('livewire.expense.partials.files-button')
                                         @can('company-expenses.edit', $expense)
                                             <a href="{{ route('expenses.edit', $expense->id) }}" class="text-[#3F5189] hover:text-[#4A5A96] dark:text-[#4A5A96] dark:hover:text-[#5A6AA6]" title="{{ __('Edit') }}">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>

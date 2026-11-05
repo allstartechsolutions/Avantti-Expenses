@@ -865,6 +865,28 @@ class ContractShow extends Component
         return array_filter($allocated, fn (int $cents) => $cents > 0);
     }
 
+    /** The payment the delete dialog is open for (client request 12, Nov 2026). */
+    public ?int $deletingPaymentId = null;
+
+    /** Why it is being deleted: required, kept in the contract's change history. */
+    public string $deletePaymentReason = '';
+
+    public function startDeletePayment(int $id): void
+    {
+        $this->authorizeAbility('contracts.unpay', $this->contract);
+
+        $this->deletingPaymentId = ContractPayment::where('contract_id', $this->contract->id)->findOrFail($id)->id;
+        $this->deletePaymentReason = '';
+        $this->resetValidation('deletePaymentReason');
+    }
+
+    public function cancelDeletePayment(): void
+    {
+        $this->deletingPaymentId = null;
+        $this->deletePaymentReason = '';
+        $this->resetValidation('deletePaymentReason');
+    }
+
     public function deletePayment($id)
     {
         // Taking a payment back out is the narrow act, not the same grant that
@@ -873,12 +895,21 @@ class ContractShow extends Component
 
         $payment = ContractPayment::where('contract_id', $this->contract->id)->findOrFail($id);
 
-        DB::transaction(function () use ($payment) {
+        $this->validate(
+            ['deletePaymentReason' => 'required|string|min:3|max:500'],
+            [],
+            ['deletePaymentReason' => __('reason')],
+        );
+
+        $reason = trim($this->deletePaymentReason);
+
+        DB::transaction(function () use ($payment, $reason) {
             $changes = [
                 'amount' => (float) $payment->amount,
                 'payment_date' => $payment->payment_date?->format('Y-m-d'),
                 'payment_method' => $payment->getPaymentMethodLabel(),
                 'reference' => $payment->reference_number,
+                'reason' => $reason,
             ];
 
             $payment->delete();
@@ -894,6 +925,8 @@ class ContractShow extends Component
             $this->contract->recordChange('payment_deleted', array_filter($changes, fn ($value) => $value !== null));
         });
 
+        $this->deletingPaymentId = null;
+        $this->deletePaymentReason = '';
         $this->refreshContract();
         session()->flash('message', __('Payment deleted successfully.'));
         $this->dispatch('payments-updated');

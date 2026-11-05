@@ -6,7 +6,9 @@ use App\Enums\AccessScope;
 use App\Enums\JobSiteStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\ProjectStatus;
+use App\Livewire\Contract\ContractPayments;
 use App\Livewire\Contract\ContractShow;
+use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Livewire\PaymentBatch\PaymentBatchShow;
 use App\Models\Client;
 use App\Models\Contract;
@@ -19,11 +21,13 @@ use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Services\AbilityCatalog;
 use App\Services\PermissionResolver;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -316,6 +320,7 @@ class ContractPaymentTest extends TestCase
 
         Livewire::actingAs($payer)
             ->test(ContractShow::class, ['contract' => $contract])
+            ->set('deletePaymentReason', 'Entered twice')
             ->call('deletePayment', $payment->id)
             ->assertForbidden();
 
@@ -326,6 +331,7 @@ class ContractPaymentTest extends TestCase
 
         Livewire::actingAs($auditor)
             ->test(ContractShow::class, ['contract' => $contract])
+            ->set('deletePaymentReason', 'Entered twice')
             ->call('deletePayment', $payment->id)
             ->assertOk();
 
@@ -444,7 +450,7 @@ class ContractPaymentTest extends TestCase
         $projectGeneral = $this->makeContract();
 
         $listed = Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Contract\ContractPayments::class)
+            ->test(ContractPayments::class)
             ->assertSee('Sam Supervisor')
             ->set('supervisorFilter', (string) $supervisor->id)
             ->instance()->contracts->pluck('id');
@@ -456,7 +462,7 @@ class ContractPaymentTest extends TestCase
 
         // The PDF follows the screen — filters, toggle and sort — and says so.
         $pdfData = null;
-        \Illuminate\Support\Facades\View::composer('pdf.contract-payments', function ($view) use (&$pdfData) {
+        View::composer('pdf.contract-payments', function ($view) use (&$pdfData) {
             $pdfData = $view->getData();
         });
 
@@ -488,14 +494,14 @@ class ContractPaymentTest extends TestCase
         ]);
 
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\PaymentBatch\PaymentBatchEdit::class, ['paymentBatch' => $batch])
+            ->test(PaymentBatchEdit::class, ['paymentBatch' => $batch])
             ->set('supervisorFilter', (string) $supervisor->id)
             ->call('saveDraft');
 
         $this->assertSame($supervisor->id, $batch->fresh()->supervisor_id);
 
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\PaymentBatch\PaymentBatchEdit::class, ['paymentBatch' => $batch->fresh()])
+            ->test(PaymentBatchEdit::class, ['paymentBatch' => $batch->fresh()])
             ->assertSet('supervisorFilter', (string) $supervisor->id);
     }
 
@@ -548,7 +554,7 @@ class ContractPaymentTest extends TestCase
 
     public function test_paying_is_limited_and_the_rest_are_not(): void
     {
-        $catalog = \App\Services\AbilityCatalog::class;
+        $catalog = AbilityCatalog::class;
 
         $this->assertTrue($catalog::isLimited('contracts.pay'));
         $this->assertFalse($catalog::isLimited('contracts.measure'));

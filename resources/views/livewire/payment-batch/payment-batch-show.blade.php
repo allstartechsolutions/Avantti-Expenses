@@ -210,6 +210,11 @@
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
+                    @if($items->contains(fn ($item) => $item->contract->changeOrders->isNotEmpty()))
+                        <x-ui.button variant="secondary" size="sm" wire:click="toggleAllChangeOrders">
+                            {{ $expandedContracts === [] ? __('Show all change orders') : __('Hide change orders') }}
+                        </x-ui.button>
+                    @endif
                     @if($groupBy !== '' || $sortField !== '')
                         <x-ui.button variant="ghost" size="sm" icon="x" wire:click="resetLayout">
                             {{ __('Reset order') }}
@@ -232,6 +237,9 @@
                             @include('livewire.contract.partials.sort-header', ['field' => 'job_site', 'label' => __('Job Site')])
                             @include('livewire.contract.partials.sort-header', ['field' => 'contract', 'label' => __('Contract #')])
                             @include('livewire.contract.partials.sort-header', ['field' => 'amount', 'label' => __('Amount'), 'align' => 'right'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                {{ __('Change Orders') }}
+                            </th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Pays') }}
                             </th>
@@ -264,7 +272,7 @@
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
                                         {{ Number::currency($groupTotals['total_amount'], config('app.currency'), config('app.locale')) }}
                                     </td>
-                                    <td colspan="5" class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">
+                                    <td colspan="6" class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">
                                         <div class="flex flex-wrap gap-x-4 gap-y-1">
                                             @if($groupTotals['approved_amount'] != 0)
                                                 <span class="text-green-600 dark:text-green-400">{{ __('Approved') }}: {{ Number::currency($groupTotals['approved_amount'], config('app.currency'), config('app.locale')) }}</span>
@@ -333,6 +341,30 @@
                                             {{ Number::currency($item->amount, config('app.currency'), config('app.locale')) }}
                                         </span>
                                     </td>
+                                    {{-- The contract's change orders, as on the edit screen; the arrow lists them. --}}
+                                    @php
+                                        $changeOrders = $item->contract->changeOrders;
+                                        $changeOrdersTotal = $item->contract->getChangeOrdersTotal();
+                                        $isExpanded = in_array($item->contract_id, $expandedContracts, true);
+                                    @endphp
+                                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                                        @if($changeOrders->isNotEmpty())
+                                            <div class="flex items-center justify-end gap-1">
+                                                <span class="text-sm font-medium {{ $changeOrdersTotal >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                    {{ $changeOrdersTotal >= 0 ? '+' : '' }}{{ Number::currency($changeOrdersTotal, config('app.currency'), config('app.locale')) }}
+                                                </span>
+                                                <button type="button" wire:click="toggleChangeOrders({{ $item->contract_id }})"
+                                                    class="ml-1 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                                    title="{{ __('Show change orders') }}" aria-expanded="{{ $isExpanded ? 'true' : 'false' }}">
+                                                    <svg class="w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform {{ $isExpanded ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
                                         <span class="text-sm text-slate-600 dark:text-slate-400 {{ $isRejected ? 'line-through' : '' }}">
                                             {{ $item->getPaysLabel() }}
@@ -359,6 +391,37 @@
                                         </span>
                                     </td>
                                 </tr>
+                                @if($isExpanded && $changeOrders->isNotEmpty())
+                                    <tr wire:key="batch-item-{{ $item->id }}-change-orders" class="bg-slate-50 dark:bg-slate-900/40">
+                                        <td colspan="11" class="px-4 py-3">
+                                            <div class="ml-4">
+                                                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">{{ __('Change Orders') }} · {{ $item->contract->contract_number }}</p>
+                                                <table class="w-full text-sm">
+                                                    <thead>
+                                                        <tr class="text-xs text-slate-500 dark:text-slate-400">
+                                                            <th class="text-left pb-1 font-medium">{{ __('Date') }}</th>
+                                                            <th class="text-left pb-1 font-medium">{{ __('Title') }}</th>
+                                                            <th class="text-left pb-1 font-medium">{{ __('Description') }}</th>
+                                                            <th class="text-right pb-1 font-medium">{{ __('Amount') }}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                                        @foreach($changeOrders as $co)
+                                                            <tr wire:key="batch-change-order-{{ $item->id }}-{{ $co->id }}">
+                                                                <td class="py-1.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ $co->date->appDate() }}</td>
+                                                                <td class="py-1.5 text-slate-700 dark:text-slate-300">{{ $co->title }}</td>
+                                                                <td class="py-1.5 text-slate-500 dark:text-slate-400">{{ $co->description ?? '-' }}</td>
+                                                                <td class="py-1.5 text-right font-medium whitespace-nowrap {{ $co->amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                                    {{ $co->amount >= 0 ? '+' : '' }}{{ Number::currency($co->amount, config('app.currency'), config('app.locale')) }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endforeach
                         </tbody>
                     @endforeach
@@ -371,7 +434,7 @@
                             <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
                                 {{ Number::currency($this->summary['total_amount'], config('app.currency'), config('app.locale')) }}
                             </td>
-                            <td colspan="5"></td>
+                            <td colspan="6"></td>
                         </tr>
                     </tfoot>
                 </table>

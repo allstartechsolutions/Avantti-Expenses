@@ -16,8 +16,10 @@ use App\Services\VendorDocumentNotifier;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Testing\Fakes\MailFake;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -423,11 +425,37 @@ class VendorDocumentRemindersTest extends TestCase
     |---------------------------------------------------------------------------
     */
 
+    /** Nov 2026 (request 27): a supplier's documents are reminded too, and the mail links to the supplier page. */
+    public function test_a_supplier_only_vendor_is_reminded_with_a_link_to_its_page(): void
+    {
+        $vendor = new Vendor;
+        $vendor->forceFill(['name' => 'Shore Fuel', 'is_supplier' => true, 'is_subcontractor' => false, 'created_by' => $this->admin->id])->save();
+        SubcontractorDocument::create([
+            'subcontractor_id' => $vendor->id,
+            'document_type_id' => $this->insurance->id,
+            'file_path' => "subcontractor-documents/{$vendor->id}/coi.pdf",
+            'file_name' => 'coi.pdf',
+            'file_size' => 3,
+            'expiration_date' => now()->addDays(7)->toDateString(),
+            'uploaded_by' => $this->admin->id,
+        ]);
+
+        $this->assertSame(1, $this->remind()['documents']);
+
+        Mail::assertSent(VendorDocumentExpiryMail::class, function ($mail) use ($vendor) {
+            $html = $mail->render();
+
+            return str_contains($html, route('suppliers.show', $vendor->id))
+                && ! str_contains($html, route('subcontractors.show', $vendor->id));
+        });
+    }
+
     public function test_a_vendor_that_lost_its_subcontractor_flag_neither_crashes_the_digest_nor_stops_it(): void
     {
         $former = $this->makeSubcontractor('Former Sub');
         $this->document($former, 7);
-        Vendor::whereKey($former->id)->update(['is_subcontractor' => false, 'is_supplier' => true]);
+        // Neither a subcontractor nor a supplier now; a supplier is still watched (Nov 2026).
+        Vendor::whereKey($former->id)->update(['is_subcontractor' => false, 'is_supplier' => false]);
 
         $still = $this->makeSubcontractor('Still A Sub');
         $stillDoc = $this->document($still, 7);
@@ -446,7 +474,7 @@ class VendorDocumentRemindersTest extends TestCase
         $sub = $this->makeSubcontractor();
         $document = $this->document($sub, 7);
 
-        $down = \Mockery::mock(\Illuminate\Mail\MailManager::class);
+        $down = \Mockery::mock(MailManager::class);
         $down->shouldReceive('to')->andThrow(new \RuntimeException('SMTP is down'));
         Mail::swap($down);
 
@@ -457,7 +485,7 @@ class VendorDocumentRemindersTest extends TestCase
         $this->assertSame(1, NotificationLogEntry::whereNotNull('error')->count());
 
         // The next morning, with mail back, it goes out.
-        Mail::swap(new \Illuminate\Support\Testing\Fakes\MailFake(new \Illuminate\Mail\MailManager(app())));
+        Mail::swap(new MailFake(new MailManager(app())));
         $this->travel(1)->days();
 
         $this->assertSame(1, $this->remind()['sent']);

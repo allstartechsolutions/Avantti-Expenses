@@ -165,6 +165,7 @@
                     <th style="{{ $th }} text-align: left;">{{ __('Phase') }}</th>
                     <th style="{{ $th }} text-align: left;">{{ __('Notes') }}</th>
                     <th style="{{ $th }} text-align: center;">{{ __('Status') }}</th>
+                    <th style="{{ $th }} text-align: right;">{{ __('Change Orders') }}</th>
                     <th style="{{ $th }} text-align: right;">{{ __('Amount') }}</th>
                 </tr>
             </thead>
@@ -173,7 +174,7 @@
                     @if($group['label'] !== null)
                         @php $groupTotals = $group['totals']; @endphp
                         <tr style="background-color: #e5e9f4;">
-                            <td colspan="9" style="{{ $td }} font-weight: bold; font-size: 8pt; color: #3F5189;">
+                            <td colspan="10" style="{{ $td }} font-weight: bold; font-size: 8pt; color: #3F5189;">
                                 {{ $group['label'] }}@if($group['sub'])<span style="font-weight: normal; color: #666;"> · {{ $group['sub'] }}</span>@endif
                                 <span style="font-weight: normal; color: #666; font-size: 7pt;">
                                     — {{ trans_choice(':count item|:count items', $groupTotals['count'], ['count' => $groupTotals['count']]) }}
@@ -211,6 +212,17 @@
                             <td style="{{ $td }} {{ $muted }}">{{ $item->phase ?? '—' }}</td>
                             <td style="{{ $td }} {{ $muted }}">{{ $item->notes ?? '—' }}</td>
                             <td style="{{ $td }} text-align: center; font-weight: bold; color: {{ $statusColors[$item->status] ?? '#95a5a6' }};">{{ __($item->getStatusLabel()) }}</td>
+                            <td style="{{ $td }} {{ $muted }} text-align: right;">
+                                @if($item->contract->changeOrders->isNotEmpty())
+                                    @php $coTotal = $item->contract->getChangeOrdersTotal(); @endphp
+                                    <strong style="color: {{ $coTotal >= 0 ? '#15803d' : '#b91c1c' }};">{{ $coTotal >= 0 ? '+' : '' }}{{ $money($coTotal) }}</strong>
+                                    @foreach($item->contract->changeOrders as $co)
+                                        <br><span style="font-size: 6pt; color: #555;">{{ $co->date->appDateShort() }} · {{ $co->title }}: {{ $co->amount >= 0 ? '+' : '' }}{{ $money($co->amount) }}</span>
+                                    @endforeach
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td style="{{ $td }} {{ $muted }} text-align: right; font-weight: bold;">{{ $money($item->amount) }}</td>
                         </tr>
                     @endforeach
@@ -218,19 +230,19 @@
             </tbody>
             <tfoot>
                 <tr style="background-color: #eef1f8;">
-                    <td colspan="9" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Approved') }}</td>
+                    <td colspan="10" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Approved') }}</td>
                     <td style="{{ $td }} text-align: right; font-weight: bold; color: #27ae60;">{{ $money($summary['approved_amount']) }}</td>
                 </tr>
                 <tr style="background-color: #eef1f8;">
-                    <td colspan="9" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Pending') }}</td>
+                    <td colspan="10" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Pending') }}</td>
                     <td style="{{ $td }} text-align: right; font-weight: bold; color: #e67e22;">{{ $money($summary['pending_amount']) }}</td>
                 </tr>
                 <tr style="background-color: #eef1f8;">
-                    <td colspan="9" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Rejected') }}</td>
+                    <td colspan="10" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Rejected') }}</td>
                     <td style="{{ $td }} text-align: right; font-weight: bold; color: #e74c3c;">{{ $money($summary['rejected_amount']) }}</td>
                 </tr>
                 <tr style="background-color: #3F5189; color: #fff;">
-                    <td colspan="9" style="border: 1px solid #3F5189; padding: 5px 4px; font-size: 8pt; text-align: right; font-weight: bold;">{{ __('Total') }}</td>
+                    <td colspan="10" style="border: 1px solid #3F5189; padding: 5px 4px; font-size: 8pt; text-align: right; font-weight: bold;">{{ __('Total') }}</td>
                     <td style="border: 1px solid #3F5189; padding: 5px 4px; font-size: 8pt; text-align: right; font-weight: bold;">{{ $money($summary['total_amount']) }}</td>
                 </tr>
             </tfoot>

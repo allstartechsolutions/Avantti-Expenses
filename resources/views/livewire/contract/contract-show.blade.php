@@ -620,8 +620,7 @@
                                             variant="danger"
                                             size="sm"
                                             icon="trash"
-                                            wire:click="deletePayment({{ $payment->id }})"
-                                            wire:confirm="{{ __('Are you sure you want to delete this payment?') }}"
+                                            wire:click="startDeletePayment({{ $payment->id }})"
                                             title="{{ __('Delete payment') }}" />
                                     @endcan
                                 </div>
@@ -1007,5 +1006,33 @@
             </div>
         </div>
     </div>
+    @endif
+    {{-- Deleting a payment asks why; the reason is kept in the change history (client request 12, Nov 2026). --}}
+    @if($deletingPaymentId)
+        @php $deletingPayment = $contract->payments->firstWhere('id', $deletingPaymentId); @endphp
+        <x-ui.modal name="delete-payment-modal" :show="true" maxWidth="lg">
+            <form wire:submit="deletePayment({{ $deletingPaymentId }})" class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Delete payment') }}</h3>
+                @if($deletingPayment)
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        {{ __(':amount paid on :date (:method)', [
+                            'amount' => Number::currency((float) $deletingPayment->amount, config('app.currency'), config('app.locale')),
+                            'date' => $deletingPayment->payment_date?->appDate() ?? '—',
+                            'method' => $deletingPayment->getPaymentMethodLabel(),
+                        ]) }}
+                    </p>
+                @endif
+                <p class="mt-3 text-sm text-slate-600 dark:text-slate-400">{{ __('The payment is removed and the contract balance goes back up. Say why — the reason is kept in the contract history.') }}</p>
+                <label for="delete-payment-reason" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">{{ __('Reason') }} <span class="text-red-500">*</span></label>
+                <textarea id="delete-payment-reason" wire:model="deletePaymentReason" rows="3" autofocus
+                    class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    placeholder="{{ __('e.g. Entered twice — check 29903 was voided') }}"></textarea>
+                @error('deletePaymentReason') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                <div class="mt-6 flex justify-end gap-3">
+                    <x-ui.button type="button" variant="secondary" wire:click="cancelDeletePayment">{{ __('Cancel') }}</x-ui.button>
+                    <x-ui.button type="submit" variant="danger" icon="trash">{{ __('Delete payment') }}</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
     @endif
 </div>

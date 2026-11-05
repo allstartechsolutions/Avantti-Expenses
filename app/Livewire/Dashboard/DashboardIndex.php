@@ -17,8 +17,10 @@ use App\Models\PaymentBatch;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Task;
+use App\Models\User;
 use App\Services\InvitationService;
 use App\Services\Navigation;
+use App\Services\ProjectFinancials;
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -131,6 +133,10 @@ class DashboardIndex extends Component
             // Over budget compares a project's spend with its contract value,
             // so it discloses both: it needs both grants, not either.
             'over_budget' => $projects && $expenses,
+
+            // Receivables compares lot values with what their contracts cost,
+            // so it discloses both (request 16, Nov 2026).
+            'receivables' => $projects && $this->allowsAbility('contracts.view'),
 
             'money' => $this->canSeeDashboardMoney(),
         ];
@@ -277,31 +283,60 @@ class DashboardIndex extends Component
         $blocks = $this->blocks;
 
         $cashToPay = 0;
+        $cashToPayByPm = [];
 
         if ($blocks['expenses']) {
-            $cashToPayInstallments = $this->withoutCompanyExpenses($this->onlyVisibleThrough(
+            // Each amount lands under its project's manager (client request 17,
+            // Nov 2026): 'company' for company (general) expenses, 'none' for a
+            // project with no manager. The total is the sum of the same rows.
+            $owed = [];
+            $add = function (?Project $project, float $amount, bool $company = false) use (&$owed) {
+                $key = $company ? 'company' : ($project?->project_manager_id ?? 'none');
+                $owed[$key] = ($owed[$key] ?? 0) + $amount;
+            };
+
+            $this->withoutCompanyExpenses($this->onlyVisibleThrough(
                 ExpensePayment::where('status', '!=', 'paid')
                     ->whereBetween('due_date', [$start, $end])
                     ->whereHas('expense', fn ($q) => $q->where('status', '!=', 'cancelled')),
                 'expense',
-            ), 'expense')->sum('amount');
+            ), 'expense')
+                ->with('expense:id,project_id', 'expense.project:id,project_manager_id')
+                ->get(['id', 'expense_id', 'amount'])
+                ->each(fn (ExpensePayment $p) => $add($p->expense?->project, (float) $p->amount, $p->expense?->project_id === null));
 
-            $cashToPayOneTime = $this->withoutCompanyExpenses($this->onlyVisible(
+            $this->withoutCompanyExpenses($this->onlyVisible(
                 Expense::where('status', 'unpaid')
                     ->where('total_installments', 1)
                     ->whereBetween('payment_due_date', [$start, $end]),
-            ))->sum('total_amount');
+            ))
+                ->with('project:id,project_manager_id')
+                ->get(['id', 'project_id', 'total_amount'])
+                ->each(fn (Expense $e) => $add($e->project, (float) $e->total_amount, $e->project_id === null));
 
-            $contractBalances = 0;
-            $unpaidContracts = $this->onlyVisible(
-                Contract::committed()->where('status', '!=', 'paid'),
-            )->get();
+            // getBalanceDue() sums loaded change orders and payments in PHP.
+            $this->onlyVisible(Contract::committed()->where('status', '!=', 'paid'))
+                ->with(['project:id,project_manager_id', 'changeOrders:id,contract_id,amount', 'payments:id,contract_id,amount'])
+                ->get()
+                ->each(fn (Contract $c) => $add($c->project, max(0, $c->getBalanceDue())));
 
-            foreach ($unpaidContracts as $contract) {
-                $contractBalances += max(0, $contract->getBalanceDue());
-            }
+            $cashToPay = round(array_sum($owed), 2);
 
-            $cashToPay = ($cashToPayInstallments / 100) + ($cashToPayOneTime / 100) + $contractBalances;
+            $names = User::whereIn('id', array_filter(array_keys($owed), 'is_int'))->pluck('name', 'id');
+            $cashToPayByPm = collect($owed)
+                ->map(fn ($amount, $key) => [
+                    'label' => match (true) {
+                        $key === 'company' => __('Company (general)'),
+                        $key === 'none' => __('No project manager'),
+                        default => $names[$key] ?? '—',
+                    },
+                    'amount' => round($amount, 2),
+                    'order' => is_int($key) ? 0 : ($key === 'none' ? 1 : 2),
+                ])
+                ->filter(fn ($row) => $row['amount'] > 0)
+                ->sortBy([['order', 'asc'], ['amount', 'desc']])
+                ->values()
+                ->all();
         }
 
         $receivables = 0;
@@ -367,6 +402,8 @@ class DashboardIndex extends Component
 
         return [
             'cash_to_pay' => $cashToPay,
+            'cash_to_pay_by_pm' => $cashToPayByPm,
+            'open_lots' => $blocks['receivables'] ? ProjectFinancials::openLots($this->visibleProjectIds()) : null,
             'receivables' => $receivables,
             'past_due_invoices' => $pastDueInvoices,
             'open_estimates' => $openEstimatesValue,

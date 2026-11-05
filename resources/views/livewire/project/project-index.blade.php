@@ -112,6 +112,12 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('Amount') }}
                             </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="{{ __('Contracts plus expenses') }}">
+                                {{ __('Total Costs') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="{{ __('Amount minus total costs') }}">
+                                {{ __('Balance') }}
+                            </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {{ __('# Job Sites') }}
                             </th>
@@ -174,6 +180,30 @@
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
                                         {{ Number::currency($project->getAdjustedContractValue(), config('app.currency'), config('app.locale')) }}
                                     </div>
+                                </td>
+
+                                {{-- Contracts + expenses, and what is left of the amount (client request 18, Nov 2026). --}}
+                                @php
+                                    $money = $financials[$project->id] ?? null;
+                                    // Both figures reveal expenses and contracts, so they need both grants.
+                                    $seesCosts = auth()->user()->can('expenses.view', $project) && auth()->user()->can('contracts.view', $project);
+                                @endphp
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($seesCosts)
+                                        <x-ui.money class="text-sm font-medium text-slate-900 dark:text-white" :amount="$money['costs'] ?? 0" :scope="$project" rollup />
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ __('Contracts') }} <x-ui.money :amount="$money['contracts'] ?? 0" :scope="$project" rollup /> · {{ __('Expenses') }} <x-ui.money :amount="$money['expenses'] ?? 0" :scope="$project" rollup />
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-slate-400 dark:text-slate-500">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($seesCosts)
+                                        <x-ui.money class="text-sm font-semibold {{ ($money['balance'] ?? 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}" :amount="$money['balance'] ?? 0" :scope="$project" rollup />
+                                    @else
+                                        <span class="text-sm text-slate-400 dark:text-slate-500">—</span>
+                                    @endif
                                 </td>
 
                                 <!-- Job Sites Count -->

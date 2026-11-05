@@ -11,6 +11,7 @@ use App\Models\PaymentBatch;
 use App\Models\PaymentBatchItem;
 use App\Models\Project;
 use App\Models\Subcontractor;
+use App\Models\SubcontractorEmployee;
 use App\Models\User;
 use App\Services\PaymentBatchLayout;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -45,6 +46,9 @@ class PaymentBatchEdit extends Component
     public string $projectManagerFilter = '';
 
     public string $supervisorFilter = '';
+
+    /** The subcontractor's employee on the contract (client request 6, Nov 2026). Screen-only. */
+    public string $employeeFilter = '';
 
     public string $statusFilter = '';
 
@@ -155,31 +159,101 @@ class PaymentBatchEdit extends Component
                 $this->projectFilter = '';
             }
         }
+        unset($this->selectionSummary);
         $this->resetPage();
     }
 
     public function updatedProjectFilter(): void
     {
+        unset($this->selectionSummary);
         $this->resetPage();
     }
 
     public function updatedSubcontractorFilter(): void
     {
+        if ($this->employeeFilter !== '' && ! $this->employees->contains('id', (int) $this->employeeFilter)) {
+            $this->employeeFilter = '';
+        }
+        unset($this->selectionSummary);
         $this->resetPage();
+    }
+
+    public function updatedEmployeeFilter(): void
+    {
+        unset($this->selectionSummary);
+        $this->resetPage();
+    }
+
+    /** Employees named on a contract, narrowed to the chosen subcontractor. */
+    #[Computed]
+    public function employees()
+    {
+        return SubcontractorEmployee::query()
+            ->whereHas('contracts')
+            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->with('subcontractor:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'subcontractor_id']);
+    }
+
+    /**
+     * The filters on the bar, applied to a contract query. The screen also
+     * lists every pending contract whatever the filters say; the selection
+     * below uses these alone.
+     */
+    protected function applyFilters($query)
+    {
+        return $query
+            ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
+            ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
+            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->when($this->employeeFilter, fn ($q) => $q->where('subcontractor_employee_id', $this->employeeFilter))
+            ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
+            ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter));
+    }
+
+    /** Pending lines whose contract matches the filters (client request 2, Nov 2026). */
+    protected function selectedPendingItems()
+    {
+        return $this->paymentBatch->items()
+            ->where('status', 'pending')
+            ->whereIn('contract_id', $this->applyFilters(Contract::query())->select('contracts.id'))
+            ->get();
+    }
+
+    /**
+     * What the filters select among the pending lines. `partial` is true only
+     * when it is fewer than all of them — otherwise Approve All already says it.
+     */
+    #[Computed]
+    public function selectionSummary(): array
+    {
+        $items = $this->selectedPendingItems();
+        $pending = $this->paymentBatch->items()->where('status', 'pending')->count();
+
+        return [
+            'count' => $items->count(),
+            'amount' => $items->sum(fn ($item) => (int) $item->getRawOriginal('amount')) / 100.0,
+            'partial' => $items->count() > 0 && $items->count() < $pending,
+        ];
     }
 
     public function updatedProjectManagerFilter(): void
     {
+        unset($this->selectionSummary);
         $this->resetPage();
     }
 
     public function updatedSupervisorFilter(): void
     {
+        unset($this->selectionSummary);
         $this->resetPage();
     }
 
     public function updatedStatusFilter(): void
     {
+        unset($this->selectionSummary);
         $this->resetPage();
     }
 
@@ -644,8 +718,23 @@ class PaymentBatchEdit extends Component
     {
         $this->authorizeAbility('payments.pay');
 
-        $pendingItems = $this->paymentBatch->items()->where('status', 'pending')->get();
+        $this->approvePending($this->paymentBatch->items()->where('status', 'pending')->get());
+    }
 
+    /** Approve the pending lines the filters select, and only those. */
+    public function approveSelection(): void
+    {
+        $this->authorizeAbility('payments.pay');
+
+        $this->approvePending($this->selectedPendingItems());
+    }
+
+    /**
+     * Approve a set of pending lines as one: every one is checked first and
+     * nothing is paid if any of them cannot be.
+     */
+    protected function approvePending($pendingItems): void
+    {
         if ($pendingItems->isEmpty()) {
             session()->flash('error', __('No pending items to approve.'));
 
@@ -713,7 +802,7 @@ class PaymentBatchEdit extends Component
         });
 
         $this->updateBatchStatus();
-        unset($this->batchSummary);
+        unset($this->batchSummary, $this->selectionSummary);
         $this->loadExistingItems();
 
         session()->flash('message', __(':count payment(s) approved and processed.', ['count' => $approvableItems->count()]));
@@ -731,7 +820,7 @@ class PaymentBatchEdit extends Component
         $item->update(['status' => 'rejected']);
 
         $this->updateBatchStatus();
-        unset($this->batchSummary);
+        unset($this->batchSummary, $this->selectionSummary);
 
         unset($this->payAmounts[$item->contract_id]);
         unset($this->payMethods[$item->contract_id]);
@@ -740,6 +829,46 @@ class PaymentBatchEdit extends Component
         unset($this->payTargets[$item->contract_id]);
 
         session()->flash('message', __('Item rejected.'));
+    }
+
+    /** Reject every pending line (client request 3, Nov 2026). */
+    public function rejectAllPending(): void
+    {
+        $this->authorizeAbility('payments.batch');
+
+        $this->rejectPending($this->paymentBatch->items()->where('status', 'pending')->get());
+    }
+
+    /** Reject the pending lines the filters select. */
+    public function rejectSelection(): void
+    {
+        $this->authorizeAbility('payments.batch');
+
+        $this->rejectPending($this->selectedPendingItems());
+    }
+
+    protected function rejectPending($items): void
+    {
+        if ($items->isEmpty()) {
+            session()->flash('error', __('No pending items to reject.'));
+
+            return;
+        }
+
+        PaymentBatchItem::whereIn('id', $items->pluck('id'))->where('status', 'pending')->update(['status' => 'rejected']);
+
+        foreach ($items as $item) {
+            unset(
+                $this->payAmounts[$item->contract_id], $this->payMethods[$item->contract_id],
+                $this->payPhases[$item->contract_id], $this->payNotes[$item->contract_id],
+                $this->payTargets[$item->contract_id],
+            );
+        }
+
+        $this->updateBatchStatus();
+        unset($this->batchSummary, $this->selectionSummary);
+
+        session()->flash('message', trans_choice(':count item rejected.|:count items rejected.', $items->count(), ['count' => $items->count()]));
     }
 
     public function cancelBatch(): void
@@ -779,13 +908,7 @@ class PaymentBatchEdit extends Component
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
             ->where(fn ($listed) => $listed
-                ->where(fn ($q) => $q->committed()
-                    ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
-                    ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
-                    ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
-                    ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
-                    ->when($this->supervisorFilter, fn ($q) => $q->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)))
-                    ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+                ->where(fn ($q) => $this->applyFilters($q->committed())
                     ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled'])))
                 ->orWhereIn('contracts.id', $pendingContractIds));
 
@@ -802,17 +925,15 @@ class PaymentBatchEdit extends Component
         // Every filtered contract, light: the totals row covers the whole
         // list rather than the page, and a sort or a grouping has to see all of it.
         $listed = (clone $query)->with([
-            'project.client', 'jobSite',
+            'project.client', 'jobSite', 'subcontractorEmployee',
             // The document notice covers every payee on the list, not the page.
             'subcontractor' => fn ($q) => $q->withDocumentHealth(),
         ])->orderBy('project_id')->orderBy('job_site_id')->orderBy('id')->get();
 
         $groupBy = PaymentBatchLayout::cleanGroup($this->groupBy, withStatus: false);
-        $groups = $this->groupContracts($listed, $groupBy);
+        $groups = PaymentBatchLayout::arrange($this->batchOrder($listed), $groupBy, fn ($contract) => $contract);
 
-        $contracts = $this->isSorted() || $groupBy
-            ? $this->sortedPage($groups->flatMap(fn ($group) => $group['rows']->pluck('id'))->values(), $query, $relations, 50)
-            : $query->with($relations)->orderBy('project_id')->orderBy('job_site_id')->paginate(50);
+        $contracts = $this->sortedPage($groups->flatMap(fn ($group) => $group['rows']->pluck('id'))->values(), $query, $relations, 50);
 
         // Get batch items indexed by contract_id for quick lookup
         $batchItems = $this->paymentBatch->items()
@@ -840,6 +961,44 @@ class PaymentBatchEdit extends Component
                     ->get()
             ),
         ])->layout('components.layouts.app');
+    }
+
+    /**
+     * The order of the rows (client requests 7 and 8, Nov 2026): pending
+     * lines first, rejected last, and inside that the same employee's
+     * contracts one after another — subcontractor, employee, then project
+     * and lot. A column the user sorts by applies within each of those bands.
+     */
+    protected function batchOrder($listed)
+    {
+        $statuses = $this->paymentBatch->items()->pluck('status', 'contract_id');
+        $rank = fn ($contract) => match ($statuses[$contract->id] ?? null) {
+            'pending' => 0,
+            'approved' => 1,
+            null => 2,
+            'rejected' => 3,
+            default => 2,
+        };
+
+        $rows = $this->isSorted()
+            ? $this->sortContracts($listed)
+            : $listed->sort(fn ($a, $b) => PaymentBatchLayout::compareTuples(
+                $this->defaultOrder($a), $this->defaultOrder($b),
+            ))->values();
+
+        // Stable: the order above is kept inside each band.
+        return $rows->sortBy($rank)->values();
+    }
+
+    protected function defaultOrder(Contract $contract): array
+    {
+        return [
+            $contract->subcontractor ? 0 : 1, $contract->subcontractor?->company_name ?? '',
+            $contract->subcontractorEmployee ? 0 : 1, $contract->subcontractorEmployee?->name ?? '',
+            $contract->project?->project_name ?? '', (int) $contract->project_id,
+            $contract->jobSite ? 0 : 1, $contract->jobSite?->job_site_name ?? '',
+            $contract->contract_number ?? '', (int) $contract->id,
+        ];
     }
 
     /**

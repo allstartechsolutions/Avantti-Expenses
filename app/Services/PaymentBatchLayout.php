@@ -9,20 +9,23 @@ use Illuminate\Support\Collection;
 
 /**
  * How a payment batch is laid out: grouped by client, project, job site,
- * subcontractor or line status, and sorted by a column inside each group.
+ * subcontractor, employee or line status, and sorted by a column inside each group.
  * The batch screens, /contract-payments (through SortsContracts), their PDFs
  * and CSVs all ask this class, so paper comes out in the order the screen
  * showed.
  */
 class PaymentBatchLayout
 {
-    public const GROUPS = ['client', 'project', 'job_site', 'subcontractor', 'status'];
+    public const GROUPS = ['client', 'project', 'job_site', 'subcontractor', 'employee', 'status'];
 
     /** Columns the batch lines sort by (show screen, PDF, CSV). */
     public const LINE_SORTS = ['subcontractor', 'project', 'job_site', 'contract', 'amount', 'method', 'status'];
 
-    /** The order lines have always come in: approved, pending, rejected. */
-    public const STATUS_ORDER = ['approved' => 0, 'pending' => 1, 'rejected' => 2];
+    /**
+     * Line status order: pending first, rejected last (client request 7,
+     * Nov 2026 — it was approved, pending, rejected).
+     */
+    public const STATUS_ORDER = ['pending' => 0, 'approved' => 1, 'rejected' => 2];
 
     /**
      * Grouping choices, translated. Status belongs to a batch line, so only
@@ -35,6 +38,7 @@ class PaymentBatchLayout
             'project' => __('Project'),
             'job_site' => __('Job Site'),
             'subcontractor' => __('Subcontractor'),
+            'employee' => __('Employee'),
         ];
 
         if ($withStatus) {
@@ -69,6 +73,8 @@ class PaymentBatchLayout
         $items = $batch->items()
             ->with([
                 'contract.project.client', 'contract.jobSite', 'contract.subcontractorEmployee',
+                // Shown on every batch view, PDF and CSV (Nov 2026): back charges live here today.
+                'contract.changeOrders',
                 'scheduleItem', 'measurement',
                 'contract.subcontractor' => fn ($q) => $documentHealth ? $q->withDocumentHealth() : $q,
             ])
@@ -207,6 +213,18 @@ class PaymentBatchLayout
                 'label' => $subcontractor?->company_name ?? __('No subcontractor'),
                 'sub' => null,
                 'order' => [$subcontractor ? 0 : 1, $subcontractor?->company_name ?? ''],
+            ],
+            // The person named on the contract, under their subcontractor
+            // (client request 8, Nov 2026). Contracts naming nobody come last.
+            'employee' => [
+                'key' => 'emp-'.($contract->subcontractor_id ?? 0).'-'.($contract->subcontractor_employee_id ?? 0),
+                'label' => $contract->subcontractorEmployee?->name ?? __('No employee'),
+                'sub' => $subcontractor?->company_name,
+                'order' => [
+                    $contract->subcontractorEmployee ? 0 : 1,
+                    $contract->subcontractorEmployee?->name ?? '',
+                    $subcontractor?->company_name ?? '',
+                ],
             ],
             'status' => [
                 'key' => 'status-'.$status,

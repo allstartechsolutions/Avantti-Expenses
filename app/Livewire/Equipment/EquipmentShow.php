@@ -3,11 +3,13 @@
 namespace App\Livewire\Equipment;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Livewire\Concerns\HandlesExpensePaymentActions;
 use App\Models\Equipment;
 use App\Models\EquipmentFinding;
 use App\Models\EquipmentMaintenance;
 use App\Models\EquipmentMaintenancePlan;
 use App\Models\Expense;
+use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Vendor;
@@ -30,6 +32,7 @@ use Livewire\WithFileUploads;
 class EquipmentShow extends Component
 {
     use AuthorizesAbility;
+    use HandlesExpensePaymentActions;
     use WithFileUploads;
 
     public Equipment $equipment;
@@ -560,16 +563,66 @@ class EquipmentShow extends Component
     }
 
     /**
+     * The Costs tab opens an expense in the shared view modal (client request
+     * 14, Nov 2026). Only an expense tagged to THIS equipment that the reader
+     * may see is in scope — the same set the tab lists.
+     */
+    protected function expenseInScope(int $expenseId): Expense
+    {
+        return $this->equipment->visibleExpenses(auth()->user())->findOrFail($expenseId);
+    }
+
+    /** An installment of an expense in scope above, or a 404. */
+    protected function paymentInScope(int $paymentId): ExpensePayment
+    {
+        return ExpensePayment::whereHas(
+            'expense',
+            fn ($q) => $q->whereIn('id', $this->equipment->visibleExpenses(auth()->user())->select('id'))
+        )->findOrFail($paymentId);
+    }
+
+    /**
      * The Costs tab: every expense tagged to this equipment that the reader
      * may see, by category or project, by month, by maintenance, and the
      * total cost of ownership over the same narrowed set.
      */
+    /**
+     * The costs at a glance on the Overview (client request 26, Nov 2026):
+     * the same narrowed set as the Costs tab, summed, with the latest few.
+     */
+    protected function overviewCostsData(): array
+    {
+        $expenses = $this->equipment->visibleExpenses(auth()->user())
+            ->with(['supplier:id,name', 'items:id,expense_id,item_name', 'category'])
+            ->withCount('attachments')
+            ->orderByDesc('expense_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $total = round($expenses->sum('total_amount'), 2);
+        $purchase = (float) ($this->equipment->purchase_cost ?? 0);
+
+        return [
+            'tco' => round($purchase + $total, 2),
+            'purchase' => $this->equipment->purchase_cost === null ? null : $purchase,
+            'total' => $total,
+            'count' => $expenses->count(),
+            'maintenance' => round($expenses->whereNotNull('equipment_maintenance_id')->sum('total_amount'), 2),
+            'other' => round($expenses->whereNull('equipment_maintenance_id')->sum('total_amount'), 2),
+            'thisYear' => round($expenses->filter(fn (Expense $e) => $e->expense_date->isSameYear(now()))->sum('total_amount'), 2),
+            // What is still owed: an installment expense counts only its unpaid part.
+            'unpaid' => round($expenses->sum(fn (Expense $e) => $e->getPendingAmount()), 2),
+            'latest' => $expenses->take(5),
+        ];
+    }
+
     protected function costsData(): array
     {
         $user = auth()->user();
 
         $expenses = $this->equipment->visibleExpenses($user)
             ->with(['category', 'project:id,project_name', 'jobSite:id,job_site_name', 'supplier:id,name', 'equipmentMaintenance:id,title', 'items'])
+            ->withCount('attachments')
             ->orderByDesc('expense_date')
             ->get();
 
@@ -835,6 +888,7 @@ class EquipmentShow extends Component
                 : collect(),
             'openFindingsList' => $this->showCompleteModal ? $this->equipment->findings()->open()->get() : collect(),
             'costs' => $this->activeTab === 'costs' ? $this->costsData() : [],
+            'overviewCosts' => $this->activeTab === 'overview' ? $this->overviewCostsData() : [],
             'assignments' => $this->activeTab === 'assignments'
                 ? $this->equipment->assignments()->with(['project:id,project_name', 'jobSite:id,job_site_name', 'responsible:id,name', 'assignedBy:id,name', 'endedBy:id,name'])->get()
                 : collect(),

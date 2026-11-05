@@ -42,6 +42,7 @@ class Expense extends Model
         'status',
         'payment_method',
         'is_auto_payment',
+        'check_number',
         'total_installments',
         'payment_frequency',
         'payment_due_date',
@@ -602,6 +603,7 @@ class Expense extends Model
             'expense_category_id' => __('Category'),
             'equipment_id' => __('Equipment'),
             'equipment_maintenance_id' => __('Maintenance'),
+            'check_number' => __('Check number'),
             default => null,
         };
 

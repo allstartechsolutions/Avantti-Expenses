@@ -34,7 +34,9 @@ class PaymentDetailReportService
     use ScopesCompanyExpenses;
 
     protected Carbon $start;
+
     protected Carbon $end;
+
     protected Carbon $today;
 
     protected ?Collection $cache = null;
@@ -50,6 +52,7 @@ class PaymentDetailReportService
         protected string|array $statusFilter = 'all',
         protected string $typeFilter = 'all',
         protected string $projectManagerFilter = '',
+        protected string $employeeFilter = '',
     ) {
         $start = Carbon::parse($fromDate)->startOfDay();
         $end = Carbon::parse($toDate)->endOfDay();
@@ -107,8 +110,8 @@ class PaymentDetailReportService
     protected function includesExpenses(): bool
     {
         // A vendor (supplier) filter can only match expenses; a subcontractor
-        // filter can only match contracts.
-        return $this->typeFilter !== 'contracts' && $this->subcontractorFilter === '';
+        // or employee filter can only match contracts.
+        return $this->typeFilter !== 'contracts' && $this->subcontractorFilter === '' && $this->employeeFilter === '';
     }
 
     protected function includesContracts(): bool
@@ -187,7 +190,7 @@ class PaymentDetailReportService
                     'project' => $location['project'],
                     'project_id' => $e?->project_id,
                     'job_site' => $location['job_site'],
-                    'installment_label' => $p->payment_number . '/' . $e?->total_installments,
+                    'installment_label' => $p->payment_number.'/'.$e?->total_installments,
                     'status' => $this->deriveStatus($isPaid, $p->due_date),
                     'paid_by' => $p->paidBy?->name,
                     'amount' => (float) $p->amount,
@@ -266,6 +269,7 @@ class PaymentDetailReportService
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->jobSiteFilter, fn ($q) => $q->where('job_site_id', $this->jobSiteFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->when($this->employeeFilter, fn ($q) => $q->where('subcontractor_employee_id', $this->employeeFilter))
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectManagerFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)));
     }
@@ -280,6 +284,7 @@ class PaymentDetailReportService
             ->whereHas('contract', fn ($q) => $this->contractScope($q))
             ->with([
                 'contract.subcontractor:id,name',
+                'contract.subcontractorEmployee:id,name',
                 'contract.project:id,project_name',
                 'contract.jobSite:id,job_site_name',
                 'createdBy:id,name',
@@ -295,7 +300,8 @@ class PaymentDetailReportService
                     'paid_date' => $p->payment_date,
                     'type' => 'contract',
                     'vendor' => $c?->subcontractor?->company_name,
-                    'item' => trim(($c?->contract_number ?? '') . ' ' . __('Payment')),
+                    'employee' => $c?->subcontractorEmployee?->name,
+                    'item' => trim(($c?->contract_number ?? '').' '.__('Payment')),
                     'project' => $c?->project?->project_name,
                     'project_id' => $c?->project_id,
                     'job_site' => $c?->jobSite?->job_site_name,
@@ -327,6 +333,7 @@ class PaymentDetailReportService
             })
             ->with([
                 'subcontractor:id,name',
+                'subcontractorEmployee:id,name',
                 'project:id,project_name',
                 'jobSite:id,job_site_name',
                 // getBalanceDue() sums both in PHP when they are loaded;
@@ -349,7 +356,8 @@ class PaymentDetailReportService
                     'paid_date' => null,
                     'type' => 'contract',
                     'vendor' => $c->subcontractor?->company_name,
-                    'item' => trim(($c->contract_number ?? '') . ' ' . __('Balance')),
+                    'employee' => $c->subcontractorEmployee?->name,
+                    'item' => trim(($c->contract_number ?? '').' '.__('Balance')),
                     'project' => $c->project?->project_name,
                     'project_id' => $c->project_id,
                     'job_site' => $c->jobSite?->job_site_name,
@@ -432,7 +440,7 @@ class PaymentDetailReportService
     public function byVendor(): Collection
     {
         return $this->rows()
-            ->groupBy(fn (array $r) => ($r['type'] === 'contract' ? 'c:' : 'e:') . ($r['vendor'] ?? ''))
+            ->groupBy(fn (array $r) => ($r['type'] === 'contract' ? 'c:' : 'e:').($r['vendor'] ?? ''))
             ->map(function (Collection $rows) {
                 $first = $rows->first();
 

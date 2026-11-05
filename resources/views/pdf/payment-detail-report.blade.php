@@ -88,6 +88,9 @@
                 @if($subcontractor)
                     <div style="font-size: 7pt; color: #888;">{{ __('Subcontractor') }}: {{ $subcontractor->company_name }}</div>
                 @endif
+                @if($employee)
+                    <div style="font-size: 7pt; color: #888;">{{ __('Employee') }}: {{ $employee->name }}</div>
+                @endif
                 <div style="font-size: 7pt; color: #888;">{{ __('Type') }}: {{ $typeLabels[$typeFilter] }}</div>
                 <div style="font-size: 7pt; color: #888;">{{ __('Status filter') }}: {{ $statusFilter }}</div>
             </td>
@@ -140,7 +143,7 @@
                 @forelse ($rows as $r)
                     <tr>
                         <td style="{{ $td }}">{{ $r['date']?->appDate() ?? '—' }}</td>
-                        <td style="{{ $td }}">{{ $r['vendor'] ?? '—' }}@if($r['type'] === 'contract') ({{ __('Contract') }})@endif</td>
+                        <td style="{{ $td }}">{{ $r['vendor'] ?? '—' }}@if($r['type'] === 'contract') ({{ __('Contract') }})@endif @if(! empty($r['employee']))<div style="font-size: 7pt; color: #666;">{{ __('Employee') }}: {{ $r['employee'] }}</div>@endif</td>
                         <td style="{{ $td }}">
                             {{ $r['item'] ?? '—' }}
                             @if (! empty($r['reference']))

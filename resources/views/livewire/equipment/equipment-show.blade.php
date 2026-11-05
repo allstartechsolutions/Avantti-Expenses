@@ -98,4 +98,6 @@
     @if($showDeleteModal)
         @include('livewire.equipment.partials.delete-modal')
     @endif
+
+    @include('livewire.expense.partials.view-modal')
 </div>

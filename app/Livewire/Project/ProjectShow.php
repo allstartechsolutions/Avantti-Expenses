@@ -165,6 +165,9 @@ class ProjectShow extends Component
 
     public $job_amount = '';
 
+    /** What the sub is expected to cost before a contract exists; information only. */
+    public $estimated_cost = '';
+
     public $status = 'created';
 
     protected function rules()
@@ -183,6 +186,7 @@ class ProjectShow extends Component
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',
             'job_amount' => 'required|numeric|min:0',
+            'estimated_cost' => 'nullable|numeric|min:0',
             'status' => 'required|in:created,in_progress,completed,on_hold',
         ];
     }
@@ -230,7 +234,7 @@ class ProjectShow extends Component
     {
         $this->authorizeAbility('project.edit', $this->project);
 
-        $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'status', 'editingJobSite']);
+        $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'estimated_cost', 'status', 'editingJobSite']);
 
         // Pre-populate with project data
         $this->street = $this->project->street ?? '';
@@ -269,6 +273,7 @@ class ProjectShow extends Component
         $this->phone = $jobSite->phone;
         $this->email = $jobSite->email;
         $this->job_amount = $jobSite->job_amount;
+        $this->estimated_cost = $jobSite->estimated_cost ?? '';
         $this->status = $jobSite->status->value;
 
         $this->showJobSiteForm = true;
@@ -298,6 +303,7 @@ class ProjectShow extends Component
                 'phone' => $this->phone,
                 'email' => $this->email,
                 'job_amount' => $this->job_amount,
+                'estimated_cost' => filled($this->estimated_cost) ? $this->estimated_cost : null,
                 'status' => $this->status,
             ]);
 
@@ -320,6 +326,7 @@ class ProjectShow extends Component
                 'phone' => $this->phone,
                 'email' => $this->email,
                 'job_amount' => $this->job_amount,
+                'estimated_cost' => filled($this->estimated_cost) ? $this->estimated_cost : null,
                 'status' => $this->status,
                 'created_by' => Auth::id(),
             ]);
@@ -334,7 +341,7 @@ class ProjectShow extends Component
     public function cancelJobSiteForm()
     {
         $this->showJobSiteForm = false;
-        $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'status', 'editingJobSite']);
+        $this->reset(['job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code', 'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone', 'email', 'job_amount', 'estimated_cost', 'status', 'editingJobSite']);
     }
 
     // Expense methods

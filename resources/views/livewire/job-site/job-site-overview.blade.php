@@ -21,7 +21,7 @@
         $cardBgClass = $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600';
         $signedMoney = fn ($value) => ((float) $value >= 0 ? '+' : '') . Number::currency((float) $value, config('app.currency'), config('app.locale'));
     @endphp
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6 mb-6">
         <!-- Total Contract Value Card -->
         <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
             <div class="flex items-center justify-between">
@@ -82,6 +82,38 @@
                 <span>{{ __('Paid') }}: <span class="font-semibold">{{ Number::currency($totalContractsPaid, config('app.currency'), config('app.locale')) }}</span></span>
                 <span>{{ __('Unpaid') }}: <span class="font-semibold">{{ Number::currency($totalContractsUnpaid, config('app.currency'), config('app.locale')) }}</span></span>
             </div>
+        </div>
+
+        <!-- Estimated Cost Card: the expected sub cost before a contract exists. Information only. -->
+        @php
+            $estimatedCost = $jobSite->estimated_cost !== null ? (float) $jobSite->estimated_cost : null;
+            $estimateGap = $estimatedCost !== null && $contracts->isNotEmpty() ? round($totalContractsAdjusted - $estimatedCost, 2) : null;
+        @endphp
+        <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg shadow-sm p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-white/80">{{ __('Estimated cost') }}</p>
+                    @if($estimatedCost !== null)
+                        <p class="text-3xl font-bold mt-1">{{ Number::currency($estimatedCost, config('app.currency'), config('app.locale')) }}</p>
+                    @else
+                        <p class="text-3xl font-bold mt-1 text-white/60">—</p>
+                    @endif
+                </div>
+                <div class="bg-white/10 rounded-full p-4">
+                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+            </div>
+            <p class="mt-4 text-sm text-white/80">
+                @if($estimatedCost === null)
+                    {{ __('Not set — add it when editing the job site.') }}
+                @elseif($estimateGap === null)
+                    {{ __('No contract yet. Information only, not in the profit.') }}
+                @else
+                    {{ __('Contracted: :amount (:difference vs. estimate)', ['amount' => Number::currency($totalContractsAdjusted, config('app.currency'), config('app.locale')), 'difference' => $signedMoney($estimateGap)]) }}
+                @endif
+            </p>
         </div>
 
         <!-- Profit & Loss Card -->
@@ -330,6 +362,54 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Contracts Summary Card: straight to the lot's contracts, as Expenses goes to its expenses -->
+            @can('contracts.view', $jobSite)
+                @php $contractsPaidPct = $totalContractsAdjusted > 0 ? min(100, round($totalContractsPaid / $totalContractsAdjusted * 100)) : 0; @endphp
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Contracts') }}</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                    {{ __('Total Contracts') }}
+                                </label>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ $contracts->count() }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                    {{ __('Total Amount') }}
+                                </label>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ Number::currency($totalContractsAdjusted, config('app.currency'), config('app.locale')) }}</p>
+                            </div>
+                            @if($contracts->isNotEmpty())
+                                <div>
+                                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                        <span>{{ __('Paid') }}: <span class="font-semibold text-green-600 dark:text-green-400">{{ Number::currency($totalContractsPaid, config('app.currency'), config('app.locale')) }}</span></span>
+                                        <span>{{ $contractsPaidPct }}%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: {{ $contractsPaidPct }}%"></div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Unpaid') }}: <span class="font-semibold text-amber-600 dark:text-amber-400">{{ Number::currency($totalContractsUnpaid, config('app.currency'), config('app.locale')) }}</span></p>
+                                </div>
+                            @else
+                                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No contract on this location yet.') }}</p>
+                            @endif
+                            <div class="pt-2">
+                                <x-ui.button
+                                    variant="primary"
+                                    href="{{ route('jobsites.contracts', $jobSite) }}"
+                                    class="w-full">
+                                    {{ __('View Contracts') }}
+                                </x-ui.button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endcan
 
             <!-- Change Orders Summary Card -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">

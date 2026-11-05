@@ -66,6 +66,7 @@ return [
         'job_site_id' => 'lot',
         'job_site_name' => 'lot name',
         'job_amount' => 'job amount',
+        'estimated_cost' => 'estimated cost',
         'project_manager_id' => 'project manager',
         'supervisor_id' => 'supervisor',
         'client_id' => 'client',

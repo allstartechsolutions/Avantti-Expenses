@@ -260,6 +260,7 @@ return [
         'job_site_id' => 'local',
         'job_site_name' => 'nome do local',
         'job_amount' => 'valor do projeto',
+        'estimated_cost' => 'custo estimado',
         'project_manager_id' => 'gerente do projeto',
         'supervisor_id' => 'supervisor',
         'client_id' => 'cliente',

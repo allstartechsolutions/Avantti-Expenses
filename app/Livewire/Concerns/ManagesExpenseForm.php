@@ -50,6 +50,9 @@ trait ManagesExpenseForm
 
     public $expense_is_auto_payment = false;
 
+    /** The check a company expense was paid with — shown only for method "check". */
+    public $expense_check_number = '';
+
     public $expense_has_installments = false;
 
     public $expense_total_installments = 2;
@@ -169,6 +172,7 @@ trait ManagesExpenseForm
         $this->expense_status = $expense->status === 'paid' ? 'paid' : 'unpaid';
         $this->expense_payment_method = $expense->payment_method;
         $this->expense_is_auto_payment = (bool) $expense->is_auto_payment;
+        $this->expense_check_number = $expense->check_number ?? '';
         $this->expense_has_installments = (int) $expense->total_installments > 1;
         $this->expense_total_installments = max(2, (int) $expense->total_installments);
         $this->expense_payment_frequency = $expense->payment_frequency ?? 'monthly';
@@ -456,6 +460,7 @@ trait ManagesExpenseForm
                 ]
                 : ['nullable', 'prohibited'],
             'expense_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'expense_check_number' => 'nullable|string|max:255',
             'items' => 'required|array|min:1',
         ] + $this->equipmentRules(), [
             'items.required' => __('At least one item is required.'),
@@ -549,6 +554,7 @@ trait ManagesExpenseForm
             'total_amount' => $this->expense_total_amount,
             'payment_method' => $this->expense_payment_method,
             'is_auto_payment' => $this->expense_is_auto_payment,
+            'check_number' => $this->checkNumberToStore(),
         ];
 
         $data += $this->extraHeaderData();
@@ -574,6 +580,20 @@ trait ManagesExpenseForm
         }
 
         return $data;
+    }
+
+    /**
+     * The check number to save: only a company expense paid by check keeps one,
+     * so switching the method away from "check" clears it rather than leaving
+     * a stale number on a card payment.
+     */
+    protected function checkNumberToStore(): ?string
+    {
+        if (! $this->isCompanyExpense() || $this->expense_payment_method !== 'check') {
+            return null;
+        }
+
+        return trim((string) $this->expense_check_number) ?: null;
     }
 
     /**

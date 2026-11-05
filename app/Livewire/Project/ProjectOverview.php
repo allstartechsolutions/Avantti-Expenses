@@ -11,6 +11,7 @@ use App\Models\EquipmentAssignment;
 use App\Models\Expense;
 use App\Models\Project;
 use App\Models\PurchaseOrder;
+use App\Services\ProjectFinancials;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -139,7 +140,8 @@ class ProjectOverview extends Component
 
     public function render()
     {
-        return view('livewire.project.project-overview')
-            ->layout('components.layouts.app');
+        return view('livewire.project.project-overview', [
+            'financials' => ProjectFinancials::forProject($this->project),
+        ])->layout('components.layouts.app');
     }
 }

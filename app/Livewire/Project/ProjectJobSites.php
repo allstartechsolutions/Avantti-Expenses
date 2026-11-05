@@ -69,6 +69,9 @@ class ProjectJobSites extends Component
 
     public $job_amount = '';
 
+    /** What the sub is expected to cost before a contract exists; information only. */
+    public $estimated_cost = '';
+
     public $status = 'created';
 
     public $supervisor_id = null;
@@ -91,6 +94,7 @@ class ProjectJobSites extends Component
             'phone' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',
             'job_amount' => 'required|numeric|min:0',
+            'estimated_cost' => 'nullable|numeric|min:0',
             'status' => 'required|in:created,in_progress,completed,on_hold',
             'supervisor_id' => 'nullable|exists:users,id',
         ];
@@ -125,7 +129,7 @@ class ProjectJobSites extends Component
         $this->reset([
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
-            'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
+            'email', 'job_amount', 'estimated_cost', 'status', 'editingJobSite', 'supervisor_id',
             'supervisor_change_note',
         ]);
 
@@ -166,6 +170,7 @@ class ProjectJobSites extends Component
         $this->phone = $jobSite->phone;
         $this->email = $jobSite->email;
         $this->job_amount = $jobSite->job_amount;
+        $this->estimated_cost = $jobSite->estimated_cost ?? '';
         $this->status = $jobSite->status->value;
         $this->supervisor_id = $jobSite->supervisor_id;
         $this->supervisor_change_note = '';
@@ -200,6 +205,7 @@ class ProjectJobSites extends Component
                 'phone' => $this->phone,
                 'email' => $this->email,
                 'job_amount' => $this->job_amount,
+                'estimated_cost' => filled($this->estimated_cost) ? $this->estimated_cost : null,
                 'status' => $this->status,
                 'supervisor_id' => $supervisorId,
             ]);
@@ -233,6 +239,7 @@ class ProjectJobSites extends Component
                 'phone' => $this->phone,
                 'email' => $this->email,
                 'job_amount' => $this->job_amount,
+                'estimated_cost' => filled($this->estimated_cost) ? $this->estimated_cost : null,
                 'status' => $this->status,
                 'created_by' => Auth::id(),
                 'supervisor_id' => $supervisorId,
@@ -258,7 +265,7 @@ class ProjectJobSites extends Component
         $this->reset([
             'job_site_name', 'street', 'address_2', 'city', 'state', 'postal_code',
             'neighborhood', 'latitude', 'longitude', 'contact_person', 'phone',
-            'email', 'job_amount', 'status', 'editingJobSite', 'supervisor_id',
+            'email', 'job_amount', 'estimated_cost', 'status', 'editingJobSite', 'supervisor_id',
             'supervisor_change_note',
         ]);
     }

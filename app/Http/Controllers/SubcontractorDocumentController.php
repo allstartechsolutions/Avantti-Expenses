@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Subcontractor;
 use App\Models\SubcontractorDocument;
+use App\Models\Vendor;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Storage;
  */
 class SubcontractorDocumentController extends Controller
 {
-    public function download(Subcontractor $subcontractor, SubcontractorDocument $document, FileUploadService $files)
+    // Bound as a plain vendor (no subcontractor scope): a supplier's documents
+    // download through the same route (client request 27, Nov 2026).
+    public function download(Vendor $subcontractor, SubcontractorDocument $document, FileUploadService $files)
     {
         abort_unless($document->subcontractor_id === $subcontractor->id, 404);
 

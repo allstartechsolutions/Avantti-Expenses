@@ -10,6 +10,96 @@
         @endcan
     </x-slot:actions>
 
+    {{-- The job site's money, summed over its lots (client request 19, Nov 2026). --}}
+    @php
+        $fin = $financials['totals'];
+        $isProfit = $fin['balance'] >= 0;
+        // Each figure only for somebody who may see where it comes from; the
+        // profit needs both (it would reveal either by subtraction).
+        $seesExpenses = auth()->user()->can('expenses.view', $project);
+        $seesContracts = auth()->user()->can('contracts.view', $project);
+        $seesBoth = $seesExpenses && $seesContracts;
+    @endphp
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+        <div class="bg-gradient-to-r from-[#3F5189] to-[#4A5A96] rounded-lg shadow-sm p-6 text-white">
+            <p class="text-sm font-medium text-white/80">{{ __('Total Contract Value') }}</p>
+            <x-ui.money class="block text-3xl font-bold mt-1" :amount="$fin['contract_value']" :scope="$project" rollup />
+            <p class="mt-4 text-sm text-white/80">{{ trans_choice(':count lot|:count lots', $financials['lot_count'], ['count' => $financials['lot_count']]) }}</p>
+        </div>
+        @if($seesExpenses)
+        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-sm p-6 text-white">
+            <p class="text-sm font-medium text-white/80">{{ __('Total Expenses') }}</p>
+            <x-ui.money class="block text-3xl font-bold mt-1" :amount="$fin['expenses']" :scope="$project" rollup />
+            <p class="mt-4 text-sm text-white/80">{{ __('Every lot and the job site itself') }}</p>
+        </div>
+        @endif
+        @if($seesContracts)
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-sm p-6 text-white">
+            <p class="text-sm font-medium text-white/80">{{ __('Contracts') }}</p>
+            <x-ui.money class="block text-3xl font-bold mt-1" :amount="$fin['contracts']" :scope="$project" rollup />
+            <div class="mt-4 flex items-center justify-between gap-2 text-sm text-white/90">
+                <span>{{ __('Paid') }}: <x-ui.money class="font-semibold" :amount="$fin['paid']" :scope="$project" rollup /></span>
+                <span>{{ __('Unpaid') }}: <x-ui.money class="font-semibold" :amount="$fin['unpaid']" :scope="$project" rollup /></span>
+            </div>
+        </div>
+        @endif
+        @if($seesBoth)
+        <div class="{{ $isProfit ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-orange-500 to-orange-600' }} rounded-lg shadow-sm p-6 text-white">
+            <p class="text-sm font-medium text-white/80">{{ $isProfit ? __('Profit') : __('Loss') }}</p>
+            <x-ui.money class="block text-3xl font-bold mt-1" :amount="abs($fin['balance'])" :scope="$project" rollup />
+            <p class="mt-4 text-sm text-white/80">{{ __('Contract Value − Expenses − Contracts') }}</p>
+        </div>
+        @endif
+    </div>
+
+    @if($seesBoth && $financials['lots']->isNotEmpty())
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Profit or loss by lot') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('The rows add up to the cards above.') }}</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-900">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Job Site') }}</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contract Value') }}</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Expenses') }}</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Contracts') }}</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Profit / Loss') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        @foreach($financials['lots'] as $row)
+                            <tr wire:key="lot-fin-{{ $row['id'] ?? 'general' }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                <td class="px-6 py-3 whitespace-nowrap">
+                                    @if($row['id'])
+                                        <a href="{{ route('jobsites.overview', $row['id']) }}" wire:navigate class="font-medium text-[#3F5189] dark:text-[#8B9BD0] hover:underline">{{ $row['name'] }}</a>
+                                    @else
+                                        <span class="text-slate-600 dark:text-slate-300">{{ __('Project (General)') }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 text-right whitespace-nowrap"><x-ui.money class="text-slate-900 dark:text-white" :amount="$row['contract_value']" :scope="$project" rollup /></td>
+                                <td class="px-6 py-3 text-right whitespace-nowrap"><x-ui.money class="text-slate-700 dark:text-slate-300" :amount="$row['expenses']" :scope="$project" rollup /></td>
+                                <td class="px-6 py-3 text-right whitespace-nowrap"><x-ui.money class="text-slate-700 dark:text-slate-300" :amount="$row['contracts']" :scope="$project" rollup /></td>
+                                <td class="px-6 py-3 text-right whitespace-nowrap"><x-ui.money class="font-semibold {{ $row['balance'] < 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }}" :amount="$row['balance']" :scope="$project" rollup /></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40">
+                        <tr>
+                            <td class="px-6 py-3 font-semibold text-slate-900 dark:text-white">{{ __('Total') }}</td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap font-semibold"><x-ui.money class="text-slate-900 dark:text-white" :amount="$fin['contract_value']" :scope="$project" rollup /></td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap font-semibold"><x-ui.money class="text-slate-900 dark:text-white" :amount="$fin['expenses']" :scope="$project" rollup /></td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap font-semibold"><x-ui.money class="text-slate-900 dark:text-white" :amount="$fin['contracts']" :scope="$project" rollup /></td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap font-bold"><x-ui.money class="{{ $isProfit ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400' }}" :amount="$fin['balance']" :scope="$project" rollup /></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Info -->
         <div class="lg:col-span-2 space-y-6">

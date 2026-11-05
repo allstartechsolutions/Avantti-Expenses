@@ -118,6 +118,16 @@
                 </select>
             </div>
             <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Employee') }}</label>
+                <select wire:model.live="employeeFilter"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
+                    <option value="">{{ __('All employees') }}</option>
+                    @foreach ($employees as $emp)
+                        <option value="{{ $emp->id }}">{{ $subcontractorFilter === '' && $emp->subcontractor ? __(':employee — :subcontractor', ['employee' => $emp->name, 'subcontractor' => $emp->subcontractor->company_name]) : $emp->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Type') }}</label>
                 <select wire:model.live="typeFilter"
                         class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3F5189]">
@@ -227,6 +237,9 @@
                                         {{ $r['vendor'] ?? '—' }}
                                         @if ($r['type'] === 'contract')
                                             <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">{{ __('Contract') }}</span>
+                                        @endif
+                                        @if (! empty($r['employee']))
+                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Employee') }}: {{ $r['employee'] }}</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">

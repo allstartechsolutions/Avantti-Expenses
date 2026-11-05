@@ -243,7 +243,7 @@ class JobSiteShow extends Component
             ->get();
 
         // Expenses
-        $expensesQuery = $this->jobSite->expenses()->with(['supplier', 'createdBy', 'payments', 'items.budgetItem']);
+        $expensesQuery = $this->jobSite->expenses()->with(['supplier', 'createdBy', 'payments', 'items.budgetItem'])->withCount('attachments');
 
         // Apply cost code filter
         if ($this->expenseCostCodeFilter !== 'all') {

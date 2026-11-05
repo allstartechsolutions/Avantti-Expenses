@@ -4,9 +4,11 @@ namespace App\Livewire\Report;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
+use App\Models\ExpensePayment;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
+use App\Models\SubcontractorEmployee;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\PaymentDetailReportService;
@@ -20,13 +22,23 @@ class PaymentDetailReport extends Component
     use AuthorizesAbility;
 
     public string $fromDate = '';
+
     public string $toDate = '';
+
     public string $clientFilter = '';
+
     public string $projectManagerFilter = '';
+
     public string $projectFilter = '';
+
     public string $jobSiteFilter = '';
+
     public string $vendorFilter = '';
+
     public string $subcontractorFilter = '';
+
+    /** A subcontractor's employee named on the contract (client request 20, Nov 2026). */
+    public string $employeeFilter = '';
 
     /** Multi-select: any of paid|pending|overdue. Empty = all statuses. */
     public $statusFilter = [];
@@ -44,6 +56,7 @@ class PaymentDetailReport extends Component
         'jobSiteFilter' => ['except' => ''],
         'vendorFilter' => ['except' => ''],
         'subcontractorFilter' => ['except' => ''],
+        'employeeFilter' => ['except' => ''],
         'statusFilter' => ['except' => []],
         'typeFilter' => ['except' => 'all'],
         'view' => ['except' => 'detail'],
@@ -99,6 +112,14 @@ class PaymentDetailReport extends Component
         }
     }
 
+    /** The employee list narrows to the chosen subcontractor; drop a pick it no longer offers. */
+    public function updatedSubcontractorFilter(): void
+    {
+        if ($this->employeeFilter !== '' && ! $this->employees->contains('id', (int) $this->employeeFilter)) {
+            $this->employeeFilter = '';
+        }
+    }
+
     public function setCurrentMonth(): void
     {
         $this->fromDate = Carbon::now()->startOfMonth()->toDateString();
@@ -136,6 +157,7 @@ class PaymentDetailReport extends Component
             $this->statusFilter,
             in_array($this->typeFilter, ['all', 'expenses', 'contracts'], true) ? $this->typeFilter : 'all',
             $this->projectManagerFilter,
+            $this->employeeFilter,
         )->includeCompany($this->allowsAbility('company-expenses.view'));
     }
 
@@ -175,6 +197,17 @@ class PaymentDetailReport extends Component
         return Supplier::orderBy('name')->get(['id', 'name']);
     }
 
+    /** Employees named on at least one contract, narrowed to the chosen subcontractor. */
+    public function getEmployeesProperty(): Collection
+    {
+        return SubcontractorEmployee::query()
+            ->whereHas('contracts')
+            ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
+            ->with('subcontractor:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'subcontractor_id']);
+    }
+
     public function getSubcontractorsProperty(): Collection
     {
         return Subcontractor::orderBy('name')->get(['id', 'name']);
@@ -199,7 +232,7 @@ class PaymentDetailReport extends Component
             default => $this->detailCsv($service),
         };
 
-        $filename = 'payment-details-' . $this->view . '-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+        $filename = 'payment-details-'.$this->view.'-'.$this->fromDate.'-to-'.$this->toDate.'.csv';
 
         return new StreamedResponse(function () use ($headers, $rows, $totals) {
             $out = fopen('php://output', 'w');
@@ -216,7 +249,7 @@ class PaymentDetailReport extends Component
             fclose($out);
         }, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -227,16 +260,17 @@ class PaymentDetailReport extends Component
 
     protected function detailCsv(PaymentDetailReportService $service): array
     {
-        $headers = [__('Date'), __('Type'), __('Vendor'), __('Item'), __('Project'), __('Job Site'), __('Installment'), __('Status'), __('Paid Date'), __('Paid By'), __('Reference'), __('Phase'), __('Notes'), __('Batch notes'), __('Amount')];
+        $headers = [__('Date'), __('Type'), __('Vendor'), __('Employee'), __('Item'), __('Project'), __('Job Site'), __('Installment'), __('Status'), __('Paid Date'), __('Paid By'), __('Reference'), __('Phase'), __('Notes'), __('Batch notes'), __('Amount')];
         $rows = $service->rows()->map(fn ($r) => [
             $r['date']?->format('Y-m-d') ?? '',
             $r['type'] === 'contract' ? __('Contract') : __('Expense'),
             $r['vendor'] ?? '',
+            $r['employee'] ?? '',
             $r['item'] ?? '',
             $r['project'] ?? '',
             $r['job_site'] ?? '',
             $r['installment_label'] ?? '',
-            \App\Models\ExpensePayment::statusLabel($r['status']),
+            ExpensePayment::statusLabel($r['status']),
             $r['paid_date']?->format('Y-m-d') ?? '',
             $r['paid_by'] ?? '',
             $r['reference'] ?? '',
@@ -247,7 +281,7 @@ class PaymentDetailReport extends Component
         ])->all();
 
         $k = $service->kpis();
-        $totals = [__('Total'), '', '', '', '', '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
+        $totals = [__('Total'), '', '', '', '', '', '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
 
         return [$headers, $rows, $totals];
     }
@@ -320,6 +354,7 @@ class PaymentDetailReport extends Component
             'jobSites' => $this->jobSites,
             'vendors' => $this->vendors,
             'subcontractors' => $this->subcontractors,
+            'employees' => $this->employees,
         ])->layout('components.layouts.app');
     }
 }
