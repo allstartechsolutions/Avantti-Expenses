@@ -163,6 +163,9 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                                                 <span class="font-medium">{{ $expense->getPaymentLabel() }}</span>
+                                                @if($expense->check_number)
+                                                    <div class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[12rem]" title="{{ $expense->check_number }}">{{ __('Check no. :number', ['number' => $expense->check_number]) }}</div>
+                                                @endif
                                                 @if($expense->isInstallment())
                                                     <div class="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
                                                         <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ $expense->getPaymentProgress() }}%"></div>

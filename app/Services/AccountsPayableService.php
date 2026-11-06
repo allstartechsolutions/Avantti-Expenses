@@ -34,7 +34,9 @@ class AccountsPayableService
     use ScopesCompanyExpenses;
 
     protected Carbon $start;
+
     protected Carbon $end;
+
     protected Carbon $today;
 
     protected ?Collection $outstandingCache = null;
@@ -196,7 +198,8 @@ class AccountsPayableService
             'type' => 'installment',
             'due_date' => $p->due_date,
             'vendor' => $expense?->supplier?->name,
-            'item' => ($expense?->item_name ?: ($expense?->category?->getDisplayLabel() ?? '')) . ' (#' . $p->payment_number . ')',
+            'check_number' => $expense?->check_number,
+            'item' => ($expense?->item_name ?: ($expense?->category?->getDisplayLabel() ?? '')).' (#'.$p->payment_number.')',
             'project' => $this->expenseLocation($expense)['project'],
             'project_id' => $expense?->project_id,
             'job_site' => $this->expenseLocation($expense)['job_site'],
@@ -219,6 +222,7 @@ class AccountsPayableService
             'type' => 'one_time',
             'due_date' => $due,
             'vendor' => $e->supplier?->name,
+            'check_number' => $e->check_number,
             'item' => $e->item_name ?? ($e->project_id === null ? $e->category?->getDisplayLabel() : null),
             'project' => $this->expenseLocation($e)['project'],
             'project_id' => $e->project_id,
@@ -241,7 +245,7 @@ class AccountsPayableService
             'type' => 'contract_installment',
             'due_date' => $item['date'],
             'vendor' => $c->subcontractor?->company_name,
-            'item' => trim(__('Contract') . ' ' . $c->contract_number . ' — ' . $item['label']),
+            'item' => trim(__('Contract').' '.$c->contract_number.' — '.$item['label']),
             'project' => $c->project?->project_name,
             'project_id' => $c->project_id,
             'job_site' => $c->jobSite?->job_site_name,
@@ -254,9 +258,9 @@ class AccountsPayableService
     protected function mapContractPaymentRow(ContractPayment $p): array
     {
         $c = $p->contract;
-        $label = __('Contract') . ' ' . ($c?->contract_number ?? '');
+        $label = __('Contract').' '.($c?->contract_number ?? '');
         if ($p->phase) {
-            $label .= ' — ' . $p->phase;
+            $label .= ' — '.$p->phase;
         }
 
         return [

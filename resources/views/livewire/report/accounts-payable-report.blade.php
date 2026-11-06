@@ -156,7 +156,7 @@
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                                     {{ $row['due_date']?->appDate() }}
                                 </td>
-                                <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $row['vendor'] ?? '—' }}</td>
+                                <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $row['vendor'] ?? '—' }}@if (! empty($row['check_number']))<span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Check no. :number', ['number' => $row['check_number']]) }}</span>@endif</td>
                                 <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['item'] }}</td>
                                 <td class="px-6 py-3 text-sm">
                                     @if ($row['project_id'])

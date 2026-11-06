@@ -96,6 +96,9 @@ class ProjectShow extends Component
 
     public $expense_is_auto_payment = false;
 
+    /** Which check, when the method is Check (Nov 2026: every expense, not only company ones). */
+    public $expense_check_number = '';
+
     public $expense_has_installments = false;
 
     public $expense_total_installments = 2;
@@ -549,7 +552,7 @@ class ProjectShow extends Component
             'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseItems', 'catalogItemSearches', 'expense_total_amount',
             // Payment fields
-            'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
+            'expense_status', 'expense_payment_method', 'expense_check_number', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview',
@@ -639,6 +642,7 @@ class ProjectShow extends Component
         $this->expense_status = $expense->status;
         $this->expense_payment_method = $expense->payment_method;
         $this->expense_is_auto_payment = $expense->is_auto_payment;
+        $this->expense_check_number = $expense->check_number ?? '';
         $this->expense_has_installments = $expense->isInstallment();
         $this->expense_total_installments = $expense->total_installments;
         $this->expense_payment_frequency = $expense->payment_frequency ?? 'monthly';
@@ -702,6 +706,7 @@ class ProjectShow extends Component
         $this->expense_status = $expense->status;
         $this->expense_payment_method = $expense->payment_method;
         $this->expense_is_auto_payment = $expense->is_auto_payment;
+        $this->expense_check_number = $expense->check_number ?? '';
         $this->expense_has_installments = $expense->isInstallment();
         $this->expense_total_installments = $expense->total_installments;
         $this->expense_payment_frequency = $expense->payment_frequency;
@@ -769,6 +774,7 @@ class ProjectShow extends Component
             'expense_job_site_id' => 'nullable|exists:job_sites,id',
             'expense_supplier_id' => 'nullable|exists:vendors,id,is_supplier,1',
             'expense_payment_method' => 'nullable|in:cash,check,credit_card,debit_card,bank_transfer,pix,other',
+            'expense_check_number' => 'nullable|string|max:255',
             'expenseItems' => 'required|array|min:1',
             'expenseItems.*.item_name' => 'required|string|max:255',
             'expenseItems.*.quantity' => 'required|numeric|min:0.01',
@@ -820,6 +826,8 @@ class ProjectShow extends Component
                 'receipt_path' => $receiptPath,
                 'expense_date' => $this->expense_date,
                 'payment_method' => $this->expense_payment_method,
+                // Kept only while the method is Check, as on the full expense screens.
+                'check_number' => $this->expense_payment_method === 'check' ? (trim((string) $this->expense_check_number) ?: null) : null,
                 'is_auto_payment' => $this->expense_is_auto_payment,
             ];
 
@@ -984,7 +992,7 @@ class ProjectShow extends Component
             'expense_equipment_id', 'expense_equipment_maintenance_id',
             'expenseItems', 'catalogItemSearches', 'budgetItems', 'expense_total_amount', 'expenseHistory',
             // Payment fields
-            'expense_status', 'expense_payment_method', 'expense_is_auto_payment',
+            'expense_status', 'expense_payment_method', 'expense_check_number', 'expense_is_auto_payment',
             'expense_has_installments', 'expense_total_installments', 'expense_payment_frequency',
             'expense_payment_due_date', 'expense_paid_date', 'expense_use_custom_amounts',
             'expense_custom_amounts', 'expense_payment_schedule_preview',

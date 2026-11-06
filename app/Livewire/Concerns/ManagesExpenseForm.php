@@ -583,13 +583,14 @@ trait ManagesExpenseForm
     }
 
     /**
-     * The check number to save: only a company expense paid by check keeps one,
-     * so switching the method away from "check" clears it rather than leaving
-     * a stale number on a card payment.
+     * The check number to save: any expense paid by check keeps one — company,
+     * job site or lot (company only until 6 Nov 2026, when the client asked for
+     * it everywhere). Switching the method away from "check" clears it rather
+     * than leaving a stale number on a card payment.
      */
     protected function checkNumberToStore(): ?string
     {
-        if (! $this->isCompanyExpense() || $this->expense_payment_method !== 'check') {
+        if ($this->expense_payment_method !== 'check') {
             return null;
         }
 

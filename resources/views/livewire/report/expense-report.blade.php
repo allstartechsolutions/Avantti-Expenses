@@ -382,7 +382,7 @@
                                     <td class="px-6 py-3 text-sm text-slate-900 dark:text-white">{{ $row['vendor'] ?? '—' }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['project'] ?? '—' }}</td>
                                     <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $row['job_site'] ?? __('Project-level') }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-400">{{ $row['payment_label'] }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-400">{{ $row['payment_label'] }}@if (! empty($row['check_number']))<span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Check no. :number', ['number' => $row['check_number']]) }}</span>@endif</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-slate-900 dark:text-white">{{ Number::currency($row['total'], $currency, $locale) }}</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">{{ Number::currency($row['paid'], $currency, $locale) }}</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-amber-600 dark:text-amber-400">{{ Number::currency($row['outstanding'], $currency, $locale) }}</td>

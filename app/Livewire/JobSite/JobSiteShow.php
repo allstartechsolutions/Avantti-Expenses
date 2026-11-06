@@ -261,6 +261,7 @@ class JobSiteShow extends Component
             $expensesQuery->where(function ($query) {
                 $query->where('item_name', 'like', '%'.$this->expenseSearch.'%')
                     ->orWhere('notes', 'like', '%'.$this->expenseSearch.'%')
+                    ->orWhere('check_number', 'like', '%'.$this->expenseSearch.'%')
                     ->orWhereHas('items', function ($itemQuery) {
                         $itemQuery->where('item_name', 'like', '%'.$this->expenseSearch.'%');
                     })

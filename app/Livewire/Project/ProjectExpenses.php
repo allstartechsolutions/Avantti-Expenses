@@ -86,6 +86,7 @@ class ProjectExpenses extends Component
         if ($this->expenseSearch) {
             $expensesQuery->where(function ($query) {
                 $query->where('notes', 'like', '%'.$this->expenseSearch.'%')
+                    ->orWhere('check_number', 'like', '%'.$this->expenseSearch.'%')
                     ->orWhereHas('items', function ($itemQuery) {
                         $itemQuery->where('item_name', 'like', '%'.$this->expenseSearch.'%');
                     })

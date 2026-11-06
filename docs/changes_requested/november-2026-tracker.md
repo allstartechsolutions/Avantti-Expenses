@@ -35,15 +35,19 @@ Worked one item at a time. Status: **todo**, **done**, **needs decision**.
 | 21 | Lot details: "View Contracts" button like "View Expenses" | **done** (5 Nov 2026) |
 | 22 | Lot / job site: "Estimated cost" field, shown as a card on the overview (information only) | **done** (5 Nov 2026) |
 | 23 | Create Supplier: address autocomplete, as on Clients | **done** (5 Nov 2026) |
-| 24 | Company expense: check number when the method is Check | **done** (5 Nov 2026) |
+| 24 | Expense check number when the method is Check (company, job site and lot) | **done** (5 Nov 2026) |
 | 25 | Company Expenses: report by payment method (check / card / autopay) over a date range | **done** (5 Nov 2026) |
 | 26 | Equipment overview: show the costs | **done** (5 Nov 2026) |
 | 27 | Suppliers: documents (W-9 / COI) | **done** (5 Nov 2026) |
 
 ## Decisions
 
-- **#24 check number** — company expenses only; one number per expense, installments
-  included (option A). Numbers already typed into Notes are not migrated. The field
+- **#24 check number** — one number per expense, installments included (option A). First built
+  for company expenses only; on 6 Nov 2026 the client asked for it on job site and lot expenses
+  too, so every expense form (including the project page's modal) has it, and the project and
+  lot expense lists show it and search it. The reports that list expenses one by one show it too
+  — Payment Details, Expense Report (detail) and Accounts Payable, on screen, in the PDF and as a
+  CSV column. Payment Schedule only shows totals, so it has nowhere to put one. Numbers already typed into Notes are not migrated. The field
   appears only for method *Check*; another method clears it. Stays editable after payment.
 - **#22 estimated cost** — one value per lot (`job_sites.estimated_cost`, plain currency,
   nullable), entered on both job-site forms. Information only, as decided on 5 Nov: it never

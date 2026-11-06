@@ -263,7 +263,7 @@
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['vendor'] ?? '—' }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['project'] ?? '—' }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px;">{{ $row['job_site'] ?? __('Project-level') }}</td>
-                        <td style="border: 1px solid #ddd; padding: 3px 5px; text-align: center;">{{ $row['payment_label'] }}</td>
+                        <td style="border: 1px solid #ddd; padding: 3px 5px; text-align: center;">{{ $row['payment_label'] }}@if (! empty($row['check_number']))<br><span style="font-size: 7pt; color: #666;">{{ __('Check no. :number', ['number' => $row['check_number']]) }}</span>@endif</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px; text-align: right;">{{ $money($row['total']) }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px; text-align: right; color: #27ae60;">{{ $money($row['paid']) }}</td>
                         <td style="border: 1px solid #ddd; padding: 3px 5px; text-align: right; color: #d68910;">{{ $money($row['outstanding']) }}</td>

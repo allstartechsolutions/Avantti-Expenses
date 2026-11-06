@@ -265,9 +265,9 @@
                             <option value="other">{{ __('Other') }}</option>
                         </select>
 
-                        {{-- A company expense paid by check records which check. It stays
-                             editable after payment: the number is often known only then. --}}
-                        @if($this->isCompanyExpense() && $expense_payment_method === 'check')
+                        {{-- An expense paid by check records which check — company, job site
+                             or lot. It stays editable after payment: the number is often known only then. --}}
+                        @if($expense_payment_method === 'check')
                             <div class="mt-4">
                                 <label for="expense_check_number" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Check number') }}</label>
                                 <input

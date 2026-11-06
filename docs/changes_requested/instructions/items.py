@@ -199,14 +199,15 @@ ITEMS = [
         "match": "Add expense – abaixo do payment method",
         "done": "Nov 5, 2026",
         "steps": [
-            "Go to Company → Company Expenses → Add Company Expense.",
+            "Add an expense — on a job site, on a lot, or under Company → Company Expenses → Add Company Expense.",
             "Choose Payment Method \"Check\". A Check number field appears right below it.",
             "Type the check number (or a short note about the check) and save.",
-            "The number shows in the list under Payments (\"Check no. 29852\") and in the expense details.",
+            "The number shows in the expense list under Payments (\"Check no. 29852\") — company, job site and lot lists alike — and in the expense details.",
             "To find an expense by its check, type the number in the list's search box.",
+            "The reports show it as well: Payment Details, Expense Report (detail view) and Accounts Payable — on screen, in the PDF and as a \"Check number\" column in the CSV.",
         ],
         "notes": [
-            "Company expenses only. One number per expense, installments included.",
+            "Every expense paid by check — company, job site and lot. One number per expense, installments included.",
             "Choosing another payment method clears the number. It can still be edited after the expense is paid.",
             "Check numbers typed into Notes before this change were not moved into the new field.",
         ],
@@ -214,6 +215,7 @@ ITEMS = [
             ("24-check-number-field.png", "Add Company Expense — the Check number field"),
             ("24-search-filters.png", "Searching by check number"),
             ("24-search-result.png", "The result, with the check number under Payments"),
+            ("24-lot-expenses-check-number.png", "A lot's expenses — the check number under Payments"),
         ],
     },
     {

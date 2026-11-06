@@ -94,7 +94,7 @@
             @forelse($rows as $row)
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['due_date']?->appDate() }}</td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['vendor'] ?? '—' }}</td>
+                    <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['vendor'] ?? '—' }}@if (! empty($row['check_number']))<br><span style="font-size: 7pt; color: #666;">{{ __('Check no. :number', ['number' => $row['check_number']]) }}</span>@endif</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['item'] }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['project'] ?? '—' }}</td>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">{{ $row['job_site'] ?? __('Project-level') }}</td>

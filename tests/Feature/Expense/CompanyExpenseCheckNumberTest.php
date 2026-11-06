@@ -2,21 +2,30 @@
 
 namespace Tests\Feature\Expense;
 
+use App\Enums\JobSiteStatus;
 use App\Enums\ProjectStatus;
 use App\Livewire\CompanyExpense\CompanyExpenseCreate;
 use App\Livewire\CompanyExpense\CompanyExpenseIndex;
 use App\Livewire\Expense\ExpenseCreate;
 use App\Livewire\Expense\ExpenseEdit;
+use App\Livewire\JobSite\JobSiteShow;
+use App\Livewire\Project\ProjectExpenses;
+use App\Livewire\Project\ProjectShow;
+use App\Livewire\Report\AccountsPayableReport;
+use App\Livewire\Report\ExpenseReport;
+use App\Livewire\Report\PaymentDetailReport;
 use App\Models\Client;
 use App\Models\Equipment;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -222,26 +231,28 @@ class CompanyExpenseCheckNumberTest extends TestCase
         $this->assertSame(__('Check number'), Expense::fieldLabel('check_number'));
     }
 
-    public function test_a_job_site_expense_never_stores_a_check_number(): void
+    /** 6 Nov 2026: the client wants the check number on job site and lot expenses too. */
+    private function projectWithLot(): array
     {
-        $client = Client::create([
-            'company_name' => 'Check Client',
-            'contact_name' => 'C',
-            'email' => 'c@example.test',
-            'created_by' => $this->admin->id,
+        $client = Client::create(['company_name' => 'Check Client', 'contact_name' => 'C', 'email' => 'c@example.test', 'created_by' => $this->admin->id]);
+        $project = Project::create([
+            'project_name' => 'Obra', 'client_id' => $client->id, 'contact_person' => 'C',
+            'email' => 'p@example.test', 'status' => ProjectStatus::CREATED, 'created_by' => $this->admin->id,
+        ]);
+        $lot = JobSite::create([
+            'project_id' => $project->id, 'job_site_name' => 'Lot 46', 'contact_person' => 'C',
+            'email' => 'lot@example.test', 'status' => JobSiteStatus::CREATED, 'created_by' => $this->admin->id,
         ]);
 
-        $project = Project::create([
-            'project_name' => 'Obra',
-            'client_id' => $client->id,
-            'contact_person' => 'C',
-            'email' => 'p@example.test',
-            'status' => ProjectStatus::CREATED,
-            'created_by' => $this->admin->id,
-        ]);
+        return [$project, $lot];
+    }
+
+    public function test_a_lot_expense_paid_by_check_keeps_its_number(): void
+    {
+        [$project, $lot] = $this->projectWithLot();
 
         Livewire::actingAs($this->admin)
-            ->test(ExpenseCreate::class, ['project' => $project])
+            ->test(ExpenseCreate::class, ['jobSite' => $lot])
             ->set('expense_date', now()->toDateString())
             ->call('openAddItemModal')
             ->set('item_name', 'Cement')
@@ -249,12 +260,93 @@ class CompanyExpenseCheckNumberTest extends TestCase
             ->set('item_unit_price', 100)
             ->call('saveItem')
             ->set('expense_payment_method', 'check')
-            ->assertDontSee('wire:model="expense_check_number"', false)
-            ->set('expense_check_number', '29852')
+            ->assertSee('wire:model="expense_check_number"', false)
+            ->set('expense_check_number', ' 30117 ')
             ->set('expense_status', 'paid')
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->assertNull(Expense::where('project_id', $project->id)->sole()->check_number);
+        $expense = Expense::where('job_site_id', $lot->id)->sole();
+        $this->assertSame('30117', $expense->check_number);
+
+        // The project and the lot lists show it, and their searches find it.
+        Livewire::actingAs($this->admin)
+            ->test(ProjectExpenses::class, ['project' => $project])
+            ->assertSee(__('Check no. :number', ['number' => '30117']))
+            ->set('expenseSearch', '30117')
+            ->assertSee(__('Check no. :number', ['number' => '30117']))
+            ->set('expenseSearch', 'no-such-check')
+            ->assertDontSee(__('Check no. :number', ['number' => '30117']));
+
+        Livewire::actingAs($this->admin)
+            ->test(JobSiteShow::class, ['jobSite' => $lot])
+            ->call('setActiveTab', 'expenses')
+            ->assertSee(__('Check no. :number', ['number' => '30117']))
+            ->set('expenseSearch', '30117')
+            ->assertSee(__('Check no. :number', ['number' => '30117']))
+            ->set('expenseSearch', 'no-such-check')
+            ->assertDontSee(__('Check no. :number', ['number' => '30117']));
+    }
+
+    public function test_the_project_page_modal_keeps_and_clears_the_check_number(): void
+    {
+        [$project] = $this->projectWithLot();
+
+        $page = Livewire::actingAs($this->admin)
+            ->test(ProjectShow::class, ['project' => $project])
+            ->call('openExpenseCreateModal')
+            ->set('expense_date', now()->toDateString())
+            ->set('expenseItems.0.item_name', 'Lumber')
+            ->set('expenseItems.0.quantity', 1)
+            ->set('expenseItems.0.unit_price', 250)
+            ->set('expense_payment_method', 'check')
+            ->assertSee('wire:model="expense_check_number"', false)
+            ->set('expense_check_number', '30118')
+            ->call('saveExpense')
+            ->assertHasNoErrors();
+
+        $expense = Expense::where('project_id', $project->id)->sole();
+        $this->assertSame('30118', $expense->check_number);
+
+        $page->call('openExpenseEditModal', $expense->id)
+            ->assertSet('expense_check_number', '30118')
+            ->set('expense_payment_method', 'credit_card')
+            ->call('saveExpense')
+            ->assertHasNoErrors();
+
+        $this->assertNull($expense->fresh()->check_number);
+    }
+
+    /** 6 Nov 2026: the reports show the check number too — on screen, in the CSV and in the PDF. */
+    public function test_the_reports_show_the_check_number(): void
+    {
+        $label = __('Check no. :number', ['number' => '29852']);
+
+        // Paid: Payment Details and the Expense Report.
+        $this->fileCompanyExpense('check', '29852');
+
+        $details = Livewire::actingAs($this->admin)->test(PaymentDetailReport::class)->assertSee($label);
+        $csv = base64_decode($details->call('exportCsv')->effects['download']['content'] ?? '');
+        $this->assertStringContainsString(__('Check number'), $csv);
+        $this->assertStringContainsString('29852', $csv);
+
+        $report = Livewire::actingAs($this->admin)->test(ExpenseReport::class)->set('view', 'detail')->assertSee($label);
+        $csv = base64_decode($report->call('exportCsv')->effects['download']['content'] ?? '');
+        $this->assertStringContainsString('29852', $csv);
+
+        $pdf = [];
+        View::composer('pdf.expense-report', function ($view) use (&$pdf) {
+            $pdf = $view->getData();
+        });
+        $this->actingAs($this->admin)->get(route('reports.expenses.pdf.view', ['view' => 'detail']))->assertOk();
+        $this->assertContains('29852', collect($pdf['detail'] ?? [])->pluck('check_number')->all());
+
+        // A check written but not cleared yet: Accounts Payable.
+        $unpaid = $this->fileCompanyExpense('check', '29853');
+        $unpaid->update(['status' => 'unpaid', 'payment_due_date' => now()->addDays(3)->toDateString(), 'paid_date' => null]);
+
+        Livewire::actingAs($this->admin)
+            ->test(AccountsPayableReport::class)
+            ->assertSee(__('Check no. :number', ['number' => '29853']));
     }
 }

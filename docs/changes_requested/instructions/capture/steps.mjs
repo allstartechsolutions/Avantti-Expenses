@@ -19,6 +19,11 @@ export default async (a) => {
   await a.mark(`const i = document.querySelector('input[wire\\\\:model="expense_check_number"]'); let el = i; for (let n = 0; n < 6 && el.parentElement; n++) { el = el.parentElement; if (el.getBoundingClientRect().width > 900) break; } return el;`);
   await a.shot('24-check-number-field', { selector: '[data-shot]', pad: 16 });
 
+  // #24 — the check number on a lot's expense list too (Nov 6).
+  await a.go('/job-sites/1/expenses', 3000);
+  await a.mark(`return document.querySelector('table').closest('.rounded-lg, .shadow-sm') || document.querySelector('table');`);
+  await a.shot('24-lot-expenses-check-number', { selector: '[data-shot]' });
+
   // Company Expenses list: notes column (#13), check no. (#24), machine (#15), paperclip (#14).
   await a.go('/company-expenses', 2500);
   await a.mark(`return document.querySelector('table').closest('.rounded-lg, .shadow-sm') || document.querySelector('table');`);

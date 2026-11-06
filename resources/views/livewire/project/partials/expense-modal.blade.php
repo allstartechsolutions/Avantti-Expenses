@@ -120,6 +120,9 @@
                                     <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">{{ __('Auto') }}</span>
                                 @endif
                             </p>
+                            @if($expense_payment_method === 'check' && $expense_check_number)
+                                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ __('Check number') }}: <span class="font-medium text-slate-900 dark:text-white">{{ $expense_check_number }}</span></p>
+                            @endif
                         </div>
                     </div>
 
@@ -465,7 +468,7 @@
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Method') }}</label>
-                            <select wire:model="expense_payment_method" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                            <select wire:model.live="expense_payment_method" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 <option value="">{{ __('Select method') }}</option>
                                 <option value="cash">{{ __('Cash') }}</option>
                                 <option value="check">{{ __('Check') }}</option>
@@ -477,6 +480,15 @@
                                 @endif
                                 <option value="other">{{ __('Other') }}</option>
                             </select>
+                            @if($expense_payment_method === 'check')
+                                <div class="mt-3">
+                                    <label for="pm-expense-check-number" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Check number') }}</label>
+                                    <input id="pm-expense-check-number" type="text" maxlength="255" wire:model="expense_check_number"
+                                        placeholder="{{ __('e.g. 29852, or a note about the check') }}"
+                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3F5189] focus:border-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    @error('expense_check_number') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                </div>
+                            @endif
                         </div>
                         <div class="flex items-center">
                             <label class="flex items-center cursor-pointer">

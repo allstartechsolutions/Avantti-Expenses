@@ -247,6 +247,9 @@
                                         @if (! empty($r['reference']))
                                             <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Reference') }}: {{ $r['reference'] }}</span>
                                         @endif
+                                        @if (! empty($r['check_number']))
+                                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Check no. :number', ['number' => $r['check_number']]) }}</span>
+                                        @endif
                                         @if (! empty($r['phase']))
                                             <span class="block text-xs text-slate-500 dark:text-slate-400">{{ __('Phase') }}: {{ $r['phase'] }}</span>
                                         @endif

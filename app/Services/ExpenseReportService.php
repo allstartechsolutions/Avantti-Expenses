@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\BudgetItem;
 use App\Models\Contract;
 use App\Models\Expense;
-use App\Models\ExpenseItem;
 use App\Models\ExpensePayment;
 use App\Services\Concerns\ScopesCompanyExpenses;
 use Carbon\Carbon;
@@ -38,7 +38,9 @@ class ExpenseReportService
     use ScopesCompanyExpenses;
 
     protected Carbon $start;
+
     protected Carbon $end;
+
     protected Carbon $today;
 
     protected ?Collection $cache = null;
@@ -161,9 +163,10 @@ class ExpenseReportService
             'expense_category_id' => $e->expense_category_id,
             'vendor' => $e->supplier?->name,
             'vendor_id' => $e->supplier_id,
+            'check_number' => $e->check_number,
             'category' => $e->item_type,
             'payment_label' => $e->total_installments > 1
-                ? ($e->payments->where('status', 'paid')->count() . '/' . $e->total_installments)
+                ? ($e->payments->where('status', 'paid')->count().'/'.$e->total_installments)
                 : '1x',
             'total' => $total,
             'paid' => $paid,
@@ -333,7 +336,7 @@ class ExpenseReportService
         }
 
         // The budget each code belongs to, so a row can open its drill-down.
-        $budgetIds = \App\Models\BudgetItem::whereIn('id', array_filter(array_keys($buckets)))
+        $budgetIds = BudgetItem::whereIn('id', array_filter(array_keys($buckets)))
             ->pluck('budget_id', 'id');
 
         return collect($buckets)

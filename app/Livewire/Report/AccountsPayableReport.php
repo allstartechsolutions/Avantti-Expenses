@@ -4,6 +4,7 @@ namespace App\Livewire\Report;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Models\Client;
+use App\Models\ExpensePayment;
 use App\Models\Project;
 use App\Services\AccountsPayableService;
 use Carbon\Carbon;
@@ -16,10 +17,15 @@ class AccountsPayableReport extends Component
     use AuthorizesAbility;
 
     public string $fromDate = '';
+
     public string $toDate = '';
+
     public string $projectFilter = '';
+
     public string $clientFilter = '';
+
     public string $statusFilter = 'unpaid';
+
     public bool $showZeroBalance = false;
 
     protected $queryString = [
@@ -122,13 +128,13 @@ class AccountsPayableReport extends Component
         $this->authorizeAbility('reports.export');
 
         $rows = $this->selectedPeriodRows;
-        $filename = 'accounts-payable-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+        $filename = 'accounts-payable-'.$this->fromDate.'-to-'.$this->toDate.'.csv';
 
         return new StreamedResponse(function () use ($rows) {
             $out = fopen('php://output', 'w');
             // BOM so Excel handles UTF-8 correctly
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [__('Due Date'), __('Vendor'), __('Item'), __('Project'), __('Job Site'), __('Status'), __('Amount')]);
+            fputcsv($out, [__('Due Date'), __('Vendor'), __('Item'), __('Project'), __('Job Site'), __('Status'), __('Check number'), __('Amount')]);
 
             foreach ($rows as $row) {
                 fputcsv($out, [
@@ -137,18 +143,19 @@ class AccountsPayableReport extends Component
                     $row['item'] ?? '',
                     $row['project'] ?? '',
                     $row['job_site'] ?? __('Project-level'),
-                    \App\Models\ExpensePayment::statusLabel($row['status']),
+                    ExpensePayment::statusLabel($row['status']),
+                    $row['check_number'] ?? '',
                     number_format($row['amount'], 2, '.', ''),
                 ]);
             }
 
             fputcsv($out, []);
-            fputcsv($out, [__('Total'), '', '', '', '', '', number_format($rows->sum('amount'), 2, '.', '')]);
+            fputcsv($out, [__('Total'), '', '', '', '', '', '', number_format($rows->sum('amount'), 2, '.', '')]);
 
             fclose($out);
         }, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 

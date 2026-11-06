@@ -3,6 +3,7 @@
 namespace App\Livewire\Report;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\JobSite;
 use App\Models\Project;
@@ -18,13 +19,21 @@ class ExpenseReport extends Component
     use AuthorizesAbility;
 
     public string $fromDate = '';
+
     public string $toDate = '';
+
     public string $clientFilter = '';
+
     public string $projectFilter = '';
+
     public string $jobSiteFilter = '';
+
     public string $vendorFilter = '';
+
     public string $categoryFilter = '';
+
     public string $statusFilter = 'all';
+
     public string $dateBasis = 'expense'; // expense | due
 
     public string $view = 'project'; // project | vendor | costcode | detail
@@ -160,7 +169,7 @@ class ExpenseReport extends Component
         };
 
         $basis = $this->dateBasis === 'due' ? 'due-date' : 'expense-date';
-        $filename = 'expense-report-' . $this->view . '-' . $basis . '-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+        $filename = 'expense-report-'.$this->view.'-'.$basis.'-'.$this->fromDate.'-to-'.$this->toDate.'.csv';
 
         return new StreamedResponse(function () use ($headers, $rows, $totals) {
             $out = fopen('php://output', 'w');
@@ -177,7 +186,7 @@ class ExpenseReport extends Component
             fclose($out);
         }, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -266,15 +275,16 @@ class ExpenseReport extends Component
     protected function detailCsv(ExpenseReportService $service): array
     {
         $dueBasis = $this->dateBasis === 'due';
-        $headers = [$dueBasis ? __('Due Date') : __('Date'), __('Item'), __('Vendor'), __('Project'), __('Job Site'), __('Category'), __('Installments'), __('Total'), __('Paid'), __('Outstanding'), __('Overdue')];
+        $headers = [$dueBasis ? __('Due Date') : __('Date'), __('Item'), __('Vendor'), __('Project'), __('Job Site'), __('Category'), __('Installments'), __('Check number'), __('Total'), __('Paid'), __('Outstanding'), __('Overdue')];
         $rows = $service->detail()->map(fn ($row) => [
             ($dueBasis ? $row['due_date'] : $row['expense_date'])?->format('Y-m-d'),
             $row['item'],
             $row['vendor'] ?? '',
             $row['project'] ?? '',
             $row['job_site'] ?? __('Project-level'),
-            $row['category'] ? \App\Models\CatalogItem::typeLabel($row['category']) : '',
+            $row['category'] ? CatalogItem::typeLabel($row['category']) : '',
             $row['payment_label'],
+            $row['check_number'] ?? '',
             $this->money($row['total']),
             $this->money($row['paid']),
             $this->money($row['outstanding']),
@@ -282,7 +292,7 @@ class ExpenseReport extends Component
         ])->all();
 
         $k = $service->kpis();
-        $totals = [__('Total'), '', '', '', '', '', '', $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
+        $totals = [__('Total'), '', '', '', '', '', '', '', $this->money($k['total']), $this->money($k['paid']), $this->money($k['outstanding']), $this->money($k['overdue'])];
 
         return [$headers, $rows, $totals];
     }
