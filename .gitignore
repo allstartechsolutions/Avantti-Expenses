@@ -29,3 +29,7 @@ Homestead.json
 .phpactor.json
 auth.json
 package-lock.json
+
+# Word lock files and Python bytecode (docs/changes_requested/instructions)
+~$*
+__pycache__/
