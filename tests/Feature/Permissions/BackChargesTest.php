@@ -282,4 +282,40 @@ class BackChargesTest extends TestCase
         $this->actingAs($this->admin)->get(route('files.download', ['path' => 'back-charges/photo.jpg']))->assertOk();
         $this->actingAs($this->user('manager'))->get(route('files.download', ['path' => 'back-charges/photo.jpg']))->assertForbidden();
     }
+
+    public function test_the_subcontractor_and_the_job_site_are_searched_for(): void
+    {
+        $this->subcontractor('Wolf Construction');
+        $off = $this->subcontractor('Benitez Roofing');
+        $off->forceFill(['is_active' => false])->save();
+        $maria = SubcontractorEmployee::create(['subcontractor_id' => $this->benitez->id, 'name' => 'Maria Benitez']);
+
+        $form = Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
+            ->call('openBackChargeCreate')
+            ->set('bcSubcontractorSearch', 'beni')
+            ->assertViewHas('subcontractorResults', fn ($r) => collect($r)->pluck('label')->all() === ['Benitez Carpentry'])
+            ->call('selectBcSubcontractor', $this->benitez->id)
+            ->assertSet('bc_subcontractor_id', (string) $this->benitez->id)
+            ->assertSet('bcSubcontractorSearch', 'Benitez Carpentry')
+            ->set('bc_subcontractor_employee_id', (string) $maria->id)
+            ->set('bcProjectSearch', 'kent')
+            ->assertViewHas('projectResults', fn ($r) => collect($r)->pluck('id')->all() === [$this->project->id])
+            ->call('selectBcProject', $this->project->id)
+            ->assertSet('bc_project_id', (string) $this->project->id);
+
+        // Typing over the chosen name unlinks it, and its employee with it.
+        $form->set('bcSubcontractorSearch', 'Benitez Carp')
+            ->assertSet('bc_subcontractor_id', '')
+            ->assertSet('bc_subcontractor_employee_id', '')
+            // An inactive one cannot be picked by id either.
+            ->call('selectBcSubcontractor', $off->id)
+            ->assertSet('bc_subcontractor_id', '');
+
+        // Editing shows the names that were saved.
+        $bc = $this->backCharge(100, ['project_id' => $this->project->id]);
+        Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
+            ->call('openBackChargeEdit', $bc->id)
+            ->assertSet('bcSubcontractorSearch', 'Benitez Carpentry')
+            ->assertSet('bcProjectSearch', 'Kent Island');
+    }
 }

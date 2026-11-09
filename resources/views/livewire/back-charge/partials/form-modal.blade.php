@@ -44,14 +44,21 @@
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">{{ __('Who owes it') }}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="bc_subcontractor_id" class="{{ $label }}">{{ __('Subcontractor') }} <span class="text-red-500">*</span></label>
-                                <select id="bc_subcontractor_id" wire:model.live="bc_subcontractor_id" class="{{ $field }}">
-                                    <option value="">{{ __('Choose a subcontractor') }}</option>
-                                    @foreach($formSubcontractors as $sub)
-                                        <option value="{{ $sub->id }}">{{ $sub->company_name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('bc_subcontractor_id') <p class="{{ $error }}">{{ $message }}</p> @enderror
+                                <x-ui.search-select
+                                    wire:model.live.debounce.300ms="bcSubcontractorSearch"
+                                    :label="__('Subcontractor').' *'"
+                                    :placeholder="__('Search by company or contact name…')"
+                                    :results="$subcontractorResults"
+                                    :selectedId="$bc_subcontractor_id !== '' ? (int) $bc_subcontractor_id : null"
+                                    :selectedLabel="$bcSubcontractorSearch"
+                                    select="selectBcSubcontractor"
+                                    clear="clearBcSubcontractor"
+                                    :search="$bcSubcontractorSearch"
+                                    :minChars="2"
+                                    :total="$subcontractorCount"
+                                    error="bc_subcontractor_id"
+                                    :empty="__('No active subcontractor matches. Check the spelling, or register the subcontractor first.')"
+                                    :unavailable="$subcontractorCount === 0 ? __('No subcontractors are registered yet.') : null" />
                             </div>
                             <div>
                                 <label for="bc_subcontractor_employee_id" class="{{ $label }}">{{ __('Employee') }} <span class="text-xs font-normal text-slate-400">({{ __('optional') }})</span></label>
@@ -88,14 +95,20 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{{ __('For reference: a back charge can be deducted from a payment on any site.') }}</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="bc_project_id" class="{{ $label }}">{{ __('Job Site') }}</label>
-                                <select id="bc_project_id" wire:model.live="bc_project_id" class="{{ $field }}">
-                                    <option value="">{{ __('None') }}</option>
-                                    @foreach($formProjects as $project)
-                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('bc_project_id') <p class="{{ $error }}">{{ $message }}</p> @enderror
+                                <x-ui.search-select
+                                    wire:model.live.debounce.300ms="bcProjectSearch"
+                                    :label="__('Job Site')"
+                                    :placeholder="__('Search by job site name…')"
+                                    :results="$projectResults"
+                                    :selectedId="$bc_project_id !== '' ? (int) $bc_project_id : null"
+                                    :selectedLabel="$bcProjectSearch"
+                                    select="selectBcProject"
+                                    clear="clearBcProject"
+                                    :search="$bcProjectSearch"
+                                    :minChars="2"
+                                    :total="$projectCount"
+                                    error="bc_project_id"
+                                    :empty="__('No job site matches.')" />
                             </div>
                             <div>
                                 <label for="bc_job_site_id" class="{{ $label }}">{{ __('Lot') }}</label>

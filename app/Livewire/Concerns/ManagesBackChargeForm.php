@@ -37,13 +37,20 @@ trait ManagesBackChargeForm
 
     public string $bc_description = '';
 
+    /** The text in the two type-to-search pickers (x-ui.search-select). */
+    public string $bcSubcontractorSearch = '';
+
+    public string $bcProjectSearch = '';
+
     public function openBackChargeCreate(?int $subcontractorId = null): void
     {
         $this->authorizeAbility('back-charges.create');
 
         $this->resetBackChargeForm();
         $this->bc_date = now()->toDateString();
-        $this->bc_subcontractor_id = $subcontractorId ? (string) $subcontractorId : '';
+        if ($subcontractorId) {
+            $this->selectBcSubcontractor($subcontractorId);
+        }
 
         $this->dispatch('open-modal', 'back-charge-form');
     }
@@ -64,6 +71,8 @@ trait ManagesBackChargeForm
         $this->bc_date = $bc->date->toDateString();
         $this->bc_reason = $bc->reason;
         $this->bc_description = (string) $bc->description;
+        $this->bcSubcontractorSearch = (string) Subcontractor::whereKey($bc->subcontractor_id)->value('name');
+        $this->bcProjectSearch = $bc->project_id ? (string) Project::whereKey($bc->project_id)->value('project_name') : '';
 
         $this->dispatch('open-modal', 'back-charge-form');
     }
@@ -79,19 +88,83 @@ trait ManagesBackChargeForm
         $this->reset([
             'editingBackChargeId', 'bc_subcontractor_id', 'bc_subcontractor_employee_id', 'bc_project_id',
             'bc_job_site_id', 'bc_amount', 'bc_date', 'bc_reason', 'bc_description',
+            'bcSubcontractorSearch', 'bcProjectSearch',
         ]);
         $this->resetValidation();
     }
 
-    /** Another company's employee is never left selected. */
-    public function updatedBcSubcontractorId(): void
+    /*
+    | The pickers. Typing over a chosen name unlinks it: the record must never
+    | point at a company or a job site whose name is no longer on the screen.
+    */
+
+    public function updatedBcSubcontractorSearch(): void
     {
-        $this->bc_subcontractor_employee_id = '';
+        if ($this->bc_subcontractor_id !== '' && $this->bcSubcontractorSearch !== (string) Subcontractor::whereKey((int) $this->bc_subcontractor_id)->value('name')) {
+            $this->clearBcSubcontractor(keepSearch: true);
+        }
     }
 
-    public function updatedBcProjectId(): void
+    public function selectBcSubcontractor(int $id): void
     {
+        // Active ones, plus the one this back charge already names.
+        $sub = Subcontractor::activeOrCurrent($this->editingBackChargeId ? BackCharge::whereKey($this->editingBackChargeId)->value('subcontractor_id') : null)->find($id);
+
+        if (! $sub) {
+            return;
+        }
+
+        if ((string) $sub->id !== $this->bc_subcontractor_id) {
+            // Another company's employee is never left selected.
+            $this->bc_subcontractor_employee_id = '';
+        }
+
+        $this->bc_subcontractor_id = (string) $sub->id;
+        $this->bcSubcontractorSearch = $sub->company_name;
+    }
+
+    public function clearBcSubcontractor(bool $keepSearch = false): void
+    {
+        $this->bc_subcontractor_id = '';
+        $this->bc_subcontractor_employee_id = '';
+
+        if (! $keepSearch) {
+            $this->bcSubcontractorSearch = '';
+        }
+    }
+
+    public function updatedBcProjectSearch(): void
+    {
+        if ($this->bc_project_id !== '' && $this->bcProjectSearch !== (string) Project::whereKey((int) $this->bc_project_id)->value('project_name')) {
+            $this->clearBcProject(keepSearch: true);
+        }
+    }
+
+    public function selectBcProject(int $id): void
+    {
+        $project = Project::visibleTo(Auth::user())->find($id);
+
+        if (! $project) {
+            return;
+        }
+
+        if ((string) $project->id !== $this->bc_project_id) {
+            // Only a lot of the chosen job site.
+            $this->bc_job_site_id = '';
+        }
+
+        $this->bc_project_id = (string) $project->id;
+        $this->bcProjectSearch = $project->project_name;
+    }
+
+    public function clearBcProject(bool $keepSearch = false): void
+    {
+        $this->bc_project_id = '';
         $this->bc_job_site_id = '';
+
+        if (! $keepSearch) {
+            $this->bcProjectSearch = '';
+        }
     }
 
     protected function backChargeRules(): array
@@ -188,19 +261,35 @@ trait ManagesBackChargeForm
     /** What the screen does once saved: the list opens the new record, the page refreshes. */
     abstract protected function backChargeSaved(BackCharge $backCharge, bool $created): void;
 
-    /** The dropdowns of the form. */
+    /** What the pickers and the dropdowns of the form offer. */
     protected function backChargeFormOptions(): array
     {
         $subcontractorId = $this->bc_subcontractor_id !== '' ? (int) $this->bc_subcontractor_id : null;
+        $subSearch = trim($this->bcSubcontractorSearch);
+        $projectSearch = trim($this->bcProjectSearch);
 
         return [
-            'formSubcontractors' => Subcontractor::activeOrCurrent($subcontractorId)->orderBy('name')->get(['id', 'name']),
+            'subcontractorResults' => $subcontractorId || mb_strlen($subSearch) < 2 ? [] : Subcontractor::active()
+                ->where(fn ($q) => $q->where('name', 'like', "%{$subSearch}%")->orWhere('contact_name', 'like', "%{$subSearch}%"))
+                ->orderBy('name')->take(10)->get(['id', 'name', 'contact_name', 'city', 'state'])
+                ->map(fn ($v) => [
+                    'id' => $v->id,
+                    'label' => $v->company_name,
+                    'meta' => collect([$v->contact_name, trim(($v->city ?? '').($v->city && $v->state ? ', ' : '').($v->state ?? ''))])->filter()->implode(' · ') ?: null,
+                ])->all(),
+            'subcontractorCount' => Subcontractor::active()->count(),
             'formEmployees' => $subcontractorId
                 ? SubcontractorEmployee::where('subcontractor_id', $subcontractorId)
                     ->activeOrCurrent($this->bc_subcontractor_employee_id ?: null)
                     ->orderBy('name')->get(['id', 'name'])
                 : new Collection,
-            'formProjects' => Project::visibleTo(Auth::user())->orderBy('project_name')->get(['id', 'project_name']),
+            'projectResults' => $this->bc_project_id !== '' || mb_strlen($projectSearch) < 2 ? [] : Project::visibleTo(Auth::user())
+                ->with('client:id,company_name')
+                ->where('project_name', 'like', "%{$projectSearch}%")
+                ->orderBy('project_name')->take(10)->get(['id', 'project_name', 'client_id'])
+                ->map(fn (Project $p) => ['id' => $p->id, 'label' => $p->project_name, 'meta' => $p->client?->company_name])
+                ->all(),
+            'projectCount' => Project::visibleTo(Auth::user())->count(),
             'formLots' => $this->bc_project_id !== ''
                 ? JobSite::where('project_id', (int) $this->bc_project_id)->orderBy('job_site_name')->get(['id', 'job_site_name'])
                 : new Collection,

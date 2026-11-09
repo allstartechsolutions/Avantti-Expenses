@@ -4361,5 +4361,10 @@
     "Waived": "Waived",
     "This line was approved or rejected meanwhile. Reload the batch.": "This line was approved or rejected meanwhile. Reload the batch.",
     ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.": ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.",
-    "Show them; they also open when you type an amount.": "Show them; they also open when you type an amount."
+    "Show them; they also open when you type an amount.": "Show them; they also open when you type an amount.",
+    "Search by company or contact name…": "Search by company or contact name…",
+    "No active subcontractor matches. Check the spelling, or register the subcontractor first.": "No active subcontractor matches. Check the spelling, or register the subcontractor first.",
+    "No subcontractors are registered yet.": "No subcontractors are registered yet.",
+    "Search by job site name…": "Search by job site name…",
+    "No job site matches.": "No job site matches."
 }
