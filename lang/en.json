@@ -4366,5 +4366,12 @@
     "No active subcontractor matches. Check the spelling, or register the subcontractor first.": "No active subcontractor matches. Check the spelling, or register the subcontractor first.",
     "No subcontractors are registered yet.": "No subcontractors are registered yet.",
     "Search by job site name…": "Search by job site name…",
-    "No job site matches.": "No job site matches."
+    "No job site matches.": "No job site matches.",
+    "Only where this employee has a contract.": "Only where this employee has a contract.",
+    "Only where this subcontractor has a contract.": "Only where this subcontractor has a contract.",
+    "No job site matches where they have a contract.": "No job site matches where they have a contract.",
+    "Choose the subcontractor first.": "Choose the subcontractor first.",
+    "No contract yet, so there is nowhere to choose.": "No contract yet, so there is nowhere to choose.",
+    "Where they worked, for reference: a back charge can be deducted from a payment on any site.": "Where they worked, for reference: a back charge can be deducted from a payment on any site.",
+    "No lot contract on this job site": "No lot contract on this job site"
 }

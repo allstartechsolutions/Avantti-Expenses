@@ -5750,5 +5750,12 @@
     "No active subcontractor matches. Check the spelling, or register the subcontractor first.": "Nenhum subempreiteiro ativo corresponde. Verifique a grafia ou cadastre o subempreiteiro primeiro.",
     "No subcontractors are registered yet.": "Nenhum subempreiteiro cadastrado ainda.",
     "Search by job site name…": "Buscar pelo nome do projeto…",
-    "No job site matches.": "Nenhum projeto corresponde."
+    "No job site matches.": "Nenhum projeto corresponde.",
+    "Only where this employee has a contract.": "Somente onde este funcionário tem contrato.",
+    "Only where this subcontractor has a contract.": "Somente onde este subempreiteiro tem contrato.",
+    "No job site matches where they have a contract.": "Nenhum projeto corresponde entre os que têm contrato.",
+    "Choose the subcontractor first.": "Escolha o subempreiteiro primeiro.",
+    "No contract yet, so there is nowhere to choose.": "Ainda não há contrato, então não há onde escolher.",
+    "Where they worked, for reference: a back charge can be deducted from a payment on any site.": "Onde trabalharam, para referência: uma glosa pode ser descontada de um pagamento em qualquer obra.",
+    "No lot contract on this job site": "Nenhum contrato de lote neste projeto"
 }

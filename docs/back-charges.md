@@ -14,6 +14,9 @@ out of what Avantti pays them. Requested in the November 2026 change requests (b
   `SubcontractorEmployee` of that company.
 - **Origin lot is optional.** It records where the problem happened, for reference later. A BC
   is often deducted from a contract on a different site.
+- **Only where they worked** (9 Nov 2026): the job site and lot offered are those where the
+  subcontractor — or, once chosen, the employee — has a contract (any status but draft). Checked
+  again on save; an edited back charge keeps the place it already names.
 - **Deducted wherever a sub is paid**: payment batch lines and direct contract payments
   (`/contract-payments` and "record payment" on the contract page).
 - **Deduct all or part.** Payments are rarely the whole contract; each payment takes as much of

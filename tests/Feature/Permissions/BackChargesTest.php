@@ -92,6 +92,18 @@ class BackChargesTest extends TestCase
         ]);
     }
 
+    /** A contract: what says the subcontractor (or employee) worked there. */
+    private function workedOn(JobSite|Project $where, ?SubcontractorEmployee $employee = null, ?Vendor $sub = null, string $status = 'active'): Contract
+    {
+        return Contract::create([
+            'project_id' => $where instanceof JobSite ? $where->project_id : $where->id,
+            'job_site_id' => $where instanceof JobSite ? $where->id : null,
+            'subcontractor_id' => ($sub ?? $this->benitez)->id, 'subcontractor_employee_id' => $employee?->id,
+            'contract_number' => Contract::generateContractNumber(), 'status' => $status,
+            'start_date' => now()->toDateString(), 'amount' => 5000, 'created_by' => $this->admin->id,
+        ]);
+    }
+
     private function deduct(BackCharge $bc, float $amount): void
     {
         $this->actingAs($this->admin);
@@ -152,6 +164,7 @@ class BackChargesTest extends TestCase
     {
         $maria = SubcontractorEmployee::create(['subcontractor_id' => $this->benitez->id, 'name' => 'Maria Benitez']);
         $lot = $this->lot($this->project, 'Lot 12');
+        $this->workedOn($lot, $maria);
 
         Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
             ->call('openBackChargeCreate')
@@ -289,6 +302,7 @@ class BackChargesTest extends TestCase
         $off = $this->subcontractor('Benitez Roofing');
         $off->forceFill(['is_active' => false])->save();
         $maria = SubcontractorEmployee::create(['subcontractor_id' => $this->benitez->id, 'name' => 'Maria Benitez']);
+        $this->workedOn($this->project, $maria);
 
         $form = Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
             ->call('openBackChargeCreate')
@@ -325,5 +339,51 @@ class BackChargesTest extends TestCase
         Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
             ->call('openBackChargeCreate')
             ->assertSeeInOrder(['Where it happened', 'Job Site', 'Lot', 'Choose the job site first']);
+    }
+
+    /** Client, 9 Nov 2026: a back charge only happens where they worked. */
+    public function test_where_it_happened_is_limited_to_where_they_have_a_contract(): void
+    {
+        $maria = SubcontractorEmployee::create(['subcontractor_id' => $this->benitez->id, 'name' => 'Maria Benitez']);
+        $jose = SubcontractorEmployee::create(['subcontractor_id' => $this->benitez->id, 'name' => 'Jose Ruiz']);
+        $lot12 = $this->lot($this->project, 'Lot 12');
+        $lot14 = $this->lot($this->project, 'Lot 14');
+        $lot15 = $this->lot($this->project, 'Lot 15');
+        $this->workedOn($lot12, $maria);
+        $this->workedOn($lot14, $jose);
+        $this->workedOn($lot15, null, $this->subcontractor('Wolf Construction')); // somebody else's
+        $this->workedOn($lot15, null, null, 'draft'); // a draft is not work done
+        $elsewhere = Project::create(['project_name' => 'Kent Annex', 'client_id' => $this->project->client_id, 'contact_person' => 'C', 'email' => 'a@example.test', 'status' => ProjectStatus::CREATED, 'created_by' => $this->admin->id]);
+
+        $form = Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
+            ->call('openBackChargeCreate')
+            ->assertSee(__('Choose the subcontractor first.'))
+            ->call('selectBcSubcontractor', $this->benitez->id)
+            ->set('bcProjectSearch', 'Kent')
+            ->assertViewHas('projectResults', fn ($r) => collect($r)->pluck('id')->all() === [$this->project->id])
+            ->call('selectBcProject', $elsewhere->id)
+            ->assertSet('bc_project_id', '')
+            ->call('selectBcProject', $this->project->id)
+            ->assertViewHas('formLots', fn ($lots) => $lots->pluck('id')->sort()->values()->all() === [$lot12->id, $lot14->id]);
+
+        // Choosing Maria narrows it to her lot, and drops Jose's if it was picked.
+        $form->set('bc_job_site_id', (string) $lot14->id)
+            ->set('bc_subcontractor_employee_id', (string) $maria->id)
+            ->assertSet('bc_job_site_id', '')
+            ->assertViewHas('formLots', fn ($lots) => $lots->pluck('id')->all() === [$lot12->id]);
+
+        // The server holds the line whatever the browser sends.
+        $form->set('bc_job_site_id', (string) $lot15->id)
+            ->set('bc_amount', '100')->set('bc_reason', 'x')
+            ->call('saveBackCharge')
+            ->assertHasErrors('bc_job_site_id');
+        $form->set('bc_project_id', (string) $elsewhere->id)->set('bc_job_site_id', '')
+            ->call('saveBackCharge')
+            ->assertHasErrors('bc_project_id');
+
+        // Another company: what was chosen goes.
+        $form->set('bc_project_id', (string) $this->project->id)
+            ->call('selectBcSubcontractor', Vendor::where('name', 'Wolf Construction')->value('id'))
+            ->assertSet('bc_project_id', '')->assertSet('bcProjectSearch', '');
     }
 }

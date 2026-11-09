@@ -3,6 +3,7 @@
 namespace App\Livewire\Concerns;
 
 use App\Models\BackCharge;
+use App\Models\Contract;
 use App\Models\JobSite;
 use App\Models\Project;
 use App\Models\Subcontractor;
@@ -115,8 +116,9 @@ trait ManagesBackChargeForm
         }
 
         if ((string) $sub->id !== $this->bc_subcontractor_id) {
-            // Another company's employee is never left selected.
+            // Another company's employee — and the places it worked — are never left selected.
             $this->bc_subcontractor_employee_id = '';
+            $this->clearBcProject();
         }
 
         $this->bc_subcontractor_id = (string) $sub->id;
@@ -127,10 +129,67 @@ trait ManagesBackChargeForm
     {
         $this->bc_subcontractor_id = '';
         $this->bc_subcontractor_employee_id = '';
+        $this->clearBcProject();
 
         if (! $keepSearch) {
             $this->bcSubcontractorSearch = '';
         }
+    }
+
+    /** Choosing the employee narrows where it happened to that employee's contracts. */
+    public function updatedBcSubcontractorEmployeeId(): void
+    {
+        if ($this->bc_project_id !== '' && ! in_array((int) $this->bc_project_id, $this->workedProjectIds(), true)) {
+            $this->clearBcProject();
+        } elseif ($this->bc_job_site_id !== '' && ! in_array((int) $this->bc_job_site_id, $this->workedLotIds(), true)) {
+            $this->bc_job_site_id = '';
+        }
+    }
+
+    /**
+     * The contracts that say where the subcontractor — or the chosen
+     * employee — worked: a back charge only happens there (client, 9 Nov
+     * 2026). A draft is not work done; a cancelled contract may have been.
+     */
+    protected function workedContracts()
+    {
+        return Contract::query()
+            ->where('status', '!=', 'draft')
+            ->where('subcontractor_id', (int) $this->bc_subcontractor_id)
+            ->when($this->bc_subcontractor_employee_id !== '', fn ($q) => $q->where('subcontractor_employee_id', (int) $this->bc_subcontractor_employee_id));
+    }
+
+    /** @return array<int, int> plus what an edited back charge already names */
+    protected function workedProjectIds(): array
+    {
+        if ($this->bc_subcontractor_id === '') {
+            return [];
+        }
+
+        $ids = $this->workedContracts()->distinct()->pluck('project_id')->map(fn ($id) => (int) $id)->all();
+
+        if ($this->editingBackChargeId && ($saved = BackCharge::whereKey($this->editingBackChargeId)->value('project_id'))) {
+            $ids[] = (int) $saved;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /** @return array<int, int> the lots of the chosen job site the subcontractor worked on */
+    protected function workedLotIds(): array
+    {
+        if ($this->bc_subcontractor_id === '' || $this->bc_project_id === '') {
+            return [];
+        }
+
+        $ids = $this->workedContracts()->where('project_id', (int) $this->bc_project_id)
+            ->whereNotNull('job_site_id')->distinct()->pluck('job_site_id')->map(fn ($id) => (int) $id)->all();
+
+        if ($this->editingBackChargeId && ($saved = BackCharge::whereKey($this->editingBackChargeId)->value('job_site_id'))) {
+            $ids[] = (int) $saved;
+        }
+
+        return array_values(array_unique($ids));
     }
 
     public function updatedBcProjectSearch(): void
@@ -142,7 +201,7 @@ trait ManagesBackChargeForm
 
     public function selectBcProject(int $id): void
     {
-        $project = Project::visibleTo(Auth::user())->find($id);
+        $project = Project::visibleTo(Auth::user())->whereKey($this->workedProjectIds())->find($id);
 
         if (! $project) {
             return;
@@ -173,9 +232,9 @@ trait ManagesBackChargeForm
             'bc_subcontractor_id' => ['required', Rule::exists('vendors', 'id')->where('is_subcontractor', true)],
             // Only an employee of the chosen company.
             'bc_subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', (int) $this->bc_subcontractor_id)],
-            'bc_project_id' => ['nullable', Rule::exists('projects', 'id')],
-            // Only a lot of the chosen job site.
-            'bc_job_site_id' => ['nullable', Rule::exists('job_sites', 'id')->where('project_id', (int) $this->bc_project_id)],
+            // Only where the subcontractor (or the employee) has a contract.
+            'bc_project_id' => ['nullable', Rule::in($this->workedProjectIds())],
+            'bc_job_site_id' => ['nullable', Rule::in($this->workedLotIds())],
             // Zero is allowed on an edit: waiving a back charge nothing was
             // deducted from is lowering it to what was deducted — nothing.
             'bc_amount' => ['required', 'numeric', $this->editingBackChargeId ? 'min:0' : 'min:0.01', 'max:99999999'],
@@ -284,14 +343,15 @@ trait ManagesBackChargeForm
                     ->orderBy('name')->get(['id', 'name'])
                 : new Collection,
             'projectResults' => $this->bc_project_id !== '' || mb_strlen($projectSearch) < 2 ? [] : Project::visibleTo(Auth::user())
+                ->whereKey($this->workedProjectIds())
                 ->with('client:id,company_name')
                 ->where('project_name', 'like', "%{$projectSearch}%")
                 ->orderBy('project_name')->take(10)->get(['id', 'project_name', 'client_id'])
                 ->map(fn (Project $p) => ['id' => $p->id, 'label' => $p->project_name, 'meta' => $p->client?->company_name])
                 ->all(),
-            'projectCount' => Project::visibleTo(Auth::user())->count(),
+            'projectCount' => $this->bc_subcontractor_id === '' ? 0 : Project::visibleTo(Auth::user())->whereKey($this->workedProjectIds())->count(),
             'formLots' => $this->bc_project_id !== ''
-                ? JobSite::where('project_id', (int) $this->bc_project_id)->orderBy('job_site_name')->get(['id', 'job_site_name'])
+                ? JobSite::whereKey($this->workedLotIds())->orderBy('job_site_name')->get(['id', 'job_site_name'])
                 : new Collection,
         ];
     }

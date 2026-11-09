@@ -62,7 +62,7 @@
                             </div>
                             <div>
                                 <label for="bc_subcontractor_employee_id" class="{{ $label }}">{{ __('Employee') }} <span class="text-xs font-normal text-slate-400">({{ __('optional') }})</span></label>
-                                <select id="bc_subcontractor_employee_id" wire:model="bc_subcontractor_employee_id" class="{{ $field }}" @disabled($bc_subcontractor_id === '')>
+                                <select id="bc_subcontractor_employee_id" wire:model.live="bc_subcontractor_employee_id" class="{{ $field }}" @disabled($bc_subcontractor_id === '')>
                                     <option value="">{{ $bc_subcontractor_id === '' ? __('Choose the subcontractor first') : __('The company itself') }}</option>
                                     @foreach($formEmployees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->name }}</option>
@@ -92,7 +92,7 @@
 
                     <div class="{{ $card }}">
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ __('Where it happened') }} <span class="text-xs font-normal text-slate-400">({{ __('optional') }})</span></h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{{ __('For reference: a back charge can be deducted from a payment on any site.') }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{{ __('Where they worked, for reference: a back charge can be deducted from a payment on any site.') }}</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <x-ui.search-select
@@ -108,12 +108,14 @@
                                     :minChars="2"
                                     :total="$projectCount"
                                     error="bc_project_id"
-                                    :empty="__('No job site matches.')" />
+                                    :hint="$bc_subcontractor_id !== '' ? ($bc_subcontractor_employee_id !== '' ? __('Only where this employee has a contract.') : __('Only where this subcontractor has a contract.')) : null"
+                                    :empty="__('No job site matches where they have a contract.')"
+                                    :unavailable="$bc_subcontractor_id === '' ? __('Choose the subcontractor first.') : ($projectCount === 0 ? __('No contract yet, so there is nowhere to choose.') : null)" />
                             </div>
                             <div>
                                 <label for="bc_job_site_id" class="{{ $label }}">{{ __('Lot') }}</label>
                                 <select id="bc_job_site_id" wire:model="bc_job_site_id" class="{{ $field }}" @disabled($bc_project_id === '')>
-                                    <option value="">{{ $bc_project_id === '' ? __('Choose the job site first') : __('None') }}</option>
+                                    <option value="">{{ $bc_project_id === '' ? __('Choose the job site first') : ($formLots->isEmpty() ? __('No lot contract on this job site') : __('None')) }}</option>
                                     @foreach($formLots as $lot)
                                         <option value="{{ $lot->id }}">{{ $lot->job_site_name }}</option>
                                     @endforeach
