@@ -185,8 +185,12 @@ trait ManagesBackChargeForm
         $ids = $this->workedContracts()->where('project_id', (int) $this->bc_project_id)
             ->whereNotNull('job_site_id')->distinct()->pluck('job_site_id')->map(fn ($id) => (int) $id)->all();
 
-        if ($this->editingBackChargeId && ($saved = BackCharge::whereKey($this->editingBackChargeId)->value('job_site_id'))) {
-            $ids[] = (int) $saved;
+        // The lot an edited back charge already names stays offered — but only
+        // under its own job site, never carried over to another one.
+        $saved = $this->editingBackChargeId ? BackCharge::whereKey($this->editingBackChargeId)->first(['project_id', 'job_site_id']) : null;
+
+        if ($saved?->job_site_id && (int) $saved->project_id === (int) $this->bc_project_id) {
+            $ids[] = (int) $saved->job_site_id;
         }
 
         return array_values(array_unique($ids));
@@ -234,7 +238,7 @@ trait ManagesBackChargeForm
             'bc_subcontractor_employee_id' => ['nullable', Rule::exists('subcontractor_employees', 'id')->where('subcontractor_id', (int) $this->bc_subcontractor_id)],
             // Only where the subcontractor (or the employee) has a contract.
             'bc_project_id' => ['nullable', Rule::in($this->workedProjectIds())],
-            'bc_job_site_id' => ['nullable', Rule::in($this->workedLotIds())],
+            'bc_job_site_id' => ['nullable', Rule::in($this->workedLotIds()), Rule::exists('job_sites', 'id')->where('project_id', (int) $this->bc_project_id)],
             // Zero is allowed on an edit: waiving a back charge nothing was
             // deducted from is lowering it to what was deducted — nothing.
             'bc_amount' => ['required', 'numeric', $this->editingBackChargeId ? 'min:0' : 'min:0.01', 'max:99999999'],

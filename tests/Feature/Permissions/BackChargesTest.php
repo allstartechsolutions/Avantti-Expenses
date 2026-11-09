@@ -386,4 +386,28 @@ class BackChargesTest extends TestCase
             ->call('selectBcSubcontractor', Vendor::where('name', 'Wolf Construction')->value('id'))
             ->assertSet('bc_project_id', '')->assertSet('bcProjectSearch', '');
     }
+
+    /** Codex, 9 Nov 2026: an edited back charge's lot is never carried over to another job site. */
+    public function test_editing_never_carries_the_saved_lot_to_another_job_site(): void
+    {
+        $lot12 = $this->lot($this->project, 'Lot 12');
+        $this->workedOn($lot12);
+        $annex = Project::create(['project_name' => 'Kent Annex', 'client_id' => $this->project->client_id, 'contact_person' => 'C', 'email' => 'a@example.test', 'status' => ProjectStatus::CREATED, 'created_by' => $this->admin->id]);
+        $annexLot = $this->lot($annex, 'Lot 1');
+        $this->workedOn($annexLot);
+        $bc = $this->backCharge(100, ['project_id' => $this->project->id, 'job_site_id' => $lot12->id]);
+
+        $form = Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
+            ->call('openBackChargeEdit', $bc->id)
+            ->assertViewHas('formLots', fn ($lots) => $lots->pluck('id')->all() === [$lot12->id])
+            ->call('selectBcProject', $annex->id)
+            ->assertViewHas('formLots', fn ($lots) => $lots->pluck('id')->all() === [$annexLot->id]);
+
+        // A crafted request pairing the annex with the old lot is refused.
+        $form->set('bc_job_site_id', (string) $lot12->id)->call('saveBackCharge')->assertHasErrors('bc_job_site_id');
+        $this->assertSame($this->project->id, $bc->fresh()->project_id);
+
+        $form->set('bc_job_site_id', (string) $annexLot->id)->call('saveBackCharge')->assertHasNoErrors();
+        $this->assertSame([$annex->id, $annexLot->id], [$bc->fresh()->project_id, $bc->fresh()->job_site_id]);
+    }
 }

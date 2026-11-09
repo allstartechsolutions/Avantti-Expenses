@@ -234,6 +234,12 @@ Six findings, all confirmed and fixed, pinned in `tests/Feature/BackCharge/BackC
   zero (status **Waived**); a new one still needs an amount.
 - **P2** the Paid column sorts by the cash it shows, not the gross.
 
+Second pass (`codex review --base aca670d`, the five follow-up commits): one finding, fixed and
+pinned in `BackChargesTest::test_editing_never_carries_the_saved_lot_to_another_job_site` —
+**P2** editing a back charge and switching its job site kept offering (and accepted) the old
+lot under the new job site. The saved lot is now kept only under its own job site, and the lot
+must belong to the chosen job site on save.
+
 ### Testing by hand
 
 `php artisan db:seed --class=BackChargeTestSeeder` (refuses on production; additive, a second
