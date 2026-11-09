@@ -113,7 +113,7 @@ class BackChargeIndex extends Component
         return response()->streamDownload(function () use ($rows, $cell, $money) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [__('Number'), __('Date'), __('Subcontractor'), __('Employee'), __('Job Site'), __('Lot'), __('Reason'), __('Description'), __('Amount'), __('Deducted'), __('Remaining'), __('Status'), __('Created by')]);
+            fputcsv($out, [__('Number'), __('Date'), __('Subcontractor'), __('Employee'), __('Project'), __('Job Site'), __('Reason'), __('Description'), __('Amount'), __('Deducted'), __('Remaining'), __('Status'), __('Created by')]);
 
             foreach ($rows as $bc) {
                 fputcsv($out, array_map($cell, [

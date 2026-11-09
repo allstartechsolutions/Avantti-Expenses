@@ -318,4 +318,12 @@ class BackChargesTest extends TestCase
             ->assertSet('bcSubcontractorSearch', 'Benitez Carpentry')
             ->assertSet('bcProjectSearch', 'Kent Island');
     }
+
+    /** The code's Project is the screen's Job Site, its JobSite the screen's Lot. */
+    public function test_where_it_happened_says_job_site_and_lot(): void
+    {
+        Livewire::actingAs($this->admin)->test(BackChargeIndex::class)
+            ->call('openBackChargeCreate')
+            ->assertSeeInOrder(['Where it happened', 'Job Site', 'Lot', 'Choose the job site first']);
+    }
 }

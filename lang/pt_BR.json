@@ -5708,7 +5708,7 @@
     "e.g. Damaged drywall in the garage": "ex.: Drywall danificado na garagem",
     "What was wrong, who found it, how the amount was reached…": "O que estava errado, quem encontrou, como se chegou ao valor…",
     "For reference: a back charge can be deducted from a payment on any site.": "Para referência: uma glosa pode ser descontada de um pagamento em qualquer obra.",
-    "Choose the job site first": "Escolha o local primeiro",
+    "Choose the job site first": "Escolha o projeto primeiro",
     "Deducted so far": "Descontado até agora",
     "Remaining after saving": "Restante após salvar",
     "How it is deducted": "Como é descontada",
@@ -5739,7 +5739,7 @@
     "Everything has been deducted.": "Tudo já foi descontado.",
     "None recorded here.": "Nenhuma registrada aqui.",
     "Started on this lot": "Originadas neste lote",
-    "Started on this job site or one of its lots": "Originadas neste local ou em um de seus lotes",
+    "Started on this job site or one of its lots": "Originadas neste projeto ou em um de seus lotes",
     "Enter an amount to deduct them from this payment.": "Informe um valor para descontá-las deste pagamento.",
     ":count open back charge|:count open back charges": ":count glosa em aberto|:count glosas em aberto",
     "Waived": "Perdoada",
@@ -5749,6 +5749,6 @@
     "Search by company or contact name…": "Buscar por empresa ou nome do contato…",
     "No active subcontractor matches. Check the spelling, or register the subcontractor first.": "Nenhum subempreiteiro ativo corresponde. Verifique a grafia ou cadastre o subempreiteiro primeiro.",
     "No subcontractors are registered yet.": "Nenhum subempreiteiro cadastrado ainda.",
-    "Search by job site name…": "Buscar pelo nome do local…",
-    "No job site matches.": "Nenhum local corresponde."
+    "Search by job site name…": "Buscar pelo nome do projeto…",
+    "No job site matches.": "Nenhum projeto corresponde."
 }

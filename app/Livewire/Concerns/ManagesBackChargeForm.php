@@ -190,7 +190,7 @@ trait ManagesBackChargeForm
         return [
             'bc_subcontractor_id' => __('subcontractor'),
             'bc_subcontractor_employee_id' => __('employee'),
-            'bc_project_id' => __('job site'),
+            'bc_project_id' => __('project'), // shown as "job site": the code's Project is the screen's Job Site
             'bc_job_site_id' => __('lot'),
             'bc_amount' => __('amount'),
             'bc_date' => __('date'),

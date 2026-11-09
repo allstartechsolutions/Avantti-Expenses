@@ -97,7 +97,7 @@
                             <div>
                                 <x-ui.search-select
                                     wire:model.live.debounce.300ms="bcProjectSearch"
-                                    :label="__('Job Site')"
+                                    :label="__('Project')"
                                     :placeholder="__('Search by job site name…')"
                                     :results="$projectResults"
                                     :selectedId="$bc_project_id !== '' ? (int) $bc_project_id : null"
