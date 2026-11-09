@@ -370,6 +370,9 @@
                             $isRejected = $batchItem && $batchItem->status === 'rejected';
                             $isPending = $batchItem && $batchItem->status === 'pending';
                             $isExpanded = in_array($contract->id, $expandedContracts);
+                            // Whether back charges may be taken out of this row: the tag, the panel and the save agree.
+                            $deductable = ! $isApproved && ! $isRejected && ! $isPaidOrCancelled && $balance > 0
+                                && $paymentBatch->canBeEdited() && ! $this->batchBlockReason($contract) && $this->canDeduct();
                         @endphp
                         @if($header = $groupHeaders[$contract->id] ?? null)
                             @include('livewire.contract.partials.group-header', ['header' => $header, 'trailing' => 7])
@@ -392,11 +395,14 @@
                                         {{ Str::limit($contract->subcontractorEmployee->name, 30) }}
                                     </div>
                                 @endif
-                                @if(! empty($backChargeRows[$contract->id]))
-                                    <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                                          title="{{ __('Enter an amount to deduct them from this payment.') }}">
+                                @if($deductable && ! empty($backChargeRows[$contract->id]))
+                                    <button type="button"
+                                            x-on:click="$dispatch('toggle-back-charges-{{ $contract->id }}')"
+                                            class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                                            title="{{ __('Show them; they also open when you type an amount.') }}">
                                         {{ trans_choice(':count open back charge|:count open back charges', count($backChargeRows[$contract->id]), ['count' => count($backChargeRows[$contract->id])]) }}
-                                    </span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
                                 @endif
                             </td>
                             <!-- Project -->
@@ -626,11 +632,7 @@
                             </td>
                         </tr>
                         {{-- Back charges: deduct on an open line, show what a paid line took --}}
-                        @php
-                            $lineDeductions = $batchItem?->backChargeDeductions ?? collect();
-                            $deductable = ! $isApproved && ! $isRejected && ! $isPaidOrCancelled && $balance > 0
-                                && $paymentBatch->canBeEdited() && ! $this->batchBlockReason($contract) && $this->canDeduct();
-                        @endphp
+                        @php $lineDeductions = $batchItem?->backChargeDeductions ?? collect(); @endphp
                         @if($deductable && ! empty($backChargeRows[$contract->id]))
                             @include('livewire.back-charge.partials.deduct-panel', ['rows' => $backChargeRows[$contract->id], 'colspan' => 15])
                         @elseif($lineDeductions->isNotEmpty())

@@ -4360,5 +4360,6 @@
     ":count open back charge|:count open back charges": ":count open back charge|:count open back charges",
     "Waived": "Waived",
     "This line was approved or rejected meanwhile. Reload the batch.": "This line was approved or rejected meanwhile. Reload the batch.",
-    ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.": ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it."
+    ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.": ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.",
+    "Show them; they also open when you type an amount.": "Show them; they also open when you type an amount."
 }

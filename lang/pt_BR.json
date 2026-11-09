@@ -5744,5 +5744,6 @@
     ":count open back charge|:count open back charges": ":count glosa em aberto|:count glosas em aberto",
     "Waived": "Perdoada",
     "This line was approved or rejected meanwhile. Reload the batch.": "Esta linha foi aprovada ou rejeitada nesse meio-tempo. Recarregue o lote.",
-    ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.": ":number: uma glosa desta linha não é devida pelo subempreiteiro ou funcionário atual do contrato. Abra o lote e remova-a."
+    ":number: a back charge on this line is not owed by the contract's current subcontractor or employee. Open the batch and clear it.": ":number: uma glosa desta linha não é devida pelo subempreiteiro ou funcionário atual do contrato. Abra o lote e remova-a.",
+    "Show them; they also open when you type an amount.": "Mostrar; também abrem quando você digita um valor."
 }

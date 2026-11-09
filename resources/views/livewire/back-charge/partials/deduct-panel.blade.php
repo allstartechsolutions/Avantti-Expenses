@@ -12,11 +12,13 @@
     $currency = config('app.currency');
     $locale = config('app.locale');
 @endphp
-{{-- Shown once the row has an amount (or already deducts): a subcontractor
-     with many contracts would otherwise get a panel under every one. --}}
+{{-- Shown once the row has an amount (or already deducts), or when its
+     "open back charges" tag is clicked: a subcontractor with many contracts
+     would otherwise get a panel under every one. --}}
 <tr wire:key="contract-{{ $contract->id }}-back-charges" class="bg-amber-50/60 dark:bg-amber-900/10"
     x-data="{
                 id: @js((string) $contract->id),
+                forced: false,
                 money: new Intl.NumberFormat(@js(str_replace('_', '-', $locale)), { style: 'currency', currency: @js($currency) }),
                 get amount() { return parseFloat(($wire.payAmounts ?? {})[this.id]) || 0; },
                 value(bc) { return parseFloat((($wire.payDeductions ?? {})[this.id] ?? {})[bc]) || 0; },
@@ -29,7 +31,8 @@
                     $wire.set('payDeductions.' + this.id + '.' + bc, Math.max(0, Math.min(available, room)).toFixed(2), false);
                 },
              }"
-    x-show="amount > 0 || deducted > 0" x-cloak>
+    x-on:toggle-back-charges-{{ $contract->id }}.window="forced = ! forced"
+    x-show="forced || amount > 0 || deducted > 0" x-cloak>
     <td colspan="{{ $colspan }}" class="px-4 py-3">
         <div class="ml-4 max-w-4xl">
             <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
