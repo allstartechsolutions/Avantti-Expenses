@@ -3,6 +3,7 @@
 namespace App\Livewire\Project;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\BackCharge;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
@@ -142,6 +143,10 @@ class ProjectOverview extends Component
     {
         return view('livewire.project.project-overview', [
             'financials' => ProjectFinancials::forProject($this->project),
+            // Back charges that started on this job site or one of its lots — a label, not money.
+            'originBackCharges' => auth()->user()->can('back-charges.view')
+                ? BackCharge::where('project_id', $this->project->id)->withDeducted()->with('subcontractor:id,name', 'jobSite:id,job_site_name')->orderByDesc('date')->get()
+                : collect(),
         ])->layout('components.layouts.app');
     }
 }

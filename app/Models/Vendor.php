@@ -29,7 +29,7 @@ class Vendor extends Model
      */
     public const SUPPLIER_FK_TABLES = ['expenses', 'catalog_items', 'purchase_orders', 'equipment', 'equipment_maintenances'];
 
-    public const SUBCONTRACTOR_FK_TABLES = ['contracts', 'payment_batches', 'subcontractor_documents', 'subcontractor_employees'];
+    public const SUBCONTRACTOR_FK_TABLES = ['contracts', 'payment_batches', 'subcontractor_documents', 'subcontractor_employees', 'back_charges'];
 
     protected $fillable = [];
 
@@ -64,7 +64,8 @@ class Vendor extends Model
      */
     public static function hasSubcontractorRecords(int $vendorId): bool
     {
-        foreach (['contracts', 'payment_batches'] as $table) {
+        // Back charges are money owed: they block a delete like a contract does.
+        foreach (['contracts', 'payment_batches', 'back_charges'] as $table) {
             if (DB::table($table)->where('subcontractor_id', $vendorId)->exists()) {
                 return true;
             }
@@ -109,6 +110,11 @@ class Vendor extends Model
     public function paymentBatches(): HasMany
     {
         return $this->hasMany(PaymentBatch::class, 'subcontractor_id');
+    }
+
+    public function backCharges(): HasMany
+    {
+        return $this->hasMany(BackCharge::class, 'subcontractor_id');
     }
 
     public function documents(): HasMany

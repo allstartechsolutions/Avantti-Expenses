@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentBatchItem extends Model
 {
@@ -38,6 +39,27 @@ class PaymentBatchItem extends Model
     public function batch(): BelongsTo
     {
         return $this->belongsTo(PaymentBatch::class, 'payment_batch_id');
+    }
+
+    public function backChargeDeductions(): HasMany
+    {
+        return $this->hasMany(BackChargeDeduction::class);
+    }
+
+    /** Back charges deducted on this line (docs/back-charges.md). */
+    public function getBackChargesDeducted(): float
+    {
+        $cents = $this->relationLoaded('backChargeDeductions')
+            ? $this->backChargeDeductions->sum(fn ($d) => $d->getRawOriginal('amount'))
+            : $this->backChargeDeductions()->sum('amount');
+
+        return round($cents / 100, 2);
+    }
+
+    /** The check: the line less the back charges deducted on it. */
+    public function getNetAmount(): float
+    {
+        return round($this->amount - $this->getBackChargesDeducted(), 2);
     }
 
     public function contract(): BelongsTo

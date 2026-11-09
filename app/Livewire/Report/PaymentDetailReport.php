@@ -260,7 +260,7 @@ class PaymentDetailReport extends Component
 
     protected function detailCsv(PaymentDetailReportService $service): array
     {
-        $headers = [__('Date'), __('Type'), __('Vendor'), __('Employee'), __('Item'), __('Project'), __('Job Site'), __('Installment'), __('Status'), __('Paid Date'), __('Paid By'), __('Reference'), __('Check number'), __('Phase'), __('Notes'), __('Batch notes'), __('Amount')];
+        $headers = [__('Date'), __('Type'), __('Vendor'), __('Employee'), __('Item'), __('Project'), __('Job Site'), __('Installment'), __('Status'), __('Paid Date'), __('Paid By'), __('Reference'), __('Check number'), __('Phase'), __('Notes'), __('Batch notes'), __('Back charges deducted'), __('Amount')];
         $rows = $service->rows()->map(fn ($r) => [
             $r['date']?->format('Y-m-d') ?? '',
             $r['type'] === 'contract' ? __('Contract') : __('Expense'),
@@ -278,11 +278,12 @@ class PaymentDetailReport extends Component
             $r['phase'] ?? '',
             $r['notes'] ?? '',
             $r['batch_notes'] ?? '',
+            collect($r['back_charges'] ?? [])->map(fn ($bc) => $bc['number'].' '.$this->money($bc['amount']))->implode('; '),
             $this->money($r['amount']),
         ])->all();
 
         $k = $service->kpis();
-        $totals = [__('Total'), '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
+        $totals = [__('Total'), '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', $this->money($k['total'])];
 
         return [$headers, $rows, $totals];
     }

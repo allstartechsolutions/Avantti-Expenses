@@ -113,14 +113,15 @@ class WorkerShow extends Component
             ->visibleTo($user)
             ->whereIn('subcontractor_employee_id', $employees->pluck('id'))
             ->with(['project', 'jobSite', 'subcontractor', 'subcontractorEmployee'])
+            ->withBackChargesDeducted()
             ->orderByDesc('start_date')
             ->get();
 
         $contractTotals = [
             'count' => $contracts->count(),
             'amount' => $contracts->sum(fn (Contract $c) => $c->amount),
-            'adjusted' => $contracts->sum(fn (Contract $c) => $c->getAdjustedAmount()),
-            'paid' => $contracts->sum(fn (Contract $c) => $c->getAmountPaid()),
+            'adjusted' => $contracts->sum(fn (Contract $c) => $c->getNetAmount()),
+            'paid' => $contracts->sum(fn (Contract $c) => $c->getCashPaid()),
             'open' => $contracts->whereIn('status', ['active', 'partially_paid'])->count(),
         ];
 

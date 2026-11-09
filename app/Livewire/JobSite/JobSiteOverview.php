@@ -3,6 +3,7 @@
 namespace App\Livewire\JobSite;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\BackCharge;
 use App\Models\ChangeOrder;
 use App\Models\DailyReport;
 use App\Models\DailyReportImage;
@@ -151,16 +152,20 @@ class JobSiteOverview extends Component
         $expenses = $this->jobSite->expenses()->get();
         $totalExpensesAmount = $expenses->sum('total_amount');
 
-        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
         $totalContractsAdjusted = 0;
         $totalContractsPaid = 0;
         foreach ($contracts as $contract) {
-            $totalContractsAdjusted += $contract->getAdjustedAmount();
-            $totalContractsPaid += $contract->getAmountPaid();
+            $totalContractsAdjusted += $contract->getNetAmount();
+            $totalContractsPaid += $contract->getCashPaid();
         }
         $totalContractsUnpaid = round($totalContractsAdjusted - $totalContractsPaid, 2);
 
         return view('livewire.job-site.job-site-overview', [
+            // Back charges that started on this lot — a label, not money (docs/back-charges.md).
+            'originBackCharges' => auth()->user()->can('back-charges.view')
+                ? BackCharge::where('job_site_id', $this->jobSite->id)->withDeducted()->with('subcontractor:id,name')->orderByDesc('date')->get()
+                : collect(),
             'changeOrders' => $changeOrders,
             'totalChangeOrdersAmount' => $totalChangeOrdersAmount,
             'pendingChangeOrdersAmount' => $pendingChangeOrdersAmount,

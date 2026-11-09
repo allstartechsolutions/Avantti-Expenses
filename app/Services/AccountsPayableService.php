@@ -143,6 +143,7 @@ class AccountsPayableService
                 'contract.project:id,project_name',
                 'contract.jobSite:id,job_site_name',
                 'contract.subcontractor:id,name',
+                'backChargeDeductions',
             ])
             ->whereHas('contract', function ($q) {
                 $q->where('status', '!=', 'cancelled');
@@ -168,6 +169,7 @@ class AccountsPayableService
                 'subcontractor:id,name',
                 'changeOrders',
                 'payments',
+                'backChargeDeductions',
                 'scheduleItems.payments',
                 'scheduleItems.measurements.payments',
             ])
@@ -274,7 +276,8 @@ class AccountsPayableService
             'job_site' => $c?->jobSite?->job_site_name,
             'job_site_id' => $c?->job_site_id,
             'status' => 'paid',
-            'amount' => (float) $p->amount,
+            // The check, not the gross: back charges deducted never left the bank.
+            'amount' => $p->getNetAmount(),
         ];
     }
 
@@ -392,9 +395,8 @@ class AccountsPayableService
         $paidOne = $this->paidOneTime()
             ->whereRaw('COALESCE(paid_date, expense_date) BETWEEN ? AND ?', [$from, $to])
             ->get();
-        $contractPaidSum = $this->paidContractPayments()
-            ->whereBetween('payment_date', [$from, $to])
-            ->sum('amount');
+        $contractPaidSum = ContractPayment::cashCents($this->paidContractPayments()
+            ->whereBetween('payment_date', [$from, $to]));
 
         $paidExpenses = round(($paidInstSum / 100) + $paidOne->sum('total_amount'), 2);
         $paidSubcontractors = round($contractPaidSum / 100, 2);
@@ -441,6 +443,7 @@ class AccountsPayableService
                 'jobSite:id,job_site_name',
                 'subcontractor:id,name',
             ])
+            ->withBackChargesDeducted()
             ->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))
@@ -454,8 +457,8 @@ class AccountsPayableService
                     'job_site' => $c->jobSite?->job_site_name,
                     'job_site_id' => $c->job_site_id,
                     'status' => $c->status,
-                    'adjusted_amount' => $c->getAdjustedAmount(),
-                    'paid' => $c->getAmountPaid(),
+                    'adjusted_amount' => $c->getNetAmount(),
+                    'paid' => $c->getCashPaid(),
                     'balance' => $c->getBalanceDue(),
                 ];
             })
@@ -474,14 +477,15 @@ class AccountsPayableService
     {
         return Contract::query()
             ->with(['subcontractor:id,name'])
+            ->withBackChargesDeducted()
             ->committed()
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->tap(fn ($q) => $this->applyClientScope($q))
             ->get()
             ->groupBy('subcontractor_id')
             ->map(function (Collection $contracts) {
-                $contractValue = round($contracts->sum(fn (Contract $c) => $c->getAdjustedAmount()), 2);
-                $paid = round($contracts->sum(fn (Contract $c) => $c->getAmountPaid()), 2);
+                $contractValue = round($contracts->sum(fn (Contract $c) => $c->getNetAmount()), 2);
+                $paid = round($contracts->sum(fn (Contract $c) => $c->getCashPaid()), 2);
 
                 return [
                     'subcontractor' => $contracts->first()->subcontractor?->company_name,

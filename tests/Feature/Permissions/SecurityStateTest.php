@@ -96,6 +96,7 @@ class SecurityStateTest extends TestCase
         foreach ([
             route('users.index'),
             route('login-activity.index'),
+            route('back-charges.index'),
             route('cost-codes.templates.index'),
             route('reports.sales-tax'),
             route('system-settings.index'),
@@ -150,7 +151,7 @@ class SecurityStateTest extends TestCase
 
         $this->assertSame(
             [
-                'access', 'approvals', 'assignment-defaults', 'budget', 'catalog', 'change-orders', 'clients', 'company', 'company-expenses',
+                'access', 'approvals', 'assignment-defaults', 'back-charges', 'budget', 'catalog', 'change-orders', 'clients', 'company', 'company-expenses',
                 'contracts', 'cost-codes',
                 'daily-reports', 'dashboard', 'documentation', 'documents', 'equipment', 'estimates', 'expenses', 'income', 'invoices',
                 'login-activity', 'meetings', 'payments', 'project',

@@ -212,8 +212,8 @@
                                 <td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusBadge($contract->status) }}">{{ $contract->getStatusLabel() }}</span></td>
                                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ $contract->start_date?->appDate() ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ $contract->end_date?->appDate() ?? '—' }}</td>
-                                <td class="px-6 py-4 text-sm text-right text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$contract->getAdjustedAmount()" :scope="$contract->jobSite ?? $contract->project" /></td>
-                                <td class="px-6 py-4 text-sm text-right text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$contract->getAmountPaid()" :scope="$contract->jobSite ?? $contract->project" /></td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$contract->getNetAmount()" :scope="$contract->jobSite ?? $contract->project" /></td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-900 dark:text-white whitespace-nowrap"><x-ui.money :amount="$contract->getCashPaid()" :scope="$contract->jobSite ?? $contract->project" /></td>
                             </tr>
                         @endforeach
                     </tbody>

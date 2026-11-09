@@ -3,11 +3,13 @@
 namespace App\Livewire\Contract;
 
 use App\Livewire\Concerns\AuthorizesAbility;
+use App\Models\BackCharge;
 use App\Models\Contract;
 use App\Models\ContractMeasurement;
 use App\Models\ContractPayment;
 use App\Models\ContractPaymentItem;
 use App\Models\ContractScheduleItem;
+use App\Services\BackChargeDeductions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +42,9 @@ class ContractShow extends Component
     public $paymentReference = '';
 
     public $paymentNotes = '';
+
+    /** Back charges to deduct from this payment, [back charge id] => amount (docs/back-charges.md). */
+    public array $paymentDeductions = [];
 
     /**
      * Optional cronograma parcela this payment settles. Empty means an
@@ -99,6 +104,8 @@ class ContractShow extends Component
             'payments.measurement',
             'payments.items.budgetItem',
             'payments.batchItem.batch',
+            'payments.backChargeDeductions.backCharge:id,number,reason',
+            'backChargeDeductions.backCharge:id,number,reason',
             'changeOrders.createdBy',
         ]);
     }
@@ -173,6 +180,30 @@ class ContractShow extends Component
      * much may still be paid without a parcela, otherwise it would be
      * impossible to pay at all.
      */
+    /** Whether this person may take back charges out of the payment. */
+    public function canDeduct(): bool
+    {
+        return $this->allowsAbility('back-charges.deduct');
+    }
+
+    /**
+     * The open back charges this contract's payments may take: the
+     * company's, plus the employee's when the contract names one.
+     */
+    public function getOpenBackChargesProperty()
+    {
+        if (! $this->canDeduct() || ! $this->contract->subcontractor_id) {
+            return collect();
+        }
+
+        return BackCharge::deductibleFrom($this->contract)
+            ->open()
+            ->withDeducted()
+            ->with('subcontractorEmployee:id,name')
+            ->orderBy('date')->orderBy('id')
+            ->get();
+    }
+
     public function getUnscheduledRemainingProperty(): float
     {
         return $this->contract->getUnscheduledRemaining();
@@ -481,6 +512,7 @@ class ContractShow extends Component
         $this->paymentDate = now()->format('Y-m-d');
         $this->paymentReference = '';
         $this->paymentNotes = '';
+        $this->paymentDeductions = [];
         $this->paymentScheduleItemId = '';
         $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
@@ -513,6 +545,7 @@ class ContractShow extends Component
         $this->paymentDate = '';
         $this->paymentReference = '';
         $this->paymentNotes = '';
+        $this->paymentDeductions = [];
         $this->paymentScheduleItemId = '';
         $this->paymentMeasurementId = '';
         $this->autoFilledItemIndex = null;
@@ -683,6 +716,15 @@ class ContractShow extends Component
                     'amount' => $row['amount'] ?: 0,
                     'percent_complete' => $row['percent'] !== '' ? $row['percent'] : null,
                 ]);
+            }
+
+            // Throws on a bad amount, which rolls the payment back.
+            if ($this->canDeduct()) {
+                app(BackChargeDeductions::class)->deductFromPayment(
+                    $payment,
+                    collect($this->paymentDeductions)->filter(fn ($v) => is_numeric($v) && (float) $v > 0)->all(),
+                    'paymentDeductions',
+                );
             }
         });
 
@@ -950,6 +992,8 @@ class ContractShow extends Component
             'payments.measurement',
             'payments.items.budgetItem',
             'payments.batchItem.batch',
+            'payments.backChargeDeductions.backCharge:id,number,reason',
+            'backChargeDeductions.backCharge:id,number,reason',
             'changeOrders.createdBy',
         ]);
     }

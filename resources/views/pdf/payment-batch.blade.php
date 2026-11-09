@@ -223,7 +223,15 @@
                                     —
                                 @endif
                             </td>
-                            <td style="{{ $td }} {{ $muted }} text-align: right; font-weight: bold;">{{ $money($item->amount) }}</td>
+                            <td style="{{ $td }} {{ $muted }} text-align: right; font-weight: bold;">
+                                {{ $money($item->amount) }}
+                                @foreach($item->backChargeDeductions as $deduction)
+                                    <br><span style="font-size: 6pt; font-weight: normal; color: #c0392b;">{{ $deduction->backCharge?->number }} −{{ $money($deduction->amount) }} · {{ \Illuminate\Support\Str::limit($deduction->backCharge?->reason, 40) }}</span>
+                                @endforeach
+                                @if($item->backChargeDeductions->isNotEmpty())
+                                    <br><span style="font-size: 7pt;">{{ __('Check: :amount', ['amount' => $money($item->getNetAmount())]) }}</span>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 @endforeach
@@ -245,6 +253,16 @@
                     <td colspan="10" style="border: 1px solid #3F5189; padding: 5px 4px; font-size: 8pt; text-align: right; font-weight: bold;">{{ __('Total') }}</td>
                     <td style="border: 1px solid #3F5189; padding: 5px 4px; font-size: 8pt; text-align: right; font-weight: bold;">{{ $money($summary['total_amount']) }}</td>
                 </tr>
+                @if($summary['back_charges_amount'] > 0)
+                    <tr style="background-color: #eef1f8;">
+                        <td colspan="10" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Back charges deducted') }}</td>
+                        <td style="{{ $td }} text-align: right; font-weight: bold; color: #c0392b;">−{{ $money($summary['back_charges_amount']) }}</td>
+                    </tr>
+                    <tr style="background-color: #eef1f8;">
+                        <td colspan="10" style="{{ $td }} text-align: right; font-weight: bold;">{{ __('Checks') }}</td>
+                        <td style="{{ $td }} text-align: right; font-weight: bold;">{{ $money($summary['net_amount']) }}</td>
+                    </tr>
+                @endif
             </tfoot>
         </table>
     @endif

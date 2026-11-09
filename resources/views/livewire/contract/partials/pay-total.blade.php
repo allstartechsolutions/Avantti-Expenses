@@ -15,6 +15,10 @@
         get total() {
             return Math.round(this.entered.reduce((sum, v) => sum + v, 0) * 100) / 100;
         },
+        get deducted() {
+            const lines = Object.values($wire.payDeductions ?? {});
+            return Math.round(lines.flatMap(l => Object.values(l ?? {})).map(v => parseFloat(v)).filter(v => v > 0).reduce((s, v) => s + v, 0) * 100) / 100;
+        },
         get countLabel() {
             const n = this.entered.length;
             return (n === 1 ? this.labels[0] : (this.labels[1] ?? this.labels[0])).replace(':count', n);
@@ -24,4 +28,8 @@
          :class="total > 0 ? 'text-[#3F5189] dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500'"
          x-text="money.format(total)"></div>
     <div class="text-xs text-slate-500 dark:text-slate-400" x-text="countLabel"></div>
+    <div class="text-xs text-red-600 dark:text-red-400" x-show="deducted > 0" x-cloak>
+        − <span x-text="money.format(deducted)"></span> {{ __('back charges') }}
+        · {{ __('checks') }} <span class="font-semibold" x-text="money.format(Math.round((total - deducted) * 100) / 100)"></span>
+    </div>
 </div>

@@ -133,6 +133,12 @@ class PermissionSeeder extends Seeder
         // Ending somebody else's session throws them out mid-work; an administrator's call.
         'login-activity.end_sessions',
 
+        // --- Back charges (Nov 2026): money taken out of a subcontractor's pay.
+        //     New, so nothing is reproduced; the owner asked for administrators
+        //     only to start, grantable to anybody from the access screens.
+        'back-charges.view', 'back-charges.create', 'back-charges.edit', 'back-charges.delete',
+        'back-charges.deduct',
+
         // --- Collaboration (RFIs and approvals), new in this module ---------
         // Nothing is being reproduced here: neither area existed before, so no
         // grant is being widened or narrowed. These three follow the rules the

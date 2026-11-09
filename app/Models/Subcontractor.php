@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeletesVendorDocuments;
+use App\Models\Concerns\HasDocumentHealth;
 use App\Models\Concerns\HasFormattedPhone;
+use App\Models\Concerns\HasVendorActiveState;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,10 +16,10 @@ use Illuminate\Support\Collection;
 
 class Subcontractor extends Model
 {
-    use HasFormattedPhone, HasFactory;
-    use \App\Models\Concerns\DeletesVendorDocuments;
-    use \App\Models\Concerns\HasDocumentHealth;
-    use \App\Models\Concerns\HasVendorActiveState;
+    use DeletesVendorDocuments;
+    use HasDocumentHealth;
+    use HasFactory, HasFormattedPhone;
+    use HasVendorActiveState;
 
     /**
      * Subcontractors live in the unified `vendors` table (shared with
@@ -120,6 +123,11 @@ class Subcontractor extends Model
     /**
      * Get all employees for this subcontractor
      */
+    public function backCharges(): HasMany
+    {
+        return $this->hasMany(BackCharge::class);
+    }
+
     public function employees(): HasMany
     {
         return $this->hasMany(SubcontractorEmployee::class);
@@ -167,8 +175,9 @@ class Subcontractor extends Model
     {
         $words = explode(' ', $this->company_name);
         if (count($words) >= 2) {
-            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
         }
+
         return strtoupper(substr($this->company_name, 0, 2));
     }
 }

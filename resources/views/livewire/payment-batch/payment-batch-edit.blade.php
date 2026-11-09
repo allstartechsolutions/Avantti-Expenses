@@ -103,6 +103,10 @@
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($this->batchSummary['total_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->batchSummary['back_charges_amount'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->batchSummary['back_charges_amount'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->batchSummary['net_amount'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -357,6 +361,9 @@
                             $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
                             $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
                             $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
+                            // Back charges deducted lower the contract and never left the bank.
+                            $backChargesTotal = $contract->getBackChargesDeducted();
+                            $cashPaid = round($totalPaidDollars - $backChargesTotal, 2);
                             $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
                             $batchItem = $batchItems[$contract->id] ?? null;
                             $isApproved = $batchItem && $batchItem->status === 'approved';
@@ -384,6 +391,12 @@
                                          title="{{ $contract->subcontractorEmployee->name }}@if($contract->subcontractorEmployee->title) ({{ $contract->subcontractorEmployee->title }})@endif">
                                         {{ Str::limit($contract->subcontractorEmployee->name, 30) }}
                                     </div>
+                                @endif
+                                @if(! empty($backChargeRows[$contract->id]))
+                                    <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                          title="{{ __('Enter an amount to deduct them from this payment.') }}">
+                                        {{ trans_choice(':count open back charge|:count open back charges', count($backChargeRows[$contract->id]), ['count' => count($backChargeRows[$contract->id])]) }}
+                                    </span>
                                 @endif
                             </td>
                             <!-- Project -->
@@ -438,11 +451,16 @@
                                 @else
                                     <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
                                 @endif
+                                @if($backChargesTotal > 0)
+                                    <div class="text-xs text-red-600 dark:text-red-400" title="{{ __('Back charges deducted from this contract') }}">
+                                        {{ __('−:amount back charges', ['amount' => Number::currency($backChargesTotal, config('app.currency'), config('app.locale'))]) }}
+                                    </div>
+                                @endif
                             </td>
                             <!-- Paid -->
                             <td class="px-4 py-3 whitespace-nowrap text-right">
                                 <span class="text-sm font-medium text-green-600 dark:text-green-400">
-                                    {{ Number::currency($totalPaidDollars, config('app.currency'), config('app.locale')) }}
+                                    {{ Number::currency($cashPaid, config('app.currency'), config('app.locale')) }}
                                 </span>
                             </td>
                             <!-- Balance -->
@@ -607,6 +625,17 @@
                                 @endif
                             </td>
                         </tr>
+                        {{-- Back charges: deduct on an open line, show what a paid line took --}}
+                        @php
+                            $lineDeductions = $batchItem?->backChargeDeductions ?? collect();
+                            $deductable = ! $isApproved && ! $isRejected && ! $isPaidOrCancelled && $balance > 0
+                                && $paymentBatch->canBeEdited() && ! $this->batchBlockReason($contract) && $this->canDeduct();
+                        @endphp
+                        @if($deductable && ! empty($backChargeRows[$contract->id]))
+                            @include('livewire.back-charge.partials.deduct-panel', ['rows' => $backChargeRows[$contract->id], 'colspan' => 15])
+                        @elseif($lineDeductions->isNotEmpty())
+                            @include('livewire.back-charge.partials.deducted-summary', ['deductions' => $lineDeductions, 'amount' => (float) $batchItem->amount, 'colspan' => 15, 'rejected' => $isRejected])
+                        @endif
                         {{-- Expandable Change Orders Sub-row --}}
                         @if($isExpanded && $contract->changeOrders->count() > 0)
                             <tr wire:key="contract-{{ $contract->id }}-change-orders" class="bg-slate-50 dark:bg-slate-900/40">
@@ -665,6 +694,9 @@
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold {{ $totals['change_orders'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                 {{ $totals['change_orders'] > 0 ? '+' : '' }}{{ Number::currency($totals['change_orders'], config('app.currency'), config('app.locale')) }}
+                                @if($totals['back_charges'] > 0)
+                                    <div class="text-xs font-normal text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($totals['back_charges'], config('app.currency'), config('app.locale'))]) }}</div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-green-600 dark:text-green-400">
                                 {{ Number::currency($totals['paid'], config('app.currency'), config('app.locale')) }}

@@ -164,7 +164,10 @@
                         $changeOrdersPositive = $contract->changeOrders->filter(fn($co) => $co->getRawOriginal('amount') > 0)->sum(fn($co) => $co->getRawOriginal('amount')) / 100;
                         $changeOrdersNegative = $contract->changeOrders->filter(fn($co) => $co->getRawOriginal('amount') < 0)->sum(fn($co) => $co->getRawOriginal('amount')) / 100;
                         $hasChangeOrders = $changeOrdersPositive != 0 || $changeOrdersNegative != 0;
-                        $adjustedAmount = $contract->getAdjustedAmount();
+                        // Back charges deducted lower the contract (docs/back-charges.md).
+                        $backChargesDeducted = $contract->getBackChargesDeducted();
+                        $hasChangeOrders = $hasChangeOrders || $backChargesDeducted > 0;
+                        $adjustedAmount = $contract->getNetAmount();
                         $balanceDue = $contract->getBalanceDue();
                     @endphp
                     <dl class="space-y-4">
@@ -190,6 +193,22 @@
                                 </dd>
                             </div>
                         @endif
+                        @if($backChargesDeducted > 0)
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Back charges deducted') }}</dt>
+                                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
+                                    −{{ Number::currency($backChargesDeducted, config('app.currency'), config('app.locale')) }}
+                                </dd>
+                                <dd class="mt-1 space-y-0.5">
+                                    @foreach($contract->backChargeDeductions->whereNotNull('contract_payment_id') as $deduction)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            <a href="{{ route('back-charges.show', $deduction->back_charge_id) }}" class="text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $deduction->backCharge?->number }}</a>
+                                            {{ $deduction->backCharge?->reason }} · −{{ Number::currency($deduction->amount, config('app.currency'), config('app.locale')) }}
+                                        </div>
+                                    @endforeach
+                                </dd>
+                            </div>
+                        @endif
                         @if($hasChangeOrders)
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Adjusted Amount') }}</dt>
@@ -202,7 +221,7 @@
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ __('Amount Paid') }}</dt>
                                 <dd class="mt-1 text-xl font-semibold text-green-600 dark:text-green-400">
-                                    {{ Number::currency($contract->getAmountPaid(), config('app.currency'), config('app.locale')) }}
+                                    {{ Number::currency($contract->getCashPaid(), config('app.currency'), config('app.locale')) }}
                                 </dd>
                             </div>
                             <div>
@@ -530,6 +549,15 @@
                                         <p class="text-sm font-semibold text-slate-900 dark:text-white">
                                             <x-ui.money :amount="$payment->amount" :scope="$contract->jobSite ?? $contract->project" />
                                         </p>
+                                        @foreach($payment->backChargeDeductions as $deduction)
+                                            <p class="text-xs text-red-600 dark:text-red-400">
+                                                <a href="{{ route('back-charges.show', $deduction->back_charge_id) }}" class="hover:underline">{{ $deduction->backCharge?->number }}</a>
+                                                −{{ Number::currency($deduction->amount, config('app.currency'), config('app.locale')) }} · {{ $deduction->backCharge?->reason }}
+                                            </p>
+                                        @endforeach
+                                        @if($payment->backChargeDeductions->isNotEmpty())
+                                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Check: :amount', ['amount' => Number::currency($payment->getNetAmount(), config('app.currency'), config('app.locale'))]) }}</p>
+                                        @endif
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                             {{ $payment->payment_date->appDate() }} &middot; {{ $payment->payment_method ? $payment->getPaymentMethodLabel() : __('Method not recorded') }}
                                         </p>
@@ -947,6 +975,53 @@
                             </div>
                             @error('paymentAmount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
+
+                        {{-- Back charges this payment may take (docs/back-charges.md) --}}
+                        @if($this->openBackCharges->isNotEmpty())
+                            <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10 p-4"
+                                 x-data="{
+                                    money: new Intl.NumberFormat(@js(str_replace('_', '-', config('app.locale'))), { style: 'currency', currency: @js(config('app.currency')) }),
+                                    get amount() { return parseFloat($wire.paymentAmount) || 0; },
+                                    value(bc) { return parseFloat(($wire.paymentDeductions ?? {})[bc]) || 0; },
+                                    get deducted() { return Math.round(Object.values($wire.paymentDeductions ?? {}).map(v => parseFloat(v)).filter(v => v > 0).reduce((s, v) => s + v, 0) * 100) / 100; },
+                                    get net() { return Math.round((this.amount - this.deducted) * 100) / 100; },
+                                    takeAll(bc, available) {
+                                        const room = this.amount - (this.deducted - this.value(bc));
+                                        $wire.set('paymentDeductions.' + bc, Math.max(0, Math.min(available, room)).toFixed(2), false);
+                                    },
+                                 }">
+                                <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                    {{ trans_choice(':count open back charge for this subcontractor|:count open back charges for this subcontractor', $this->openBackCharges->count(), ['count' => $this->openBackCharges->count()]) }}
+                                </p>
+                                <p class="text-xs text-amber-800 dark:text-amber-300 mb-3">{{ __('Leave a box empty to skip that back charge this time. What is not deducted stays open for the next payment.') }}</p>
+                                <div class="space-y-2">
+                                    @foreach($this->openBackCharges as $bc)
+                                        <div wire:key="payment-bc-{{ $bc->id }}" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                            <div class="min-w-0 text-sm">
+                                                <a href="{{ route('back-charges.show', $bc) }}" target="_blank" class="font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $bc->number }}</a>
+                                                <span class="text-slate-700 dark:text-slate-300">{{ $bc->reason }}</span>
+                                                <div class="text-xs text-slate-500 dark:text-slate-400">
+                                                    {{ __('Available') }}: {{ Number::currency($bc->getRemaining(), config('app.currency'), config('app.locale')) }}
+                                                    @if($bc->subcontractorEmployee) · {{ __('Employee: :name', ['name' => $bc->subcontractorEmployee->name]) }}@endif
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <button type="button" x-on:click="takeAll({{ $bc->id }}, {{ $bc->getRemaining() }})" class="text-xs font-medium text-[#3F5189] dark:text-indigo-300 hover:underline" title="{{ __('Deduct what is left, up to the payment') }}">{{ __('All') }}</button>
+                                                <input type="number" step="0.01" min="0" max="{{ $bc->getRemaining() }}" wire:model="paymentDeductions.{{ $bc->id }}" placeholder="0.00"
+                                                       aria-label="{{ __('Deduct from :number', ['number' => $bc->number]) }}"
+                                                       class="w-28 px-2 py-1 text-sm text-right border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3F5189] bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                            </div>
+                                        </div>
+                                        @error('paymentDeductions.'.$bc->id) <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    @endforeach
+                                </div>
+                                @error('paymentDeductions') <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                <div class="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800 flex justify-between text-sm" x-show="deducted > 0" x-cloak>
+                                    <span class="text-slate-600 dark:text-slate-300"><span x-text="money.format(amount)"></span> − <span class="text-red-600 dark:text-red-400" x-text="money.format(deducted)"></span></span>
+                                    <span class="font-semibold" :class="net < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'">{{ __('check') }} <span x-text="money.format(net)"></span></span>
+                                </div>
+                            </div>
+                        @endif
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ __('Payment Method *') }}</label>

@@ -34,6 +34,8 @@ use App\Livewire\Approval\ApprovalForm;
 use App\Livewire\Approval\ApprovalSeedFromBudget;
 use App\Livewire\Approval\ApprovalShow;
 use App\Livewire\Auth\AcceptInvitation;
+use App\Livewire\BackCharge\BackChargeIndex;
+use App\Livewire\BackCharge\BackChargeShow;
 use App\Livewire\Budget\BudgetCostGrid;
 use App\Livewire\Budget\BudgetCreate;
 use App\Livewire\Budget\BudgetEdit;
@@ -402,6 +404,12 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('ability:payments.view')->name('contract-payments.pdf.download');
     Route::get('contract-payments/pdf/view', [ContractPaymentsPdfController::class, 'stream'])
         ->middleware('ability:payments.view')->name('contract-payments.pdf.view');
+
+    // Back charges (docs/back-charges.md): admins only by seed.
+    Route::get('back-charges', BackChargeIndex::class)
+        ->middleware('ability:back-charges.view')->name('back-charges.index');
+    Route::get('back-charges/{backCharge}', BackChargeShow::class)
+        ->middleware('ability:back-charges.view')->name('back-charges.show');
 
     // Payment Batch routes
     Route::get('payment-batches', PaymentBatchIndex::class)

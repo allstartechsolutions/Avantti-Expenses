@@ -13,10 +13,10 @@ class SubcontractorIndex extends Component
 {
     use AuthorizesAbility;
     use TogglesVendorActive;
-
     use WithPagination;
 
     public $search = '';
+
     public $perPage = 10;
 
     /** Filter on the documents badge: expired | expiring_soon | valid | none, or '' for everyone. */
@@ -27,7 +27,9 @@ class SubcontractorIndex extends Component
 
     // Delete modal
     public $showDeleteModal = false;
+
     public $deletingSubcontractorId = null;
+
     public $deleteSubcontractorData = [];
 
     protected $queryString = [
@@ -65,7 +67,7 @@ class SubcontractorIndex extends Component
 
         $subcontractor = Subcontractor::findOrFail($subcontractorId);
 
-        if ($subcontractor->contracts()->exists() || $subcontractor->paymentBatches()->exists()) {
+        if ($subcontractor->contracts()->exists() || $subcontractor->paymentBatches()->exists() || $subcontractor->backCharges()->exists()) {
             return;
         }
 
@@ -88,8 +90,9 @@ class SubcontractorIndex extends Component
         $subcontractor = Subcontractor::findOrFail($this->deletingSubcontractorId);
 
         // Re-check as a safety guard
-        if ($subcontractor->contracts()->exists() || $subcontractor->paymentBatches()->exists()) {
+        if ($subcontractor->contracts()->exists() || $subcontractor->paymentBatches()->exists() || $subcontractor->backCharges()->exists()) {
             $this->cancelDeleteSubcontractor();
+
             return;
         }
 
@@ -132,16 +135,16 @@ class SubcontractorIndex extends Component
 
         $subcontractors = Subcontractor::query()
             ->with('createdBy')
-            ->withCount(['contracts', 'paymentBatches'])
+            ->withCount(['contracts', 'paymentBatches', 'backCharges'])
             ->withDocumentHealth()
             ->documentHealth($health)
             ->activeState($this->status)
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('contact_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('contact_email', 'like', '%' . $this->search . '%')
-                      ->orWhere('phone', 'like', '%' . $this->search . '%');
+                    $q->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('contact_name', 'like', '%'.$this->search.'%')
+                        ->orWhere('contact_email', 'like', '%'.$this->search.'%')
+                        ->orWhere('phone', 'like', '%'.$this->search.'%');
                 });
             })
             ->orderBy('created_at', 'desc')

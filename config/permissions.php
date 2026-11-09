@@ -276,6 +276,16 @@ return [
             'active' => ['payment-batches.*'],
             'icon' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
         ],
+        [
+            'key' => 'back-charges',
+            'name' => 'Back Charges',
+            'group' => 'projects',
+            'order' => 75,
+            'route' => 'back-charges.index',
+            'ability' => 'back-charges.view',
+            'active' => ['back-charges.*'],
+            'icon' => 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
+        ],
 
         [
             'key' => 'equipment',
@@ -917,6 +927,25 @@ return [
                 'pay' => ['name' => 'Record a payment', 'limited' => true],
                 'batch' => ['name' => 'Build payment batches'],
                 'refund' => ['name' => 'Refund a payment', 'sensitive' => true],
+            ],
+        ],
+
+        // Money a subcontractor company or one of its employees owes, taken out
+        // of what they are paid (docs/back-charges.md). A company record: a
+        // back charge follows the subcontractor across sites, its origin lot
+        // is only a label.
+        'back-charges' => [
+            'name' => 'Back Charges',
+            'module' => 'projects',
+            'levels' => ['global'],
+            'money' => true,
+            'swept' => true,
+            'actions' => [
+                'view', 'create', 'edit',
+                'delete' => ['name' => 'Delete', 'sensitive' => true],
+                // Taking a back charge out of a payment. The payment screen's
+                // own grant is needed as well; this only adds the deduction.
+                'deduct' => ['name' => 'Deduct from a payment'],
             ],
         ],
 

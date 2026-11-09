@@ -304,7 +304,16 @@ class SubcontractorShow extends Component
     {
         $this->authorizeAbility('vendors.edit');
 
-        $this->ownEmployee($employeeId)->delete();
+        $employee = $this->ownEmployee($employeeId);
+
+        // A back charge against the employee is money owed: it blocks the delete.
+        if ($employee->backCharges()->exists()) {
+            session()->flash('error', __(':name has back charges and cannot be deleted. Switch them off instead.', ['name' => $employee->name]));
+
+            return;
+        }
+
+        $employee->delete();
 
         session()->flash('message', __('Employee deleted successfully!'));
     }
@@ -486,7 +495,7 @@ class SubcontractorShow extends Component
     {
         $this->authorizeAbility('vendors.delete');
 
-        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {
+        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists() || $this->subcontractor->backCharges()->exists()) {
             return;
         }
 
@@ -499,7 +508,7 @@ class SubcontractorShow extends Component
         $this->authorizeAbility('vendors.delete');
 
         // Re-check as a safety guard
-        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists()) {
+        if ($this->subcontractor->contracts()->exists() || $this->subcontractor->paymentBatches()->exists() || $this->subcontractor->backCharges()->exists()) {
             $this->cancelDeleteSubcontractor();
 
             return;
@@ -557,12 +566,19 @@ class SubcontractorShow extends Component
         $linkedContracts = $this->subcontractor->contracts()->count();
         $linkedPaymentBatches = $this->subcontractor->paymentBatches()->count();
 
+        // Its back charges (docs/back-charges.md): the open ones, with what is left of each.
+        $backCharges = $this->allowsAbility('back-charges.view')
+            ? $this->subcontractor->backCharges()->withDeducted()->with('subcontractorEmployee:id,name', 'jobSite:id,job_site_name', 'project:id,project_name')->orderByDesc('date')->get()
+            : collect();
+
         return view('livewire.subcontractor.subcontractor-show', $this->documentViewData() + [
             'employees' => $employees,
             'employeeCounts' => $employeeCounts,
             'linkedEmployees' => $linkedEmployees,
             'linkedContracts' => $linkedContracts,
             'linkedPaymentBatches' => $linkedPaymentBatches,
+            'linkedBackCharges' => $this->subcontractor->backCharges()->count(),
+            'backCharges' => $backCharges,
         ])->layout('components.layouts.app');
     }
 }

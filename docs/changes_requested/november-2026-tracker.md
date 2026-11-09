@@ -10,14 +10,14 @@ Worked one item at a time. Status: **todo**, **done**, **needs decision**.
 | 1 | Batch list: totals by payment date and by PM (e.g. PM Alexandre $210,362.48 = Oct 8 $100,012.50 + Oct 9 $110,349.98) | **done** (5 Nov 2026) |
 | 2 | Batch screen: when filtered by subcontractor, show the selection total and an "approve this selection" button | **done** (5 Nov 2026) |
 | 3 | "Reject all pending" button | **done** (5 Nov 2026) |
-| 4 | Back charges: approve / decline in the batch | needs decision (see BC notes) |
-| 5 | BCs already deducted: hide from the batch, keep visible on the lot with the deduction date | needs decision (see BC notes) |
+| 4 | Back charges: approve / decline in the batch | **done** (9 Nov 2026) — `docs/back-charges.md` |
+| 5 | BCs already deducted: hide from the batch, keep visible on the lot with the deduction date | **done** (9 Nov 2026) |
 | 6 | Filter by employee | **done** (5 Nov 2026) |
 | 7 | Sort: pending first, rejected last | **done** (5 Nov 2026) |
 | 8 | Group rows by employee (same employee consecutively) | **done** (5 Nov 2026) |
 | 9 | Batch list: filter by PM, total summary at the bottom | **done** (5 Nov 2026) |
-| 10 | BC must appear in the exported Excel/CSV (checks are printed from it) | **partly done** (5 Nov 2026) — change orders on batch view, PDF and CSV; rest with the BC redesign |
-| 11 | After approval, show which BC was deducted and what for (e.g. CTR-1204) | **partly done** (5 Nov 2026) — change orders on batch view, PDF and CSV; rest with the BC redesign |
+| 10 | BC must appear in the exported Excel/CSV (checks are printed from it) | **done** (5 Nov / 9 Nov 2026) — change orders, then back charges and check amounts, on batch view, PDF and CSV |
+| 11 | After approval, show which BC was deducted and what for (e.g. CTR-1204) | **done** (5 Nov / 9 Nov 2026) — change orders, then back charges and check amounts, on batch view, PDF and CSV |
 
 ## Other modules
 
@@ -117,8 +117,8 @@ the money switch (now `<x-ui.money rollup>`).
   still to pay underneath, and the old figure kept as "Invoiced, due this month". Needs
   `projects.view` + `contracts.view` (it discloses both). For somebody with that and no
   `invoices.view`, the card now takes the slot the Over Budget count used to; the over-budget
-  list further down is unchanged. Back charges count through the contracts' adjusted amounts
-  today; once they are their own deductions, `openLots()` subtracts them in one place.
+  list further down is unchanged. Back charges deducted lower the contracts' cost and the cash
+  paid in `ProjectFinancials::figures()` (9 Nov 2026).
 
 ## Back charge notes (items 4, 5, 10, 11)
 
@@ -133,7 +133,10 @@ contract it is taken from. The client's answers:
   neither the view nor the export.
 
 This points to a BC as its own record against the subcontractor, deducted through a
-batch, rather than a change order. To be designed when these items are reached.
+batch, rather than a change order. **Built 9 Nov 2026** — see `docs/back-charges.md`:
+its own record (company or employee, optional origin lot), deducted in full or in part from
+batch lines and direct contract payments, the rest carried automatically; "declined for good"
+is lowering the amount to what was deducted, with the reason in the description.
 
 ## Client how-to document
 

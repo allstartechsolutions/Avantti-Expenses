@@ -131,13 +131,14 @@
                                 $linked = array_filter([
                                     __('Contracts') => $vendor->contracts_count,
                                     __('Batches') => $vendor->payment_batches_count,
+                                    __('Back Charges') => $vendor->back_charges_count,
                                     __('Employees') => $vendor->employees_count,
                                     __('Expenses') => $vendor->expenses_count,
                                     __('POs') => $vendor->purchase_orders_count,
                                     __('Catalog') => $vendor->catalog_items_count,
                                 ]);
                                 $blocked = ($vendor->is_supplier && $vendor->is_subcontractor)
-                                    || $vendor->contracts_count || $vendor->payment_batches_count
+                                    || $vendor->contracts_count || $vendor->payment_batches_count || $vendor->back_charges_count
                                     || $vendor->expenses_count || $vendor->purchase_orders_count || $vendor->catalog_items_count;
                             @endphp
                             <tr wire:key="vendor-{{ $vendor->id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ $vendor->is_active ? '' : 'bg-slate-50/60 dark:bg-slate-900/30' }}">

@@ -18,7 +18,7 @@ class JobSiteFinancialReportPdfController extends Controller
         $pdf = Pdf::loadView('pdf.job-site-financial-report', $data);
         $pdf->setPaper('letter', 'portrait');
 
-        $filename = 'jobsite-' . Str::slug($jobSite->job_site_name) . '-financial-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'jobsite-'.Str::slug($jobSite->job_site_name).'-financial-'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -50,15 +50,15 @@ class JobSiteFinancialReportPdfController extends Controller
 
         $contractsCollection = $jobSite->contracts()
             ->committed()
-            ->with(['subcontractor:id,name', 'changeOrders', 'payments'])
+            ->with(['subcontractor:id,name', 'changeOrders', 'payments', 'backChargeDeductions'])
             ->orderBy('contract_number')
             ->get();
 
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contractsCollection as $contract) {
-            $contractsAdjusted += $contract->getAdjustedAmount();
-            $contractsPaid += $contract->getAmountPaid();
+            $contractsAdjusted += $contract->getNetAmount();
+            $contractsPaid += $contract->getCashPaid();
         }
         $contractsUnpaid = round($contractsAdjusted - $contractsPaid, 2);
 

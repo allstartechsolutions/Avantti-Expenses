@@ -4,12 +4,14 @@ namespace App\Livewire\Contract;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\SortsContracts;
+use App\Models\BackCharge;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
 use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\User;
+use App\Services\BackChargeDeductions;
 use App\Services\PaymentBatchLayout;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -50,9 +52,16 @@ class ContractPayments extends Component
     public string $groupBy = '';
 
     public string $paymentDate = '';
+
     public array $payAmounts = [];
+
     public array $payMethods = [];
+
     public array $payNotes = [];
+
+    /** Back charges to deduct, [contract id][back charge id] => amount (docs/back-charges.md). */
+    public array $payDeductions = [];
+
     public array $expandedContracts = [];
 
     public function mount(): void
@@ -154,6 +163,7 @@ class ContractPayments extends Component
             ])
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->withBackChargesDeducted()
             ->when($this->clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
             ->when($this->projectFilter, fn ($q) => $q->where('project_id', $this->projectFilter))
             ->when($this->subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $this->subcontractorFilter))
@@ -227,8 +237,9 @@ class ContractPayments extends Component
         $totalValueCents = (clone $baseQuery)
             ->whereNot('status', 'cancelled')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->withBackChargesDeducted()
             ->get()
-            ->sum(fn ($c) => $c->amount * 100 + ($c->change_orders_total_cents ?? 0));
+            ->sum(fn ($c) => $c->amount * 100 + ($c->change_orders_total_cents ?? 0) - ($c->back_charges_deducted_cents ?? 0));
 
         // Active contracts count
         $activeCount = (clone $baseQuery)->where('status', 'active')->count();
@@ -247,15 +258,15 @@ class ContractPayments extends Component
         // Paid this month
         $startOfMonth = now()->startOfMonth();
         $endOfMonth = now()->endOfMonth();
-        $paidThisMonthCents = ContractPayment::whereBetween('payment_date', [$startOfMonth, $endOfMonth])
+        // Cash out: back charges deducted never left the bank.
+        $paidThisMonthCents = ContractPayment::cashCents(ContractPayment::whereBetween('payment_date', [$startOfMonth, $endOfMonth])
             ->whereHas('contract', function ($q) {
                 $q->when($this->clientFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('client_id', $this->clientFilter)))
                     ->when($this->projectFilter, fn ($q2) => $q2->where('project_id', $this->projectFilter))
                     ->when($this->subcontractorFilter, fn ($q2) => $q2->where('subcontractor_id', $this->subcontractorFilter))
                     ->when($this->projectManagerFilter, fn ($q2) => $q2->whereHas('project', fn ($p) => $p->where('project_manager_id', $this->projectManagerFilter)))
                     ->when($this->supervisorFilter, fn ($q2) => $q2->whereHas('jobSite', fn ($s) => $s->where('supervisor_id', $this->supervisorFilter)));
-            })
-            ->sum('amount');
+            }));
 
         return [
             'pending_balance' => $pendingBalanceCents / 100,
@@ -276,8 +287,20 @@ class ContractPayments extends Component
         $rowsToProcess = collect($this->payAmounts)
             ->filter(fn ($amount) => $amount !== null && $amount !== '' && (float) $amount > 0);
 
+        $canDeduct = $this->canDeduct();
+
+        // A deduction needs a payment to come out of.
+        foreach (array_keys($this->payDeductions) as $contractId) {
+            if ($canDeduct && $this->deductionsFor($contractId) !== [] && ! $rowsToProcess->has($contractId)) {
+                $this->addError("payDeductions.{$contractId}", __('Enter the payment this back charge comes out of.'));
+
+                return;
+            }
+        }
+
         if ($rowsToProcess->isEmpty()) {
             session()->flash('error', __('No payment amounts entered.'));
+
             return;
         }
 
@@ -285,8 +308,9 @@ class ContractPayments extends Component
         $errors = [];
         foreach ($rowsToProcess as $contractId => $amount) {
             $contract = Contract::find($contractId);
-            if (!$contract) {
+            if (! $contract) {
                 $errors[] = __('Contract #:id not found.', ['id' => $contractId]);
+
                 continue;
             }
 
@@ -294,6 +318,7 @@ class ContractPayments extends Component
             // is activated, and the list never offers one.
             if ($contract->isDraft()) {
                 $errors[] = __(':number is still a draft and cannot be paid.', ['number' => $contract->contract_number]);
+
                 continue;
             }
 
@@ -311,15 +336,16 @@ class ContractPayments extends Component
 
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             session()->flash('error', implode(' ', $errors));
+
             return;
         }
 
-        DB::transaction(function () use ($rowsToProcess) {
+        DB::transaction(function () use ($rowsToProcess, $canDeduct) {
             $count = 0;
             foreach ($rowsToProcess as $contractId => $amount) {
-                ContractPayment::create([
+                $payment = ContractPayment::create([
                     'contract_id' => $contractId,
                     'amount' => (float) $amount,
                     'payment_date' => $this->paymentDate,
@@ -327,6 +353,11 @@ class ContractPayments extends Component
                     'notes' => $this->payNotes[$contractId] ?? null,
                     'created_by' => Auth::id(),
                 ]);
+
+                // Throws on a bad amount, which rolls every payment back.
+                if ($canDeduct) {
+                    app(BackChargeDeductions::class)->deductFromPayment($payment, $this->deductionsFor($contractId), "payDeductions.{$contractId}");
+                }
 
                 $contract = Contract::find($contractId);
                 $contract->refresh();
@@ -341,6 +372,58 @@ class ContractPayments extends Component
         $this->payAmounts = [];
         $this->payMethods = [];
         $this->payNotes = [];
+        $this->payDeductions = [];
+        unset($this->contractGroups, $this->contracts, $this->totals, $this->summary);
+    }
+
+    /** Whether this person may take back charges out of the payments. */
+    public function canDeduct(): bool
+    {
+        return $this->allowsAbility('back-charges.deduct');
+    }
+
+    /** The deductions typed on a row, without the empty boxes. */
+    protected function deductionsFor($contractId): array
+    {
+        return collect($this->payDeductions[$contractId] ?? [])
+            ->filter(fn ($amount) => is_numeric($amount) && (float) $amount > 0)
+            ->all();
+    }
+
+    /**
+     * The open back charges each listed contract may take: the company's,
+     * plus the employee's when the contract names one.
+     *
+     * @return array<int, array<int, array{bc: BackCharge, available: float}>>
+     */
+    #[Computed]
+    public function backChargeRows(): array
+    {
+        if (! $this->canDeduct()) {
+            return [];
+        }
+
+        $contracts = $this->contracts;
+        $charges = BackCharge::query()
+            ->whereIn('subcontractor_id', $contracts->pluck('subcontractor_id')->filter()->unique())
+            ->open()
+            ->withDeducted()
+            ->with('subcontractorEmployee:id,name')
+            ->orderBy('date')->orderBy('id')
+            ->get();
+
+        $rows = [];
+
+        foreach ($contracts as $contract) {
+            foreach ($charges as $bc) {
+                if ($bc->subcontractor_id === $contract->subcontractor_id
+                    && ($bc->subcontractor_employee_id === null || $bc->subcontractor_employee_id === $contract->subcontractor_employee_id)) {
+                    $rows[$contract->id][] = ['bc' => $bc, 'available' => $bc->getRemaining()];
+                }
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -354,11 +437,11 @@ class ContractPayments extends Component
         $groups = $this->contractGroups;
         $money = fn ($value) => number_format((float) $value, 2, '.', '');
 
-        $filename = 'contract-payments-' . now()->format('Y-m-d') . '.csv';
+        $filename = 'contract-payments-'.now()->format('Y-m-d').'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ];
 
         $callback = function () use ($groups, $money) {
@@ -376,6 +459,7 @@ class ContractPayments extends Component
                 __('Contract #'),
                 __('Original Amount'),
                 __('Change Orders (+/-)'),
+                __('Back charges deducted'),
                 __('Adjusted Amount'),
                 __('Paid'),
                 __('Balance'),
@@ -394,11 +478,12 @@ class ContractPayments extends Component
 
                     fputcsv($file, [
                         __('Group'),
-                        $group['sub'] ? $group['label'] . ' — ' . $group['sub'] : $group['label'],
+                        $group['sub'] ? $group['label'].' — '.$group['sub'] : $group['label'],
                         trans_choice(':count contract|:count contracts', $totals['count'], ['count' => $totals['count']]),
                         '', '', '', '',
                         $money($totals['amount']),
                         $money($totals['change_orders']),
+                        $money($totals['back_charges']),
                         $money($totals['adjusted']),
                         $money($totals['paid']),
                         $money($totals['balance']),
@@ -410,7 +495,10 @@ class ContractPayments extends Component
                     $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
                     $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
                     $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
-                    $adjustedAmount = round($contract->amount + $changeOrdersTotal, 2);
+                    // Net of back charges: the contract costs less, and the deducted part never left the bank.
+                    $backCharges = $contract->getBackChargesDeducted();
+                    $adjustedAmount = round($contract->amount + $changeOrdersTotal - $backCharges, 2);
+                    $totalPaidDollars = round($totalPaidDollars - $backCharges, 2);
 
                     fputcsv($file, [
                         __('Contract'),
@@ -422,6 +510,7 @@ class ContractPayments extends Component
                         $contract->contract_number,
                         $money($contract->amount),
                         $money($changeOrdersTotal),
+                        $money($backCharges),
                         $money($adjustedAmount),
                         $money($totalPaidDollars),
                         $money($balance),
@@ -436,7 +525,7 @@ class ContractPayments extends Component
                             __('Change Order'),
                             '', '', '', '', '',
                             $contract->contract_number,
-                            '', '', '', '', '', '', '', '',
+                            '', '', '', '', '', '', '', '', '',
                             $co->date->format('Y-m-d'),
                             $co->title,
                             $co->description ?? '',

@@ -102,6 +102,10 @@
                     $coTotal = ($contract->change_orders_total_cents ?? 0) / 100;
                     $adjusted = round($contract->amount + $coTotal, 2);
                     $balance = round($adjusted - $totalPaid, 2);
+                    // Net of back charges: the contract costs less, the deducted part never left the bank.
+                    $bcTotal = $contract->getBackChargesDeducted();
+                    $adjusted = round($adjusted - $bcTotal, 2);
+                    $totalPaid = round($totalPaid - $bcTotal, 2);
                     $bgColor = $index % 2 === 0 ? '#ffffff' : '#f9fafb';
                     $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
                 @endphp
@@ -145,6 +149,9 @@
                             {{ $coTotal >= 0 ? '+' : '' }}${{ number_format($coTotal, 2) }}
                         @else
                             <span style="color: #ccc;">—</span>
+                        @endif
+                        @if($bcTotal > 0)
+                            <br><span style="font-size: 6pt; font-weight: normal; color: #e74c3c;">{{ __('−:amount back charges', ['amount' => '$'.number_format($bcTotal, 2)]) }}</span>
                         @endif
                     </td>
                     <td style="border: 1px solid #ddd; padding: 4px; font-size: 7pt; text-align: right; font-weight: bold; {{ $isPaidOrCancelled ? 'color: #999;' : '' }}">

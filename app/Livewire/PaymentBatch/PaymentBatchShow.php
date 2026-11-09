@@ -79,7 +79,7 @@ class PaymentBatchShow extends Component
     #[Computed]
     public function summary(): array
     {
-        return PaymentBatchLayout::lineTotals($this->paymentBatch->items);
+        return PaymentBatchLayout::lineTotals($this->paymentBatch->items()->with('backChargeDeductions')->get());
     }
 
     /**
@@ -149,6 +149,7 @@ class PaymentBatchShow extends Component
             fputcsv($out, [
                 __('Subcontractor'), __('Contact (Employee)'), __('Client'), __('Project'), __('Job Site'), __('Contract #'),
                 __('Pays'), __('Method'), __('Phase'), __('Notes'), __('Status'), __('Amount'),
+                __('Back charges deducted'), __('Check amount'),
                 __('Change Orders'), __('Change order details'),
             ]);
 
@@ -174,6 +175,10 @@ class PaymentBatchShow extends Component
                         $item->notes ?? '',
                         __($item->getStatusLabel()),
                         $money($item->amount),
+                        $item->backChargeDeductions
+                            ->map(fn ($d) => ($d->backCharge?->number ?? '').' '.$money($d->amount).' ('.($d->backCharge?->reason ?? '').')')
+                            ->implode('; '),
+                        $money($item->getNetAmount()),
                         $item->contract->changeOrders->isEmpty() ? '' : $money($item->contract->getChangeOrdersTotal()),
                         $item->contract->changeOrders
                             ->map(fn ($co) => $co->date->format('Y-m-d').' '.$co->title.': '.$money($co->amount))
@@ -195,6 +200,10 @@ class PaymentBatchShow extends Component
             fputcsv($out, [__('Pending'), $money($summary['pending_amount'])]);
             fputcsv($out, [__('Rejected'), $money($summary['rejected_amount'])]);
             fputcsv($out, [__('Total'), $money($summary['total_amount'])]);
+            if ($summary['back_charges_amount'] > 0) {
+                fputcsv($out, [__('Back charges deducted'), $money($summary['back_charges_amount'])]);
+                fputcsv($out, [__('Checks'), $money($summary['net_amount'])]);
+            }
             fclose($out);
         }, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',

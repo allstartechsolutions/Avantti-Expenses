@@ -37,12 +37,12 @@ class JobSiteFinancialReport extends Component
         $totalExpenses = $expenses->sum('total_amount');
 
         // Cost: contracts scoped to this jobsite, each adjusted for their own change orders
-        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->jobSite->contracts()->committed()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contracts as $contract) {
-            $contractsAdjusted += $contract->getAdjustedAmount();
-            $contractsPaid += $contract->getAmountPaid();
+            $contractsAdjusted += $contract->getNetAmount();
+            $contractsPaid += $contract->getCashPaid();
         }
         $contractsUnpaid = round($contractsAdjusted - $contractsPaid, 2);
 
@@ -79,6 +79,7 @@ class JobSiteFinancialReport extends Component
                 'subcontractor:id,name',
                 'changeOrders',
                 'payments',
+                'backChargeDeductions',
             ])
             ->orderBy('contract_number')
             ->get();

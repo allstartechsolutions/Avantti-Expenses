@@ -58,13 +58,18 @@ trait SortsContracts
         $amount = round($contracts->sum(fn ($c) => (float) $c->amount), 2);
         $changeOrders = round($contracts->sum(fn ($c) => ($c->change_orders_total_cents ?? 0) / 100), 2);
         $paid = round($contracts->sum(fn ($c) => ($c->total_paid_cents ?? 0) / 100), 2);
+        // Back charges deducted (docs/back-charges.md), when the query summed
+        // them: they lower the contracts and never left the bank, so the
+        // balance is the same either way.
+        $backCharges = round($contracts->sum(fn ($c) => ((int) ($c->back_charges_deducted_cents ?? 0)) / 100), 2);
 
         return [
             'count' => $contracts->count(),
             'amount' => $amount,
             'change_orders' => $changeOrders,
-            'adjusted' => round($amount + $changeOrders, 2),
-            'paid' => $paid,
+            'back_charges' => $backCharges,
+            'adjusted' => round($amount + $changeOrders - $backCharges, 2),
+            'paid' => round($paid - $backCharges, 2),
             'balance' => round($amount + $changeOrders - $paid, 2),
         ];
     }
@@ -100,7 +105,8 @@ trait SortsContracts
                 'job_site' => strnatcasecmp($a->jobSite?->job_site_name ?? '', $b->jobSite?->job_site_name ?? ''),
                 'contract' => strnatcasecmp($a->contract_number, $b->contract_number),
                 'amount' => $a->amount <=> $b->amount,
-                'paid' => $paid($a) <=> $paid($b),
+                // Sorted by what the column shows: cash, net of back charges.
+                'paid' => ($paid($a) - ($a->back_charges_deducted_cents ?? 0) / 100) <=> ($paid($b) - ($b->back_charges_deducted_cents ?? 0) / 100),
                 'balance' => $balance($a) <=> $balance($b),
             };
 

@@ -223,6 +223,11 @@ class Contract extends Model
         return $this->hasMany(ContractChangeOrder::class)->orderByDesc('date');
     }
 
+    public function backChargeDeductions(): HasMany
+    {
+        return $this->hasMany(BackChargeDeduction::class);
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(ContractPayment::class)->orderByDesc('payment_date');
@@ -343,6 +348,65 @@ class Contract extends Model
         return round($this->payments()->sum('amount') / 100, 2);
     }
 
+    /**
+     * Back charges taken from this contract (docs/back-charges.md): the
+     * deductions whose payment exists. A deduction on a pending batch line
+     * is reserved against its back charge but has not lowered the contract.
+     * Reads back_charges_deducted_cents when the query added it
+     * (scopeWithBackChargesDeducted), so lists need no query per row.
+     */
+    public function getBackChargesDeducted(): float
+    {
+        if (array_key_exists('back_charges_deducted_cents', $this->attributes)) {
+            return round(((int) $this->attributes['back_charges_deducted_cents']) / 100, 2);
+        }
+
+        if ($this->relationLoaded('backChargeDeductions')) {
+            return round($this->backChargeDeductions
+                ->whereNotNull('contract_payment_id')
+                ->sum(fn ($d) => $d->getRawOriginal('amount')) / 100, 2);
+        }
+
+        return round($this->backChargeDeductions()->whereNotNull('contract_payment_id')->sum('amount') / 100, 2);
+    }
+
+    /**
+     * What the contract costs once back charges are taken out of it:
+     * contract + change orders − back charges deducted. This is the figure
+     * people read; getAdjustedAmount() stays gross because installments,
+     * measurements and retention are measured against it.
+     */
+    public function getNetAmount(): float
+    {
+        return round($this->getAdjustedAmount() - $this->getBackChargesDeducted(), 2);
+    }
+
+    /**
+     * Cash that actually went to the subcontractor: payments are stored
+     * gross, and the back charges deducted from them never left the bank.
+     */
+    public function getCashPaid(): float
+    {
+        return round($this->getAmountPaid() - $this->getBackChargesDeducted(), 2);
+    }
+
+    /**
+     * Adds back_charges_deducted_cents to a contract query: the deductions
+     * taken (their payment exists). Every list or report that shows a
+     * contract's cost or cash paid uses this, so no figure is missed.
+     */
+    public function scopeWithBackChargesDeducted($query)
+    {
+        return $query->withSum(
+            ['backChargeDeductions as back_charges_deducted_cents' => fn ($q) => $q->whereNotNull('contract_payment_id')],
+            'amount'
+        );
+    }
+
+    /**
+     * Balance due is the same whether read gross or net:
+     * (adjusted − back charges) − (paid − back charges) = adjusted − paid.
+     */
     public function getBalanceDue(): float
     {
         return round($this->getAdjustedAmount() - $this->getAmountPaid(), 2);

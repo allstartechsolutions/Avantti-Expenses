@@ -212,7 +212,7 @@
                                             title="{{ __('Edit') }}"
                                             href="{{ route('subcontractors.edit', $subcontractor->id) }}" />
                                         @if(auth()->user()->can('vendors.delete'))
-                                            @php $linkedCount = $subcontractor->contracts_count + $subcontractor->payment_batches_count; @endphp
+                                            @php $linkedCount = $subcontractor->contracts_count + $subcontractor->payment_batches_count + $subcontractor->back_charges_count; @endphp
                                             @if($linkedCount > 0)
                                                 <span title="Cannot delete: linked to {{ $subcontractor->contracts_count }} contract(s) and {{ $subcontractor->payment_batches_count }} payment batch(es)">
                                                     <x-ui.icon-button variant="danger" size="sm" icon="trash" disabled />

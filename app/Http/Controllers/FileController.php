@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\BackCharge;
 use App\Models\ChangeOrder;
 use App\Models\Contract;
 use App\Models\ContractChangeOrder;
@@ -55,6 +56,7 @@ class FileController extends Controller
         'temp_daily_reports',
         'subcontractor-documents',
         'equipment',
+        'back-charges',
         'company-logos',
         'livewire-tmp',
     ];
@@ -148,6 +150,10 @@ class FileController extends Controller
             // the polymorphic attachments, and a finding's photo; all three
             // reach the equipment.
             'equipment' => ['equipment', $this->equipmentFor($path)],
+
+            // Back charges — a company record; its photos and documents are
+            // polymorphic attachments.
+            'back-charges' => ['back-charges', $this->attachedTo($path, BackCharge::class)],
 
             // Not yet swept: the old rule stands, and its own pass adds the
             // line here. Nothing fails if that is forgotten, so it is written

@@ -133,6 +133,10 @@
                     <p class="text-2xl font-bold text-slate-900 dark:text-white">
                         {{ Number::currency($this->summary['total_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->summary['back_charges_amount'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->summary['back_charges_amount'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->summary['net_amount'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -340,6 +344,15 @@
                                         <span class="text-sm font-medium text-slate-900 dark:text-white {{ $isRejected ? 'line-through' : '' }}">
                                             {{ Number::currency($item->amount, config('app.currency'), config('app.locale')) }}
                                         </span>
+                                        @foreach($item->backChargeDeductions as $deduction)
+                                            <div class="text-xs text-red-600 dark:text-red-400" title="{{ $deduction->backCharge?->reason }}">
+                                                <a href="{{ route('back-charges.show', $deduction->back_charge_id) }}" class="hover:underline">{{ $deduction->backCharge?->number }}</a>
+                                                −{{ Number::currency($deduction->amount, config('app.currency'), config('app.locale')) }}
+                                            </div>
+                                        @endforeach
+                                        @if($item->backChargeDeductions->isNotEmpty())
+                                            <div class="text-xs font-semibold text-slate-900 dark:text-white">{{ __('Check: :amount', ['amount' => Number::currency($item->getNetAmount(), config('app.currency'), config('app.locale'))]) }}</div>
+                                        @endif
                                     </td>
                                     {{-- The contract's change orders, as on the edit screen; the arrow lists them. --}}
                                     @php
@@ -433,6 +446,10 @@
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
                                 {{ Number::currency($this->summary['total_amount'], config('app.currency'), config('app.locale')) }}
+                                @if($this->summary['back_charges_amount'] > 0)
+                                    <div class="text-xs font-normal text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->summary['back_charges_amount'], config('app.currency'), config('app.locale'))]) }}</div>
+                                    <div class="text-xs">{{ __('Checks: :amount', ['amount' => Number::currency($this->summary['net_amount'], config('app.currency'), config('app.locale'))]) }}</div>
+                                @endif
                             </td>
                             <td colspan="6"></td>
                         </tr>

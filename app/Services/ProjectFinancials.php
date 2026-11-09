@@ -113,8 +113,8 @@ class ProjectFinancials
      * been paid and what is still to pay. They do not record client payments
      * in the system, so nothing is taken off for money received.
      *
-     * Back charges reach this through the contracts' adjusted amounts today;
-     * when they become their own deductions they are subtracted here, once.
+     * Back charges deducted from a contract lower both its cost and the cash
+     * paid on it (figures()), so what is left to pay is unchanged.
      *
      * @param  array<int>|null  $projectIds  null for every project
      */
@@ -125,6 +125,7 @@ class ProjectFinancials
             ->when($projectIds !== null, fn ($q) => $q->whereIn('project_id', $projectIds))
             ->withSum('changeOrders as change_orders_cents', 'amount')
             ->withSum('payments as paid_cents', 'amount')
+            ->withBackChargesDeducted()
             ->get(['id', 'project_id', 'job_site_id', 'amount', 'status']);
 
         $openLotIds = $contracts->whereNotIn('status', ['paid', 'cancelled'])->pluck('job_site_id')->unique()->values();
@@ -154,13 +155,17 @@ class ProjectFinancials
             ->whereIn('project_id', $projectIds)
             ->withSum('changeOrders as change_orders_cents', 'amount')
             ->withSum('payments as paid_cents', 'amount')
+            ->withBackChargesDeducted()
             ->get(['id', 'project_id', 'job_site_id', 'amount', 'status']);
     }
 
     protected static function figures(float $contractValue, float $expenses, Collection $contracts): array
     {
-        $adjusted = round($contracts->sum(fn ($c) => (float) $c->amount + ((int) $c->change_orders_cents) / 100), 2);
-        $paid = round($contracts->sum(fn ($c) => ((int) $c->paid_cents) / 100), 2);
+        // Net of back charges (docs/back-charges.md): the contract costs less,
+        // and the deducted part of each payment never left the bank.
+        $backCharges = fn ($c) => ((int) $c->back_charges_deducted_cents) / 100;
+        $adjusted = round($contracts->sum(fn ($c) => (float) $c->amount + ((int) $c->change_orders_cents) / 100 - $backCharges($c)), 2);
+        $paid = round($contracts->sum(fn ($c) => ((int) $c->paid_cents) / 100 - $backCharges($c)), 2);
         $expenses = round($expenses, 2);
         $costs = round($expenses + $adjusted, 2);
 

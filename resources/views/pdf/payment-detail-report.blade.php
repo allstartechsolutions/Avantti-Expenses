@@ -170,7 +170,7 @@
                             {{ $r['paid_date']?->appDate() ?? '—' }}
                             @if($r['paid_by']) <span style="color: #888;">({{ $r['paid_by'] }})</span>@endif
                         </td>
-                        <td style="{{ $tdRight }}">{{ $money($r['amount']) }}</td>
+                        <td style="{{ $tdRight }}">{{ $money($r['amount']) }}@foreach ($r['back_charges'] ?? [] as $bc)<br><span style="font-size: 7pt; color: #c0392b;">{{ __(':number deducted :amount', ['number' => $bc['number'], 'amount' => $money($bc['amount'])]) }}</span>@endforeach</td>
                     </tr>
                 @empty
                     <tr><td colspan="9" style="{{ $td }} text-align: center; color: #888;">{{ __('No payments match the selected filters.') }}</td></tr>

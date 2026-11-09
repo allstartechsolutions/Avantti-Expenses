@@ -76,6 +76,8 @@ class PaymentBatchLayout
                 // Shown on every batch view, PDF and CSV (Nov 2026): back charges live here today.
                 'contract.changeOrders',
                 'scheduleItem', 'measurement',
+                // Back charges taken out of each line (docs/back-charges.md).
+                'backChargeDeductions.backCharge:id,number,reason',
                 'contract.subcontractor' => fn ($q) => $documentHealth ? $q->withDocumentHealth() : $q,
             ])
             ->get();
@@ -94,12 +96,18 @@ class PaymentBatchLayout
         $sum = fn (?string $status = null) => ($status ? $items->where('status', $status) : $items)
             ->sum(fn ($item) => (int) $item->getRawOriginal('amount')) / 100.0;
 
+        // A rejected line holds no deductions: they are given back on reject.
+        $backCharges = $items->sum(fn ($item) => (int) round($item->getBackChargesDeducted() * 100)) / 100.0;
+
         return [
             'count' => $items->count(),
             'total_amount' => $sum(),
             'approved_amount' => $sum('approved'),
             'pending_amount' => $sum('pending'),
             'rejected_amount' => $sum('rejected'),
+            'back_charges_amount' => $backCharges,
+            // What the checks add up to: the lines not rejected, less the back charges.
+            'net_amount' => round($sum() - $sum('rejected') - $backCharges, 2),
         ];
     }
 

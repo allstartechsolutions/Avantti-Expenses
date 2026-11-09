@@ -279,10 +279,11 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach ($contractsDetail as $contract)
                             @php
-                                $adjusted = $contract->getAdjustedAmount();
-                                $paid = $contract->getAmountPaid();
+                                $adjusted = $contract->getNetAmount();
+                                $paid = $contract->getCashPaid();
                                 $balance = round($adjusted - $paid, 2);
                                 $coTotal = $contract->getChangeOrdersTotal();
+                                $bcTotal = $contract->getBackChargesDeducted();
                                 $contractStatusClass = match ($contract->status) {
                                     'paid' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
                                     'partially_paid' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -308,6 +309,11 @@
                                     @if ($coTotal != 0)
                                         <div class="text-xs {{ $coTotal < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400' }}">
                                             {{ __('incl.') }} {{ $coTotal >= 0 ? '+' : '' }}{{ Number::currency($coTotal, $currency, $locale) }} {{ __('CO') }}
+                                        </div>
+                                    @endif
+                                    @if ($bcTotal > 0)
+                                        <div class="text-xs text-red-600 dark:text-red-400">
+                                            {{ __('incl. −:amount back charges', ['amount' => Number::currency($bcTotal, $currency, $locale)]) }}
                                         </div>
                                     @endif
                                 </td>

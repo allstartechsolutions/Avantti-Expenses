@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Concerns\SortsContracts;
+use App\Models\Client;
 use App\Models\Company;
 use App\Models\Contract;
+use App\Models\Project;
+use App\Models\Subcontractor;
+use App\Models\User;
 use App\Services\PaymentBatchLayout;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -22,7 +26,7 @@ class ContractPaymentsPdfController extends Controller
         $pdf->setPaper('letter', 'landscape');
 
         $suffix = $request->boolean('include_payments') ? '-detailed' : '';
-        $filename = 'contract-payments' . $suffix . '-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'contract-payments'.$suffix.'-'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -78,6 +82,7 @@ class ContractPaymentsPdfController extends Controller
             ->with($eagerLoad)
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->withBackChargesDeducted()
             ->when($clientFilter, fn ($q) => $q->whereHas('project', fn ($p) => $p->where('client_id', $clientFilter)))
             ->when($projectFilter, fn ($q) => $q->where('project_id', $projectFilter))
             ->when($subcontractorFilter, fn ($q) => $q->where('subcontractor_id', $subcontractorFilter))
@@ -101,7 +106,8 @@ class ContractPaymentsPdfController extends Controller
             $paid = ($contract->total_paid_cents ?? 0) / 100;
             $co = ($contract->change_orders_total_cents ?? 0) / 100;
             $totalValue += $contract->amount;
-            $totalPaid += $paid;
+            // Cash: back charges deducted never left the bank.
+            $totalPaid += $paid - $contract->getBackChargesDeducted();
             $totalChangeOrders += $co;
             $totalBalance += round($contract->amount + $co - $paid, 2);
         }
@@ -120,43 +126,43 @@ class ContractPaymentsPdfController extends Controller
         $filters = [];
 
         if ($request->query('client')) {
-            $client = \App\Models\Client::find($request->query('client'));
+            $client = Client::find($request->query('client'));
             if ($client) {
-                $filters[] = __('Client') . ': ' . $client->company_name;
+                $filters[] = __('Client').': '.$client->company_name;
             }
         }
         if ($request->query('project')) {
-            $project = \App\Models\Project::find($request->query('project'));
+            $project = Project::find($request->query('project'));
             if ($project) {
-                $filters[] = __('Project') . ': ' . $project->project_name;
+                $filters[] = __('Project').': '.$project->project_name;
             }
         }
         if ($request->query('subcontractor')) {
-            $sub = \App\Models\Subcontractor::find($request->query('subcontractor'));
+            $sub = Subcontractor::find($request->query('subcontractor'));
             if ($sub) {
-                $filters[] = __('Subcontractor') . ': ' . $sub->company_name;
+                $filters[] = __('Subcontractor').': '.$sub->company_name;
             }
         }
         if ($request->query('project_manager')) {
-            $manager = \App\Models\User::find($request->query('project_manager'));
+            $manager = User::find($request->query('project_manager'));
             if ($manager) {
-                $filters[] = __('Project Manager') . ': ' . $manager->name;
+                $filters[] = __('Project Manager').': '.$manager->name;
             }
         }
         if ($request->query('supervisor')) {
-            $supervisor = \App\Models\User::find($request->query('supervisor'));
+            $supervisor = User::find($request->query('supervisor'));
             if ($supervisor) {
-                $filters[] = __('Supervisor') . ': ' . $supervisor->name;
+                $filters[] = __('Supervisor').': '.$supervisor->name;
             }
         }
         if ($request->query('status')) {
-            $filters[] = __('Status') . ': ' . Contract::statusLabel($request->query('status'));
+            $filters[] = __('Status').': '.Contract::statusLabel($request->query('status'));
         }
         if ($request->boolean('show_zero_balance')) {
             $filters[] = __('Including Paid/Cancelled');
         }
         if ($groupBy = PaymentBatchLayout::cleanGroup($request->query('group'), withStatus: false)) {
-            $filters[] = __('Grouped by') . ': ' . PaymentBatchLayout::groupOptions(withStatus: false)[$groupBy];
+            $filters[] = __('Grouped by').': '.PaymentBatchLayout::groupOptions(withStatus: false)[$groupBy];
         }
         if ($this->isSorted()) {
             $filters[] = __('Sorted by :column, :direction', [

@@ -77,6 +77,11 @@ class SubcontractorEmployee extends Model
     /**
      * Get the contracts linked to this employee
      */
+    public function backCharges(): HasMany
+    {
+        return $this->hasMany(BackCharge::class);
+    }
+
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);

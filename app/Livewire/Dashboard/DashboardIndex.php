@@ -582,10 +582,11 @@ class DashboardIndex extends Component
                     'expense',
                 ), 'expense')->sum('amount');
 
-                $contractPayments = $this->onlyVisibleThrough(
+                // Cash out: back charges deducted never left the bank.
+                $contractPayments = ContractPayment::cashCents($this->onlyVisibleThrough(
                     ContractPayment::whereBetween('payment_date', [$monthStart, $monthEnd]),
                     'contract',
-                )->sum('amount');
+                ));
 
                 $outflow[] = round(($expensePayments + $contractPayments) / 100, 2);
             } else {

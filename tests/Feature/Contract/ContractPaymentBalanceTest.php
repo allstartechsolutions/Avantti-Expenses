@@ -2,22 +2,26 @@
 
 namespace Tests\Feature\Contract;
 
+use App\Enums\JobSiteStatus;
 use App\Enums\ProjectStatus;
 use App\Livewire\Contract\ContractPayments;
 use App\Livewire\Contract\ContractShow;
 use App\Livewire\PaymentBatch\PaymentBatchEdit;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\ContractChangeOrder;
+use App\Models\JobSite;
 use App\Models\PaymentBatch;
 use App\Models\PaymentBatchItem;
-use App\Models\ContractChangeOrder;
 use App\Models\Project;
 use App\Models\Role;
+use App\Models\SubcontractorEmployee;
 use App\Models\User;
 use App\Models\Vendor;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Number;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -115,7 +119,7 @@ class ContractPaymentBalanceTest extends TestCase
         $this->assertSame(0, $contract->payments()->count());
         $component->assertSee(__('Payment for :number exceeds the balance due of :balance.', [
             'number' => $contract->contract_number,
-            'balance' => \Illuminate\Support\Number::currency(600, config('app.currency'), config('app.locale')),
+            'balance' => Number::currency(600, config('app.currency'), config('app.locale')),
         ]));
 
         $component->set('payAmounts.'.$contract->id, '600')->call('processPayments');
@@ -173,12 +177,12 @@ class ContractPaymentBalanceTest extends TestCase
         $first->payments()->create(['amount' => 400, 'payment_date' => now()->toDateString(), 'payment_method' => 'cash', 'created_by' => $this->admin->id]);
         $second = $this->makeContract(2000);
 
-        $expected = ['count' => 2, 'amount' => 3000.0, 'change_orders' => 500.0, 'adjusted' => 3500.0, 'paid' => 400.0, 'balance' => 3100.0];
+        $expected = ['count' => 2, 'amount' => 3000.0, 'change_orders' => 500.0, 'adjusted' => 3500.0, 'paid' => 400.0, 'balance' => 3100.0, 'back_charges' => 0.0];
 
         $component = Livewire::actingAs($this->admin)->test(ContractPayments::class);
         $this->assertEquals($expected, $component->instance()->totals());
         $component->assertSee(__('Total'))
-            ->assertSee(\Illuminate\Support\Number::currency(3100, config('app.currency'), config('app.locale')));
+            ->assertSee(Number::currency(3100, config('app.currency'), config('app.locale')));
 
         $batch = PaymentBatch::create([
             'name' => 'Totals',
@@ -195,7 +199,7 @@ class ContractPaymentBalanceTest extends TestCase
         $batchScreen = Livewire::actingAs($this->admin)->test(PaymentBatchEdit::class, ['paymentBatch' => $batch]);
         $this->assertCount(50, $batchScreen->viewData('contracts'));
         $this->assertEquals(
-            ['count' => 52, 'amount' => 8000.0, 'change_orders' => 500.0, 'adjusted' => 8500.0, 'paid' => 400.0, 'balance' => 8100.0],
+            ['count' => 52, 'amount' => 8000.0, 'change_orders' => 500.0, 'adjusted' => 8500.0, 'paid' => 400.0, 'balance' => 8100.0, 'back_charges' => 0.0],
             $batchScreen->viewData('totals'),
         );
     }
@@ -203,7 +207,7 @@ class ContractPaymentBalanceTest extends TestCase
     public function test_each_row_names_the_employee_assigned_to_the_contract(): void
     {
         $contract = $this->makeContract(1000);
-        $employee = \App\Models\SubcontractorEmployee::create([
+        $employee = SubcontractorEmployee::create([
             'subcontractor_id' => $contract->subcontractor_id,
             'name' => 'Maria Souza',
             'title' => 'Foreman',
@@ -218,12 +222,12 @@ class ContractPaymentBalanceTest extends TestCase
 
     public function test_the_table_sorts_by_lot_contract_amount_paid_and_balance(): void
     {
-        $site = fn (string $name) => \App\Models\JobSite::create([
+        $site = fn (string $name) => JobSite::create([
             'project_id' => $this->project->id,
             'job_site_name' => $name,
             'contact_person' => 'C',
             'email' => str()->random(6).'@example.test',
-            'status' => \App\Enums\JobSiteStatus::CREATED,
+            'status' => JobSiteStatus::CREATED,
             'created_by' => $this->admin->id,
         ]);
 
@@ -267,12 +271,12 @@ class ContractPaymentBalanceTest extends TestCase
 
     public function test_the_payment_batch_table_sorts_the_same_way_across_pages(): void
     {
-        $site = fn (string $name) => \App\Models\JobSite::create([
+        $site = fn (string $name) => JobSite::create([
             'project_id' => $this->project->id,
             'job_site_name' => $name,
             'contact_person' => 'C',
             'email' => str()->random(6).'@example.test',
-            'status' => \App\Enums\JobSiteStatus::CREATED,
+            'status' => JobSiteStatus::CREATED,
             'created_by' => $this->admin->id,
         ]);
 

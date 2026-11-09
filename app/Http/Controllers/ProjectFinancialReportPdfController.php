@@ -18,7 +18,7 @@ class ProjectFinancialReportPdfController extends Controller
         $pdf = Pdf::loadView('pdf.project-financial-report', $data);
         $pdf->setPaper('letter', 'portrait');
 
-        $filename = 'project-' . Str::slug($project->project_name) . '-financial-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'project-'.Str::slug($project->project_name).'-financial-'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -59,6 +59,7 @@ class ProjectFinancialReportPdfController extends Controller
                 'jobSite:id,job_site_name',
                 'changeOrders',
                 'payments',
+                'backChargeDeductions',
             ])
             ->orderBy('contract_number')
             ->get();
@@ -66,8 +67,8 @@ class ProjectFinancialReportPdfController extends Controller
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contractsCollection as $contract) {
-            $contractsAdjusted += $contract->getAdjustedAmount();
-            $contractsPaid += $contract->getAmountPaid();
+            $contractsAdjusted += $contract->getNetAmount();
+            $contractsPaid += $contract->getCashPaid();
         }
         $contractsUnpaid = round($contractsAdjusted - $contractsPaid, 2);
 
@@ -112,12 +113,12 @@ class ProjectFinancialReportPdfController extends Controller
         $projectLevelCOTotal = $project->projectLevelChangeOrders()->approved()->sum('amount');
         $projectLevelExpenses = $project->projectLevelExpenses->sum('total_amount');
 
-        $projectLevelContracts = $project->projectLevelContracts()->with(['changeOrders', 'payments'])->get();
+        $projectLevelContracts = $project->projectLevelContracts()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
         $projectLevelContractsAdjusted = 0;
         $projectLevelContractsPaid = 0;
         foreach ($projectLevelContracts as $contract) {
-            $projectLevelContractsAdjusted += $contract->getAdjustedAmount();
-            $projectLevelContractsPaid += $contract->getAmountPaid();
+            $projectLevelContractsAdjusted += $contract->getNetAmount();
+            $projectLevelContractsPaid += $contract->getCashPaid();
         }
 
         $projectLevelBase = $project->amount_source?->value === 'manual'
@@ -139,12 +140,12 @@ class ProjectFinancialReportPdfController extends Controller
             $jsContractValue = $jobSite->getAdjustedContractValue();
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
-            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
+            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
             $jsContractsAdjusted = 0;
             $jsContractsPaid = 0;
             foreach ($jsContracts as $contract) {
-                $jsContractsAdjusted += $contract->getAdjustedAmount();
-                $jsContractsPaid += $contract->getAmountPaid();
+                $jsContractsAdjusted += $contract->getNetAmount();
+                $jsContractsPaid += $contract->getCashPaid();
             }
 
             $rows[] = [

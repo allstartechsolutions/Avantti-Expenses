@@ -150,7 +150,7 @@ class VendorIndex extends Component
             : null;
 
         $vendors = Vendor::query()
-            ->withCount(['contracts', 'paymentBatches', 'expenses', 'purchaseOrders', 'catalogItems', 'employees'])
+            ->withCount(['contracts', 'paymentBatches', 'expenses', 'purchaseOrders', 'catalogItems', 'employees', 'backCharges'])
             ->withDocumentHealth()
             ->activeState($this->status)
             ->when($this->type === 'suppliers', fn (Builder $q) => $q->where('is_supplier', true))

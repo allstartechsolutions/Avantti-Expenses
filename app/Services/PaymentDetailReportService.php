@@ -291,6 +291,7 @@ class PaymentDetailReportService
                 'contract.jobSite:id,job_site_name',
                 'createdBy:id,name',
                 'batchItem.batch:id,name,notes',
+                'backChargeDeductions.backCharge:id,number,reason',
             ])
             ->get()
             ->map(function (ContractPayment $p) {
@@ -310,7 +311,11 @@ class PaymentDetailReportService
                     'installment_label' => null,
                     'status' => 'paid',
                     'paid_by' => $p->createdBy?->name,
-                    'amount' => (float) $p->amount,
+                    // The check; the back charges deducted are listed beside it.
+                    'amount' => $p->getNetAmount(),
+                    'back_charges' => $p->backChargeDeductions
+                        ->map(fn ($d) => ['number' => $d->backCharge?->number, 'reason' => $d->backCharge?->reason, 'amount' => (float) $d->amount])
+                        ->values()->all(),
                     'reference' => $p->reference_number,
                     'phase' => $p->phase,
                     'notes' => $p->notes,

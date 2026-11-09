@@ -54,7 +54,7 @@
                     {{ __('Edit Subcontractor') }}
                 </x-ui.button>
                 @if(auth()->user()->can('vendors.delete'))
-                    @if($linkedContracts + $linkedPaymentBatches > 0)
+                    @if($linkedContracts + $linkedPaymentBatches + $linkedBackCharges > 0)
                         <span title="Cannot delete: linked to {{ $linkedContracts }} contract(s) and {{ $linkedPaymentBatches }} payment batch(es)">
                             <x-ui.button variant="danger" icon="trash" disabled>
                                 {{ __('Delete') }}
@@ -350,6 +350,49 @@
                             @endif
                         </div>
                     </div>
+
+                    @can('back-charges.view')
+                        @php
+                            $openBackCharges = $backCharges->reject->isFullyDeducted();
+                            $leftToDeduct = round($openBackCharges->sum(fn ($bc) => $bc->getRemainingCents()) / 100, 2);
+                        @endphp
+                        <!-- Back charges (docs/back-charges.md) -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Back Charges') }}</h3>
+                                @if($backCharges->isNotEmpty())
+                                    <a href="{{ route('back-charges.index', ['subcontractorFilter' => $subcontractor->id]) }}" class="text-sm text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ __('View all') }}</a>
+                                @endif
+                            </div>
+                            <div class="p-6">
+                                @if($backCharges->isEmpty())
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No back charges for this subcontractor.') }}</p>
+                                @else
+                                    <div class="flex items-baseline justify-between mb-3">
+                                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ trans_choice(':count open|:count open', $openBackCharges->count(), ['count' => $openBackCharges->count()]) }}</span>
+                                        <span class="text-lg font-semibold {{ $leftToDeduct > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white' }}"><x-ui.money rollup :amount="$leftToDeduct" /></span>
+                                    </div>
+                                    <ul class="divide-y divide-slate-200 dark:divide-slate-700">
+                                        @foreach($openBackCharges->take(5) as $bc)
+                                            <li wire:key="sub-bc-{{ $bc->id }}" class="py-2 flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <a href="{{ route('back-charges.show', $bc) }}" class="text-sm font-medium text-[#3F5189] dark:text-[#4A5A96] hover:underline">{{ $bc->number }}</a>
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ $bc->reason }}@if($bc->subcontractorEmployee) · {{ $bc->subcontractorEmployee->name }}@endif</p>
+                                                </div>
+                                                <span class="text-sm font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap"><x-ui.money :amount="$bc->getRemaining()" /></span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                    @if($openBackCharges->count() > 5)
+                                        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ trans_choice('and :count more|and :count more', $openBackCharges->count() - 5, ['count' => $openBackCharges->count() - 5]) }}</p>
+                                    @endif
+                                    @if($openBackCharges->isEmpty())
+                                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Everything has been deducted.') }}</p>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+                    @endcan
 
                     <!-- Subcontractor Stats -->
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">

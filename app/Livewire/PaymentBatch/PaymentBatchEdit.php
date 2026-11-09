@@ -4,6 +4,7 @@ namespace App\Livewire\PaymentBatch;
 
 use App\Livewire\Concerns\AuthorizesAbility;
 use App\Livewire\Concerns\SortsContracts;
+use App\Models\BackCharge;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\ContractPayment;
@@ -13,11 +14,13 @@ use App\Models\Project;
 use App\Models\Subcontractor;
 use App\Models\SubcontractorEmployee;
 use App\Models\User;
+use App\Services\BackChargeDeductions;
 use App\Services\PaymentBatchLayout;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -71,6 +74,13 @@ class PaymentBatchEdit extends Component
      */
     public array $payTargets = [];
 
+    /**
+     * Back charges deducted on each line (docs/back-charges.md):
+     * [contract id][back charge id] => amount. Saved with the draft; taken
+     * when the line is approved, given back when it is rejected.
+     */
+    public array $payDeductions = [];
+
     /** Client, project, job site or subcontractor; empty lists the contracts ungrouped. */
     #[Url(as: 'group', except: '')]
     public string $groupBy = '';
@@ -106,9 +116,10 @@ class PaymentBatchEdit extends Component
 
     public function loadExistingItems(): void
     {
-        $items = $this->paymentBatch->items()->where('status', 'pending')->get();
+        $items = $this->paymentBatch->items()->where('status', 'pending')->with('backChargeDeductions')->get();
 
         $this->payAmounts = [];
+        $this->payDeductions = [];
         $this->payMethods = [];
         $this->payPhases = [];
         $this->payNotes = [];
@@ -126,7 +137,25 @@ class PaymentBatchEdit extends Component
                 $item->contract_measurement_id !== null => 'medicao:'.$item->contract_measurement_id,
                 default => '',
             };
+
+            foreach ($item->backChargeDeductions as $deduction) {
+                $this->payDeductions[$key][(string) $deduction->back_charge_id] = number_format($deduction->amount, 2, '.', '');
+            }
         }
+    }
+
+    /** Whether this person may take back charges out of the lines. */
+    public function canDeduct(): bool
+    {
+        return $this->allowsAbility('back-charges.deduct');
+    }
+
+    /** The deductions typed on a line, without the empty boxes. */
+    protected function deductionsFor($contractId): array
+    {
+        return collect($this->payDeductions[$contractId] ?? [])
+            ->filter(fn ($amount) => is_numeric($amount) && (float) $amount > 0)
+            ->all();
     }
 
     public function sort(string $field): void
@@ -310,8 +339,10 @@ class PaymentBatchEdit extends Component
     #[Computed]
     public function batchSummary(): array
     {
-        $items = $this->paymentBatch->items;
+        $items = $this->paymentBatch->items()->with('backChargeDeductions')->get();
         $totalCents = $items->sum(fn ($item) => $item->getRawOriginal('amount'));
+        // Rejected lines hold no deductions (they are given back on reject).
+        $backChargeCents = $items->sum(fn ($item) => $item->backChargeDeductions->sum(fn ($d) => (int) $d->getRawOriginal('amount')));
         $approvedCents = $items->where('status', 'approved')->sum(fn ($item) => $item->getRawOriginal('amount'));
         $pendingCents = $items->where('status', 'pending')->sum(fn ($item) => $item->getRawOriginal('amount'));
         $rejectedCents = $items->where('status', 'rejected')->sum(fn ($item) => $item->getRawOriginal('amount'));
@@ -325,6 +356,9 @@ class PaymentBatchEdit extends Component
             'approved_amount' => $approvedCents / 100,
             'rejected_count' => $items->where('status', 'rejected')->count(),
             'rejected_amount' => $rejectedCents / 100,
+            'back_charges_amount' => $backChargeCents / 100,
+            // What the checks add up to, rejected lines left out.
+            'net_amount' => ($totalCents - $rejectedCents - $backChargeCents) / 100,
         ];
     }
 
@@ -359,6 +393,7 @@ class PaymentBatchEdit extends Component
             ->merge(collect($this->payNotes)->keys())
             ->merge(collect($this->payMethods)->keys())
             ->merge(collect($this->payTargets)->keys())
+            ->merge(collect($this->payDeductions)->keys())
             ->unique();
 
         $rowsToSave = $allContractIds->filter(function ($contractId) {
@@ -370,8 +405,9 @@ class PaymentBatchEdit extends Component
             $hasPhase = ! empty($phase);
             $hasNotes = ! empty($notes);
             $hasTarget = ! empty($this->payTargets[$contractId] ?? '');
+            $hasDeductions = $this->deductionsFor($contractId) !== [];
 
-            return $hasAmount || $hasPhase || $hasNotes || $hasTarget;
+            return $hasAmount || $hasPhase || $hasNotes || $hasTarget || $hasDeductions;
         });
 
         $rowsToRemove = $allContractIds->diff($rowsToSave);
@@ -397,12 +433,29 @@ class PaymentBatchEdit extends Component
             ));
         }
 
-        DB::transaction(function () use ($rowsToSave, $rowsToRemove) {
+        // A line approved or rejected since this screen was loaded — by
+        // somebody else, or in another tab — is history: a stale save must
+        // neither turn it back to pending nor touch its deductions.
+        $settledIds = PaymentBatchItem::where('payment_batch_id', $this->paymentBatch->id)
+            ->whereIn('contract_id', $rowsToSave)
+            ->where('status', '!=', 'pending')
+            ->pluck('contract_id');
+
+        if ($settledIds->isNotEmpty()) {
+            $rowsToSave = $rowsToSave->reject(fn ($id) => $settledIds->contains((int) $id))->values();
+        }
+
+        // Somebody without the grant saves the line around its deductions,
+        // never through them: what was set aside stays as it was, whatever
+        // the browser sends.
+        $canDeduct = $this->canDeduct();
+
+        DB::transaction(function () use ($rowsToSave, $rowsToRemove, $canDeduct) {
             foreach ($rowsToSave as $contractId) {
                 $amount = $this->payAmounts[$contractId] ?? null;
                 $hasAmount = $amount !== null && $amount !== '' && (float) $amount > 0;
 
-                PaymentBatchItem::updateOrCreate(
+                $item = PaymentBatchItem::updateOrCreate(
                     [
                         'payment_batch_id' => $this->paymentBatch->id,
                         'contract_id' => $contractId,
@@ -417,6 +470,13 @@ class PaymentBatchEdit extends Component
                         'status' => 'pending',
                     ]
                 );
+
+                if ($canDeduct) {
+                    app(BackChargeDeductions::class)->syncForBatchItem($item, $this->deductionsFor($contractId), "payDeductions.{$contractId}");
+                } elseif ((int) round($item->getBackChargesDeducted() * 100) > (int) $item->getRawOriginal('amount')) {
+                    // The check cannot go below zero.
+                    throw ValidationException::withMessages(["payAmounts.{$contractId}" => __('The back charges deducted cannot be more than the payment.')]);
+                }
             }
 
             // Remove items that were cleared (only pending ones)
@@ -669,6 +729,12 @@ class PaymentBatchEdit extends Component
             return;
         }
 
+        if ($error = app(BackChargeDeductions::class)->payeeError($item, $contract)) {
+            session()->flash('error', $error);
+
+            return;
+        }
+
         DB::transaction(function () use ($item) {
             $this->processApprovedItem($item);
         });
@@ -681,7 +747,7 @@ class PaymentBatchEdit extends Component
         unset($this->payMethods[$item->contract_id]);
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
-        unset($this->payTargets[$item->contract_id]);
+        unset($this->payTargets[$item->contract_id], $this->payDeductions[$item->contract_id]);
 
         session()->flash('message', __('Payment for :number approved and processed.', ['number' => $contract->contract_number]));
     }
@@ -692,7 +758,7 @@ class PaymentBatchEdit extends Component
      */
     protected function processApprovedItem(PaymentBatchItem $item): void
     {
-        ContractPayment::create([
+        $payment = ContractPayment::create([
             'contract_id' => $item->contract_id,
             'contract_schedule_item_id' => $item->contract_schedule_item_id,
             'contract_measurement_id' => $item->contract_measurement_id,
@@ -705,6 +771,9 @@ class PaymentBatchEdit extends Component
             'notes' => $item->notes,
             'created_by' => Auth::id(),
         ]);
+
+        // What the line set aside is now taken: the contract is lowered.
+        app(BackChargeDeductions::class)->takeForApprovedItem($item, $payment);
 
         $item->update([
             'status' => 'approved',
@@ -787,6 +856,10 @@ class PaymentBatchEdit extends Component
             if ($error = $this->targetError($item, $contract)) {
                 $errors[] = $error;
             }
+
+            if ($error = app(BackChargeDeductions::class)->payeeError($item, $contract)) {
+                $errors[] = $error;
+            }
         }
 
         if (! empty($errors)) {
@@ -817,7 +890,10 @@ class PaymentBatchEdit extends Component
             ->where('status', 'pending')
             ->firstOrFail();
 
-        $item->update(['status' => 'rejected']);
+        DB::transaction(function () use ($item) {
+            $item->update(['status' => 'rejected']);
+            app(BackChargeDeductions::class)->releaseForBatchItem($item);
+        });
 
         $this->updateBatchStatus();
         unset($this->batchSummary, $this->selectionSummary);
@@ -826,7 +902,7 @@ class PaymentBatchEdit extends Component
         unset($this->payMethods[$item->contract_id]);
         unset($this->payPhases[$item->contract_id]);
         unset($this->payNotes[$item->contract_id]);
-        unset($this->payTargets[$item->contract_id]);
+        unset($this->payTargets[$item->contract_id], $this->payDeductions[$item->contract_id]);
 
         session()->flash('message', __('Item rejected.'));
     }
@@ -855,13 +931,17 @@ class PaymentBatchEdit extends Component
             return;
         }
 
-        PaymentBatchItem::whereIn('id', $items->pluck('id'))->where('status', 'pending')->update(['status' => 'rejected']);
+        DB::transaction(function () use ($items) {
+            PaymentBatchItem::whereIn('id', $items->pluck('id'))->where('status', 'pending')->update(['status' => 'rejected']);
+            // What the lines set aside goes back to the back charges.
+            $items->each(fn (PaymentBatchItem $item) => app(BackChargeDeductions::class)->releaseForBatchItem($item));
+        });
 
         foreach ($items as $item) {
             unset(
                 $this->payAmounts[$item->contract_id], $this->payMethods[$item->contract_id],
                 $this->payPhases[$item->contract_id], $this->payNotes[$item->contract_id],
-                $this->payTargets[$item->contract_id],
+                $this->payTargets[$item->contract_id], $this->payDeductions[$item->contract_id],
             );
         }
 
@@ -883,7 +963,12 @@ class PaymentBatchEdit extends Component
             return;
         }
 
-        $this->paymentBatch->update(['status' => 'cancelled']);
+        DB::transaction(function () {
+            // A cancelled batch pays nothing: its pending lines give back what they set aside.
+            $this->paymentBatch->items()->where('status', 'pending')->get()
+                ->each(fn (PaymentBatchItem $item) => app(BackChargeDeductions::class)->releaseForBatchItem($item));
+            $this->paymentBatch->update(['status' => 'cancelled']);
+        });
         unset($this->batchSummary);
 
         session()->flash('message', __('Batch cancelled.'));
@@ -907,6 +992,7 @@ class PaymentBatchEdit extends Component
         $query = Contract::query()
             ->withSum('payments as total_paid_cents', 'amount')
             ->withSum('changeOrders as change_orders_total_cents', 'amount')
+            ->withBackChargesDeducted()
             ->where(fn ($listed) => $listed
                 ->where(fn ($q) => $this->applyFilters($q->committed())
                     ->unless($this->showZeroBalance, fn ($q) => $q->whereNotIn('status', ['paid', 'cancelled'])))
@@ -937,7 +1023,7 @@ class PaymentBatchEdit extends Component
 
         // Get batch items indexed by contract_id for quick lookup
         $batchItems = $this->paymentBatch->items()
-            ->with(['scheduleItem', 'measurement'])
+            ->with(['scheduleItem', 'measurement', 'backChargeDeductions.backCharge'])
             ->whereIn('contract_id', $contracts->pluck('id'))
             ->get()
             ->keyBy('contract_id');
@@ -949,6 +1035,7 @@ class PaymentBatchEdit extends Component
         return view('livewire.payment-batch.payment-batch-edit', [
             'contracts' => $contracts,
             'batchItems' => $batchItems,
+            'backChargeRows' => $this->backChargeRows($contracts, $batchItems),
             'totals' => $this->contractTotals($listed),
             'groupHeaders' => $groupBy ? $this->groupHeaders($groups, $contracts->pluck('id')) : [],
             // Approve All pays every pending item, filtered out or not, so
@@ -961,6 +1048,51 @@ class PaymentBatchEdit extends Component
                     ->get()
             ),
         ])->layout('components.layouts.app');
+    }
+
+    /**
+     * The back charges each row on the page may take, keyed by contract id:
+     * the company's, plus the employee's when the contract names one. What
+     * this line already set aside counts as available to it, so editing a
+     * saved line never looks like it is over the remaining amount.
+     *
+     * @return array<int, array<int, array{bc: BackCharge, available: float}>>
+     */
+    protected function backChargeRows($contracts, $batchItems): array
+    {
+        $subcontractorIds = $contracts->pluck('subcontractor_id')->filter()->unique();
+
+        if ($subcontractorIds->isEmpty()) {
+            return [];
+        }
+
+        $charges = BackCharge::query()
+            ->whereIn('subcontractor_id', $subcontractorIds)
+            ->withDeducted()
+            ->with('subcontractorEmployee:id,name')
+            ->orderBy('date')->orderBy('id')
+            ->get();
+
+        $rows = [];
+
+        foreach ($contracts as $contract) {
+            $item = $batchItems[$contract->id] ?? null;
+            $reserved = $item && $item->status === 'pending'
+                ? $item->backChargeDeductions->mapWithKeys(fn ($d) => [$d->back_charge_id => (int) $d->getRawOriginal('amount')])
+                : collect();
+
+            foreach ($charges as $bc) {
+                $fits = $bc->subcontractor_id === $contract->subcontractor_id
+                    && ($bc->subcontractor_employee_id === null || $bc->subcontractor_employee_id === $contract->subcontractor_employee_id);
+                $availableCents = $bc->getRemainingCents() + ($reserved[$bc->id] ?? 0);
+
+                if ($fits && $availableCents > 0) {
+                    $rows[$contract->id][] = ['bc' => $bc, 'available' => round($availableCents / 100, 2)];
+                }
+            }
+        }
+
+        return $rows;
     }
 
     /**

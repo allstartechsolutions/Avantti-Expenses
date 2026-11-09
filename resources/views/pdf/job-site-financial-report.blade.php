@@ -240,10 +240,11 @@
         <tbody>
             @forelse($contracts as $contract)
                 @php
-                    $adjusted = $contract->getAdjustedAmount();
-                    $paid = $contract->getAmountPaid();
+                    $adjusted = $contract->getNetAmount();
+                    $paid = $contract->getCashPaid();
                     $balance = round($adjusted - $paid, 2);
                     $coTotal = $contract->getChangeOrdersTotal();
+                    $bcTotal = $contract->getBackChargesDeducted();
                 @endphp
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 4px 6px;">#{{ $contract->contract_number }}</td>
@@ -254,6 +255,11 @@
                         @if($coTotal != 0)
                             <div style="font-size: 6.5pt; color: {{ $coTotal < 0 ? '#e74c3c' : '#888' }};">
                                 {{ __('incl.') }} {{ $coTotal >= 0 ? '+' : '' }}${{ number_format($coTotal, 2) }} CO
+                            </div>
+                        @endif
+                        @if($bcTotal > 0)
+                            <div style="font-size: 6.5pt; color: #e74c3c;">
+                                {{ __('incl. −:amount back charges', ['amount' => '$'.number_format($bcTotal, 2)]) }}
                             </div>
                         @endif
                     </td>

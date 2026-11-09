@@ -350,6 +350,8 @@
                 </div>
             </div>
 
+            @include('livewire.back-charge.partials.origin-card', ['originLabel' => __('Started on this job site or one of its lots')])
+
             <!-- Project Stats -->
             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">

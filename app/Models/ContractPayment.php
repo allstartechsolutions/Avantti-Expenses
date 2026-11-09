@@ -40,6 +40,42 @@ class ContractPayment extends Model
         );
     }
 
+    public function backChargeDeductions(): HasMany
+    {
+        return $this->hasMany(BackChargeDeduction::class);
+    }
+
+    /** Back charges deducted from this payment (docs/back-charges.md). */
+    public function getBackChargesDeducted(): float
+    {
+        $cents = $this->relationLoaded('backChargeDeductions')
+            ? $this->backChargeDeductions->sum(fn ($d) => $d->getRawOriginal('amount'))
+            : $this->backChargeDeductions()->sum('amount');
+
+        return round($cents / 100, 2);
+    }
+
+    /**
+     * Cash out, in cents, for a query of payments: what was paid less the
+     * back charges deducted from those payments. Cash reports sum with this,
+     * never with ->sum('amount') (docs/back-charges.md).
+     */
+    public static function cashCents($query): int
+    {
+        $gross = (int) (clone $query)->sum('contract_payments.amount');
+        $deducted = (int) BackChargeDeduction::query()
+            ->whereIn('contract_payment_id', (clone $query)->select('contract_payments.id'))
+            ->sum('amount');
+
+        return $gross - $deducted;
+    }
+
+    /** The check: the payment less the back charges deducted from it. */
+    public function getNetAmount(): float
+    {
+        return round($this->amount - $this->getBackChargesDeducted(), 2);
+    }
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);

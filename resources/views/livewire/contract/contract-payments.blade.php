@@ -316,6 +316,9 @@
                             $totalPaidDollars = ($contract->total_paid_cents ?? 0) / 100;
                             $changeOrdersTotal = ($contract->change_orders_total_cents ?? 0) / 100;
                             $balance = round($contract->amount + $changeOrdersTotal - $totalPaidDollars, 2);
+                            // Back charges deducted lower the contract and never left the bank.
+                            $backChargesTotal = $contract->getBackChargesDeducted();
+                            $cashPaid = round($totalPaidDollars - $backChargesTotal, 2);
                             $isPaidOrCancelled = in_array($contract->status, ['paid', 'cancelled']);
                             $isExpanded = in_array($contract->id, $expandedContracts);
                         @endphp
@@ -340,6 +343,12 @@
                                          title="{{ $contract->subcontractorEmployee->name }}@if($contract->subcontractorEmployee->title) ({{ $contract->subcontractorEmployee->title }})@endif">
                                         {{ Str::limit($contract->subcontractorEmployee->name, 30) }}
                                     </div>
+                                @endif
+                                @if(! empty($this->backChargeRows[$contract->id]))
+                                    <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                          title="{{ __('Enter an amount to deduct them from this payment.') }}">
+                                        {{ trans_choice(':count open back charge|:count open back charges', count($this->backChargeRows[$contract->id]), ['count' => count($this->backChargeRows[$contract->id])]) }}
+                                    </span>
                                 @endif
                             </td>
                             <!-- Project -->
@@ -398,11 +407,16 @@
                                 @else
                                     <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
                                 @endif
+                                @if($backChargesTotal > 0)
+                                    <div class="text-xs text-red-600 dark:text-red-400" title="{{ __('Back charges deducted from this contract') }}">
+                                        {{ __('−:amount back charges', ['amount' => Number::currency($backChargesTotal, config('app.currency'), config('app.locale'))]) }}
+                                    </div>
+                                @endif
                             </td>
                             <!-- Paid -->
                             <td class="px-4 py-3 whitespace-nowrap text-right">
                                 <span class="text-sm font-medium text-green-600 dark:text-green-400">
-                                    {{ Number::currency($totalPaidDollars, config('app.currency'), config('app.locale')) }}
+                                    {{ Number::currency($cashPaid, config('app.currency'), config('app.locale')) }}
                                 </span>
                             </td>
                             <!-- Balance -->
@@ -466,6 +480,10 @@
                                 @endif
                             </td>
                         </tr>
+                        {{-- Back charges this payment may take (docs/back-charges.md) --}}
+                        @if(! $isPaidOrCancelled && $balance > 0 && ! empty($this->backChargeRows[$contract->id]))
+                            @include('livewire.back-charge.partials.deduct-panel', ['rows' => $this->backChargeRows[$contract->id], 'colspan' => 12])
+                        @endif
                         {{-- Expandable Change Orders Sub-row --}}
                         @if($isExpanded && $contract->changeOrders->count() > 0)
                             <tr wire:key="contract-{{ $contract->id }}-change-orders" class="bg-slate-50 dark:bg-slate-900/40">

@@ -39,6 +39,8 @@ class LegacyBehaviourTest extends TestCase
         'users.index' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
         // New in Nov 2026, admin-only by seed (docs/login-activity.md).
         'login-activity.index' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
+        // New in Nov 2026, admin-only by seed (docs/back-charges.md).
+        'back-charges.index' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
         'users.create' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
         'cost-codes.templates.index' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
         'cost-codes.templates.create' => ['admin' => 200, 'manager' => 403, 'employee' => 403],
@@ -151,7 +153,7 @@ class LegacyBehaviourTest extends TestCase
     // added after the bridge was deleted, so it was never on it: it was
     // declared unswept only while its screens were being written, and flipped
     // once every action guarded itself and every list filtered itself.
-    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard', 'documentation', 'rfis', 'approvals', 'assignment-defaults', 'workers', 'company-expenses', 'equipment', 'login-activity'];
+    protected const CONVERTED = ['users', 'access', 'team', 'project', 'projects', 'company', 'settings', 'expenses', 'income', 'budget', 'cost-codes', 'requisitions', 'quotations', 'purchase-orders', 'change-orders', 'contracts', 'payments', 'documents', 'tasks', 'meetings', 'daily-reports', 'estimates', 'invoices', 'clients', 'vendors', 'catalog', 'reports', 'project-report', 'dashboard', 'documentation', 'rfis', 'approvals', 'assignment-defaults', 'workers', 'company-expenses', 'equipment', 'login-activity', 'back-charges'];
 
     public function test_only_the_converted_areas_are_swept(): void
     {

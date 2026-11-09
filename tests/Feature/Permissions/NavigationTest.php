@@ -45,8 +45,9 @@ class NavigationTest extends TestCase
             // Login Activity joined on 2026-11-05, admin-only by seed.
             'Company: Company Info, Users, Roles & Access, Login Activity, Company Expenses, Equipment, Maintenance',
             // My Quotations joined at phase 6 of the procurement assignment
-            // module: the buying queue, gated on `quotations.view`.
-            'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches',
+            // module: the buying queue, gated on `quotations.view`. Back
+            // Charges joined on 2026-11-09, admin-only by seed.
+            'Projects: All Projects, Clients, Cost Codes, My Quotations, Payments, Contract Payments, Payment Batches, Back Charges',
             // Vendors (suppliers + subcontractors) and Workers moved into one
             // Directory group on 2026-09-07; Suppliers left Catalog and
             // Subcontractors left Projects the same day.

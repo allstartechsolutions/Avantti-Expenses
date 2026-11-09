@@ -278,7 +278,12 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-white">{{ Number::currency($r['amount'], $currency, $locale) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-white">
+                                        {{ Number::currency($r['amount'], $currency, $locale) }}
+                                        @foreach ($r['back_charges'] ?? [] as $bc)
+                                            <span class="block text-xs font-normal text-red-600 dark:text-red-400" title="{{ $bc['reason'] }}">{{ __(':number deducted :amount', ['number' => $bc['number'], 'amount' => Number::currency($bc['amount'], $currency, $locale)]) }}</span>
+                                        @endforeach
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

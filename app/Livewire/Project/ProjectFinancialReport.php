@@ -41,12 +41,12 @@ class ProjectFinancialReport extends Component
         $totalExpenses = $expenses->sum('total_amount');
 
         // Cost: contracts adjusted (each Contract::getAdjustedAmount already includes ContractChangeOrders)
-        $contracts = $this->project->contracts()->committed()->with(['changeOrders', 'payments'])->get();
+        $contracts = $this->project->contracts()->committed()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
         $contractsAdjusted = 0;
         $contractsPaid = 0;
         foreach ($contracts as $contract) {
-            $contractsAdjusted += $contract->getAdjustedAmount();
-            $contractsPaid += $contract->getAmountPaid();
+            $contractsAdjusted += $contract->getNetAmount();
+            $contractsPaid += $contract->getCashPaid();
         }
         $contractsUnpaid = round($contractsAdjusted - $contractsPaid, 2);
 
@@ -77,12 +77,12 @@ class ProjectFinancialReport extends Component
         $projectLevelChangeOrders = $this->project->projectLevelChangeOrders()->approved()->sum('amount');
         $projectLevelExpenses = $this->project->projectLevelExpenses->sum('total_amount');
 
-        $projectLevelContracts = $this->project->projectLevelContracts()->with(['changeOrders', 'payments'])->get();
+        $projectLevelContracts = $this->project->projectLevelContracts()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
         $projectLevelContractsAdjusted = 0;
         $projectLevelContractsPaid = 0;
         foreach ($projectLevelContracts as $contract) {
-            $projectLevelContractsAdjusted += $contract->getAdjustedAmount();
-            $projectLevelContractsPaid += $contract->getAmountPaid();
+            $projectLevelContractsAdjusted += $contract->getNetAmount();
+            $projectLevelContractsPaid += $contract->getCashPaid();
         }
 
         // In manual mode, project base value is initial_amount; in from_jobsites mode it's 0
@@ -110,12 +110,12 @@ class ProjectFinancialReport extends Component
 
             $jsExpenses = $jobSite->expenses->sum('total_amount');
 
-            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments'])->get();
+            $jsContracts = $jobSite->contracts()->committed()->with(['changeOrders', 'payments', 'backChargeDeductions'])->get();
             $jsContractsAdjusted = 0;
             $jsContractsPaid = 0;
             foreach ($jsContracts as $contract) {
-                $jsContractsAdjusted += $contract->getAdjustedAmount();
-                $jsContractsPaid += $contract->getAmountPaid();
+                $jsContractsAdjusted += $contract->getNetAmount();
+                $jsContractsPaid += $contract->getCashPaid();
             }
             $jsContractsUnpaid = round($jsContractsAdjusted - $jsContractsPaid, 2);
 
@@ -151,6 +151,7 @@ class ProjectFinancialReport extends Component
                 'jobSite:id,job_site_name',
                 'changeOrders',
                 'payments',
+                'backChargeDeductions',
             ])
             ->orderBy('contract_number')
             ->get();
