@@ -14,7 +14,7 @@
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-3">
                     <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $bc->number }}</h1>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bc->isFullyDeducted() ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }}">{{ $bc->getStatusLabel() }}</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bc->getStatusColor() === 'green' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }}">{{ $bc->getStatusLabel() }}</span>
                 </div>
                 <p class="mt-1 text-slate-700 dark:text-slate-300 break-words">{{ $bc->reason }}</p>
             </div>

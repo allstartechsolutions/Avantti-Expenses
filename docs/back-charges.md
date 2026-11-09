@@ -231,6 +231,35 @@ Six findings, all confirmed and fixed, pinned in `tests/Feature/BackCharge/BackC
   zero (status **Waived**); a new one still needs an amount.
 - **P2** the Paid column sorts by the cash it shows, not the gross.
 
+### Testing by hand
+
+`php artisan db:seed --class=BackChargeTestSeeder` (refuses on production; additive, a second
+run does nothing). Every record starts with "Test". Password for all three users:
+`TestPass!2026`.
+
+| User | Role | Try |
+|---|---|---|
+| `test-admin@avantti.test` | admin | everything, including delete |
+| `test-pm@avantti.test` | Test PM (back charges) — manager's abilities + payments + back charges view / create / edit / deduct | create and deduct; no delete buttons |
+| `test-manager@avantti.test` | manager as seeded | no Back Charges menu, no deduct panel, pays normally |
+
+Job site **Test — Bayside Commons** (Lots 1–4); subcontractors **Test Drywall Co** (employees
+Ana Souza, Bruno Costa), **Test Electric LLC** (Carla Dias), **Test Plumbing Inc**.
+
+| Back charge | State | Where to look |
+|---|---|---|
+| Damaged window frame, $1,500, Drywall, Lot 2 | open | offered on every Test Drywall payment |
+| Lost company ladder, $400, Drywall — Ana | open, employee | offered only on CTR-T01 (Ana's contract) |
+| Cleanup after drywall, $1,000, Drywall | $600 taken from a $3,000 direct payment on CTR-T02 (check $2,400) | contract CTR-T02, Payment Detail |
+| Cut conduit repair, $750, Electric — Carla | fully deducted in the approved batch "Test — Week 44" ($2,000 line, check $1,250) | batch view / PDF / CSV, CTR-T04 |
+| Missed inspection fee, Electric | waived (amount 0) | the list's status |
+| Water damage under sink, $500, Plumbing | set aside on a pending line of "Test — Week 46 (draft)" | Pending approval; reject the line and it reopens |
+
+"Test — Week 46 (draft)" also has CTR-T01 pending at $3,000 with nothing deducted: open the
+batch, take the ladder and part of the window frame, save, approve. CTR-T03 runs on three
+released $5,000 installments: pay one with a back charge on the contract page and it still
+reads as fully paid.
+
 ### Deploying
 
 `php artisan migrate` (two tables). Nothing to seed: administrators bypass the ability tables;

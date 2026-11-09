@@ -123,10 +123,34 @@ class BackCharge extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    /** Adds deducted_cents: every deduction, pending batch lines included. */
+    /**
+     * Adds deducted_cents (every deduction, pending batch lines included) and
+     * reserved_cents (the part only set aside on lines not approved yet).
+     */
     public function scopeWithDeducted(Builder $query): Builder
     {
-        return $query->withSum('deductions as deducted_cents', 'amount');
+        return $query->withSum('deductions as deducted_cents', 'amount')
+            ->withSum(['deductions as reserved_cents' => fn ($q) => $q->whereNull('contract_payment_id')], 'amount');
+    }
+
+    /** What is only set aside on batch lines that are not approved yet, in cents. */
+    public function getReservedCents(): int
+    {
+        if (array_key_exists('reserved_cents', $this->attributes)) {
+            return (int) $this->attributes['reserved_cents'];
+        }
+
+        if ($this->relationLoaded('deductions')) {
+            return (int) $this->deductions->whereNull('contract_payment_id')->sum(fn ($d) => $d->getRawOriginal('amount'));
+        }
+
+        return (int) $this->deductions()->whereNull('contract_payment_id')->sum('amount');
+    }
+
+    /** Nothing left to deduct, but part of it waits on a batch line that is not approved yet. */
+    public function isAwaitingApproval(): bool
+    {
+        return $this->isFullyDeducted() && $this->getReservedCents() > 0;
     }
 
     /** Back charges with something left to deduct. */
@@ -192,6 +216,7 @@ class BackCharge extends Model
     {
         return match (true) {
             $this->isWaived() => __('Waived'),
+            $this->isAwaitingApproval() => __('Pending approval'),
             $this->isFullyDeducted() => __('Fully deducted'),
             default => __('Open'),
         };
@@ -199,7 +224,7 @@ class BackCharge extends Model
 
     public function getStatusColor(): string
     {
-        return $this->isFullyDeducted() ? 'green' : 'amber';
+        return $this->isFullyDeducted() && ! $this->isAwaitingApproval() ? 'green' : 'amber';
     }
 
     /** Company name, or "Employee — Company" when it is against an employee. */

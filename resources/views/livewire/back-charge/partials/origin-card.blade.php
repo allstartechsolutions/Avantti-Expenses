@@ -23,8 +23,8 @@
                             </div>
                             <div class="text-right whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white"><x-ui.money :amount="$bc->amount" /></div>
-                                <div class="text-xs {{ $bc->isFullyDeducted() ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400' }}">
-                                    {{ $bc->isFullyDeducted() ? __('Fully deducted') : __(':amount left', ['amount' => Number::currency($bc->getRemaining(), config('app.currency'), config('app.locale'))]) }}
+                                <div class="text-xs {{ $bc->getStatusColor() === 'green' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                    {{ $bc->isFullyDeducted() ? $bc->getStatusLabel() : __(':amount left', ['amount' => Number::currency($bc->getRemaining(), config('app.currency'), config('app.locale'))]) }}
                                 </div>
                             </div>
                         </li>

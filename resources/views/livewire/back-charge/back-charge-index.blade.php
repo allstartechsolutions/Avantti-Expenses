@@ -138,7 +138,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold {{ $bc->isFullyDeducted() ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400' }}"><x-ui.money :amount="$bc->getRemaining()" /></td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bc->isFullyDeducted() ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }}">{{ $bc->getStatusLabel() }}</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bc->getStatusColor() === 'green' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }}">{{ $bc->getStatusLabel() }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-2">
