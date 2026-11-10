@@ -353,9 +353,9 @@ ITEMS = [
         "match": "Batches – Back Charge – colocar a opção aprooved or decline",
         "done": "Nov 9, 2026",
         "steps": [
-            "Record the back charge first: Job Sites → Back Charges → New Back Charge. Choose the subcontractor and, if it is one person's fault, the employee; the reason, the amount and, optionally, the job site and lot where it happened. Save; you can then attach photos on its page.",
-            "Open the payment batch and type the payment as usual (Batch Amount). Rows whose subcontractor owes back charges carry an orange \"open back charges\" tag.",
-            "As soon as an amount is typed, the open back charges appear under the row. To deduct (approve), type how much in Deduct now, or click All to take what is left (never more than the payment). The line shows the check: payment − deductions.",
+            "Record the back charge first: Job Sites → Back Charges → New Back Charge. Type part of the subcontractor's company or contact name and pick it from the list; if it is one person's fault, choose the employee. Then the reason, the amount and, optionally, where it happened: the Job Site search offers only job sites where that subcontractor (or that employee) has a contract, and Lot only those lots. Save; you can then attach photos on its page.",
+            "Open the payment batch and type the payment as usual (Batch Amount). Rows whose subcontractor owes back charges carry an orange \"open back charges\" tag — only on rows that can take a deduction (pending, with a balance due). Click the tag to show or hide the list.",
+            "The open back charges also appear under the row as soon as an amount is typed. To deduct (approve), type how much in Deduct now, or click All to take what is left (never more than the payment). The line shows the check: payment − deductions.",
             "To decline it this time, leave the box empty. Nothing is lost: it stays open and is offered again on the next payment.",
             "Save Draft, then approve the line as usual. On approval the deduction is final and the contract goes down by that amount.",
         ],
@@ -367,6 +367,7 @@ ITEMS = [
             "Deducting is a separate permission (Back Charges → Deduct from a payment): administrators only to start, grantable on the access screens. The same deduction is available when paying on Contract Payments and on a contract's Record Payment.",
         ],
         "images": [
+            ("4-back-charge-form.png", "New Back Charge — the Job Site search lists only where Demo Framing Pros LLC has a contract"),
             ("4-batch-deduct-panel.png", "Batch — $1,000 payment, All takes the $400 left of BC-0001: check $600"),
             ("4-5-back-charges-list.png", "Job Sites → Back Charges — what each one is, what was deducted and what is left"),
         ],
