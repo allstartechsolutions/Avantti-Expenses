@@ -18,7 +18,7 @@ ITEMS = [
             "\"By project manager and payment date\" shows each PM's total, split by payment date (e.g. PM Alexandre = Oct 8 + Oct 9). \"By payment date\" shows each date's total. The grand total is at the top right.",
             "Use the Project Manager and Payment date filters above the list to narrow both the list and the totals.",
         ],
-        "notes": ["The totals add up every line in each batch, exactly like the Total Amount column."],
+        "notes": ["The totals add up every line in each batch less the back charges deducted on them (what the checks add up to), exactly like the Total Amount column (since Nov 16, 2026)."],
         "images": [
             ("1-9-batch-totals.png", "Payment Batches — the Totals panel under the list"),
         ],
@@ -403,13 +403,21 @@ ITEMS = [
     {
         "tracker": 11,
         "match": "Batches – após aprovado, precisa que apareca o BC",
-        "done": "Nov 5, 2026 · completed Nov 9, 2026",
+        "done": "Nov 5, 2026 · completed Nov 9, 2026 · batch totals fixed Nov 16, 2026",
         "steps": [
+            "On Job Sites → Payment Batches, the Total Amount column is now what the checks add up to: the batch's lines less the back charges deducted. When a batch has back charges, the amount before them and the back charges (in red) are shown underneath. The Totals panel under the list (grand total, by PM, by date) uses the same figure.",
             "Open the approved batch (eye icon on Payment Batches).",
             "Under each line's amount: the back charge deducted (e.g. BC-0001 −$600.00, its reason on hover) and the check amount. Click the BC number to open it.",
-            "The Total Amount card and the totals row show the back charges deducted and what the checks add up to.",
+            "The Total Amount card shows the back charges deducted and what the checks add up to. The Approved and Pending cards now show the same for their own lines, so once a batch is approved the Approved card reads, for example, $2,500.00 − $600.00 back charges = Checks: $1,900.00. When the lines are grouped (Group by, e.g. Subcontractor), each group's subtotal shows its back charges and checks as well. The PDF and the CSV show the same.",
         ],
-        "notes": ["On the contract (e.g. CTR-1204) the same deduction is listed under Back charges deducted, and on the payment in its payment history."],
-        "images": [("10-11-batch-view-back-charge.png", "Approved batch — which back charge was deducted, and the check")],
+        "notes": [
+            "Fixed after your feedback of Nov 16, 2026 (Misael's batch): the list showed the total before back charges, even once approved. The deductions themselves were always right — on the payment, the contract and the back charge — only the batch total on the list was shown before them.",
+            "On the contract (e.g. CTR-1204) the same deduction is listed under Back charges deducted, and on the payment in its payment history.",
+        ],
+        "images": [
+            ("11-batch-list-net.png", "Payment Batches — $2,500.00 less $600.00 back charges: Total Amount $1,900.00"),
+            ("11-batch-view-approved-card.png", "Approved batch — the Approved card shows the back charges and the checks"),
+            ("10-11-batch-view-back-charge.png", "Approved batch — which back charge was deducted, and the check"),
+        ],
     },
 ]

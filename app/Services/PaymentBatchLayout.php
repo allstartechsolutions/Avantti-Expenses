@@ -97,7 +97,8 @@ class PaymentBatchLayout
             ->sum(fn ($item) => (int) $item->getRawOriginal('amount')) / 100.0;
 
         // A rejected line holds no deductions: they are given back on reject.
-        $backCharges = $items->sum(fn ($item) => (int) round($item->getBackChargesDeducted() * 100)) / 100.0;
+        $backCharges = fn (?string $status = null) => ($status ? $items->where('status', $status) : $items)
+            ->sum(fn ($item) => (int) round($item->getBackChargesDeducted() * 100)) / 100.0;
 
         return [
             'count' => $items->count(),
@@ -105,9 +106,13 @@ class PaymentBatchLayout
             'approved_amount' => $sum('approved'),
             'pending_amount' => $sum('pending'),
             'rejected_amount' => $sum('rejected'),
-            'back_charges_amount' => $backCharges,
+            'back_charges_amount' => $backCharges(),
+            'approved_back_charges' => $backCharges('approved'),
+            'pending_back_charges' => $backCharges('pending'),
             // What the checks add up to: the lines not rejected, less the back charges.
-            'net_amount' => round($sum() - $sum('rejected') - $backCharges, 2),
+            'net_amount' => round($sum() - $sum('rejected') - $backCharges(), 2),
+            'approved_net' => round($sum('approved') - $backCharges('approved'), 2),
+            'pending_net' => round($sum('pending') - $backCharges('pending'), 2),
         ];
     }
 

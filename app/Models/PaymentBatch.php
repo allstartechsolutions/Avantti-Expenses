@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class PaymentBatch extends Model
 {
@@ -34,6 +35,15 @@ class PaymentBatch extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PaymentBatchItem::class);
+    }
+
+    /**
+     * Back charges taken out of the batch's lines (docs/back-charges.md).
+     * A rejected line holds none: they are given back on reject.
+     */
+    public function backChargeDeductions(): HasManyThrough
+    {
+        return $this->hasManyThrough(BackChargeDeduction::class, PaymentBatchItem::class, 'payment_batch_id', 'payment_batch_item_id');
     }
 
     public function createdBy(): BelongsTo

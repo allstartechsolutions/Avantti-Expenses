@@ -135,10 +135,18 @@
             <td style="width: 20%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="{{ $label }}">{{ __('Approved') }}</div>
                 <div style="font-size: 10pt; font-weight: bold; color: #27ae60;">{{ $money($summary['approved_amount']) }}</div>
+                @if($summary['approved_back_charges'] > 0)
+                    <div style="font-size: 7pt; color: #c0392b;">{{ __('−:amount back charges', ['amount' => $money($summary['approved_back_charges'])]) }}</div>
+                    <div style="font-size: 7pt; font-weight: bold; color: #333;">{{ __('Checks: :amount', ['amount' => $money($summary['approved_net'])]) }}</div>
+                @endif
             </td>
             <td style="width: 20%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="{{ $label }}">{{ __('Pending') }}</div>
                 <div style="font-size: 10pt; font-weight: bold; color: #e67e22;">{{ $money($summary['pending_amount']) }}</div>
+                @if($summary['pending_back_charges'] > 0)
+                    <div style="font-size: 7pt; color: #c0392b;">{{ __('−:amount back charges', ['amount' => $money($summary['pending_back_charges'])]) }}</div>
+                    <div style="font-size: 7pt; font-weight: bold; color: #333;">{{ __('Checks: :amount', ['amount' => $money($summary['pending_net'])]) }}</div>
+                @endif
             </td>
             <td style="width: 20%; border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f9fafb;">
                 <div style="{{ $label }}">{{ __('Rejected') }}</div>
@@ -183,7 +191,13 @@
                                     @if($groupTotals['rejected_amount'] != 0) | {{ __('Rejected') }}: {{ $money($groupTotals['rejected_amount']) }}@endif
                                 </span>
                             </td>
-                            <td style="{{ $td }} text-align: right; font-weight: bold; font-size: 8pt; color: #3F5189;">{{ $money($groupTotals['total_amount']) }}</td>
+                            <td style="{{ $td }} text-align: right; font-weight: bold; font-size: 8pt; color: #3F5189;">
+                                {{ $money($groupTotals['total_amount']) }}
+                                @if($groupTotals['back_charges_amount'] > 0)
+                                    <div style="font-size: 7pt; color: #c0392b;">{{ __('−:amount back charges', ['amount' => $money($groupTotals['back_charges_amount'])]) }}</div>
+                                    <div style="font-size: 7pt; color: #333;">{{ __('Checks: :amount', ['amount' => $money($groupTotals['net_amount'])]) }}</div>
+                                @endif
+                            </td>
                         </tr>
                     @endif
                     @foreach($group['rows'] as $index => $item)

@@ -154,6 +154,10 @@
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                         {{ Number::currency($this->summary['approved_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->summary['approved_back_charges'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->summary['approved_back_charges'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->summary['approved_net'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -171,6 +175,10 @@
                     <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                         {{ Number::currency($this->summary['pending_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->summary['pending_back_charges'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->summary['pending_back_charges'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->summary['pending_net'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -275,6 +283,10 @@
                                     </td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-semibold text-slate-900 dark:text-white">
                                         {{ Number::currency($groupTotals['total_amount'], config('app.currency'), config('app.locale')) }}
+                                        @if($groupTotals['back_charges_amount'] > 0)
+                                            <div class="text-xs font-normal text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($groupTotals['back_charges_amount'], config('app.currency'), config('app.locale'))]) }}</div>
+                                            <div class="text-xs">{{ __('Checks: :amount', ['amount' => Number::currency($groupTotals['net_amount'], config('app.currency'), config('app.locale'))]) }}</div>
+                                        @endif
                                     </td>
                                     <td colspan="6" class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">
                                         <div class="flex flex-wrap gap-x-4 gap-y-1">

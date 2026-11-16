@@ -97,16 +97,18 @@ class PaymentBatchIndex extends Component
     /**
      * Totals over every batch the filters keep — not only this page — by
      * project manager (each split by payment date) and by payment date.
-     * The same sum as the Total Amount column: every line in the batch.
+     * The same sum as the Total Amount column: every line in the batch, less
+     * the back charges deducted on them.
      */
     protected function totals(): array
     {
         $rows = $this->filteredQuery()
             ->with('projectManager:id,name')
             ->withSum('items', 'amount')
+            ->withSum('backChargeDeductions', 'amount')
             ->get(['id', 'payment_date', 'project_manager_id']);
 
-        $amount = fn (Collection $set) => round($set->sum('items_sum_amount') / 100, 2);
+        $amount = fn (Collection $set) => round(($set->sum('items_sum_amount') - $set->sum('back_charge_deductions_sum_amount')) / 100, 2);
 
         $byDate = $rows->groupBy(fn ($b) => $b->payment_date->toDateString())
             ->sortKeys()
@@ -135,6 +137,7 @@ class PaymentBatchIndex extends Component
             ->with(['createdBy', 'client', 'project', 'subcontractor', 'projectManager', 'supervisor'])
             ->withCount('items')
             ->withSum('items', 'amount')
+            ->withSum('backChargeDeductions', 'amount')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

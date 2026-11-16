@@ -5723,6 +5723,7 @@
     "Deduct from :number": "Descontar de :number",
     "Leave a box empty to skip that back charge this time. What is not deducted stays open for the next payment.": "Deixe o campo vazio para não descontar essa glosa desta vez. O que não for descontado fica em aberto para o próximo pagamento.",
     "Check: :amount": "Cheque: :amount",
+    "Lines before back charges": "Linhas antes das glosas",
     "−:amount back charges": "−:amount em glosas",
     "Checks: :amount": "Cheques: :amount",
     "Back charges deducted from this contract": "Glosas descontadas deste contrato",

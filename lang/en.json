@@ -4338,6 +4338,7 @@
     "Deduct from :number": "Deduct from :number",
     "Leave a box empty to skip that back charge this time. What is not deducted stays open for the next payment.": "Leave a box empty to skip that back charge this time. What is not deducted stays open for the next payment.",
     "Check: :amount": "Check: :amount",
+    "Lines before back charges": "Lines before back charges",
     "−:amount back charges": "−:amount back charges",
     "Checks: :amount": "Checks: :amount",
     "Back charges deducted from this contract": "Back charges deducted from this contract",

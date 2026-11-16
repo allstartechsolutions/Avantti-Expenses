@@ -191,6 +191,10 @@ class PaymentBatchShow extends Component
                         array_fill(0, 10, ''),
                         [__('Subtotal'), $money($group['totals']['total_amount'])],
                     ));
+                    if ($group['totals']['back_charges_amount'] > 0) {
+                        fputcsv($out, array_merge(array_fill(0, 10, ''), [__('Back charges deducted'), $money($group['totals']['back_charges_amount'])]));
+                        fputcsv($out, array_merge(array_fill(0, 10, ''), [__('Checks'), $money($group['totals']['net_amount'])]));
+                    }
                     fputcsv($out, []);
                 }
             }

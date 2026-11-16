@@ -124,6 +124,10 @@
                     <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">
                         {{ Number::currency($this->batchSummary['pending_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->batchSummary['pending_back_charges'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->batchSummary['pending_back_charges'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->batchSummary['pending_net'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -141,6 +145,10 @@
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                         {{ Number::currency($this->batchSummary['approved_amount'], config('app.currency'), config('app.locale')) }}
                     </p>
+                    @if($this->batchSummary['approved_back_charges'] > 0)
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ __('−:amount back charges', ['amount' => Number::currency($this->batchSummary['approved_back_charges'], config('app.currency'), config('app.locale'))]) }}</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ __('Checks: :amount', ['amount' => Number::currency($this->batchSummary['approved_net'], config('app.currency'), config('app.locale'))]) }}</p>
+                    @endif
                 </div>
             </div>
         </div>

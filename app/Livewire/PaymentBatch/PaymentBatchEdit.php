@@ -342,7 +342,10 @@ class PaymentBatchEdit extends Component
         $items = $this->paymentBatch->items()->with('backChargeDeductions')->get();
         $totalCents = $items->sum(fn ($item) => $item->getRawOriginal('amount'));
         // Rejected lines hold no deductions (they are given back on reject).
-        $backChargeCents = $items->sum(fn ($item) => $item->backChargeDeductions->sum(fn ($d) => (int) $d->getRawOriginal('amount')));
+        $backChargesOf = fn ($set) => $set->sum(fn ($item) => $item->backChargeDeductions->sum(fn ($d) => (int) $d->getRawOriginal('amount')));
+        $backChargeCents = $backChargesOf($items);
+        $approvedBackChargeCents = $backChargesOf($items->where('status', 'approved'));
+        $pendingBackChargeCents = $backChargesOf($items->where('status', 'pending'));
         $approvedCents = $items->where('status', 'approved')->sum(fn ($item) => $item->getRawOriginal('amount'));
         $pendingCents = $items->where('status', 'pending')->sum(fn ($item) => $item->getRawOriginal('amount'));
         $rejectedCents = $items->where('status', 'rejected')->sum(fn ($item) => $item->getRawOriginal('amount'));
@@ -357,8 +360,12 @@ class PaymentBatchEdit extends Component
             'rejected_count' => $items->where('status', 'rejected')->count(),
             'rejected_amount' => $rejectedCents / 100,
             'back_charges_amount' => $backChargeCents / 100,
+            'approved_back_charges' => $approvedBackChargeCents / 100,
+            'pending_back_charges' => $pendingBackChargeCents / 100,
             // What the checks add up to, rejected lines left out.
             'net_amount' => ($totalCents - $rejectedCents - $backChargeCents) / 100,
+            'approved_net' => ($approvedCents - $approvedBackChargeCents) / 100,
+            'pending_net' => ($pendingCents - $pendingBackChargeCents) / 100,
         ];
     }
 

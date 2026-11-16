@@ -138,6 +138,12 @@ its own record (company or employee, optional origin lot), deducted in full or i
 batch lines and direct contract payments, the rest carried automatically; "declined for good"
 is lowering the amount to what was deducted, with the reason in the description.
 
+**Feedback, 16 Nov 2026** — "no total do batch, ele não está deduzindo os BC, mesmo depois de
+aprovado" (Misael's batch). The deductions were right; the batch list's Total Amount column and
+Totals panel summed the lines before back charges. Fixed: both are now less the back charges,
+with the gross and the deduction under the figure; the Approved / Pending cards (view, edit, PDF)
+and each group's subtotal (view, PDF, CSV) show their own deduction and checks. Added to the client doc under item 11.
+
 ## Client how-to document
 
 Every finished item gets a "✔ DONE — how to use it" block (steps, notes, screenshots) under its

@@ -4,6 +4,7 @@ namespace Tests\Feature\BackCharge;
 
 use App\Enums\ProjectStatus;
 use App\Livewire\PaymentBatch\PaymentBatchEdit;
+use App\Livewire\PaymentBatch\PaymentBatchIndex;
 use App\Livewire\PaymentBatch\PaymentBatchShow;
 use App\Models\BackCharge;
 use App\Models\BackChargeDeduction;
@@ -240,5 +241,44 @@ class BackChargeBatchTest extends TestCase
 
         $this->contract->update(['subcontractor_employee_id' => $maria->id]);
         $this->screen()->assertSee($bc->number);
+    }
+
+    /**
+     * Client feedback, 16 Nov 2026: the batch total on the list showed the
+     * lines before back charges, even once approved.
+     */
+    public function test_the_batch_total_is_less_the_back_charges_pending_and_approved(): void
+    {
+        $bc = $this->backCharge(500);
+        $id = $this->contract->id;
+        $this->screen()->set("payAmounts.$id", '1000')->set("payDeductions.$id.{$bc->id}", '300')->call('saveDraft');
+
+        $list = fn () => Livewire::actingAs($this->admin)->test(PaymentBatchIndex::class);
+
+        // Pending: the list and the totals already show the checks.
+        $list()->assertSee('$700.00')
+            ->assertSee(__('−:amount back charges', ['amount' => '$300.00']))
+            ->assertViewHas('totals', fn ($t) => $t['total'] === 700.0);
+        $this->screen()->assertSee(__('Checks: :amount', ['amount' => '$700.00']));
+
+        $this->screen()->call('approveItem', $this->line()->id)->assertHasNoErrors();
+
+        $list()->assertSee('$700.00')
+            ->assertViewHas('totals', fn ($t) => $t['total'] === 700.0 && $t['byPm'][0]['total'] === 700.0 && $t['byDate'][0]['total'] === 700.0);
+
+        // The Approved card shows what was paid after the deduction.
+        Livewire::actingAs($this->admin)->test(PaymentBatchShow::class, ['paymentBatch' => $this->batch->fresh()])
+            ->assertSet('summary.approved_amount', 1000.0)
+            ->assertSet('summary.approved_back_charges', 300.0)
+            ->assertSet('summary.approved_net', 700.0)
+            ->assertSet('summary.pending_back_charges', 0.0)
+            // Grouped by subcontractor, the group's subtotal shows the checks too.
+            ->set('groupBy', 'subcontractor')
+            ->assertSee('Benitez Carpentry')
+            ->assertSee(__('Checks: :amount', ['amount' => '$700.00']))
+            ->call('exportCsv')
+            ->assertFileDownloaded();
+
+        $this->actingAs($this->admin)->get(route('payment-batches.pdf.view', [$this->batch, 'group' => 'subcontractor']))->assertOk();
     }
 }

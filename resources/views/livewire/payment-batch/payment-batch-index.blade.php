@@ -197,9 +197,22 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    {{-- The checks: every line less the back charges deducted on it. --}}
+                                    @php
+                                        $grossCents = (int) ($batch->items_sum_amount ?? 0);
+                                        $backChargeCents = (int) ($batch->back_charge_deductions_sum_amount ?? 0);
+                                    @endphp
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                        ${{ number_format(($batch->items_sum_amount ?? 0) / 100, 2) }}
+                                        {{ Number::currency(($grossCents - $backChargeCents) / 100, config('app.currency'), config('app.locale')) }}
                                     </div>
+                                    @if($backChargeCents > 0)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400" title="{{ __('Lines before back charges') }}">
+                                            {{ Number::currency($grossCents / 100, config('app.currency'), config('app.locale')) }}
+                                        </div>
+                                        <div class="text-xs text-red-600 dark:text-red-400">
+                                            {{ __('−:amount back charges', ['amount' => Number::currency($backChargeCents / 100, config('app.currency'), config('app.locale'))]) }}
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php

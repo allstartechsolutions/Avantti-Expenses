@@ -139,6 +139,10 @@ the contract's cost (adjusted) and the cash that left the bank (paid).
    "deduct all" shortcut; the net check updates as you type. The batch shows the gross, the
    deductions and the net totals.
 4. **Batch view, PDF and CSV**: each line shows gross, BC number and reason, and net check.
+   **Batch list** (`/payment-batches`): the Total Amount column and the Totals panel are the
+   checks — every line less its back charges — with the gross and the deduction under the
+   figure; the Approved and Pending cards (view, edit, PDF) and each group's subtotal (view,
+   PDF, CSV) show their own deduction and net check too. Client feedback, 16 Nov 2026: the list showed the gross, even once approved.
 5. **Contract Payments and the contract page's "record payment"**: the same deduct panel.
 6. **Contract page**: a "Back charges deducted" line beside change orders, and a list of the
    deductions taken from it.
